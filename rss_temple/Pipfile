@@ -8,6 +8,8 @@ name = "pypi"
 [packages]
 
 django = "*"
+feedparser = "*"
+requests = "*"
 
 
 [dev-packages]
