@@ -10,6 +10,7 @@ name = "pypi"
 django = "*"
 feedparser = "*"
 requests = "*"
+"argon2-cffi" = "*"
 
 
 [dev-packages]

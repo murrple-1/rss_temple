@@ -1,5 +1,5 @@
-from .feed import test
+from .user import user
 
 __all__ = [
-	test,
+	user,
 	]
