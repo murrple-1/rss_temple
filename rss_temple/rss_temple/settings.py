@@ -3,6 +3,7 @@ Django settings for rss_temple project.
 """
 
 import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,6 +28,11 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'api.middleware.bodyhandler.BodyHandlerMiddleware',
+    'api.middleware.profiling.ProfileMiddleware',
+    'api.middleware.cors.CORSMiddleware',
+    'api.middleware.authentication.AuthenticationMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
@@ -43,7 +49,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    },
 }
 
 
@@ -59,3 +65,50 @@ USE_I18N = False
 USE_L10N = False
 
 USE_TZ = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+        },
+        'rss_temple': {
+            'handlers': ['console'],
+            'level': os.getenv('RSS_TEMPLE_LOG_LEVEL', 'INFO'),
+        },
+        'metrics': {
+            'handlers': ['console'],
+            'level': os.getenv('METRICS_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
+
+CORS_ALLOW_ORIGINS = '*'
+CORS_ALLOW_METHODS = 'GET,POST,PUT,DELETE,OPTIONS,HEAD'
+CORS_ALLOW_HEADERS = 'Pragma,Cache-Control,Content-Type,If-Modified-Since,X-Requested-With,Authorization,X-Session-Token,X-Auth-Token'
+CORS_EXPOSE_HEADERS = ''
+
+PROFILING_OUTPUT_FILE = os.environ.get('PROFILING_OUTPUT_FILE')
+
+AUTHENTICATION_DISABLE = []
+
+REALM = 'RSS Temple'
+
+DEFAULT_COUNT = 50
+MAX_COUNT = 1000
+DEFAULT_SKIP = 0
+DEFAULT_RETURN_OBJECTS = True
+DEFAULT_RETURN_TOTAL_COUNT = True
+
+DEFAULT_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+DEFAULT_DATE_FORMAT = '%Y-%m-%d'
+DEFAULT_TIME_FORMAT = '%H:%M:%S'
+
+SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)

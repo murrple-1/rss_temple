@@ -11,6 +11,9 @@ django = "*"
 feedparser = "*"
 requests = "*"
 "argon2-cffi" = "*"
+ujson = "*"
+pyparsing = "*"
+python-dateutil = "*"
 
 
 [dev-packages]

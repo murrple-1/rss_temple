@@ -9,6 +9,7 @@ class User(models.Model):
 
 class Session(models.Model):
 	uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+	expires_at = models.DateTimeField()
 
 class RssEntry(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)

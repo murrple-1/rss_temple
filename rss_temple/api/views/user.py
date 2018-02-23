@@ -2,7 +2,7 @@ import uuid
 
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotModified
 
-from api import models
+from .. import models, searchqueries
 
 def user(request, _uuid):
 	permitted_methods = ['GET']
