@@ -7,10 +7,10 @@ name = "pypi"
 
 [packages]
 
-django = "*"
+Django = "*"
 feedparser = "*"
 requests = "*"
-"argon2-cffi" = "*"
+"argon2_cffi" = "*"
 ujson = "*"
 pyparsing = "*"
 python-dateutil = "*"

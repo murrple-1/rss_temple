@@ -1,9 +1,10 @@
-import hashlib
 import base64
 import datetime
 import uuid
 
 from django.conf import settings
+
+from argon2 import PasswordHasher
 
 import api.models as models
 from api.exceptions import QueryException
@@ -18,7 +19,7 @@ def authenticate_http_request(request):
 
     return True
 
-
+__password_hasher = PasswordHasher()
 def _user_from_http_request__credentials(request):
     if 'HTTP_AUTHORIZATION' in request.META:
         auth_parts = request.META['HTTP_AUTHORIZATION'].split(' ')
@@ -27,27 +28,20 @@ def _user_from_http_request__credentials(request):
             if auth_type == 'basic' or auth_type == 'x-basic':
                 decoded_parts = None
                 try:
-                    decoded_parts = base64.b64decode(auth_parts[1]).split(':')
+                    decoded_parts = base64.standard_b64decode(auth_parts[1]).decode().split(':')
                 except TypeError:
                     # is malformed base64
                     decoded_parts = []
+                    raise
 
                 if len(decoded_parts) == 2:
                     username = decoded_parts[0]
                     password = decoded_parts[1]
 
-                    m = hashlib.md5()
-                    m.update(
-                        base64.b64encode(
-                            '{0}:{1}'.format(
-                                username,
-                                password)))
-                    encoded_password = m.hexdigest()
-
                     try:
-                        user = models.User.objects.get(login=username)
-                        if password_hashing.validate_password(
-                                encoded_password, user.hash):
+                        user = models.User.objects.get(email=username)
+                        if __password_hasher.verify(
+                                user.pw_hash, password):
                             return user
                     except models.User.DoesNotExist:
                         pass

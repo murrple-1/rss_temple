@@ -56,7 +56,7 @@ def _to_default_sort_list(object_name):
     object_sort_configs = __sort_configs[object_name]
 
     field_name_dict = {}
-    for field_name, object_sort_config in object_sort_configs.iteritems():
+    for field_name, object_sort_config in object_sort_configs.items():
         if 'default_descriptor' in object_sort_config and object_sort_config[
                 'default_descriptor'] is not None:
             default_descriptor = object_sort_config['default_descriptor']
@@ -100,7 +100,7 @@ def _to_db_sort_field_name(object_name, field_name):
 
     object_sort_configs = __sort_configs[object_name]
 
-    for _field_name, object_sort_config in object_sort_configs.iteritems():
+    for _field_name, object_sort_config in object_sort_configs.items():
         if field_name == _field_name.lower():
             return object_sort_config['field_name']
 

@@ -32,7 +32,7 @@ class AuthenticationMiddleware:
 
         try:
             if authenticate.authenticate_http_request(request):
-                return None
+                return self.get_response(request)
             else:
                 response = HttpResponse('Authorization failed', status=401)
                 # usually, this would be type:"Basic", but that causes popups in browsers, which we want to avoid
@@ -43,8 +43,6 @@ class AuthenticationMiddleware:
                 return response
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
-
-        return self.get_response(request)
 
 
     def _should_authenticate(self, request):

@@ -7,24 +7,20 @@ from .. import models, searchqueries
 
 _OBJECT_NAME = 'user'
 
-def user(request, _uuid):
+def user(request):
     permitted_methods = ['GET']
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)
 
     if request.method == 'GET':
-        return _user_get(request, _uuid)
+        return _user_get(request)
 
-def _user_get(request, _uuid):
+def _user_get(request):
     context = searchqueries.Context()
     context.parse_query_dict(request.GET)
 
-    user = None
-    try:
-        user = models.User.objects.get(uuid=_uuid)
-    except models.User.DoesNotExist:
-        return HttpResponseNotFound('user not found')
+    user = request.user
 
     field_maps = None
     try:

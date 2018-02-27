@@ -84,7 +84,7 @@ def _handle_parse_result(results_dict, object_search_fns):
 
 
 def _q(field_name, search_obj, object_search_fns):
-    for _field_name, object_search_fn in object_search_fns.iteritems():
+    for _field_name, object_search_fn in object_search_fns.items():
         if field_name.lower() == _field_name.lower():
             try:
                 return object_search_fn(search_obj)
