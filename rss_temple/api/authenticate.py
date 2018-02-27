@@ -4,7 +4,7 @@ import uuid
 
 from django.conf import settings
 
-from argon2 import PasswordHasher
+import argon2
 
 import api.models as models
 from api.exceptions import QueryException
@@ -19,7 +19,7 @@ def authenticate_http_request(request):
 
     return True
 
-__password_hasher = PasswordHasher()
+__password_hasher = argon2.PasswordHasher()
 def _user_from_http_request__credentials(request):
     if 'HTTP_AUTHORIZATION' in request.META:
         auth_parts = request.META['HTTP_AUTHORIZATION'].split(' ')
@@ -40,9 +40,11 @@ def _user_from_http_request__credentials(request):
 
                     try:
                         user = models.User.objects.get(email=username)
-                        if __password_hasher.verify(
-                                user.pw_hash, password):
+                        try:
+                            __password_hasher.verify(user.pw_hash, password)
                             return user
+                        except argon2.exceptions.VerifyMismatchError:
+                            pass
                     except models.User.DoesNotExist:
                         pass
     return None
