@@ -97,7 +97,10 @@ CORS_EXPOSE_HEADERS = ''
 
 PROFILING_OUTPUT_FILE = os.environ.get('PROFILING_OUTPUT_FILE')
 
-AUTHENTICATION_DISABLE = []
+AUTHENTICATION_DISABLE = [
+    (r'^/api/login/my/?$', ['POST']),
+    (r'^/api/login/my/session/?$', ['POST']),
+]
 
 REALM = 'RSS Temple'
 

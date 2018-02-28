@@ -1,9 +1,7 @@
-import uuid
-
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotModified
 
 from ..exceptions import QueryException
-from .. import models, searchqueries
+from .. import searchqueries
 
 _OBJECT_NAME = 'user'
 

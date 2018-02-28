@@ -28,7 +28,7 @@ class AuthenticationMiddleware:
 
     def __call__(self, request):
         if not self._should_authenticate(request):
-            return None
+            return self.get_response(request)
 
         try:
             if authenticate.authenticate_http_request(request):
