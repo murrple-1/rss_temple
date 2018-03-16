@@ -1,0 +1,11 @@
+language: python
+python:
+    - "3.6"
+before_install:
+    - pip install pipenv
+install:
+    - cd rss_temple/
+    - pipenv install --dev
+script:
+    - python manage.py test
+
