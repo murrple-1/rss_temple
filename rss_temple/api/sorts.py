@@ -16,6 +16,27 @@ __sort_configs = {
             'default_descriptor': None,
         },
     },
+    'feed': {
+        'uuid': {
+            'field_name': 'uuid',
+            'default_descriptor': {
+                'sort_key': 0,
+                'direction': 'ASC',
+            },
+        },
+        'name': {
+            'field_name': 'name',
+            'default_descriptor': None,
+        },
+        'link': {
+            'field_name': 'link',
+            'default_descriptor': None,
+        },
+        'description': {
+            'field_name': 'description',
+            'default_descriptor': None,
+        },
+    },
 }
 
 __sort_regex = re.compile(r'^([A-Z0-9_]+):(ASC|DESC)$', re.IGNORECASE)
