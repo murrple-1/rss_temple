@@ -2,40 +2,40 @@ import re
 
 from .exceptions import QueryException
 
+class _DefaultDescriptor:
+    def __init__(self, sort_key, direction):
+        if not isinstance(sort_key, int):
+            raise TypeError('sort_key must be int')
+
+        if direction not in ['ASC', 'DESC']:
+            raise ValueError('direction not recognized')
+
+        self.sort_key = sort_key
+        self.direction = direction
+
+
+class _SortConfig:
+    def __init__(self, field_name, default_descriptor):
+        if not isinstance(field_name, str):
+            raise TypeError('field_name must be str')
+
+        if default_descriptor is not None and not isinstance(default_descriptor, _DefaultDescriptor):
+            raise TypeError('default_descriptor must be None or _DefaultDescriptor')
+
+        self.field_name = field_name
+        self.default_descriptor = default_descriptor
+
+
 __sort_configs = {
     'user': {
-        'uuid': {
-            'field_name': 'uuid',
-            'default_descriptor': {
-                'sort_key': 0,
-                'direction': 'ASC',
-            },
-        },
-        'email': {
-            'field_name': 'email',
-            'default_descriptor': None,
-        },
+        'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
+        'email': _SortConfig('email', None),
     },
-    'feed': {
-        'uuid': {
-            'field_name': 'uuid',
-            'default_descriptor': {
-                'sort_key': 0,
-                'direction': 'ASC',
-            },
-        },
-        'name': {
-            'field_name': 'name',
-            'default_descriptor': None,
-        },
-        'link': {
-            'field_name': 'link',
-            'default_descriptor': None,
-        },
-        'description': {
-            'field_name': 'description',
-            'default_descriptor': None,
-        },
+    'channel': {
+        'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
+        'name': _SortConfig('name', None),
+        'link': _SortConfig('link', None),
+        'description': _SortConfig('description', None),
     },
 }
 
@@ -78,17 +78,13 @@ def _to_default_sort_list(object_name):
 
     field_name_dict = {}
     for field_name, object_sort_config in object_sort_configs.items():
-        if 'default_descriptor' in object_sort_config and object_sort_config[
-                'default_descriptor'] is not None:
-            default_descriptor = object_sort_config['default_descriptor']
-            default_descriptor_sort_key = default_descriptor['sort_key']
+        if object_sort_config.default_descriptor is not None:
+            if object_sort_config.default_descriptor.sort_key not in field_name_dict:
+                field_name_dict[object_sort_config.default_descriptor.sort_key] = []
 
-            if default_descriptor_sort_key not in field_name_dict:
-                field_name_dict[default_descriptor_sort_key] = []
-
-            field_name_dict[default_descriptor_sort_key].append({
+            field_name_dict[object_sort_config.default_descriptor.sort_key].append({
                 'field_name': field_name,
-                'direction': default_descriptor['direction'] if 'direction' in default_descriptor else 'ASC',
+                'direction': object_sort_config.default_descriptor.direction,
             })
 
     sort_list = []
@@ -123,7 +119,7 @@ def _to_db_sort_field_name(object_name, field_name):
 
     for _field_name, object_sort_config in object_sort_configs.items():
         if field_name == _field_name.lower():
-            return object_sort_config['field_name']
+            return object_sort_config.field_name
 
     return None
 
