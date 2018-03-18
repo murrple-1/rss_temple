@@ -21,5 +21,8 @@ class Session(models.Model):
     expires_at = models.DateTimeField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-class RssEntry(models.Model):
+class Channel(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    name = models.TextField()
+    link = models.TextField()
+    description = models.TextField()
