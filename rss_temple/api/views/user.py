@@ -1,9 +1,11 @@
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotModified
 
-from ..exceptions import QueryException
-from .. import searchqueries
+from api.exceptions import QueryException
+from api import searchqueries
+
 
 _OBJECT_NAME = 'user'
+
 
 def user(request):
     permitted_methods = ['GET']
@@ -13,6 +15,7 @@ def user(request):
 
     if request.method == 'GET':
         return _user_get(request)
+
 
 def _user_get(request):
     context = searchqueries.Context()

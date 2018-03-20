@@ -1,6 +1,6 @@
 import re
 
-from .exceptions import QueryException
+from api.exceptions import QueryException
 
 class _DefaultDescriptor:
     def __init__(self, sort_key, direction):

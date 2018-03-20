@@ -23,6 +23,6 @@ class Session(models.Model):
 
 class Channel(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    name = models.TextField()
+    title = models.TextField()
     link = models.TextField()
     description = models.TextField()

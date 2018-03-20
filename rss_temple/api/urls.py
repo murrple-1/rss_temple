@@ -7,6 +7,9 @@ urlpatterns = [
     re_path(r'^login/my/session/?$', views.my_login_session),
 
     re_path(r'^user/?$', views.user),
-    #re_path('^feed/?$', views.feed),
+
+    re_path('^channel/?$', views.channel),
+    re_path('^channels/?$', views.channels),
+
     #re_path('^entry/?$', views.entry),
 ]

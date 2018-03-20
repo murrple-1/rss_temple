@@ -1,33 +1,115 @@
 import pprint
+import logging
 
-from django.http import HttpResponse
-
-import requests
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 
 import feedparser
 
-from argon2 import PasswordHasher
+import requests
 
-from api import models
+from api import models, searchqueries
+from api.exceptions import QueryException
 
-def test(request):
-    # r = requests.get('https://community.chrono.gg/c/daily-deals.rss')
 
-    # d = feedparser.parse(r.text)
+_logger = None
+def logger():
+    global _logger
+    if _logger is None:
+        _logger = logging.getLogger('rss_temple')
 
-    # return HttpResponse(pprint.pformat(d), 'text/plain')
+    return _logger
 
-    # user = models.User()
-    # user.email = 'test@test.com'
 
-    # ph = PasswordHasher()
 
-    # user.pw_hash = ph.hash('password')
+_OBJECT_NAME = 'channel'
 
-    # user.save()
 
-    # return HttpResponse(user.pw_hash, 'text/plain')
+def channel(request):
+    permitted_methods = ['GET']
 
-    user = models.User.objects.first()
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)
 
-    return HttpResponse(str(user.uuid), 'text/plain')
+    if request.method == 'GET':
+        return _channel_get(request)
+
+
+def channels(request):
+    permitted_methods = ['GET']
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)
+
+    if request.method == 'GET':
+        return _channels_get(request)
+
+
+def __feedparse_d_to_channel(d, link):
+    if 'feed' in d:
+        feed = d['feed']
+
+        channel = models.Channel()
+
+        if 'title' in feed:
+            channel.title = feed['title']
+        else:
+            raise QueryException('feed malformed', 401)
+
+        if 'subtitle' in feed:
+            channel.description = feed['subtitle']
+        elif 'description' in feed:
+            channel.description = feed['description']
+
+        channel.link = link
+
+        return channel
+    else:
+        raise QueryException('feed malformed', 401)
+
+
+def _channel_get(request):
+    context = searchqueries.Context()
+    context.parse_query_dict(request.GET)
+
+    link = request.GET.get('link')
+    if not link:
+        return HttpResponseBadRequest('\'link\' missing')
+
+    field_maps = None
+    try:
+        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+    except QueryException as e:
+        return HttpResponse(e.message, status_code=e.httpcode)
+
+    channel = None
+    try:
+        channel = models.Channel.objects.get(link=link)
+    except models.Channel.DoesNotExist:
+        channel = models.Channel()
+
+        try:
+            r = requests.get(link)
+
+            d = feedparser.parse(r.text)
+
+            logger().info('channel info: %s', pprint.pformat(d))
+
+            try:
+                channel = __feedparse_d_to_channel(d, link)
+            except QueryException as e:
+                return HttpResponse(e.message, status_code=e.httpcode)
+
+            channel.save()
+        except requests.exceptions.RequestException:
+            return HttpResponseNotFound('channel not found')
+
+    ret_obj = searchqueries.generate_return_object(field_maps, channel, context)
+
+    content, content_type = searchqueries.serialize_content(ret_obj)
+
+    return HttpResponse(content, content_type)
+
+
+def _channels_get(request):
+    # TODO
+    return HttpResponse('hello')

@@ -17,6 +17,9 @@ __field_configs = {
     },
     'channel': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
+        'title': _FieldConfig(lambda context, db_obj: db_obj.title, False),
+        'link': _FieldConfig(lambda context, db_obj: db_obj.link, False),
+        'description': _FieldConfig(lambda context, db_obj: db_obj.description, False),
     },
 }
 
