@@ -44,27 +44,49 @@ def channels(request):
         return _channels_get(request)
 
 
-def __feedparse_d_to_channel(d, link):
-    if 'feed' in d:
-        feed = d['feed']
+def channel_subscribe(request):
+    permitted_methods = ['POST', 'DELETE']
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)
+
+    if request.method == 'POST':
+        return _channel_subscribe_post(request)
+    elif request.method == 'DELETE':
+        return _channel_subscribe_delete(request)
+
+
+def __link_to_channel(link, save=True):
+    channel = None
+    try:
+        channel = models.Channel.objects.get(feed_link=link)
+    except models.Channel.DoesNotExist:
+        response = None
+        try:
+            response = requests.get(link, headers={
+                'User-Agent': 'RSS Temple',
+            })
+        except requests.exceptions.RequestException:
+            raise QueryException('channel not found', 404)
+
+        d = feedparser.parse(response.text)
+
+        logger().info('channel info: %s', pprint.pformat(d))
 
         channel = models.Channel()
 
-        if 'title' in feed:
-            channel.title = feed['title']
-        else:
+        try:
+            channel.title = d['channel']['title']
+            channel.description = d['channel']['description']
+            channel.home_link = d['channel']['link']
+            channel.feed_link = link
+        except KeyError:
             raise QueryException('feed malformed', 401)
 
-        if 'subtitle' in feed:
-            channel.description = feed['subtitle']
-        elif 'description' in feed:
-            channel.description = feed['description']
+        if save:
+            channel.save()
 
-        channel.link = link
-
-        return channel
-    else:
-        raise QueryException('feed malformed', 401)
+    return channel
 
 
 def _channel_get(request):
@@ -83,25 +105,9 @@ def _channel_get(request):
 
     channel = None
     try:
-        channel = models.Channel.objects.get(link=link)
-    except models.Channel.DoesNotExist:
-        channel = models.Channel()
-
-        try:
-            r = requests.get(link)
-
-            d = feedparser.parse(r.text)
-
-            logger().info('channel info: %s', pprint.pformat(d))
-
-            try:
-                channel = __feedparse_d_to_channel(d, link)
-            except QueryException as e:
-                return HttpResponse(e.message, status_code=e.httpcode)
-
-            channel.save()
-        except requests.exceptions.RequestException:
-            return HttpResponseNotFound('channel not found')
+        channel = __link_to_channel(link)
+    except QueryException as e:
+        return HttpResponse(e.message, status_code=e.httpcode)
 
     ret_obj = searchqueries.generate_return_object(field_maps, channel, context)
 
@@ -112,4 +118,41 @@ def _channel_get(request):
 
 def _channels_get(request):
     # TODO
-    return HttpResponse('hello')
+    return HttpResponse()
+
+
+def _channel_subscribe_post(request):
+    user = request.user
+
+    link = request.GET.get('link')
+    if not link:
+        return HttpResponseBadRequest('\'link\' missing')
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')
+
+    _json = None
+    try:
+        _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')
+
+    channel = None
+    try:
+        channel = __link_to_channel(link)
+    except QueryException as e:
+        return HttpResponse(e.message, status_code=e.httpcode)
+
+    if models.UserChannelMapping.objects.filter(user=user, channel=channel).exists():
+        return HttpResponse('user already subscribed', status_code=409)
+
+    user_channel_mapping = models.UserChannelMapping()
+    user_channel_mapping.user = user
+    user_channel_mapping.channel = channel
+
+    user_channel_mapping.save()
+
+    return HttpResponse()
