@@ -124,43 +124,43 @@ def _channels_get(request):
     try:
         count = searchqueries.get_count(query_dict)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     skip = None
     try:
         skip = searchqueries.get_skip(query_dict)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     sort = None
     try:
         sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     search = None
     try:
         search = searchqueries.get_search(query_dict, _OBJECT_NAME)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     field_maps = None
     try:
         field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     return_objects = None
     try:
         return_objects = searchqueries.get_return_objects(query_dict)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     return_total_count = None
     try:
         return_total_count = searchqueries.get_return_total_count(query_dict)
     except QueryException as e:
-        return HttpResponse(e.message, status=e.httpCode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     channels = models.Channel.objects.filter(*search)
 
