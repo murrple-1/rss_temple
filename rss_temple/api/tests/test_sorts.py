@@ -23,14 +23,14 @@ class SortsTestCase(TestCase):
         self.assertEqual(sort, ['name'])
 
     def test_multiple_default(self):
-        sort = SortsTestCase._to_sort('channel', 'name:ASC,link:ASC', True)
+        sort = SortsTestCase._to_sort('channel', 'name:ASC,homeLink:ASC', True)
 
-        self.assertEqual(sort, ['name', 'link', 'uuid'])
+        self.assertEqual(sort, ['name', 'home_link', 'uuid'])
 
     def test_multiple_nondefault(self):
-        sort = SortsTestCase._to_sort('channel', 'name:ASC,link:ASC', False)
+        sort = SortsTestCase._to_sort('channel', 'name:ASC,homeLink:ASC', False)
 
-        self.assertEqual(sort, ['name', 'link'])
+        self.assertEqual(sort, ['name', 'home_link'])
 
     def test_descending_default(self):
         sort = SortsTestCase._to_sort('channel', 'name:DESC', True)
@@ -43,24 +43,24 @@ class SortsTestCase(TestCase):
         self.assertEqual(sort, ['-name'])
 
     def test_multiple_descending_default(self):
-        sort = SortsTestCase._to_sort('channel', 'name:DESC,link:DESC', True)
+        sort = SortsTestCase._to_sort('channel', 'name:DESC,homeLink:DESC', True)
 
-        self.assertEqual(sort, ['-name', '-link', 'uuid'])
+        self.assertEqual(sort, ['-name', '-home_link', 'uuid'])
 
     def test_multiple_descending_nondefault(self):
-        sort = SortsTestCase._to_sort('channel', 'name:DESC,link:DESC', False)
+        sort = SortsTestCase._to_sort('channel', 'name:DESC,homeLink:DESC', False)
 
-        self.assertEqual(sort, ['-name', '-link'])
+        self.assertEqual(sort, ['-name', '-home_link'])
 
     def test_multiple_mixed_default(self):
-        sort = SortsTestCase._to_sort('channel', 'name:DESC,link:ASC', True)
+        sort = SortsTestCase._to_sort('channel', 'name:DESC,homeLink:ASC', True)
 
-        self.assertEqual(sort, ['-name', 'link', 'uuid'])
+        self.assertEqual(sort, ['-name', 'home_link', 'uuid'])
 
     def test_multiple_mixed_nondefault(self):
-        sort = SortsTestCase._to_sort('channel', 'name:DESC,link:ASC', False)
+        sort = SortsTestCase._to_sort('channel', 'name:DESC,homeLink:ASC', False)
 
-        self.assertEqual(sort, ['-name', 'link'])
+        self.assertEqual(sort, ['-name', 'home_link'])
 
     def test_multiple_overwritedefault(self):
         sort = SortsTestCase._to_sort('channel', 'uuid:ASC,name:DESC', True)
