@@ -206,3 +206,21 @@ def _channel_subscribe_post(request):
     channel_user_mapping.save()
 
     return HttpResponse()
+
+
+def _channel_subscribe_delete(request):
+    user = request.user
+
+    link = request.GET.get('link')
+    if not link:
+        return HttpResponseBadRequest('\'link\' missing')
+
+    channel_user_mapping = None
+    try:
+        channel_user_mapping = models.ChannelUserMapping.objects.get(user=user, channel__feed_link=link)
+    except models.ChannelUserMapping.DoesNotExist:
+        return HttpResponseNotFound('user not subscribed')
+
+    channel_user_mapping.delete()
+
+    return HttpResponse()
