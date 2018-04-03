@@ -2,6 +2,7 @@ import pprint
 import logging
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
+from django.db.utils import IntegrityError
 
 import feedparser
 
@@ -196,14 +197,14 @@ def _channel_subscribe_post(request):
     except QueryException as e:
         return HttpResponse(e.message, status=e.httpcode)
 
-    if models.ChannelUserMapping.objects.filter(user=user, channel=channel).exists():
-        return HttpResponse('user already subscribed', status=409)
-
     channel_user_mapping = models.ChannelUserMapping()
     channel_user_mapping.user = user
     channel_user_mapping.channel = channel
 
-    channel_user_mapping.save()
+    try:
+        channel_user_mapping.save()
+    except IntegrityError:
+        return HttpResponse('user already subscribed', status=409)
 
     return HttpResponse()
 

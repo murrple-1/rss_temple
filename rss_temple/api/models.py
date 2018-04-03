@@ -42,6 +42,9 @@ class Channel(models.Model):
 
 
 class ChannelUserMapping(models.Model):
+    class Meta:
+        unique_together = (('user', 'channel'),)
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
