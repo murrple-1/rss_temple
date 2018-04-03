@@ -34,7 +34,8 @@ __sort_configs = {
     'channel': {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
         'name': _SortConfig('name', None),
-        'link': _SortConfig('link', None),
+        'feedLink': _SortConfig('feed_link', None),
+        'homeLink': _SortConfig('home_link', None),
         'description': _SortConfig('description', None),
     },
 }

@@ -27,7 +27,7 @@ def _user_get(request):
     try:
         field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
     except QueryException as e:
-        return HttpResponse(e.message, status_code=e.httpcode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     ret_obj = searchqueries.generate_return_object(field_maps, user, context)
 

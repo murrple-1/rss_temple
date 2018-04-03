@@ -8,8 +8,9 @@ urlpatterns = [
 
     re_path(r'^user/?$', views.user),
 
-    re_path('^channel/?$', views.channel),
-    re_path('^channels/?$', views.channels),
+    re_path(r'^channel/?$', views.channel),
+    re_path(r'^channels/?$', views.channels),
+    re_path(r'^channel/subscribe/?$', views.channel_subscribe),
 
     #re_path('^entry/?$', views.entry),
 ]

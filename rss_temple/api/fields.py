@@ -14,11 +14,13 @@ __field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
+        'subscribedChannelUuids': _FieldConfig(lambda context, db_obj: (str(_uuid) for _uuid in db_obj.subscribed_channels().values_list('uuid', flat=True)), False),
     },
     'channel': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'title': _FieldConfig(lambda context, db_obj: db_obj.title, False),
-        'link': _FieldConfig(lambda context, db_obj: db_obj.link, False),
+        'feedLink': _FieldConfig(lambda context, db_obj: db_obj.feed_link, False),
+        'homeLink': _FieldConfig(lambda context, db_obj: db_obj.home_link, False),
         'description': _FieldConfig(lambda context, db_obj: db_obj.description, False),
     },
 }

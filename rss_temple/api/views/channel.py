@@ -1,7 +1,7 @@
 import pprint
 import logging
 
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 
 import feedparser
 
@@ -18,7 +18,6 @@ def logger():
         _logger = logging.getLogger('rss_temple')
 
     return _logger
-
 
 
 _OBJECT_NAME = 'channel'
@@ -101,13 +100,13 @@ def _channel_get(request):
     try:
         field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
     except QueryException as e:
-        return HttpResponse(e.message, status_code=e.httpcode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     channel = None
     try:
         channel = __link_to_channel(link)
     except QueryException as e:
-        return HttpResponse(e.message, status_code=e.httpcode)
+        return HttpResponse(e.message, status=e.httpcode)
 
     ret_obj = searchqueries.generate_return_object(field_maps, channel, context)
 
@@ -117,8 +116,71 @@ def _channel_get(request):
 
 
 def _channels_get(request):
-    # TODO
-    return HttpResponse()
+    query_dict = request.GET
+    context = searchqueries.Context()
+    context.parse_query_dict(query_dict)
+
+    count = None
+    try:
+        count = searchqueries.get_count(query_dict)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    skip = None
+    try:
+        skip = searchqueries.get_skip(query_dict)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    sort = None
+    try:
+        sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    search = None
+    try:
+        search = searchqueries.get_search(query_dict, _OBJECT_NAME)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    field_maps = None
+    try:
+        field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    return_objects = None
+    try:
+        return_objects = searchqueries.get_return_objects(query_dict)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    return_total_count = None
+    try:
+        return_total_count = searchqueries.get_return_total_count(query_dict)
+    except QueryException as e:
+        return HttpResponse(e.message, status=e.httpCode)
+
+    channels = models.Channel.objects.filter(*search)
+
+    ret_obj = {}
+
+    if return_objects:
+        objs = []
+        for channel in channels.order_by(
+                *sort)[skip:skip + count]:
+            obj = searchqueries.generate_return_object(
+                field_maps, channel, context)
+            objs.append(obj)
+
+        ret_obj['objects'] = objs
+
+    if return_total_count:
+        ret_obj['totalCount'] = channels.count()
+
+    content, content_type = searchqueries.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
 
 
 def _channel_subscribe_post(request):
@@ -128,31 +190,19 @@ def _channel_subscribe_post(request):
     if not link:
         return HttpResponseBadRequest('\'link\' missing')
 
-    if not request.body:
-        return HttpResponseBadRequest('no HTTP body')
-
-    _json = None
-    try:
-        _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError:
-        return HttpResponseBadRequest('HTTP body cannot be parsed')
-
-    if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object')
-
     channel = None
     try:
         channel = __link_to_channel(link)
     except QueryException as e:
-        return HttpResponse(e.message, status_code=e.httpcode)
+        return HttpResponse(e.message, status=e.httpcode)
 
-    if models.UserChannelMapping.objects.filter(user=user, channel=channel).exists():
-        return HttpResponse('user already subscribed', status_code=409)
+    if models.ChannelUserMapping.objects.filter(user=user, channel=channel).exists():
+        return HttpResponse('user already subscribed', status=409)
 
-    user_channel_mapping = models.UserChannelMapping()
-    user_channel_mapping.user = user
-    user_channel_mapping.channel = channel
+    channel_user_mapping = models.ChannelUserMapping()
+    channel_user_mapping.user = user
+    channel_user_mapping.channel = channel
 
-    user_channel_mapping.save()
+    channel_user_mapping.save()
 
     return HttpResponse()

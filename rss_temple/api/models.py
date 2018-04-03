@@ -7,6 +7,12 @@ class User(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     email = models.CharField(max_length=64, unique=True)
 
+    def subscribed_channels(self):
+        if not hasattr(self, '_subscribed_channels'):
+            self._subscribed_channels = Channel.objects.filter(uuid__in=ChannelUserMapping.objects.filter(user=self).values('channel_id'))
+
+        return self._subscribed_channels
+
 
 class Login(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
