@@ -5,20 +5,20 @@ from django.db.models import Q
 from pyparsing import ParseException
 
 from api.exceptions import QueryException
-from api.search_parser import parser
-from api.search_convertto import UuidList
+from api.search.parser import parser
+import api.search.convertto as convertto
 
 _logger = logging.getLogger('rss_temple')
 
 
 __search_fns = {
     'user': {
-        'uuid': lambda search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
+        'uuid': lambda search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
         'email': lambda search_obj: Q(email__icontains=search_obj),
         'email_exact': lambda search_obj: Q(email__iexact=search_obj),
     },
     'feed': {
-        'uuid': lambda search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
+        'uuid': lambda search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
     },
 }
 
