@@ -14,14 +14,15 @@ __field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
-        'subscribedChannelUuids': _FieldConfig(lambda context, db_obj: (str(_uuid) for _uuid in db_obj.subscribed_channels().values_list('uuid', flat=True)), False),
+        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(_uuid) for _uuid in db_obj.subscribed_feeds().values_list('uuid', flat=True)), False),
     },
-    'channel': {
+    'feed': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'title': _FieldConfig(lambda context, db_obj: db_obj.title, False),
-        'feedLink': _FieldConfig(lambda context, db_obj: db_obj.feed_link, False),
-        'homeLink': _FieldConfig(lambda context, db_obj: db_obj.home_link, False),
-        'description': _FieldConfig(lambda context, db_obj: db_obj.description, False),
+        'feedUrl': _FieldConfig(lambda context, db_obj: db_obj.feed_url, False),
+        'homeUrl': _FieldConfig(lambda context, db_obj: db_obj.home_url, False),
+        'publishedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.published_at), False),
+        'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
     },
 }
 

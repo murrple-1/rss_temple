@@ -1,101 +1,53 @@
-import pprint
-import logging
-
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 
-import feedparser
-
-import requests
-
 from api import models, searchqueries
 from api.exceptions import QueryException
+import api.feed_handler as feed_handler
 
 
-_logger = None
-def logger():
-    global _logger
-    if _logger is None:
-        _logger = logging.getLogger('rss_temple')
-
-    return _logger
+_OBJECT_NAME = 'feed'
 
 
-_OBJECT_NAME = 'channel'
-
-
-def channel(request):
+def feed(request):
     permitted_methods = ['GET']
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)
 
     if request.method == 'GET':
-        return _channel_get(request)
+        return _feed_get(request)
 
 
-def channels(request):
+def feeds(request):
     permitted_methods = ['GET']
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)
 
     if request.method == 'GET':
-        return _channels_get(request)
+        return _feeds_get(request)
 
 
-def channel_subscribe(request):
+def feed_subscribe(request):
     permitted_methods = ['POST', 'DELETE']
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)
 
     if request.method == 'POST':
-        return _channel_subscribe_post(request)
+        return _feed_subscribe_post(request)
     elif request.method == 'DELETE':
-        return _channel_subscribe_delete(request)
+        return _feed_subscribe_delete(request)
 
 
-def __link_to_channel(link, save=True):
-    channel = None
-    try:
-        channel = models.Channel.objects.get(feed_link=link)
-    except models.Channel.DoesNotExist:
-        response = None
-        try:
-            response = requests.get(link, headers={
-                'User-Agent': 'RSS Temple',
-            })
-        except requests.exceptions.RequestException:
-            raise QueryException('channel not found', 404)
-
-        d = feedparser.parse(response.text)
-
-        logger().info('channel info: %s', pprint.pformat(d))
-
-        channel = models.Channel()
-
-        try:
-            channel.title = d['channel']['title']
-            channel.description = d['channel']['description']
-            channel.home_link = d['channel']['link']
-            channel.feed_link = link
-        except KeyError:
-            raise QueryException('feed malformed', 401)
-
-        if save:
-            channel.save()
-
-    return channel
-
-
-def _channel_get(request):
+def _feed_get(request):
     context = searchqueries.Context()
     context.parse_query_dict(request.GET)
 
-    link = request.GET.get('link')
-    if not link:
-        return HttpResponseBadRequest('\'link\' missing')
+    url = request.GET.get('url')
+    if not url:
+        return HttpResponseBadRequest('\'url\' missing')
 
     field_maps = None
     try:
@@ -103,20 +55,25 @@ def _channel_get(request):
     except QueryException as e:
         return HttpResponse(e.message, status=e.httpcode)
 
-    channel = None
+    feed = None
     try:
-        channel = __link_to_channel(link)
-    except QueryException as e:
-        return HttpResponse(e.message, status=e.httpcode)
+        feed = models.Feed.objects.get(feed_url=url)
+    except models.Feed.DoesNotExist:
+        try:
+            d = feed_handler.url_2_d(url)
+            feed = feed_handler.d_feed_2_feed(d.feed, url)
+            feed.save()
+        except QueryException as e:
+            return HttpResponse(e.message, status=e.httpcode)
 
-    ret_obj = searchqueries.generate_return_object(field_maps, channel, context)
+    ret_obj = searchqueries.generate_return_object(field_maps, feed, context)
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
 
-def _channels_get(request):
+def _feeds_get(request):
     query_dict = request.GET
     context = searchqueries.Context()
     context.parse_query_dict(query_dict)
@@ -163,58 +120,63 @@ def _channels_get(request):
     except QueryException as e:
         return HttpResponse(e.message, status=e.httpcode)
 
-    channels = models.Channel.objects.filter(*search)
+    feeds = models.Feed.objects.filter(*search)
 
     ret_obj = {}
 
     if return_objects:
         objs = []
-        for channel in channels.order_by(
+        for feed in feeds.order_by(
                 *sort)[skip:skip + count]:
             obj = searchqueries.generate_return_object(
-                field_maps, channel, context)
+                field_maps, feed, context)
             objs.append(obj)
 
         ret_obj['objects'] = objs
 
     if return_total_count:
-        ret_obj['totalCount'] = channels.count()
+        ret_obj['totalCount'] = feeds.count()
 
     content, content_type = searchqueries.serialize_content(ret_obj)
     return HttpResponse(content, content_type)
 
 
-def _channel_subscribe_post(request):
+def _feed_subscribe_post(request):
     user = request.user
 
-    link = request.GET.get('link')
-    if not link:
-        return HttpResponseBadRequest('\'link\' missing')
+    url = request.GET.get('url')
+    if not url:
+        return HttpResponseBadRequest('\'url\' missing')
 
-    channel = None
+    feed = None
     try:
-        channel = __link_to_channel(link)
-    except QueryException as e:
-        return HttpResponse(e.message, status=e.httpcode)
+        feed = models.Feed.objects.get(feed_url=url)
+    except models.Feed.DoesNotExist:
+        try:
+            d = feed_handler.url_2_d(url)
+            feed = feed_handler.d_feed_2_feed(d.feed, url)
+            feed.save()
+        except QueryException as e:
+            return HttpResponse(e.message, status=e.httpcode)
 
-    channel_user_mapping = models.ChannelUserMapping()
-    channel_user_mapping.user = user
-    channel_user_mapping.channel = channel
+    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping()
+    subscribed_feed_user_mapping.user = user
+    subscribed_feed_user_mapping.feed = feed
 
     try:
-        channel_user_mapping.save()
+        subscribed_feed_user_mapping.save()
     except IntegrityError:
         return HttpResponse('user already subscribed', status=409)
 
     return HttpResponse()
 
 
-def _channel_subscribe_delete(request):
-    link = request.GET.get('link')
-    if not link:
-        return HttpResponseBadRequest('\'link\' missing')
+def _feed_subscribe_delete(request):
+    url = request.GET.get('url')
+    if not url:
+        return HttpResponseBadRequest('\'url\' missing')
 
-    count, _ = models.ChannelUserMapping.objects.filter(user=request.user, channel__feed_link=link).delete()
+    count, _ = models.SubscribedFeedUserMapping.objects.filter(user=request.user, feed__feed_url=url).delete()
 
     if count < 1:
         return HttpResponseNotFound('user not subscribed')

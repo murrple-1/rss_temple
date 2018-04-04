@@ -5,7 +5,7 @@ from django.conf import settings
 
 import ujson
 
-from . import authenticate, fields as fieldutils, searches as searchutils, sorts as sortutils
+from . import fields as fieldutils, searches as searchutils, sorts as sortutils
 from .exceptions import QueryException
 
 

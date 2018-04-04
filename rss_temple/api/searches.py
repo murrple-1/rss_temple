@@ -1,4 +1,3 @@
-import re
 import logging
 
 from django.db.models import Q
@@ -7,8 +6,7 @@ from pyparsing import ParseException
 
 from api.exceptions import QueryException
 from api.search_parser import parser
-from api.search_convertto import CustomConvertTo, Int, IntList, IntRange, FloatRange, UuidList, UuidBinaryList, Bool, Date, DateRange, DateDeltaRange
-from api import models
+from api.search_convertto import UuidList
 
 _logger = logging.getLogger('rss_temple')
 
@@ -19,7 +17,7 @@ __search_fns = {
         'email': lambda search_obj: Q(email__icontains=search_obj),
         'email_exact': lambda search_obj: Q(email__iexact=search_obj),
     },
-    'channel': {
+    'feed': {
         'uuid': lambda search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
     },
 }

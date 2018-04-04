@@ -1,11 +1,9 @@
-import base64
 import datetime
 import uuid
 
 from django.conf import settings
 
 import api.models as models
-from api.exceptions import QueryException
 
 def authenticate_http_request(request):
     user = _user_from_http_request__session_token(request)

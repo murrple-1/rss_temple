@@ -31,12 +31,13 @@ __sort_configs = {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
         'email': _SortConfig('email', None),
     },
-    'channel': {
+    'feed': {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
-        'name': _SortConfig('name', None),
-        'feedLink': _SortConfig('feed_link', None),
-        'homeLink': _SortConfig('home_link', None),
-        'description': _SortConfig('description', None),
+        'title': _SortConfig('title', None),
+        'feedUrl': _SortConfig('feed_url', None),
+        'homeUrl': _SortConfig('home_url', None),
+        'publishedAt': _SortConfig('published_at', None),
+        'updatedAt': _SortConfig('updated_at', None),
     },
 }
 
