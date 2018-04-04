@@ -7,13 +7,14 @@ name = "pypi"
 
 [packages]
 
-Django = "*"
+django = "*"
 feedparser = "*"
 requests = "*"
-"argon2_cffi" = "*"
+"argon2-cffi" = "*"
 ujson = "*"
 pyparsing = "*"
 python-dateutil = "*"
+filelock = "*"
 
 
 [dev-packages]
