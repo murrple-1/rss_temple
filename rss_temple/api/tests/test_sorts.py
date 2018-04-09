@@ -66,3 +66,13 @@ class SortsTestCase(TestCase):
         sort = SortsTestCase._to_sort('feed', 'uuid:ASC,title:DESC', True)
 
         self.assertEqual(sort, ['uuid', '-title'])
+
+    def test_default_descriptor_errors(self):
+        with self.assertRaises(TypeError):
+            sorts._DefaultDescriptor(None, 'DESC')
+
+        with self.assertRaises(ValueError):
+            sorts._DefaultDescriptor(0, None)
+
+        with self.assertRaises(ValueError):
+            sorts._DefaultDescriptor(0, 'BAD')
