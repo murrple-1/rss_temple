@@ -1,13 +1,13 @@
 language: python
 python:
-    - "3.6"
+  - "3.6"
 cache: pip
 before_install:
-    - pip install pipenv
+  - pip install pipenv
 install:
-    - cd rss_temple/
-    - pipenv install --dev
+  - cd rss_temple/
+  - pipenv install --dev
 script:
-    - coverage run --source=api manage.py test api.tests
+  - coverage run --source=api manage.py test api.tests
 after_script:
-    - coveralls
+  - coveralls
