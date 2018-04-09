@@ -12,7 +12,7 @@ class FieldsTestCase(TestCase):
             self.assertIn('field_name', field_map)
             self.assertIsInstance(field_map['field_name'], str)
             self.assertIn('accessor', field_map)
-            self.assertIs(callable(field_map['accessor']), True)
+            self.assertTrue(callable(field_map['accessor']))
 
     def test_all_field_maps(self):
         all_field_maps = fields.get_all_field_maps('feed')
@@ -23,4 +23,4 @@ class FieldsTestCase(TestCase):
             self.assertIn('field_name', field_map)
             self.assertIsInstance(field_map['field_name'], str)
             self.assertIn('accessor', field_map)
-            self.assertIs(callable(field_map['accessor']), True)
+            self.assertTrue(callable(field_map['accessor']))
