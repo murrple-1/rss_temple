@@ -27,7 +27,10 @@ class Int(CustomConvertTo):
 class IntList(CustomConvertTo):
     @staticmethod
     def convertto(search_obj):
-        return [int(part) for part in search_obj.split('|')]
+        if search_obj.strip() == '':
+            return []
+
+        return [int(part.strip()) for part in search_obj.split(',')]
 
 
 class IntRange(CustomConvertTo):
@@ -76,18 +79,6 @@ class UuidList(CustomConvertTo):
         return [uuid.UUID(uuid_str) for uuid_str in search_obj.split('|')]
 
 
-class UuidBinary(CustomConvertTo):
-    @staticmethod
-    def convertto(search_obj):
-        return uuid.UUID(search_obj).bytes
-
-
-class UuidBinaryList(CustomConvertTo):
-    @staticmethod
-    def convertto(search_obj):
-        return [uuid.UUID(uuid_str).bytes for uuid_str in search_obj.split('|')]
-
-
 _DATE_DELTA_RANGE_OLDER_THAN_REGEX = re.compile(r'^older_than:(\d+)([dmy])$')
 _DATE_DELTA_RANGE_EARLIER_THAN_REGEX = re.compile(
     r'^earlier_than:(\d+)([hdmy])$')
@@ -95,8 +86,8 @@ _DATE_DELTA_RANGE_EARLIER_THAN_REGEX = re.compile(
 
 class DateDeltaRange(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
-        now = datetime.datetime.utcnow()
+    def convertto(search_obj, now=None):
+        now = now or datetime.datetime.utcnow()
 
         if search_obj == 'yesterday':
             yesterday = (now + relativedelta(days=-1))
@@ -181,8 +172,6 @@ class DateDeltaRange(CustomConvertTo):
                     epoch = now + relativedelta(months=-number)
                 elif _type == 'y':
                     epoch = now + relativedelta(years=-number)
-                else:
-                    raise RuntimeError('unknown older than type')
 
                 return datetime.datetime.min, epoch
             else:
@@ -201,8 +190,6 @@ class DateDeltaRange(CustomConvertTo):
                         epoch = now + relativedelta(months=-number)
                     elif _type == 'y':
                         epoch = now + relativedelta(years=-number)
-                    else:
-                        raise RuntimeError('unknown earlier than type')
 
                     return epoch, datetime.datetime.max
                 else:
