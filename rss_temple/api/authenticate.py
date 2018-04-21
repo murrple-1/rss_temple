@@ -2,11 +2,15 @@ import datetime
 import uuid
 
 from django.conf import settings
+from django.db.models.query_utils import Q
+from django.db.models.functions import Now
 
 import api.models as models
 
 def authenticate_http_request(request):
-    user = _user_from_http_request__session_token(request)
+    user = _user_from_http_request__session_token(
+        request)
+
     if not user:
         return False
 
@@ -27,15 +31,20 @@ def _user_from_http_request__session_token(request):
         except ValueError:
             return None
 
+        session = None
         try:
-            session = models.Session.objects.prefetch_related('user').get(uuid=session_token_uuid)
-            if session.expires_at is None or session.expires_at > datetime.datetime.utcnow():
+            session = models.Session.objects.prefetch_related('user').get(
+                Q(uuid=session_token_uuid) & (Q(expires_at__isnull=True) | Q(expires_at__gt=Now())))
+        except models.Session.DoesNotExist:
+            return None
+
+        if session:
+            if session.expires_at is not None:
                 session.expires_at = (
                     datetime.datetime.utcnow() +
                     _SESSION_EXPIRY_INTERVAL)
                 session.save(update_fields=['expires_at'])
 
-                return session.user
-        except models.Session.DoesNotExist:
-            pass
+            return session.user
+
     return None
