@@ -30,7 +30,7 @@ class FacebookLogin(Login):
 
 class Session(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
