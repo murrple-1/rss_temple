@@ -8,6 +8,6 @@ install:
   - cd rss_temple/
   - pipenv install --dev
 script:
-  - coverage run --source=api manage.py test api.tests
+  - coverage run --source=api --omit=api/tests/* manage.py test api.tests
 after_script:
   - coveralls
