@@ -17,16 +17,22 @@ def logger():
 
     return _logger
 
+
 def url_2_d(url):
     response = None
     try:
         response = requests.get(url, headers={
             'User-Agent': 'RSS Temple',
         })
+        response.raise_for_status()
     except requests.exceptions.RequestException:
         raise QueryException('feed not found', 404)
 
-    d = feedparser.parse(response.text)
+    return text_2_d(response.text)
+
+
+def text_2_d(text):
+    d = feedparser.parse(text)
 
     logger().info('feed info: %s', pprint.pformat(d))
 
@@ -34,6 +40,7 @@ def url_2_d(url):
         raise QueryException('feed malformed', 401)
 
     return d
+
 
 def d_feed_2_feed(d_feed, url):
     feed = models.Feed()
