@@ -1,13 +1,19 @@
 from unittest import TestCase
-import os
+import logging
 import time
 from multiprocessing import Process
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 from api import feed_handler
 from api.exceptions import QueryException
 
-def _http_server():
+def _http_server_process():
+    import os
+    import sys
+    from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+    sys.stdout = open('/dev/null', 'w')
+    sys.stderr = sys.stdout
+
     os.chdir('api/tests/test_files/')
 
     with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
@@ -16,13 +22,17 @@ def _http_server():
 class FeedHandlerTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.http_process = Process(target=_http_server)
+        logging.disable(logging.CRITICAL)
+
+        cls.http_process = Process(target=_http_server_process)
         cls.http_process.start()
 
         time.sleep(2.0)
 
     @classmethod
     def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
         cls.http_process.terminate()
 
         time.sleep(2.0)
