@@ -44,21 +44,21 @@ class FeedHandlerTestCase(TestCase):
         with self.assertRaises(QueryException):
             feed_handler.url_2_d('http://localhost:8080/rss_2.0/sample-404.xml')
 
-    def test_well_formed_rss(self):
+    def test_well_formed_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
             text = f.read()
 
         feed_handler.text_2_d(text)
 
-    def test_well_formed_atom(self):
+    def test_well_formed_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
 
         feed_handler.text_2_d(text)
 
-    def test_malformed_rss(self):
+    def test_malformed_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/malformed.xml', 'r') as f:
             text = f.read()
@@ -66,7 +66,7 @@ class FeedHandlerTestCase(TestCase):
         with self.assertRaises(QueryException):
             feed_handler.text_2_d(text)
 
-    def test_malformed_atom(self):
+    def test_malformed_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/malformed.xml', 'r') as f:
             text = f.read()
@@ -74,7 +74,7 @@ class FeedHandlerTestCase(TestCase):
         with self.assertRaises(QueryException):
             feed_handler.text_2_d(text)
 
-    def test_d_feed_2_feed_rss(self):
+    def test_d_feed_2_feed_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -89,7 +89,7 @@ class FeedHandlerTestCase(TestCase):
         self.assertEqual(feed.title, d.feed.get('title'))
         self.assertEqual(feed.home_url, d.feed.get('link'))
 
-    def test_d_feed_2_feed_atom(self):
+    def test_d_feed_2_feed_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -104,7 +104,7 @@ class FeedHandlerTestCase(TestCase):
         self.assertEqual(feed.title, d.feed.get('title'))
         self.assertEqual(feed.home_url, d.feed.get('link'))
 
-    def test_d_feed_2_feed_entry_rss(self):
+    def test_d_feed_2_feed_entry_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -113,7 +113,7 @@ class FeedHandlerTestCase(TestCase):
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
 
-    def test_d_feed_2_feed_entry_atom(self):
+    def test_d_feed_2_feed_entry_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -122,7 +122,7 @@ class FeedHandlerTestCase(TestCase):
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
 
-    def test_d_feed_2_feed_tags_rss(self):
+    def test_d_feed_2_feed_tags_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -131,7 +131,7 @@ class FeedHandlerTestCase(TestCase):
 
         feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
 
-    def test_d_feed_2_feed_tags_atom(self):
+    def test_d_feed_2_feed_tags_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -140,7 +140,7 @@ class FeedHandlerTestCase(TestCase):
 
         feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
 
-    def test_d_entry_2_entry_tags_rss(self):
+    def test_d_entry_2_entry_tags_rss_2_0(self):
         text = None
         with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
             text = f.read()
@@ -149,7 +149,7 @@ class FeedHandlerTestCase(TestCase):
 
         entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
 
-    def test_d_entry_2_entry_tags_atom(self):
+    def test_d_entry_2_entry_tags_atom_1_0(self):
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
