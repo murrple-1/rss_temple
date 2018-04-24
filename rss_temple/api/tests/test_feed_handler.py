@@ -19,6 +19,7 @@ def _http_server_process():
     with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
         httpd.serve_forever()
 
+# TODO finish tests
 class FeedHandlerTestCase(TestCase):
     FEED_TYPES = [
         'atom_0.3',
@@ -95,6 +96,8 @@ class FeedHandlerTestCase(TestCase):
 
             feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
 
+            # TODO finish
+
     def test_d_feed_2_feed_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
             text = None
@@ -105,6 +108,8 @@ class FeedHandlerTestCase(TestCase):
 
             feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
 
+            # TODO finish
+
     def test_d_entry_2_entry_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
             text = None
@@ -114,3 +119,5 @@ class FeedHandlerTestCase(TestCase):
             d = feed_handler.text_2_d(text)
 
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
+
+            # TODO finish
