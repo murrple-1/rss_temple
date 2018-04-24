@@ -38,22 +38,22 @@ class FeedHandlerTestCase(TestCase):
         time.sleep(2.0)
 
     def test_url_2_d(self):
-        feed_handler.url_2_d('http://localhost:8080/well_formed.xml')
+        feed_handler.url_2_d('http://localhost:8080/rss/well_formed.xml')
 
     def test_request_fail(self):
         with self.assertRaises(QueryException):
-            feed_handler.url_2_d('http://localhost:8080/sample-404.xml')
+            feed_handler.url_2_d('http://localhost:8080/rss/sample-404.xml')
 
     def test_well_formed(self):
         text = None
-        with open('api/tests/test_files/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/well_formed.xml', 'r') as f:
             text = f.read()
 
         feed_handler.text_2_d(text)
 
     def test_malformed(self):
         text = None
-        with open('api/tests/test_files/malformed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/malformed.xml', 'r') as f:
             text = f.read()
 
         with self.assertRaises(QueryException):
@@ -61,7 +61,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed(self):
         text = None
-        with open('api/tests/test_files/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/well_formed.xml', 'r') as f:
             text = f.read()
 
         d = feed_handler.text_2_d(text)
@@ -76,7 +76,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed_entry(self):
         text = None
-        with open('api/tests/test_files/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/well_formed.xml', 'r') as f:
             text = f.read()
 
         d = feed_handler.text_2_d(text)
@@ -85,7 +85,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed_tags(self):
         text = None
-        with open('api/tests/test_files/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/well_formed.xml', 'r') as f:
             text = f.read()
 
         d = feed_handler.text_2_d(text)
@@ -94,7 +94,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_entry_2_entry_tags(self):
         text = None
-        with open('api/tests/test_files/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/rss/well_formed.xml', 'r') as f:
             text = f.read()
 
         d = feed_handler.text_2_d(text)
