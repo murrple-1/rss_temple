@@ -24,3 +24,15 @@ class FieldsTestCase(TestCase):
             self.assertIsInstance(field_map['field_name'], str)
             self.assertIn('accessor', field_map)
             self.assertTrue(callable(field_map['accessor']))
+
+    def test_fieldconfig(self):
+        fc = fields._FieldConfig(lambda context, db_obj: 'test', True)
+
+        self.assertEquals(fc.accessor(object(), object()), 'test')
+        self.assertTrue(fc.default)
+
+        with self.assertRaises(TypeError):
+            fields._FieldConfig(None, None)
+
+        with self.assertRaises(TypeError):
+            fields._FieldConfig(lambda: None, None)
