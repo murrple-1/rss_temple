@@ -88,3 +88,12 @@ class SortsTestCase(TestCase):
 
         with self.assertRaises(TypeError):
             sorts._SortConfig('testField', object())
+
+    def test_bad_sort_list(self):
+        with self.assertRaises(QueryException):
+            sorts.sort_list_to_db_sort_list('user', [
+                {
+                    'field_name': 'bad_field',
+                    'direction': 'ASC',
+                }
+            ])
