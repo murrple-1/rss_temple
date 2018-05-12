@@ -1,4 +1,5 @@
 from unittest import TestCase
+import uuid
 
 from api import fields
 
@@ -36,3 +37,23 @@ class FieldsTestCase(TestCase):
 
         with self.assertRaises(TypeError):
             fields._FieldConfig(lambda: None, None)
+
+
+    def test_to_field_map(self):
+        field_map = fields.to_field_map('feed', 'uuid')
+
+        self.assertEquals(field_map['field_name'], 'uuid')
+
+        class TestContext:
+            pass
+
+        class TestObject:
+            def __init__(self):
+                self.uuid = uuid.uuid4()
+
+        test_context = TestContext()
+        test_obj = TestObject()
+        self.assertIsInstance(field_map['accessor'](test_context, test_obj), str)
+
+        field_map = fields.to_field_map('feed', 'bad_field_name')
+        self.assertIsNone(field_map)
