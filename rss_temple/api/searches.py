@@ -55,8 +55,6 @@ def _handle_parse_result(results_dict, object_search_fns):
                         object_search_fns) | _handle_parse_result(
                         where_expression_extension,
                         object_search_fns))
-            else:
-                raise RuntimeError('unknown parse result')
         else:
             return _handle_parse_result(where_expression, object_search_fns)
     elif 'WhereClause' in results_dict:
@@ -80,8 +78,6 @@ def _handle_parse_result(results_dict, object_search_fns):
             _handle_parse_result(
                 results_dict['ParenthesizedExpression'],
                 object_search_fns))
-    else:
-        raise RuntimeError('unknown parse result')
 
 
 def _q(field_name, search_obj, object_search_fns):
