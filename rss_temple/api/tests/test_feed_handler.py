@@ -121,3 +121,14 @@ class FeedHandlerTestCase(TestCase):
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
 
             # TODO finish
+
+    def test_d_feed_2_feed_entry_plaintext(self):
+        text = None
+        with open('api/tests/test_files/atom_1.0/well_formed_text.xml', 'r') as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
+
+        # TODO finish
