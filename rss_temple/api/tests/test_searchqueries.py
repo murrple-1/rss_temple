@@ -24,3 +24,12 @@ class SearchQueriesTestCase(TestCase):
         d = Decimal('0.5')
 
         self.assertAlmostEqual(context.format_decimal(d), float(d))
+
+    def test_serialize_content(self):
+        content, content_type = searchqueries.serialize_content({
+            'test1': 1,
+            'test2': True
+        })
+
+        self.assertEquals(content_type, 'application/json')
+        self.assertEquals(content, '{"test1":1,"test2":true}')

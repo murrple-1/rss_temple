@@ -1,12 +1,9 @@
-import timeit
-import logging
-
 from django.conf import settings
 
 import ujson
 
-from . import fields as fieldutils, searches as searchutils, sorts as sortutils
-from .exceptions import QueryException
+from api import fields as fieldutils, searches as searchutils, sorts as sortutils
+from api.exceptions import QueryException
 
 
 class Context:
@@ -45,21 +42,8 @@ class Context:
         return float(decimal)
 
 
-_metrics_logger = logging.getLogger('metrics')
 def serialize_content(obj):
-    content = None
-    if _metrics_logger.isEnabledFor(logging.DEBUG):
-        start_time = timeit.default_timer()
-        content = ujson.dumps(obj)
-        end_time = timeit.default_timer()
-
-        _metrics_logger.debug(
-            'dumps (JSON): %s ms for %s chars',
-            (end_time - start_time) * 1000,
-            len(content))
-    else:
-        content = ujson.dumps(obj)
-
+    content = ujson.dumps(obj)
     return content, 'application/json'
 
 
