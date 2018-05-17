@@ -69,3 +69,31 @@ class SearchQueriesTestCase(TestCase):
         self.assertEquals(searchqueries.get_skip(QueryDict('')), searchqueries._DEFAULT_SKIP)
 
         self.assertEquals(searchqueries.get_skip(QueryDict(''), default= 5), 5)
+
+    def test_get_return_objects(self):
+        self.assertTrue(searchqueries.get_return_objects(QueryDict('objects=true')))
+        self.assertTrue(searchqueries.get_return_objects(QueryDict('objects=TRUE')))
+        self.assertFalse(searchqueries.get_return_objects(QueryDict('objects=false')))
+        self.assertFalse(searchqueries.get_return_objects(QueryDict('objects=FALSE')))
+
+        self.assertEquals(searchqueries.get_return_objects(QueryDict('')), searchqueries._DEFAULT_RETURN_OBJECTS)
+
+        self.assertEquals(searchqueries.get_return_objects(QueryDict('tobjects=true'), param_name='tobjects'), True)
+        self.assertEquals(searchqueries.get_return_objects(QueryDict('tobjects=false'), param_name='tobjects'), False)
+
+        self.assertEquals(searchqueries.get_return_objects(QueryDict(''), default=True), True)
+        self.assertEquals(searchqueries.get_return_objects(QueryDict(''), default=False), False)
+
+    def test_return_total_count(self):
+        self.assertTrue(searchqueries.get_return_total_count(QueryDict('totalcount=true')))
+        self.assertTrue(searchqueries.get_return_total_count(QueryDict('totalcount=TRUE')))
+        self.assertFalse(searchqueries.get_return_total_count(QueryDict('totalcount=false')))
+        self.assertFalse(searchqueries.get_return_total_count(QueryDict('totalcount=FALSE')))
+
+        self.assertEquals(searchqueries.get_return_total_count(QueryDict('')), searchqueries._DEFAULT_RETURN_TOTAL_COUNT)
+
+        self.assertEquals(searchqueries.get_return_total_count(QueryDict('ttotalcount=true'), param_name='ttotalcount'), True)
+        self.assertEquals(searchqueries.get_return_total_count(QueryDict('ttotalcount=false'), param_name='ttotalcount'), False)
+
+        self.assertEquals(searchqueries.get_return_total_count(QueryDict(''), default=True), True)
+        self.assertEquals(searchqueries.get_return_total_count(QueryDict(''), default=False), False)
