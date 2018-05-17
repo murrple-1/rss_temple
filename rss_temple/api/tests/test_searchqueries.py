@@ -122,3 +122,27 @@ class SearchQueriesTestCase(TestCase):
 
         self.assertEquals(searchqueries.get_sort(QueryDict('t_disabledefaultsort=true'), 'feed',
             disable_default_sort_param_name='t_disabledefaultsort'), SearchQueriesTestCase._to_sort('feed', '', False))
+
+    def test_get_search(self):
+        self.assertEquals(searchqueries.get_search(QueryDict(''), 'user'), [])
+        self.assertEquals(searchqueries.get_search(QueryDict('search=email:"test"'), 'user'), searchqueries.searchutils.to_filter_args('user', 'email:"test"'))
+
+        self.assertEquals(searchqueries.get_search(QueryDict('tsearch=email:"test"'), 'user', param_name='tsearch'), searchqueries.searchutils.to_filter_args('user', 'email:"test"'))
+
+    def test_get_field_maps(self):
+        self.assertEquals(searchqueries.get_field_maps(QueryDict(''), 'feed'), searchqueries.fieldutils.get_default_field_maps('feed'))
+
+        self.assertEquals(searchqueries.get_field_maps(QueryDict('fields=uuid'), 'feed'),
+            [searchqueries.fieldutils.to_field_map('feed', 'uuid')])
+
+        self.assertEquals(searchqueries.get_field_maps(QueryDict('fields=uuid,title'), 'feed'),
+            [searchqueries.fieldutils.to_field_map('feed', 'uuid'), searchqueries.fieldutils.to_field_map('feed', 'title')])
+
+        with self.settings(DEBUG=True):
+            self.assertEquals(searchqueries.get_field_maps(QueryDict('fields=_all'), 'feed'),
+                searchqueries.fieldutils.get_all_field_maps('feed'))
+
+        self.assertEquals(searchqueries.get_field_maps(QueryDict('fields=badField'), 'feed'), searchqueries.fieldutils.get_default_field_maps('feed'))
+
+        self.assertEquals(searchqueries.get_field_maps(QueryDict('tfields=uuid'), 'feed', param_name='tfields'),
+            [searchqueries.fieldutils.to_field_map('feed', 'uuid')])
