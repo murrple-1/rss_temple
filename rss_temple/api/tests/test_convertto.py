@@ -1,6 +1,7 @@
-from unittest import TestCase
 import uuid
 import datetime
+
+from django.test import TestCase
 
 from dateutil.relativedelta import relativedelta
 

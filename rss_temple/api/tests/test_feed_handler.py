@@ -1,7 +1,8 @@
-from unittest import TestCase
 import logging
 import time
 from multiprocessing import Process
+
+from django.test import TestCase
 
 from api import feed_handler
 from api.exceptions import QueryException

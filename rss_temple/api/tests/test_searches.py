@@ -1,5 +1,6 @@
-from unittest import TestCase
 import logging
+
+from django.test import TestCase
 
 from api import searches
 from api.exceptions import QueryException

@@ -1,7 +1,7 @@
-from unittest import TestCase
 import datetime
 import uuid
 
+from django.test import TestCase
 from django.http import HttpRequest
 
 from api import authenticate, models

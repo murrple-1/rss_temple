@@ -1,5 +1,6 @@
-from unittest import TestCase
 import uuid
+
+from django.test import TestCase
 
 from api import fields
 

@@ -1,7 +1,7 @@
-from unittest import TestCase
 import datetime
 from decimal import Decimal
 
+from django.test import TestCase
 from django.http.request import QueryDict
 
 from api import searchqueries

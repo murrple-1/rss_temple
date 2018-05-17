@@ -1,4 +1,4 @@
-from unittest import TestCase
+from django.test import TestCase
 
 from api import sorts
 from api.exceptions import QueryException
