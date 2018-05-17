@@ -126,11 +126,11 @@ def get_return_total_count(
 
 
 def get_sort(query_dict, object_name, param_name='sort',
-             disable_default_sort_aram_name='_disabledefaultsort'):
+             disable_default_sort_param_name='_disabledefaultsort'):
     sort = query_dict.get(param_name, None)
 
     default_sort_enabled = query_dict.get(
-        disable_default_sort_aram_name, None) != 'true'
+        disable_default_sort_param_name, None) != 'true'
 
     sort_list = sortutils.to_sort_list(object_name, sort, default_sort_enabled)
     db_sort_list = sortutils.sort_list_to_db_sort_list(object_name, sort_list)
