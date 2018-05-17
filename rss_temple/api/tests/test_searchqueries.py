@@ -97,3 +97,28 @@ class SearchQueriesTestCase(TestCase):
 
         self.assertEquals(searchqueries.get_return_total_count(QueryDict(''), default=True), True)
         self.assertEquals(searchqueries.get_return_total_count(QueryDict(''), default=False), False)
+
+    @staticmethod
+    def _to_sort(object_name, sort, default_sort_enabled):
+        sort_list = searchqueries.sortutils.to_sort_list(object_name, sort, default_sort_enabled)
+        db_sort_list = searchqueries.sortutils.sort_list_to_db_sort_list(object_name, sort_list)
+
+        sort = searchqueries.sortutils.to_order_by_fields(db_sort_list)
+
+        return sort
+
+    def test_get_sort(self):
+        self.assertEquals(searchqueries.get_sort(QueryDict(''), 'feed'), SearchQueriesTestCase._to_sort('feed', '', True))
+
+        self.assertEquals(searchqueries.get_sort(QueryDict('sort=title:ASC'), 'feed'), SearchQueriesTestCase._to_sort('feed', 'title:ASC', True))
+
+        self.assertEquals(searchqueries.get_sort(QueryDict('tsort=title:ASC'), 'feed',
+            param_name='tsort'), SearchQueriesTestCase._to_sort('feed', 'title:ASC', True))
+
+        self.assertEquals(searchqueries.get_sort(QueryDict('_disabledefaultsort=true'), 'feed'), SearchQueriesTestCase._to_sort('feed', '', False))
+        self.assertEquals(searchqueries.get_sort(QueryDict('_disabledefaultsort=TRUE'), 'feed'), SearchQueriesTestCase._to_sort('feed', '', False))
+        self.assertEquals(searchqueries.get_sort(QueryDict('_disabledefaultsort=false'), 'feed'), SearchQueriesTestCase._to_sort('feed', '', True))
+        self.assertEquals(searchqueries.get_sort(QueryDict('_disabledefaultsort=FALSE'), 'feed'), SearchQueriesTestCase._to_sort('feed', '', True))
+
+        self.assertEquals(searchqueries.get_sort(QueryDict('t_disabledefaultsort=true'), 'feed',
+            disable_default_sort_param_name='t_disabledefaultsort'), SearchQueriesTestCase._to_sort('feed', '', False))
