@@ -5,6 +5,7 @@ from django.http.response import HttpResponse
 import api.middleware.authentication as authentication
 
 class AuthenticationTestCase(TestCase):
+    # TODO
     def test_middleware(self):
         middleware = authentication.AuthenticationMiddleware(lambda request: HttpResponse())
 

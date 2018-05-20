@@ -7,6 +7,7 @@ from django.http.response import HttpResponse
 import api.middleware.cors as cors
 
 class CORSTestCase(TestCase):
+    # TODO
     def test_middleware(self):
         with self.settings(CORS_ALLOW_ORIGINS='*',
             CORS_ALLOW_METHODS='GET,POST,OPTIONS',
