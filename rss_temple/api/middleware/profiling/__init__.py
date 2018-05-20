@@ -7,7 +7,7 @@ if _OUTPUT_FILE is not None and settings.DEBUG:
     import cProfile
 
     _OUTPUT_FILE_DIR = os.path.dirname(_OUTPUT_FILE)
-    if not os.path.isdir(_OUTPUT_FILE_DIR):
+    if _OUTPUT_FILE_DIR != '' and not os.path.isdir(_OUTPUT_FILE_DIR):
         os.makedirs(_OUTPUT_FILE_DIR, 0o755)
 
     class ProfileMiddleware(object):
@@ -16,7 +16,7 @@ if _OUTPUT_FILE is not None and settings.DEBUG:
 
 
         def __call__(self, request):
-            if request.GET.get('_profile', None) == 'true':
+            if request.GET.get('_profile', '').lower() == 'true':
                 profile = cProfile.Profile()
                 profile.enable()
 

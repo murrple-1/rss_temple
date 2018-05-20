@@ -1,7 +1,30 @@
+import importlib
+
 from django.test import TestCase
+from django.http.request import HttpRequest
+from django.http.response import HttpResponse
 
 import api.middleware.profiling as profiling
 
 class ProfilingTestCase(TestCase):
     def test_middleware(self):
-        pass
+        with self.settings(PROFILING_OUTPUT_FILE='profiling/profile', DEBUG=True):
+            importlib.reload(profiling)
+            middleware = profiling.ProfileMiddleware(lambda request: HttpResponse())
+
+            request = HttpRequest()
+
+            response = middleware(request)
+
+            request = HttpRequest()
+            request.GET['_profile'] = 'true'
+
+            response = middleware(request)
+
+        with self.settings(PROFILING_OUTPUT_FILE=None, DEBUG=False):
+            importlib.reload(profiling)
+            middleware = profiling.ProfileMiddleware(lambda request: HttpResponse())
+
+            request = HttpRequest()
+
+            response = middleware(request)
