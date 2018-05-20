@@ -8,7 +8,7 @@ import api.middleware.profiling as profiling
 
 class ProfilingTestCase(TestCase):
     def test_middleware(self):
-        with self.settings(PROFILING_OUTPUT_FILE='profiling/profile', DEBUG=True):
+        with self.settings(PROFILING_OUTPUT_FILE='api/tests/test_files/profiling/profile', DEBUG=True):
             importlib.reload(profiling)
             middleware = profiling.ProfileMiddleware(lambda request: HttpResponse())
 
