@@ -146,3 +146,26 @@ class SearchQueriesTestCase(TestCase):
 
         self.assertEquals(searchqueries.get_field_maps(QueryDict('tfields=uuid'), 'feed', param_name='tfields'),
             [searchqueries.fieldutils.to_field_map('feed', 'uuid')])
+
+    def test_generate_return_object(self):
+        field_maps = [
+            {
+                'field_name': 'uuid',
+                'accessor': lambda context, db_obj: db_obj.uuid,
+            }
+        ]
+
+        class MockObject:
+            pass
+
+        class MockContext:
+            pass
+
+        db_obj = MockObject()
+        db_obj.uuid = 'test string'
+
+        context = MockContext()
+
+        self.assertEquals(searchqueries.generate_return_object(field_maps, db_obj, context), {
+            'uuid': 'test string',
+        })
