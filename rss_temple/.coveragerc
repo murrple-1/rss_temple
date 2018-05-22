@@ -1,0 +1,6 @@
+[run]
+source =
+    api
+omit =
+    api/tests/*
+    api/session_cleanup_daemon/__main__.py
