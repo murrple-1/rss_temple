@@ -7,6 +7,13 @@ from django.http.response import HttpResponse
 import api.middleware.cors as cors
 
 class CORSTestCase(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        # reload without messing up the settings
+        importlib.reload(cors)
+
     def test_allow_star(self):
         with self.settings(CORS_ALLOW_ORIGINS='*',
             CORS_ALLOW_METHODS='GET,POST,OPTIONS',

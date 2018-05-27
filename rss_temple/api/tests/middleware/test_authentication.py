@@ -9,6 +9,13 @@ import api.middleware.authentication as authentication
 from api import models
 
 class AuthenticationTestCase(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        # reload without messing up the settings
+        importlib.reload(authentication)
+
     def test_succeed_authentication(self):
         with self.settings(
             REALM='Test Realm',

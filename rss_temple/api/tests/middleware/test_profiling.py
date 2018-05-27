@@ -7,6 +7,13 @@ from django.http.response import HttpResponse
 import api.middleware.profiling as profiling
 
 class ProfilingTestCase(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        # reload without messing up the settings
+        importlib.reload(profiling)
+
     def test_middleware(self):
         with self.settings(PROFILING_OUTPUT_FILE='api/tests/test_files/profiling/profile', DEBUG=True):
             importlib.reload(profiling)
