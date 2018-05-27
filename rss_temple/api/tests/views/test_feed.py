@@ -3,7 +3,7 @@ import logging
 
 from django.test import TestCase, Client
 
-from api import models
+from api import models, fields
 
 class FeedTestCase(TestCase):
     # TODO
@@ -40,13 +40,13 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.get('/api/feed', {
             'url': 'http://www.feedforall.com/sample.xml',
-            'fields': '_all',
+            'fields': ','.join(fields.field_list('feed')),
             }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token)
         self.assertEqual(response.status_code, 200)
 
     def test_feeds_get(self):
         c = Client()
-        response = c.get('/api/feeds', { 'fields': '_all' }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token)
+        response = c.get('/api/feeds', { 'fields': ','.join(fields.field_list('feed')) }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token)
         self.assertEqual(response.status_code, 200)
 
     def test_feed_subscribe_post_delete(self):
