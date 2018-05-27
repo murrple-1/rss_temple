@@ -29,5 +29,5 @@ class UserTestCase(TestCase):
 
     def test_user_get(self):
         c = Client()
-        response = c.get('/api/user', HTTP_X_SESSION_TOKEN=UserTestCase.session_token)
+        response = c.get('/api/user', { 'fields': '_all' }, HTTP_X_SESSION_TOKEN=UserTestCase.session_token)
         self.assertEqual(response.status_code, 200)

@@ -16,7 +16,7 @@ def my_login(request):
     permitted_methods = ['POST']
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)
+        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
 
     if request.method == 'POST':
         return _my_login_post(request)
@@ -26,7 +26,7 @@ def my_login_session(request):
     permitted_methods = ['POST']
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)
+        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
 
     if request.method == 'POST':
         return _my_login_session_post(request)
