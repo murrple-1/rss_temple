@@ -19,10 +19,11 @@ class CORSMiddleware:
 
 
     def __call__(self, request):
+        response = None
         if request.method == 'OPTIONS':
-            return HttpResponse()
-
-        response = self.get_response(request)
+            response = HttpResponse()
+        else:
+            response = self.get_response(request)
 
         cors_enabled = False
 
