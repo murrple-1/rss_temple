@@ -8,10 +8,14 @@ from api.exceptions import QueryException
 class SearchesTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+
         logging.disable(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
+        super().tearDownClass()
+
         logging.disable(logging.NOTSET)
 
     def test_standard(self):

@@ -32,6 +32,8 @@ class FeedHandlerTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+
         logging.disable(logging.CRITICAL)
 
         cls.http_process = Process(target=_http_server_process)
@@ -41,6 +43,8 @@ class FeedHandlerTestCase(TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        super().tearDownClass()
+
         logging.disable(logging.NOTSET)
 
         cls.http_process.terminate()
