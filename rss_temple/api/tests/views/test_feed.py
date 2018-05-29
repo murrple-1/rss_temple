@@ -1,11 +1,27 @@
 import datetime
 import logging
+import time
+from multiprocessing import Process
 
 from django.test import TestCase, Client
 
 import ujson
 
 from api import models, fields
+
+def _http_server_process():
+    import os
+    import sys
+    from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+    sys.stdout = open('/dev/null', 'w')
+    sys.stderr = sys.stdout
+
+    os.chdir('api/tests/test_files/')
+
+    with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
+        httpd.serve_forever()
+
 
 class FeedTestCase(TestCase):
     @classmethod
@@ -36,16 +52,25 @@ class FeedTestCase(TestCase):
         cls.session_token = session.uuid
         cls.session_token_str = str(session.uuid)
 
+        cls.http_process = Process(target=_http_server_process)
+        cls.http_process.start()
+
+        time.sleep(2.0)
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logging.disable(logging.NOTSET)
 
+        cls.http_process.terminate()
+
+        time.sleep(2.0)
+
     def test_feed_get(self):
         c = Client()
         response = c.get('/api/feed', {
-            'url': 'http://www.feedforall.com/sample.xml',
+            'url': 'http://localhost:8080/rss_2.0/well_formed.xml',
             'fields': ','.join(fields.field_list('feed')),
             }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
@@ -58,20 +83,20 @@ class FeedTestCase(TestCase):
     def test_feed_get_non_rss_url(self):
         c = Client()
         response = c.get('/api/feed', {
-            'url': 'http://www.feedforall.com/bad.xml',
+            'url': 'http://localhost:8080/rss_2.0/sample-404.xml',
             }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
     def test_feeds_get(self):
         feed = None
         try:
-            feed = models.Feed.objects.get(feed_url='http://www.feedforall.com/sample.xml')
+            feed = models.Feed.objects.get(feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
         except models.Feed.DoesNotExist:
             feed = models.Feed(
-                feed_url='http://www.feedforall.com/sample.xml',
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
                 is_new=False,
-                title='FeedForAll Sample Feed',
-                home_url='http://www.feedforall.com/industry-solutions.htm',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
                 updated_at=None)
             feed.save()
@@ -91,19 +116,19 @@ class FeedTestCase(TestCase):
         models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user).delete()
 
         c = Client()
-        response = c.post('/api/feed/subscribe?url=http://www.feedforall.com/sample.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feed_subscribe_post_duplicate(self):
         feed = None
         try:
-            feed = models.Feed.objects.get(feed_url='http://www.feedforall.com/sample.xml')
+            feed = models.Feed.objects.get(feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
         except models.Feed.DoesNotExist:
             feed = models.Feed(
-                feed_url='http://www.feedforall.com/sample.xml',
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
                 is_new=False,
-                title='FeedForAll Sample Feed',
-                home_url='http://www.feedforall.com/industry-solutions.htm',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
                 updated_at=None)
             feed.save()
@@ -118,7 +143,7 @@ class FeedTestCase(TestCase):
             subscribed_feed_user_mapping.save()
 
         c = Client()
-        response = c.post('/api/feed/subscribe?url=http://www.feedforall.com/sample.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 409)
 
     def test_feed_subscribe_post_no_url(self):
@@ -128,19 +153,19 @@ class FeedTestCase(TestCase):
 
     def test_feed_subscribe_post_non_rss_url(self):
         c = Client()
-        response = c.post('/api/feed/subscribe?url=http://www.feedforall.com/bad.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/sample-404.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
     def test_feed_subscribe_delete(self):
         feed = None
         try:
-            feed = models.Feed.objects.get(feed_url='http://www.feedforall.com/sample.xml')
+            feed = models.Feed.objects.get(feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
         except models.Feed.DoesNotExist:
             feed = models.Feed(
-                feed_url='http://www.feedforall.com/sample.xml',
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
                 is_new=False,
-                title='FeedForAll Sample Feed',
-                home_url='http://www.feedforall.com/industry-solutions.htm',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
                 updated_at=None)
             feed.save()
@@ -155,12 +180,12 @@ class FeedTestCase(TestCase):
             subscribed_feed_user_mapping.save()
 
         c = Client()
-        response = c.delete('/api/feed/subscribe?url=http://www.feedforall.com/sample.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feed_subscribe_delete_not_subscribed(self):
         c = Client()
-        response = c.delete('/api/feed/subscribe?url=http://www.feedforall.com/bad.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/sample-404.xml', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
     def test_feed_subscribe_delete_no_url(self):
