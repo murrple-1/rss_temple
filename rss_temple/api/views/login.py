@@ -10,7 +10,7 @@ import ujson
 
 from api import models
 
-__password_hasher = argon2.PasswordHasher()
+_password_hasher = argon2.PasswordHasher()
 
 def my_login(request):
     permitted_methods = ['POST']
@@ -34,28 +34,28 @@ def my_login_session(request):
 
 def _my_login_post(request):
     if not request.body:
-        return HttpResponseBadRequest('no HTTP body')
+        return HttpResponseBadRequest('no HTTP body') # pragma: no cover
 
     _json = None
     try:
         _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError:
+    except ValueError: # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
     if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object')
+        return HttpResponseBadRequest('JSON body must be object') # pragma: no cover
 
     if 'email' not in _json:
-        return HttpResponseBadRequest('\'email\' missing')
+        return HttpResponseBadRequest('\'email\' missing') # pragma: no cover
 
     if not isinstance(_json['email'], str):
-        return HttpResponseBadRequest('\'email\' must be string')
+        return HttpResponseBadRequest('\'email\' must be string') # pragma: no cover
 
     if 'password' not in _json:
-        return HttpResponseBadRequest('\'password\' missing')
+        return HttpResponseBadRequest('\'password\' missing') # pragma: no cover
 
     if not isinstance(_json['password'], str):
-        return HttpResponseBadRequest('\'password\' must be string')
+        return HttpResponseBadRequest('\'password\' must be string') # pragma: no cover
 
     if models.MyLogin.objects.filter(user__email=_json['email']).exists():
         return HttpResponse('login already exists', status=409)
@@ -71,7 +71,7 @@ def _my_login_post(request):
 
         my_login = models.MyLogin()
 
-        my_login.pw_hash = __password_hasher.hash(_json['password'])
+        my_login.pw_hash = _password_hasher.hash(_json['password'])
         my_login.user = user
         my_login.save()
 
@@ -82,28 +82,28 @@ _SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
 
 def _my_login_session_post(request):
     if not request.body:
-        return HttpResponseBadRequest('no HTTP body')
+        return HttpResponseBadRequest('no HTTP body') # pragma: no cover
 
     _json = None
     try:
         _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError:
+    except ValueError: # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
     if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object')
+        return HttpResponseBadRequest('JSON body must be object') # pragma: no cover
 
     if 'email' not in _json:
-        return HttpResponseBadRequest('\'email\' missing')
+        return HttpResponseBadRequest('\'email\' missing') # pragma: no cover
 
     if not isinstance(_json['email'], str):
-        return HttpResponseBadRequest('\'email\' must be string')
+        return HttpResponseBadRequest('\'email\' must be string') # pragma: no cover
 
     if 'password' not in _json:
-        return HttpResponseBadRequest('\'password\' missing')
+        return HttpResponseBadRequest('\'password\' missing') # pragma: no cover
 
     if not isinstance(_json['password'], str):
-        return HttpResponseBadRequest('\'password\' must be string')
+        return HttpResponseBadRequest('\'password\' must be string') # pragma: no cover
 
     my_login = None
     try:
@@ -112,7 +112,7 @@ def _my_login_session_post(request):
         return HttpResponseForbidden()
 
     try:
-        __password_hasher.verify(my_login.pw_hash, _json['password'])
+        _password_hasher.verify(my_login.pw_hash, _json['password'])
     except argon2.exceptions.VerifyMismatchError:
         return HttpResponseForbidden()
 
