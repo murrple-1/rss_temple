@@ -149,7 +149,7 @@ class ConvertToTestCase(TestCase):
     def test_date_delta_range_last_week(self):
         now = datetime.datetime(2000, 1, 15, 0, 0, 0, 0)
         last_week_start = datetime.datetime(2000, 1, 3, 0, 0, 0, 0)
-        last_week_end = datetime.datetime(2000, 1, 9, 0, 0, 0, 0)
+        last_week_end = datetime.datetime(2000, 1, 9, 23, 59, 59, 999999)
 
         self.assertEqual(DateDeltaRange.convertto('last_week', now=now), (last_week_start, last_week_end))
 

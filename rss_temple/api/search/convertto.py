@@ -114,10 +114,10 @@ class DateDeltaRange(CustomConvertTo):
                     days=(
                         6 -
                         now.weekday()))).replace(
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0)
+                hour=23,
+                minute=59,
+                second=59,
+                microsecond=999999)
 
             return start_day, end_day
         elif search_obj == 'last_month':
