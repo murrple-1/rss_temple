@@ -10,8 +10,7 @@ def logger():
     global _logger
 
     if _logger is None:
-        _logger = logging.getLogger(__name__)
-        _logger.setLevel(logging.DEBUG)
+        _logger = logging.getLogger('session_cleanup_daemon')
 
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(logging.DEBUG)

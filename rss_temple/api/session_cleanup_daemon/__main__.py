@@ -14,6 +14,7 @@ django.setup()
 
 import time
 import argparse
+import logging
 
 import filelock
 
@@ -29,6 +30,8 @@ def main():
         action='store_true',
         dest='runNow')
     args = parser.parse_args()
+
+    logger().setLevel(logging.DEBUG)
 
     if not args.runNow:
         lock = filelock.FileLock('session_cleanup_daemon.lock')

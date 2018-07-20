@@ -28,7 +28,8 @@ class FeedTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.disable(logging.CRITICAL)
+        logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
+        logging.getLogger('django').setLevel(logging.CRITICAL)
 
         user = None
         try:
@@ -60,8 +61,6 @@ class FeedTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-
-        logging.disable(logging.NOTSET)
 
         cls.http_process.terminate()
 

@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.test import TestCase, Client
 
@@ -11,6 +12,8 @@ class UserTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        logging.getLogger('django').setLevel(logging.CRITICAL)
 
         user = None
         try:

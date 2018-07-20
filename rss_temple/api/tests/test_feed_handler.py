@@ -34,7 +34,9 @@ class FeedHandlerTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.disable(logging.CRITICAL)
+        cls.logger = logging.getLogger(__name__)
+
+        logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
         cls.http_process = Process(target=_http_server_process)
         cls.http_process.start()
@@ -44,8 +46,6 @@ class FeedHandlerTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-
-        logging.disable(logging.NOTSET)
 
         cls.http_process.terminate()
 
@@ -115,8 +115,11 @@ class FeedHandlerTestCase(TestCase):
             feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
             self.assertIsInstance(feed_tags, frozenset)
 
-            for feed_tag in feed_tags:
-                self.assertIsInstance(feed_tag, str)
+            if len(feed_tags):
+                for feed_tag in feed_tags:
+                    self.assertIsInstance(feed_tag, str)
+            else:
+                FeedHandlerTestCase.logger.warning('%s feed_tags empty', feed_type)
 
             # TODO finish
 
@@ -131,8 +134,11 @@ class FeedHandlerTestCase(TestCase):
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
             self.assertIsInstance(entry_tags, frozenset)
 
-            for entry_tag in entry_tags:
-                self.assertIsInstance(entry_tag, str)
+            if len(entry_tags):
+                for entry_tag in entry_tags:
+                    self.assertIsInstance(entry_tag, str)
+            else:
+                FeedHandlerTestCase.logger.warning('%s entry_tags empty', feed_type)
 
             # TODO finish
 

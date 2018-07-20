@@ -11,13 +11,7 @@ class SearchesTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.disable(logging.CRITICAL)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.disable(logging.NOTSET)
+        logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
     def test_standard(self):
         searches.to_filter_args('feed', Context(), 'uuid:"99d63124-59e2-4204-ba61-be294dcb4d22|c54a1f76-f350-4336-b7c4-33ec8f5e81a3"')

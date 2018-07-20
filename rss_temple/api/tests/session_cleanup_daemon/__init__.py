@@ -10,14 +10,16 @@ from api.session_cleanup_daemon import cleanup
 class DaemonTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
-        logging.disable(logging.CRITICAL)
+        super().setUpClass()
+
+        logging.getLogger('session_cleanup_daemon').setLevel(logging.CRITICAL)
 
         cls.user = models.User(email='example@example.com')
         cls.user.save()
 
     @classmethod
     def tearDownClass(cls):
-        logging.disable(logging.NOTSET)
+        super().tearDownClass()
 
         cls.user.delete()
 

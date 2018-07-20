@@ -1,3 +1,5 @@
+import logging
+
 from django.test import TestCase, Client
 
 import argon2
@@ -9,6 +11,12 @@ from api import models
 _password_hasher = argon2.PasswordHasher()
 
 class LoginTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        logging.getLogger('django').setLevel(logging.CRITICAL)
+
     def test_my_login_post(self):
         models.User.objects.filter(
             email='test@test.com').delete()
