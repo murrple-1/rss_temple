@@ -4,7 +4,7 @@ from multiprocessing import Process
 
 from django.test import TestCase
 
-from api import feed_handler
+from api import feed_handler, models
 from api.exceptions import QueryException
 
 def _http_server_process():
@@ -100,6 +100,7 @@ class FeedHandlerTestCase(TestCase):
             d = feed_handler.text_2_d(text)
 
             feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
+            self.assertIsInstance(feed_entry, models.FeedEntry)
 
             # TODO finish
 
@@ -112,6 +113,10 @@ class FeedHandlerTestCase(TestCase):
             d = feed_handler.text_2_d(text)
 
             feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
+            self.assertIsInstance(feed_tags, frozenset)
+
+            for feed_tag in feed_tags:
+                self.assertIsInstance(feed_tag, str)
 
             # TODO finish
 
@@ -124,6 +129,10 @@ class FeedHandlerTestCase(TestCase):
             d = feed_handler.text_2_d(text)
 
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
+            self.assertIsInstance(entry_tags, frozenset)
+
+            for entry_tag in entry_tags:
+                self.assertIsInstance(entry_tag, str)
 
             # TODO finish
 
@@ -135,5 +144,6 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
+        self.assertIsInstance(feed_entry, models.FeedEntry)
 
         # TODO finish

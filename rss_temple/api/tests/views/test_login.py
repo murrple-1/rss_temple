@@ -1,5 +1,3 @@
-import datetime
-
 from django.test import TestCase, Client
 
 import argon2

@@ -1,7 +1,6 @@
 import datetime
 
 from django.test import TestCase, Client
-from django.conf import settings
 
 import ujson
 

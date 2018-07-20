@@ -22,11 +22,13 @@ class ProfilingTestCase(TestCase):
             request = HttpRequest()
 
             response = middleware(request)
+            assert response # PyFlakes
 
             request = HttpRequest()
             request.GET['_profile'] = 'true'
 
             response = middleware(request)
+            assert response # PyFlakes
 
         with self.settings(PROFILING_OUTPUT_FILE=None, DEBUG=False):
             importlib.reload(profiling)
@@ -35,3 +37,4 @@ class ProfilingTestCase(TestCase):
             request = HttpRequest()
 
             response = middleware(request)
+            assert response # PyFlakes

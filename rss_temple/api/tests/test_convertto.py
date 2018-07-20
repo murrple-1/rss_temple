@@ -3,8 +3,6 @@ import datetime
 
 from django.test import TestCase
 
-from dateutil.relativedelta import relativedelta
-
 from api.search.convertto import (
     CustomConvertTo,
     Bool,

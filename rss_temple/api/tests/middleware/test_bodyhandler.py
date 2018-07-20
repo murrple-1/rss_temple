@@ -23,3 +23,4 @@ class BodyHandlerTestCase(TestCase):
         request = MockHttpRequest()
 
         response = middleware(request)
+        assert response # PyFlakes
