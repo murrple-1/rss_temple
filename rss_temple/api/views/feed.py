@@ -100,7 +100,7 @@ def _feeds_get(request):
 
     search = None
     try:
-        search = searchqueries.get_search(query_dict, _OBJECT_NAME)
+        search = searchqueries.get_search(context, query_dict, _OBJECT_NAME)
     except QueryException as e: # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 

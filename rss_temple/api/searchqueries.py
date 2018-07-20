@@ -103,12 +103,12 @@ def get_sort(query_dict, object_name, param_name='sort',
     return sort
 
 
-def get_search(query_dict, object_name, param_name='search'):
+def get_search(context, query_dict, object_name, param_name='search'):
     search = query_dict.get(param_name, None)
     if not search:
         return []
 
-    filter_args = searchutils.to_filter_args(object_name, search)
+    filter_args = searchutils.to_filter_args(object_name, context, search)
     return filter_args
 
 

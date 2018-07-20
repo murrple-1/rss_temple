@@ -125,10 +125,10 @@ class SearchQueriesTestCase(TestCase):
             disable_default_sort_param_name='t_disabledefaultsort'), SearchQueriesTestCase._to_sort('feed', '', False))
 
     def test_get_search(self):
-        self.assertEquals(searchqueries.get_search(QueryDict(''), 'user'), [])
-        self.assertEquals(searchqueries.get_search(QueryDict('search=email:"test"'), 'user'), searchqueries.searchutils.to_filter_args('user', 'email:"test"'))
+        self.assertEquals(searchqueries.get_search(Context(), QueryDict(''), 'user'), [])
+        self.assertEquals(searchqueries.get_search(Context(), QueryDict('search=email:"test"'), 'user'), searchqueries.searchutils.to_filter_args('user', Context(), 'email:"test"'))
 
-        self.assertEquals(searchqueries.get_search(QueryDict('tsearch=email:"test"'), 'user', param_name='tsearch'), searchqueries.searchutils.to_filter_args('user', 'email:"test"'))
+        self.assertEquals(searchqueries.get_search(Context(), QueryDict('tsearch=email:"test"'), 'user', param_name='tsearch'), searchqueries.searchutils.to_filter_args('user', Context(), 'email:"test"'))
 
     def test_get_field_maps(self):
         self.assertEquals(searchqueries.get_field_maps(QueryDict(''), 'feed'), searchqueries.fieldutils.get_default_field_maps('feed'))
@@ -159,13 +159,10 @@ class SearchQueriesTestCase(TestCase):
         class MockObject:
             pass
 
-        class MockContext:
-            pass
-
         db_obj = MockObject()
         db_obj.uuid = 'test string'
 
-        context = MockContext()
+        context = Context()
 
         self.assertEquals(searchqueries.generate_return_object(field_maps, db_obj, context), {
             'uuid': 'test string',
