@@ -4,6 +4,7 @@ from django.db.utils import IntegrityError
 from api import models, searchqueries
 from api.exceptions import QueryException
 import api.feed_handler as feed_handler
+from api.context import Context
 
 
 _OBJECT_NAME = 'feed'
@@ -42,7 +43,7 @@ def feed_subscribe(request):
 
 
 def _feed_get(request):
-    context = searchqueries.Context()
+    context = Context()
     context.parse_query_dict(request.GET)
 
     url = request.GET.get('url')
@@ -75,7 +76,8 @@ def _feed_get(request):
 
 def _feeds_get(request):
     query_dict = request.GET
-    context = searchqueries.Context()
+
+    context = Context()
     context.parse_query_dict(query_dict)
 
     count = None

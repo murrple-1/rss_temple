@@ -2,6 +2,7 @@ from django.http import HttpResponse, HttpResponseNotAllowed
 
 from api.exceptions import QueryException
 from api import searchqueries
+from api.context import Context
 
 
 _OBJECT_NAME = 'user'
@@ -18,7 +19,7 @@ def user(request):
 
 
 def _user_get(request):
-    context = searchqueries.Context()
+    context = Context()
     context.parse_query_dict(request.GET)
 
     user = request.user

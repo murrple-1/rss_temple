@@ -6,11 +6,12 @@ from django.http.request import QueryDict
 
 from api import searchqueries
 from api.exceptions import QueryException
+from api.context import Context
 
 
 class SearchQueriesTestCase(TestCase):
     def test_context(self):
-        context = searchqueries.Context()
+        context = Context()
 
         query_dict = QueryDict('_dtformat=%Y-%m-%d %H:%M:%S&_dformat=%Y-%m-%d&_tformat=%H:%M:%S')
 
