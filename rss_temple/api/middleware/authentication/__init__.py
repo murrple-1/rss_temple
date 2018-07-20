@@ -3,8 +3,7 @@ import re
 from django.http import HttpResponse
 from django.conf import settings
 
-import api.authenticate as authenticate
-from api.exceptions import QueryException
+from api import authenticate
 
 _REALM = settings.REALM
 _AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE

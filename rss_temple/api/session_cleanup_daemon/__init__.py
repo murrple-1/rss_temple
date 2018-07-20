@@ -1,11 +1,7 @@
 import logging
 import sys
-import time
-import argparse
 
 from django.db.models.functions import Now
-
-import filelock
 
 from api import models
 
