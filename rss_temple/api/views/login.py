@@ -12,11 +12,12 @@ from api import models
 
 _password_hasher = argon2.PasswordHasher()
 
+
 def my_login(request):
     permitted_methods = ['POST']
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'POST':
         return _my_login_post(request)
@@ -26,7 +27,7 @@ def my_login_session(request):
     permitted_methods = ['POST']
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'POST':
         return _my_login_session_post(request)
@@ -34,28 +35,29 @@ def my_login_session(request):
 
 def _my_login_post(request):
     if not request.body:
-        return HttpResponseBadRequest('no HTTP body') # pragma: no cover
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
     _json = None
     try:
-        _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError: # pragma: no cover
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
     if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object') # pragma: no cover
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in _json:
-        return HttpResponseBadRequest('\'email\' missing') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
     if not isinstance(_json['email'], str):
-        return HttpResponseBadRequest('\'email\' must be string') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
     if 'password' not in _json:
-        return HttpResponseBadRequest('\'password\' missing') # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
     if not isinstance(_json['password'], str):
-        return HttpResponseBadRequest('\'password\' must be string') # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
     if models.MyLogin.objects.filter(user__email=_json['email']).exists():
         return HttpResponse('login already exists', status=409)
@@ -77,33 +79,35 @@ def _my_login_post(request):
 
     return HttpResponse()
 
+
 _SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
 
 
 def _my_login_session_post(request):
     if not request.body:
-        return HttpResponseBadRequest('no HTTP body') # pragma: no cover
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
     _json = None
     try:
-        _json = ujson.loads(request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError: # pragma: no cover
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
     if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object') # pragma: no cover
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in _json:
-        return HttpResponseBadRequest('\'email\' missing') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
     if not isinstance(_json['email'], str):
-        return HttpResponseBadRequest('\'email\' must be string') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
     if 'password' not in _json:
-        return HttpResponseBadRequest('\'password\' missing') # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
     if not isinstance(_json['password'], str):
-        return HttpResponseBadRequest('\'password\' must be string') # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
     my_login = None
     try:

@@ -6,6 +6,7 @@ from django.http import HttpRequest
 
 from api import authenticate, models
 
+
 class AuthenticateTestCase(TestCase):
     def test_success(self):
         user = None
@@ -19,7 +20,8 @@ class AuthenticateTestCase(TestCase):
 
         session = models.Session()
         session.user = user
-        session.expires_at = (datetime.datetime.utcnow() + datetime.timedelta(days=2))
+        session.expires_at = (datetime.datetime.utcnow() +
+                              datetime.timedelta(days=2))
 
         session.save()
 

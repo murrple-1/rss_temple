@@ -2,6 +2,7 @@ import re
 
 from api.exceptions import QueryException
 
+
 class _DefaultDescriptor:
     def __init__(self, sort_key, direction):
         if not isinstance(sort_key, int):
@@ -20,7 +21,8 @@ class _SortConfig:
             raise TypeError('field_name must be str')
 
         if default_descriptor is not None and not isinstance(default_descriptor, _DefaultDescriptor):
-            raise TypeError('default_descriptor must be None or _DefaultDescriptor')
+            raise TypeError(
+                'default_descriptor must be None or _DefaultDescriptor')
 
         self.field_name = field_name
         self.default_descriptor = default_descriptor
@@ -82,7 +84,8 @@ def _to_default_sort_list(object_name):
     for field_name, object_sort_config in object_sort_configs.items():
         if object_sort_config.default_descriptor is not None:
             if object_sort_config.default_descriptor.sort_key not in field_name_dict:
-                field_name_dict[object_sort_config.default_descriptor.sort_key] = []
+                field_name_dict[object_sort_config.default_descriptor.sort_key] = [
+                ]
 
             field_name_dict[object_sort_config.default_descriptor.sort_key].append({
                 'field_name': field_name,

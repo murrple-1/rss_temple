@@ -10,6 +10,8 @@ from api import models
 from api.exceptions import QueryException
 
 _logger = None
+
+
 def logger():
     global _logger
     if _logger is None:

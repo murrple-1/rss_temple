@@ -3,6 +3,7 @@ from django.test import TestCase
 from api import sorts
 from api.exceptions import QueryException
 
+
 class SortsTestCase(TestCase):
     @staticmethod
     def _to_sort(object_name, sort, default_sort_enabled):

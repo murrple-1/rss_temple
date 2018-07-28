@@ -10,6 +10,7 @@ from api import models
 
 _password_hasher = argon2.PasswordHasher()
 
+
 class LoginTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -25,7 +26,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my', ujson.dumps({
             'email': 'test@test.com',
             'password': 'mypassword',
-            }), 'application/json')
+        }), 'application/json')
         self.assertEqual(response.status_code, 200)
 
     def test_my_login_post_already_exists(self):
@@ -51,7 +52,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my', ujson.dumps({
             'email': 'test@test.com',
             'password': 'mypassword',
-            }), 'application/json')
+        }), 'application/json')
         self.assertEqual(response.status_code, 409)
 
     def test_my_login_session_post(self):
@@ -77,7 +78,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my/session', ujson.dumps({
             'email': 'test@test.com',
             'password': 'mypassword',
-            }), 'application/json')
+        }), 'application/json')
 
         self.assertEqual(response.status_code, 200)
 
@@ -86,7 +87,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my/session', ujson.dumps({
             'email': 'bademail@test.com',
             'password': 'mypassword',
-            }), 'application/json')
+        }), 'application/json')
 
         self.assertEqual(response.status_code, 403)
 
@@ -113,6 +114,6 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my/session', ujson.dumps({
             'email': 'test@test.com',
             'password': 'badpassword',
-            }), 'application/json')
+        }), 'application/json')
 
         self.assertEqual(response.status_code, 403)

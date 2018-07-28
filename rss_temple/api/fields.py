@@ -69,5 +69,6 @@ def to_field_map(object_name, field_name):
             }
     return None
 
+
 def field_list(object_name):
     return __field_configs[object_name].keys()

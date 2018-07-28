@@ -6,6 +6,8 @@ from django.db.models.functions import Now
 from api import models
 
 _logger = None
+
+
 def logger():
     global _logger
 

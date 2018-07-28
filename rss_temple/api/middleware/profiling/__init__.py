@@ -14,7 +14,6 @@ if _OUTPUT_FILE is not None and settings.DEBUG:
         def __init__(self, get_response):
             self.get_response = get_response
 
-
         def __call__(self, request):
             if request.GET.get('_profile', '').lower() == 'true':
                 profile = cProfile.Profile()
@@ -33,7 +32,6 @@ else:
     class ProfileMiddleware(object):
         def __init__(self, get_response):
             self.get_response = get_response
-
 
         def __call__(self, request):
             return self.get_response(request)

@@ -7,6 +7,7 @@ from django.test import TestCase
 from api import feed_handler, models
 from api.exceptions import QueryException
 
+
 def _http_server_process():
     import os
     import sys
@@ -21,6 +22,8 @@ def _http_server_process():
         httpd.serve_forever()
 
 # TODO finish tests
+
+
 class FeedHandlerTestCase(TestCase):
     FEED_TYPES = [
         'atom_0.3',
@@ -56,7 +59,8 @@ class FeedHandlerTestCase(TestCase):
 
     def test_request_fail(self):
         with self.assertRaises(QueryException):
-            feed_handler.url_2_d('http://localhost:8080/rss_2.0/sample-404.xml')
+            feed_handler.url_2_d(
+                'http://localhost:8080/rss_2.0/sample-404.xml')
 
     def test_well_formed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
@@ -119,7 +123,8 @@ class FeedHandlerTestCase(TestCase):
                 for feed_tag in feed_tags:
                     self.assertIsInstance(feed_tag, str)
             else:
-                FeedHandlerTestCase.logger.warning('%s feed_tags empty', feed_type)
+                FeedHandlerTestCase.logger.warning(
+                    '%s feed_tags empty', feed_type)
 
             # TODO finish
 
@@ -138,7 +143,8 @@ class FeedHandlerTestCase(TestCase):
                 for entry_tag in entry_tags:
                     self.assertIsInstance(entry_tag, str)
             else:
-                FeedHandlerTestCase.logger.warning('%s entry_tags empty', feed_type)
+                FeedHandlerTestCase.logger.warning(
+                    '%s entry_tags empty', feed_type)
 
             # TODO finish
 

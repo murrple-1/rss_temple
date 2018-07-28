@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from api import fields
 
+
 class FieldsTestCase(TestCase):
     def test_default_field_maps(self):
         default_field_maps = fields.get_default_field_maps('feed')
@@ -39,7 +40,6 @@ class FieldsTestCase(TestCase):
         with self.assertRaises(TypeError):
             fields._FieldConfig(lambda: None, None)
 
-
     def test_to_field_map(self):
         field_map = fields.to_field_map('feed', 'uuid')
 
@@ -54,7 +54,8 @@ class FieldsTestCase(TestCase):
 
         test_context = TestContext()
         test_obj = TestObject()
-        self.assertIsInstance(field_map['accessor'](test_context, test_obj), str)
+        self.assertIsInstance(field_map['accessor'](
+            test_context, test_obj), str)
 
         field_map = fields.to_field_map('feed', 'bad_field_name')
         self.assertIsNone(field_map)

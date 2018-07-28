@@ -5,6 +5,7 @@ from django.http.response import HttpResponse
 
 import api.middleware.bodyhandler as bodyhandler
 
+
 class BodyHandlerTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -14,7 +15,8 @@ class BodyHandlerTestCase(TestCase):
         importlib.reload(bodyhandler)
 
     def test_middleware(self):
-        middleware = bodyhandler.BodyHandlerMiddleware(lambda request: HttpResponse())
+        middleware = bodyhandler.BodyHandlerMiddleware(
+            lambda request: HttpResponse())
 
         class MockHttpRequest:
             def __init__(self):
@@ -23,4 +25,4 @@ class BodyHandlerTestCase(TestCase):
         request = MockHttpRequest()
 
         response = middleware(request)
-        assert response # PyFlakes
+        assert response  # PyFlakes

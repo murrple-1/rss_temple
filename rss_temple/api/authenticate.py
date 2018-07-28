@@ -7,6 +7,7 @@ from django.db.models.functions import Now
 
 import api.models as models
 
+
 def authenticate_http_request(request):
     user = _user_from_http_request__session_token(
         request)

@@ -15,15 +15,12 @@ class AuthenticationMiddleware:
             self.path_info_regex = re.compile(path_info_regex_str)
             self.method_list = method_list
 
-
         def matches(self, request):
             return bool(self.path_info_regex.search(request.path_info) and (
                 len(self.method_list) < 1 or request.method in self.method_list))
 
-
     def __init__(self, get_response):
         self.get_response = get_response
-
 
     def __call__(self, request):
         if not self._should_authenticate(request):
@@ -39,7 +36,6 @@ class AuthenticationMiddleware:
             response['WWW-Authenticate'] = 'X-Basic realm="{0}"'.format(
                 _REALM) if _REALM else 'X-Basic'
             return response
-
 
     def _should_authenticate(self, request):
         if not hasattr(self, '_disable_entries'):

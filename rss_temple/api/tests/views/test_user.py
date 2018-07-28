@@ -7,6 +7,7 @@ import ujson
 
 from api import models, fields
 
+
 class UserTestCase(TestCase):
     # TODO
     @classmethod
@@ -28,7 +29,8 @@ class UserTestCase(TestCase):
 
         session = models.Session()
         session.user = user
-        session.expires_at = (datetime.datetime.utcnow() + datetime.timedelta(days=2))
+        session.expires_at = (datetime.datetime.utcnow() +
+                              datetime.timedelta(days=2))
 
         session.save()
 
@@ -39,7 +41,8 @@ class UserTestCase(TestCase):
 
     def test_user_get(self):
         c = Client()
-        response = c.get('/api/user', { 'fields': ','.join(fields.field_list('user')) }, HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = c.get('/api/user', {'fields': ','.join(fields.field_list(
+            'user'))}, HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         _json = ujson.loads(response.content)

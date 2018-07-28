@@ -10,7 +10,8 @@ class User(models.Model):
 
     def subscribed_feeds(self):
         if not hasattr(self, '_subscribed_feeds'):
-            self._subscribed_feeds = Feed.objects.filter(uuid__in=SubscribedFeedUserMapping.objects.filter(user=self).values('feed_id'))
+            self._subscribed_feeds = Feed.objects.filter(
+                uuid__in=SubscribedFeedUserMapping.objects.filter(user=self).values('feed_id'))
 
         return self._subscribed_feeds
 
