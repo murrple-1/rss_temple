@@ -12,9 +12,8 @@ ujson = "*"
 pyparsing = "*"
 python-dateutil = "*"
 filelock = "*"
-python-coveralls = "*"
 
 [dev-packages]
+coveralls = "*"
 
 [requires]
-python_version = "3.6"
