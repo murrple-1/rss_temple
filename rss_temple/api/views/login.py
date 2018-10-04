@@ -32,6 +32,7 @@ def my_login_session(request):
     if request.method == 'POST':
         return _my_login_session_post(request)
 
+
 def google_login_session(request):
     permitted_methods = {'POST'}
 
@@ -86,14 +87,12 @@ def _my_login_post(request):
         try:
             user = models.User.objects.get(email=_json['email'])
         except models.User.DoesNotExist:
-            user = models.User()
-            user.email = _json['email']
+            user = models.User(email=_json['email'])
             user.save()
 
-        my_login = models.MyLogin()
-
-        my_login.pw_hash = _password_hasher.hash(_json['password'])
-        my_login.user = user
+        my_login = models.MyLogin(
+            pw_hash=_password_hasher.hash(_json['password']),
+            user=user)
         my_login.save()
 
     return HttpResponse()
@@ -139,10 +138,10 @@ def _my_login_session_post(request):
     except argon2.exceptions.VerifyMismatchError:
         return HttpResponseForbidden()
 
-    session = models.Session()
-    session.user = my_login.user
-    session.expires_at = datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL
-
+    session = models.Session(
+        user=my_login.user,
+        expires_at=datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL,
+    )
     session.save()
 
     return HttpResponse(str(session.uuid), 'text/plain')

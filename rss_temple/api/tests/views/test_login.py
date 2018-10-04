@@ -35,8 +35,7 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(
-                email='test@test.com')
+            user = models.User(email='test@test.com')
             user.save()
 
         my_login = None
@@ -44,8 +43,7 @@ class LoginTestCase(TestCase):
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
             my_login = models.MyLogin(
-                user=user,
-                pw_hash=_password_hasher.hash('mypassword'))
+                user=user, pw_hash=_password_hasher.hash('mypassword'))
             my_login.save()
 
         c = Client()
@@ -61,8 +59,7 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(
-                email='test@test.com')
+            user = models.User(email='test@test.com')
             user.save()
 
         my_login = None
@@ -70,8 +67,7 @@ class LoginTestCase(TestCase):
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
             my_login = models.MyLogin(
-                user=user,
-                pw_hash=_password_hasher.hash('mypassword'))
+                user=user, pw_hash=_password_hasher.hash('mypassword'))
             my_login.save()
 
         c = Client()
@@ -97,8 +93,7 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(
-                email='test@test.com')
+            user = models.User(email='test@test.com')
             user.save()
 
         my_login = None
@@ -106,8 +101,7 @@ class LoginTestCase(TestCase):
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
             my_login = models.MyLogin(
-                user=user,
-                pw_hash=_password_hasher.hash('mypassword'))
+                user=user, pw_hash=_password_hasher.hash('mypassword'))
             my_login.save()
 
         c = Client()

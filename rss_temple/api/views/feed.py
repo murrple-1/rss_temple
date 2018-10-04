@@ -161,9 +161,8 @@ def _feed_subscribe_post(request):
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
 
-    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping()
-    subscribed_feed_user_mapping.user = user
-    subscribed_feed_user_mapping.feed = feed
+    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
+        user=user, feed=feed)
 
     try:
         subscribed_feed_user_mapping.save()

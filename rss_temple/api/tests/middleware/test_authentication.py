@@ -31,16 +31,11 @@ class AuthenticationTestCase(TestCase):
             try:
                 user = models.User.objects.get(email='test@test.com')
             except models.User.DoesNotExist:
-                user = models.User()
-                user.email = 'test@test.com'
-
+                user = models.User(email='test@test.com')
                 user.save()
 
-            session = models.Session()
-            session.user = user
-            session.expires_at = (
-                datetime.datetime.utcnow() + datetime.timedelta(days=2))
-
+            session = models.Session(
+                user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
             session.save()
 
             session_token = str(session.uuid)
