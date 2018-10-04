@@ -9,7 +9,7 @@ _OBJECT_NAME = 'user'
 
 
 def user(request):
-    permitted_methods = ['GET']
+    permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover

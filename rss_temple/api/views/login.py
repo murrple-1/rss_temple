@@ -14,7 +14,7 @@ _password_hasher = argon2.PasswordHasher()
 
 
 def my_login(request):
-    permitted_methods = ['POST']
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
@@ -24,7 +24,7 @@ def my_login(request):
 
 
 def my_login_session(request):
-    permitted_methods = ['POST']
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
@@ -33,7 +33,7 @@ def my_login_session(request):
         return _my_login_session_post(request)
 
 def google_login_session(request):
-    permitted_methods = ['POST']
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
@@ -43,7 +43,7 @@ def google_login_session(request):
 
 
 def facebook_login_session(request):
-    permitted_methods = ['POST']
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
