@@ -32,6 +32,25 @@ def my_login_session(request):
     if request.method == 'POST':
         return _my_login_session_post(request)
 
+def google_login_session(request):
+    permitted_methods = ['POST']
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _google_login_session_post(request)
+
+
+def facebook_login_session(request):
+    permitted_methods = ['POST']
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _facebook_login_session_post(request)
+
 
 def _my_login_post(request):
     if not request.body:
@@ -127,3 +146,45 @@ def _my_login_session_post(request):
     session.save()
 
     return HttpResponse(str(session.uuid), 'text/plain')
+
+
+def _google_login_session_post(request):
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    # TODO temporary
+    import uuid
+    _uuid = uuid.uuid4()
+
+    return HttpResponse(str(_uuid), 'text/plain')
+
+
+def _facebook_login_session_post(request):
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    # TODO temporary
+    import uuid
+    _uuid = uuid.uuid4()
+
+    return HttpResponse(str(_uuid), 'text/plain')
