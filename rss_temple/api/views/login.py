@@ -225,7 +225,8 @@ def _my_login_session_post(request):
     )
     session.save()
 
-    return HttpResponse(str(session.uuid), 'text/plain')
+    content, content_type = searchqueries.serialize_content(str(session.uuid))
+    return HttpResponse(content, content_type)
 
 
 def _facebook_login_session_post(request):
@@ -256,7 +257,13 @@ def _facebook_login_session_post(request):
     try:
         fb_login = models.FacebookLogin.objects.get(profile_id=profile['id'])
     except models.FacebookLogin.DoesNotExist:
-        return HttpResponse(status=422)
+        ret_obj = {
+            'profile_id': profile['id'],
+            'email': profile['email'],
+        }
+
+        content, content_type = searchqueries.serialize_content(ret_obj)
+        return HttpResponse(content, content_type, status=422)
 
     session = models.Session(
         user=fb_login.user,
@@ -264,4 +271,5 @@ def _facebook_login_session_post(request):
     )
     session.save()
 
-    return HttpResponse(str(session.uuid), 'text/plain')
+    content, content_type = searchqueries.serialize_content(str(session.uuid))
+    return HttpResponse(content, content_type)
