@@ -99,6 +99,8 @@ PROFILING_OUTPUT_FILE = os.environ.get('PROFILING_OUTPUT_FILE')
 
 AUTHENTICATION_DISABLE = [
     (r'^/api/login/my/?$', ['POST']),
+    (r'^/api/login/google/?$', ['POST']),
+    (r'^/api/login/facebook/?$', ['POST']),
     (r'^/api/login/my/session/?$', ['POST']),
     (r'^/api/login/google/session/?$', ['POST']),
     (r'^/api/login/facebook/session/?$', ['POST']),

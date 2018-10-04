@@ -26,6 +26,10 @@ class MyLogin(Login):
 
 
 class FacebookLogin(Login):
+    profile_id = models.CharField(max_length=96)
+
+
+class GoogleLogin(Login):
     pass
 
 

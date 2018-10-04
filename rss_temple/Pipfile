@@ -12,6 +12,8 @@ ujson = "*"
 pyparsing = "*"
 python-dateutil = "*"
 filelock = "*"
+facebook-sdk = "*"
+google-api-python-client = "*"
 
 [dev-packages]
 coveralls = "*"

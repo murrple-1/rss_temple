@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     re_path(r'^login/my/?$', views.my_login),
+    re_path(r'^login/google/?$', views.google_login),
+    re_path(r'^login/facebook/?$', views.facebook_login),
     re_path(r'^login/my/session/?$', views.my_login_session),
     re_path(r'^login/google/session/?$', views.google_login_session),
     re_path(r'^login/facebook/session/?$', views.facebook_login_session),
