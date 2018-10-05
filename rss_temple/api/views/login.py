@@ -146,14 +146,22 @@ def _facebook_login_post(request):
     if not isinstance(_json['password'], str):
         return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
-    if 'profile_id' not in _json:
-        return HttpResponseBadRequest('\'profile_id\' missing')  # pragma: no cover
+    if 'token' not in _json:
+        return HttpResponseBadRequest('\'token\' missing')  # pragma: no cover
 
-    if not isinstance(_json['profile_id'], str):
-        return HttpResponseBadRequest('\'profile_id\' must be string')  # pragma: no cover
+    if not isinstance(_json['token'], str):
+        return HttpResponseBadRequest('\'token\' must be string')  # pragma: no cover
+
+    graph = facebook.GraphAPI(_json['token'])
+
+    profile = None
+    try:
+        profile = graph.get_object('me', fields='id')
+    except facebook.GraphAPIError:
+        return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=_json['profile_id']).exists()
+        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
         or models.MyLogin.objects.filter(user__email=_json['email']).exists()
         ):
         return HttpResponse('login already exists', status=409)
@@ -172,7 +180,7 @@ def _facebook_login_post(request):
         my_login.save()
 
         facebook_login = models.FacebookLogin(
-            profile_id=_json['profile_id'],
+            profile_id=profile['id'],
             user=user)
         facebook_login.save()
 
@@ -251,15 +259,19 @@ def _facebook_login_session_post(request):
 
     graph = facebook.GraphAPI(_json['token'])
 
-    profile = graph.get_object('me', fields='id,email')
+    profile = None
+    try:
+        profile = graph.get_object('me', fields='id,email')
+    except facebook.GraphAPIError:
+        return HttpResponseBadRequest('bad Facebook token')
 
     fb_login = None
     try:
         fb_login = models.FacebookLogin.objects.get(profile_id=profile['id'])
     except models.FacebookLogin.DoesNotExist:
         ret_obj = {
-            'profile_id': profile['id'],
-            'email': profile['email'],
+            'token': _json['token'],
+            'email': profile.get['email'],
         }
 
         content, content_type = searchqueries.serialize_content(ret_obj)
