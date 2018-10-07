@@ -30,7 +30,7 @@ class FacebookLogin(Login):
 
 
 class GoogleLogin(Login):
-    pass
+    g_user_id = models.CharField(max_length=96)
 
 
 class Session(models.Model):
