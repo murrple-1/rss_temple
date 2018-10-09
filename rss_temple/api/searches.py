@@ -20,6 +20,12 @@ __search_fns = {
     'feed': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
     },
+    # TODO
+    'feedentry': {
+        'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
+        'feedUuid': lambda context, search_obj: Q(feed_id__in=convertto.UuidList.convertto(search_obj)),
+        'feedUrl': lambda context, search_obj: Q(feed__feed_url=search_obj),
+    },
 }
 
 

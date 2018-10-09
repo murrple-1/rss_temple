@@ -2,6 +2,8 @@ from django.urls import re_path
 
 from . import views
 
+_uuid_regex = r'[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'
+
 urlpatterns = [
     re_path(r'^login/my/?$', views.my_login),
     re_path(r'^login/google/?$', views.google_login),
@@ -15,4 +17,7 @@ urlpatterns = [
     re_path(r'^feed/?$', views.feed),
     re_path(r'^feeds/?$', views.feeds),
     re_path(r'^feed/subscribe/?$', views.feed_subscribe),
+
+    re_path(r'^feedentry/({})/?$'.format(_uuid_regex), views.feed_entry),
+    re_path(r'^feedentries/?$', views.feed_entries),
 ]

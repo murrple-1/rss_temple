@@ -41,6 +41,10 @@ __sort_configs = {
         'publishedAt': _SortConfig('published_at', None),
         'updatedAt': _SortConfig('updated_at', None),
     },
+    # TODO
+    'feedentry': {
+        'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
+    },
 }
 
 __sort_regex = re.compile(r'^([A-Z0-9_]+):(ASC|DESC)$', re.IGNORECASE)

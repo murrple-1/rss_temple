@@ -1,72 +1,44 @@
+import uuid
+
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
-from django.db.utils import IntegrityError
-from django.db import transaction
 
 from api import models, searchqueries
 from api.exceptions import QueryException
-import api.feed_handler as feed_handler
 from api.context import Context
 
 
-_OBJECT_NAME = 'feed'
+_OBJECT_NAME = 'feedentry'
 
 
-def feed(request):
+def feed_entry(request, _uuid):
     permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
-        return _feed_get(request)
+        return _feed_entry_get(request, _uuid)
 
 
-def feeds(request):
+def feed_entries(request):
     permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
-        return _feeds_get(request)
+        return _feed_entries_get(request)
 
 
-def feed_subscribe(request):
-    permitted_methods = {'POST', 'DELETE'}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == 'POST':
-        return _feed_subscribe_post(request)
-    elif request.method == 'DELETE':
-        return _feed_subscribe_delete(request)
-
-
-def _save_feed(url):
-    with transaction.atomic():
-        d = feed_handler.url_2_d(url)
-        feed = feed_handler.d_feed_2_feed(d.feed, url)
-        feed.save()
-
-        feed_entries = []
-        for d_entry in d.get('entries', []):
-            feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
-            feed_entry.feed = feed
-            feed_entries.append(feed_entry)
-
-        models.FeedEntry.objects.bulk_create(feed_entries)
-
-        return feed
-
-
-def _feed_get(request):
+def _feed_entry_get(request, _uuid):
     context = Context()
     context.parse_query_dict(request.GET)
 
-    url = request.GET.get('url')
-    if not url:
-        return HttpResponseBadRequest('\'url\' missing')
+    _uuid_ = None
+    try:
+        _uuid_ = uuid.UUID(_uuid)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
 
     field_maps = None
     try:
@@ -74,23 +46,20 @@ def _feed_get(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feed = None
+    feed_entry = None
     try:
-        feed = models.Feed.objects.get(feed_url=url)
-    except models.Feed.DoesNotExist:
-        try:
-            feed = _save_feed(url)
-        except QueryException as e:
-            return HttpResponse(e.message, status=e.httpcode)
+        feed_entry = models.FeedEntry.objects.get(uuid=_uuid_)
+    except models.FeedEnrty.DoesNotExist:
+        return HttpResponseNotFound('feed entry not found')
 
-    ret_obj = searchqueries.generate_return_object(field_maps, feed, context)
+    ret_obj = searchqueries.generate_return_object(field_maps, feed_entry, context)
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
 
-def _feeds_get(request):
+def _feed_entries_get(request):
     query_dict = request.GET
 
     context = Context()
@@ -138,63 +107,22 @@ def _feeds_get(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feeds = models.Feed.objects.filter(*search)
+    feed_entries = models.FeedEntry.objects.filter(*search)
 
     ret_obj = {}
 
     if return_objects:
         objs = []
-        for feed in feeds.order_by(
+        for feed_entry in feed_entries.order_by(
                 *sort)[skip:skip + count]:
             obj = searchqueries.generate_return_object(
-                field_maps, feed, context)
+                field_maps, feed_entry, context)
             objs.append(obj)
 
         ret_obj['objects'] = objs
 
     if return_total_count:
-        ret_obj['totalCount'] = feeds.count()
+        ret_obj['totalCount'] = feed_entries.count()
 
     content, content_type = searchqueries.serialize_content(ret_obj)
     return HttpResponse(content, content_type)
-
-
-def _feed_subscribe_post(request):
-    user = request.user
-
-    url = request.GET.get('url')
-    if not url:
-        return HttpResponseBadRequest('\'url\' missing')
-
-    feed = None
-    try:
-        feed = models.Feed.objects.get(feed_url=url)
-    except models.Feed.DoesNotExist:
-        try:
-            feed = _save_feed(url)
-        except QueryException as e:
-            return HttpResponse(e.message, status=e.httpcode)
-
-    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-        user=user, feed=feed)
-
-    try:
-        subscribed_feed_user_mapping.save()
-    except IntegrityError:
-        return HttpResponse('user already subscribed', status=409)
-
-    return HttpResponse()
-
-
-def _feed_subscribe_delete(request):
-    url = request.GET.get('url')
-    if not url:
-        return HttpResponseBadRequest('\'url\' missing')
-
-    count, _ = models.SubscribedFeedUserMapping.objects.filter(
-        user=request.user, feed__feed_url=url).delete()
-
-    if count < 1:
-        return HttpResponseNotFound('user not subscribed')
-
-    return HttpResponse()

@@ -24,6 +24,17 @@ __field_configs = {
         'publishedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.published_at), False),
         'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
     },
+    'feedentry': {
+        'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
+        'id': _FieldConfig(lambda context, db_obj: db_obj.id, False),
+        'createdAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.created_at) if db_obj.created_at is not None else None, False),
+        'publishedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.published_at), False),
+        'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
+        'title': _FieldConfig(lambda context, db_obj: db_obj.title, False),
+        'url': _FieldConfig(lambda context, db_obj: db_obj.url, False),
+        'content': _FieldConfig(lambda context, db_obj: db_obj.content, False),
+        'authorName': _FieldConfig(lambda context, db_obj: db_obj.author_name, False),
+    },
 }
 
 
