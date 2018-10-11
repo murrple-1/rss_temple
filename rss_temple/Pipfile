@@ -14,6 +14,7 @@ python-dateutil = "*"
 filelock = "*"
 google-auth = "*"
 facebook-sdk = "*"
+html-sanitizer = "*"
 
 [dev-packages]
 coveralls = "*"

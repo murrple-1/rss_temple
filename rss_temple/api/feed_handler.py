@@ -6,8 +6,12 @@ import feedparser
 
 import requests
 
+from html_sanitizer import Sanitizer
+
 from api import models
 from api.exceptions import QueryException
+
+_sanitizer = Sanitizer()
 
 _logger = None
 
@@ -95,9 +99,10 @@ def d_entry_2_feed_entry(d_entry):
 
     feed_entry.url = d_entry.get('link')
 
-    if 'content' in d_entry:
-        content = None
-
+    content = None
+    if 'summary' in d_entry:
+        content = d_entry.summary
+    elif 'content' in d_entry:
         content_dicts = d_entry.content
 
         for content_dict in content_dicts:
@@ -109,9 +114,12 @@ def d_entry_2_feed_entry(d_entry):
                 # these types are fine too
                 content = content_dict.value
 
-        feed_entry.content = content
-    else:
-        feed_entry.content = None
+        content = content
+
+    if isinstance(content, str):
+        content = _sanitizer.sanitize(content)
+
+    feed_entry.content = content
 
     feed_entry.author_name = d_entry.get('author')
 
