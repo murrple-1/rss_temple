@@ -8,7 +8,7 @@ install:
   - cd rss_temple/
   - pipenv install --dev
 script:
-  - coverage run manage.py test api.tests
+  - coverage run manage.py test api.tests daemons.tests
 after_script:
   - coveralls
 addons:

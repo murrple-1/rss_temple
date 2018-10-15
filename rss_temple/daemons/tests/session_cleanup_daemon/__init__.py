@@ -4,7 +4,8 @@ import logging
 from django.test import TestCase
 
 from api import models
-from api.session_cleanup_daemon import cleanup
+
+from daemons.session_cleanup_daemon import cleanup
 
 
 class DaemonTestCase(TestCase):

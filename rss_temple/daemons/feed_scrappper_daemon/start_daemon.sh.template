@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd /path/to/rss_temple/git/repo/rss_temple/ # directory should contain manage.py
-pipenv run python -m api.session_cleanup_daemon
+pipenv run python -m daemons.feed_scrapper_daemon

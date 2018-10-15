@@ -1,6 +1,8 @@
 [run]
 source =
     api
+    daemons
 omit =
     api/tests/*
-    api/session_cleanup_daemon/__main__.py
+    daemons/tests/*
+    daemons/*/__main__.py
