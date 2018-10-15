@@ -42,11 +42,12 @@ class Session(models.Model):
 class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
-    is_new = models.BooleanField(default=True)
     title = models.TextField(null=True)
     home_url = models.TextField(null=True)
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
+    db_created_at = models.DateTimeField(default=timezone.now)
+    db_updated_at = models.DateTimeField(null=True)
 
 
 class SubscribedFeedUserMapping(models.Model):
@@ -75,6 +76,8 @@ class FeedEntry(models.Model):
     content = models.TextField(null=True)
     author_name = models.TextField(null=True)
     hash = models.IntegerField()
+    db_created_at = models.DateTimeField(default=timezone.now)
+    db_updated_at = models.DateTimeField(null=True)
 
     def __eq__(self, other):
         if isinstance(other, FeedEntry):

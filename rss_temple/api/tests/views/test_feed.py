@@ -92,11 +92,11 @@ class FeedTestCase(TestCase):
         except models.Feed.DoesNotExist:
             feed = models.Feed(
                 feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                is_new=False,
                 title='Sample Feed',
                 home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
-                updated_at=None)
+                updated_at=None,
+                db_updated_at=None)
             feed.save()
 
         c = Client()
@@ -128,11 +128,11 @@ class FeedTestCase(TestCase):
         except models.Feed.DoesNotExist:
             feed = models.Feed(
                 feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                is_new=False,
                 title='Sample Feed',
                 home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
-                updated_at=None)
+                updated_at=None,
+                db_updated_at=None)
             feed.save()
 
         subscribed_feed_user_mapping = None
@@ -170,11 +170,11 @@ class FeedTestCase(TestCase):
         except models.Feed.DoesNotExist:
             feed = models.Feed(
                 feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                is_new=False,
                 title='Sample Feed',
                 home_url='http://localhost:8080',
                 published_at=datetime.datetime.utcnow(),
-                updated_at=None)
+                updated_at=None,
+                db_updated_at=None)
             feed.save()
 
         subscribed_feed_user_mapping = None
