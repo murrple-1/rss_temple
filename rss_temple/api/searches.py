@@ -6,7 +6,7 @@ from pyparsing import ParseException
 
 from api.exceptions import QueryException
 from api.search.parser import parser
-import api.search.convertto as convertto
+from api.search import convertto
 
 _logger = logging.getLogger('rss_temple')
 

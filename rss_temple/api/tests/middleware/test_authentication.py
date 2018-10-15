@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 
-import api.middleware.authentication as authentication
+from api.middleware import authentication
 from api import models
 
 

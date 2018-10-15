@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db.models.query_utils import Q
 from django.db.models.functions import Now
 
-import api.models as models
+from api import models
 
 
 def authenticate_http_request(request):

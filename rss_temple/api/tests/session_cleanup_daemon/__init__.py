@@ -3,7 +3,7 @@ import logging
 
 from django.test import TestCase
 
-import api.models as models
+from api import models
 from api.session_cleanup_daemon import cleanup
 
 

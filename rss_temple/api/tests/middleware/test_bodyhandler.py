@@ -3,7 +3,7 @@ import importlib
 from django.test import TestCase
 from django.http.response import HttpResponse
 
-import api.middleware.bodyhandler as bodyhandler
+from api.middleware import bodyhandler
 
 
 class BodyHandlerTestCase(TestCase):

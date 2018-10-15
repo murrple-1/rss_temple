@@ -2,9 +2,8 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFou
 from django.db.utils import IntegrityError
 from django.db import transaction
 
-from api import models, searchqueries
+from api import models, searchqueries, feed_handler
 from api.exceptions import QueryException
-import api.feed_handler as feed_handler
 from api.context import Context
 
 

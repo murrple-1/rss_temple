@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 
-import api.middleware.profiling as profiling
+from api.middleware import profiling
 
 
 class ProfilingTestCase(TestCase):
