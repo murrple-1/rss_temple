@@ -38,7 +38,7 @@ def main():
         except filelock.Timeout:
             logger().info('only 1 process allowed at a time - lock file already held')
         except Exception:
-            logger().exception('cleanup loop stopped unexpectedly')
+            logger().exception('loop stopped unexpectedly')
             raise
     else:
         cleanup()

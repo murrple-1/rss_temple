@@ -16,13 +16,23 @@ import time
 import argparse
 import logging
 
+from django.db import transaction
+
 import filelock
 
-from . import logger
+from . import logger, scrape_feed
+from api import models
 
+def _scrape_loop():
+    feeds = models.Feed.objects.select_for_update(skip_locked=True).all()
+    with transaction.atomic():
+        for feed in feeds:
+            scrape_feed(feed)
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--feed-url')
+    parser.add_argument('--feed-uuid')
     args = parser.parse_args()
 
     logger().setLevel(logging.DEBUG)
@@ -32,12 +42,12 @@ def main():
         try:
             with lock.acquire(timeout=1):
                 while True:
-                    # TODO
+                    _scrape_loop()
                     time.sleep(60 * 60 * 24)
         except filelock.Timeout:
             logger().info('only 1 process allowed at a time - lock file already held')
         except Exception:
-            logger().exception('cleanup loop stopped unexpectedly')
+            logger().exception('loop stopped unexpectedly')
             raise
     else:
         # TODO

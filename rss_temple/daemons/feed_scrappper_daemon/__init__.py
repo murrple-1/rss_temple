@@ -1,6 +1,8 @@
 import logging
 import sys
 
+from api import feed_handler, models
+
 _logger = None
 
 
@@ -32,9 +34,17 @@ def logger():
 
 
 def scrape_feed(feed):
-    d = url_2_d(feed.feed_url)
+    d = feed_handler.url_2_d(feed.feed_url)
+
+    feed_entries = []
 
     for d_entry in d.get('entries', []):
-        feed_entry = d_entry_2_feed_entry(d_entry)
+        feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+        feed_entry.feed = feed
 
-        # TODO
+        if models.FeedEntry.objects.filter(feed=feed, hash=feed_entry.hash).exists():
+            continue
+
+        feed_entries.append(feed_entry)
+
+    models.FeedEntry.objects.bulk_create(feed_entries)

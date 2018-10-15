@@ -74,6 +74,25 @@ class FeedEntry(models.Model):
     url = models.TextField(null=True)
     content = models.TextField(null=True)
     author_name = models.TextField(null=True)
+    hash = models.IntegerField()
+
+    def __eq__(self, other):
+        if isinstance(other, FeedEntry):
+            return (
+                self.id == other.id
+                and self.created_at == other.created_at
+                and self.published_at == other.published_at
+                and self.updated_at == other.updated_at
+                and self.title == other.title
+                and self.url == other.url
+                and self.content == other.content
+                and self.author_name == other.author_name
+            )
+        else:
+            return False
+
+    def __hash__(self):
+        return hash((self.id, self.created_at, self.published_at, self.updated_at, self.title, self.url, self.content, self.author_name))
 
 
 class Tag(models.Model):
