@@ -1,3 +1,18 @@
+# Setting up Django
+
+import os
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rss_temple.settings')
+
+# django.conf.settings requires these be set, but the value doesn't matter
+# for this script
+os.environ.setdefault('SECRET_KEY', '<SECRET_KEY>')
+os.environ.setdefault('GOOGLE_CLIENT_ID', '<GOOGLE_CLIENT_ID>')
+
+import django
+
+django.setup()
+
 import logging
 import sys
 
