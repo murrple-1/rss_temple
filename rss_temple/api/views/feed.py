@@ -1,6 +1,7 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 from django.db import transaction
+from django.db.models import Q
 
 from api import models, searchqueries, feed_handler
 from api.exceptions import QueryException
@@ -28,6 +29,16 @@ def feeds(request):
 
     if request.method == 'GET':
         return _feeds_get(request)
+
+
+def feeds_subscribed(request):
+    permitted_methods = {'GET'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'GET':
+        return _feeds_subscribed_get(request)
 
 
 def feed_subscribe(request):
@@ -116,6 +127,78 @@ def _feeds_get(request):
     search = None
     try:
         search = searchqueries.get_search(context, query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    field_maps = None
+    try:
+        field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_objects = None
+    try:
+        return_objects = searchqueries.get_return_objects(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_total_count = None
+    try:
+        return_total_count = searchqueries.get_return_total_count(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    feeds = models.Feed.objects.filter(*search)
+
+    ret_obj = {}
+
+    if return_objects:
+        objs = []
+        for feed in feeds.order_by(
+                *sort)[skip:skip + count]:
+            obj = searchqueries.generate_return_object(
+                field_maps, feed, context)
+            objs.append(obj)
+
+        ret_obj['objects'] = objs
+
+    if return_total_count:
+        ret_obj['totalCount'] = feeds.count()
+
+    content, content_type = searchqueries.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
+
+
+# TODO combine? simplify?
+def _feeds_subscribed_get(request):
+    query_dict = request.GET
+
+    context = Context()
+    context.parse_query_dict(query_dict)
+
+    count = None
+    try:
+        count = searchqueries.get_count(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    skip = None
+    try:
+        skip = searchqueries.get_skip(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    sort = None
+    try:
+        sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    search = None
+    try:
+        search = [
+            Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=request.user).values('feed_id'))
+        ] + searchqueries.get_search(context, query_dict, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 

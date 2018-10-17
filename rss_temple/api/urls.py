@@ -16,6 +16,7 @@ urlpatterns = [
 
     re_path(r'^feed/?$', views.feed),
     re_path(r'^feeds/?$', views.feeds),
+    re_path(r'^feeds/subscribed/?$', views.feeds_subscribed),
     re_path(r'^feed/subscribe/?$', views.feed_subscribe),
 
     re_path(r'^feedentry/({})/?$'.format(_uuid_regex), views.feed_entry),

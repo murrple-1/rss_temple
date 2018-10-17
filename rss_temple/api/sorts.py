@@ -44,6 +44,9 @@ __sort_configs = {
     # TODO
     'feedentry': {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
+        'createdAt': _SortConfig('created_at', None),
+        'publishedAt': _SortConfig('published_at', None),
+        'updatedAt': _SortConfig('created_at', None),
     },
 }
 
