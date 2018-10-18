@@ -23,6 +23,8 @@ __field_configs = {
         'homeUrl': _FieldConfig(lambda context, db_obj: db_obj.home_url, False),
         'publishedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.published_at), False),
         'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
+
+        'subscribed': _FieldConfig(lambda context, db_obj: db_obj.subscribed(context.request.user), False),
     },
     'feedentry': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
@@ -34,6 +36,8 @@ __field_configs = {
         'url': _FieldConfig(lambda context, db_obj: db_obj.url, False),
         'content': _FieldConfig(lambda context, db_obj: db_obj.content, False),
         'authorName': _FieldConfig(lambda context, db_obj: db_obj.author_name, False),
+
+        'fromSubscription': _FieldConfig(lambda context, db_obj: db_obj.from_subscription(context.request.user), False),
     },
 }
 

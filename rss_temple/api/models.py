@@ -49,6 +49,12 @@ class Feed(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 
+    def subscribed(self, user):
+        if not hasattr(self, '_subscribed'):
+            self._subscribed = self.uuid in (f.uuid for f in user.subscribed_feeds())
+
+        return self._subscribed
+
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
@@ -96,6 +102,12 @@ class FeedEntry(models.Model):
 
     def __hash__(self):
         return hash((self.id, self.created_at, self.published_at, self.updated_at, self.title, self.url, self.content, self.author_name))
+
+    def from_subscription(self, user):
+        if not hasattr(self, '_subscribed'):
+            self._subscribed = self.feed_id in (f.uuid for f in user.subscribed_feeds())
+
+        return self._subscribed
 
 
 class Tag(models.Model):

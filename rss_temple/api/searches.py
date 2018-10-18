@@ -4,11 +4,30 @@ from django.db.models import Q
 
 from pyparsing import ParseException
 
+from api import models
 from api.exceptions import QueryException
 from api.search.parser import parser
 from api.search import convertto
 
 _logger = logging.getLogger('rss_temple')
+
+
+def _feed_subscribed(context, search_obj):
+    q = Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user).values('feed_id'))
+
+    if not convertto.Bool.convertto(search_obj):
+        q = ~q
+
+    return q
+
+
+def _feedentry_subscribed(context, search_obj):
+    q = Q(feed__in=models.Feed.objects.filter(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user).values('feed_id')))
+
+    if not convertto.Bool.convertto(search_obj):
+        q = ~q
+
+    return q
 
 
 __search_fns = {
@@ -19,12 +38,36 @@ __search_fns = {
     },
     'feed': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
+        'title': lambda context, search_obj: Q(title__icontains=search_obj),
+        'title_exact': lambda context, search_obj: Q(title__iexact=search_obj),
+        'feedUrl': lambda context, search_obj: Q(feed_url__iexact=search_obj),
+        'homeUrl': lambda context, search_obj: Q(home_url__iexact=search_obj),
+        'publishedAt': lambda context, search_obj: Q(published_at__range=convertto.DateRange.convertto(search_obj)),
+        'publishedAt_exact': lambda context, search_obj: Q(published_at__date=convertto.Date.convertto(search_obj)),
+        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=convertto.DateDeltaRange.convertto(search_obj)),
+        'updatedAt': lambda context, search_obj: Q(updated_at__range=convertto.DateRange.convertto(search_obj)),
+        'updatedAt_exact': lambda context, search_obj: Q(updated_at__date=convertto.Date.convertto(search_obj)),
+        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=convertto.DateDeltaRange.convertto(search_obj)),
+        'subscribed': _feed_subscribed,
     },
-    # TODO
     'feedentry': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
         'feedUuid': lambda context, search_obj: Q(feed_id__in=convertto.UuidList.convertto(search_obj)),
         'feedUrl': lambda context, search_obj: Q(feed__feed_url=search_obj),
+        'createdAt': lambda context, search_obj: Q(created_at__range=convertto.DateRange.convertto(search_obj)),
+        'createdAt_exact': lambda context, search_obj: Q(created_at__date=convertto.Date.convertto(search_obj)),
+        'createdAt_delta': lambda context, search_obj: Q(created_at__range=convertto.DateDeltaRange.convertto(search_obj)),
+        'publishedAt': lambda context, search_obj: Q(published_at__range=convertto.DateRange.convertto(search_obj)),
+        'publishedAt_exact': lambda context, search_obj: Q(published_at__date=convertto.Date.convertto(search_obj)),
+        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=convertto.DateDeltaRange.convertto(search_obj)),
+        'updatedAt': lambda context, search_obj: Q(updated_at__range=convertto.DateRange.convertto(search_obj)),
+        'updatedAt_exact': lambda context, search_obj: Q(updated_at__date=convertto.Date.convertto(search_obj)),
+        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=convertto.DateDeltaRange.convertto(search_obj)),
+        'url': lambda context, search_obj: Q(url__iexact=search_obj),
+        'authorName': lambda context, search_obj: Q(author_name__icontains=search_obj),
+        'authorName_exact': lambda context, search_obj: Q(author_name__iexact=search_obj),
+
+        'subscribed': _feedentry_subscribed,
     },
 }
 

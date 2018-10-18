@@ -32,6 +32,7 @@ def feed_entries(request):
 
 def _feed_entry_get(request, _uuid):
     context = Context()
+    context.parse_request(request)
     context.parse_query_dict(request.GET)
 
     _uuid_ = None
@@ -63,6 +64,7 @@ def _feed_entries_get(request):
     query_dict = request.GET
 
     context = Context()
+    context.parse_request(request)
     context.parse_query_dict(query_dict)
 
     count = None

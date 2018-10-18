@@ -8,6 +8,9 @@ class Context:
         self.date_format = getattr(settings, 'DEFAULT_DATE_FORMAT', '%Y-%m-%d')
         self.time_format = getattr(settings, 'DEFAULT_TIME_FORMAT', '%H:%M:%S')
 
+    def parse_request(self, request):
+        self.request = request
+
     def parse_query_dict(self, query_dict):
         dt_format = query_dict.get('_dtformat', None)
         if dt_format is not None:

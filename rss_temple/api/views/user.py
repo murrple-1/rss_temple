@@ -20,6 +20,7 @@ def user(request):
 
 def _user_get(request):
     context = Context()
+    context.parse_request(request)
     context.parse_query_dict(request.GET)
 
     user = request.user
