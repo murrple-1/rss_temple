@@ -20,4 +20,6 @@ urlpatterns = [
 
     re_path(r'^feedentry/({})/?$'.format(_uuid_regex), views.feed_entry),
     re_path(r'^feedentries/?$', views.feed_entries),
+    re_path(r'^feedentry/read/({})/?$'.format(_uuid_regex), views.feed_entry_read),
+    re_path(r'^feedentries/read/?$', views.feed_entries_read),
 ]

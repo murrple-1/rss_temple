@@ -131,3 +131,13 @@ class FeedEntryTagMapping(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+
+
+class ReadFeedEntryUserMapping(models.Model):
+    class Meta:
+        unique_together = (('feed_entry', 'user'))
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    read_at = models.DateTimeField(default=timezone.now)
