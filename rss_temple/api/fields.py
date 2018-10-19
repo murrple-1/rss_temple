@@ -38,6 +38,7 @@ __field_configs = {
         'authorName': _FieldConfig(lambda context, db_obj: db_obj.author_name, False),
 
         'fromSubscription': _FieldConfig(lambda context, db_obj: db_obj.from_subscription(context.request.user), False),
+        'isRead': _FieldConfig(lambda context, db_obj: db_obj.is_read(context.request.user), False),
     },
 }
 

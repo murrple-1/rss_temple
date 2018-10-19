@@ -30,6 +30,15 @@ def _feedentry_subscribed(context, search_obj):
     return q
 
 
+def _feedentry_is_read(context, search_obj):
+    q = Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user).values('feed_entry_id'))
+
+    if not convertto.Bool.convertto(search_obj):
+        q = ~q
+
+    return q
+
+
 __search_fns = {
     'user': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
@@ -68,6 +77,7 @@ __search_fns = {
         'authorName_exact': lambda context, search_obj: Q(author_name__iexact=search_obj),
 
         'subscribed': _feedentry_subscribed,
+        'isRead': _feedentry_is_read,
     },
 }
 

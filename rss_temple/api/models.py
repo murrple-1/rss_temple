@@ -15,6 +15,19 @@ class User(models.Model):
 
         return self._subscribed_feeds
 
+    def read_feed_entries(self):
+        if not hasattr(self, '_read_feed_entries'):
+            self._read_feed_entries = FeedEntry.objects.filter(
+                uuid__in=ReadFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
+
+        return self._read_feed_entries
+
+    def read_feed_entry_uuids(self):
+        if not hasattr(self, '_read_feed_entry_uuids'):
+            self._read_feed_entry_uuids = frozenset(_uuid for _uuid in self.read_feed_entries().values_list('uuid', flat=True))
+
+        return self._read_feed_entry_uuids
+
 
 class Login(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -104,10 +117,16 @@ class FeedEntry(models.Model):
         return hash((self.id, self.created_at, self.published_at, self.updated_at, self.title, self.url, self.content, self.author_name))
 
     def from_subscription(self, user):
-        if not hasattr(self, '_subscribed'):
-            self._subscribed = self.feed_id in (f.uuid for f in user.subscribed_feeds())
+        if not hasattr(self, '_from_subscription'):
+            self._from_subscription = self.feed_id in (f.uuid for f in user.subscribed_feeds())
 
-        return self._subscribed
+        return self._from_subscription
+
+    def is_read(self, user):
+        if not hasattr(self, '_is_read'):
+            self._is_read = self.uuid in user.read_feed_entry_uuids()
+
+        return self._is_read
 
 
 class Tag(models.Model):
