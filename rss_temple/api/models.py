@@ -52,6 +52,12 @@ class Session(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
+class UserCategory(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField(unique=True)
+
+
 class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
@@ -76,6 +82,7 @@ class SubscribedFeedUserMapping(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_category = models.ForeignKey(UserCategory, null=True, on_delete=models.SET_NULL)
 
 
 class FeedEntry(models.Model):
