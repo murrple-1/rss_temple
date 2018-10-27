@@ -168,6 +168,8 @@ def _feed_subscribe_post(request):
     if not url:
         return HttpResponseBadRequest('\'url\' missing')
 
+    category_text = request.GET.get('category')
+
     feed = None
     try:
         feed = models.Feed.objects.get(feed_url=url)
@@ -177,8 +179,15 @@ def _feed_subscribe_post(request):
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
 
+    user_category = None
+    if category_text is not None:
+        try:
+            user_category = models.UserCategory.objects.get(user=request.user, text=category_text)
+        except models.UserCategory.DoesNotExist:
+            return HttpResponseNotFound('category not found')
+
     subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-        user=user, feed=feed)
+        user=user, feed=feed, user_category=user_category)
 
     try:
         subscribed_feed_user_mapping.save()
