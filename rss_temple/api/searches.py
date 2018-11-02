@@ -48,6 +48,11 @@ __search_fns = {
         'email': lambda context, search_obj: Q(email__icontains=search_obj),
         'email_exact': lambda context, search_obj: Q(email__iexact=search_obj),
     },
+    'usercategory': {
+        'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
+        'text': lambda context, search_obj: Q(text__icontains=search_obj),
+        'text_exact': lambda context, search_obj: Q(text__iexact=search_obj),
+    },
     'feed': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
         'title': lambda context, search_obj: Q(title__icontains=search_obj),

@@ -33,6 +33,10 @@ __sort_configs = {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
         'email': _SortConfig('email', None),
     },
+    'usercategory': {
+        'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
+        'text': _SortConfig('text', None),
+    },
     'feed': {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
         'title': _SortConfig('title', None),

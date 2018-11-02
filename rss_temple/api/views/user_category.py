@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db import IntegrityError
+from django.db.models import Q
 
 import ujson
 
@@ -11,7 +12,7 @@ from api.exceptions import QueryException
 from api.context import Context
 
 
-_OBJECT_NAME = 'user_category'
+_OBJECT_NAME = 'usercategory'
 
 
 def user_category(request, _uuid):
@@ -176,5 +177,70 @@ def _user_category_delete(request, _uuid):
 
 
 def _user_categories_get(request):
-    # TODO
-    pass
+    query_dict = request.GET
+
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(query_dict)
+
+    count = None
+    try:
+        count = searchqueries.get_count(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    skip = None
+    try:
+        skip = searchqueries.get_skip(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    sort = None
+    try:
+        sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    search = None
+    try:
+        search = [Q(user=request.user)] + searchqueries.get_search(context, query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    field_maps = None
+    try:
+        field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_objects = None
+    try:
+        return_objects = searchqueries.get_return_objects(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_total_count = None
+    try:
+        return_total_count = searchqueries.get_return_total_count(query_dict)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    user_categories = models.UserCategory.objects.filter(*search)
+
+    ret_obj = {}
+
+    if return_objects:
+        objs = []
+        for user_category in user_categories.order_by(
+                *sort)[skip:skip + count]:
+            obj = searchqueries.generate_return_object(
+                field_maps, user_category, context)
+            objs.append(obj)
+
+        ret_obj['objects'] = objs
+
+    if return_total_count:
+        ret_obj['totalCount'] = user_categories.count()
+
+    content, content_type = searchqueries.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
