@@ -181,7 +181,8 @@ def _feed_subscribe_post(request):
     user_category = None
     if category_text is not None:
         try:
-            user_category = models.UserCategory.objects.get(user=request.user, text=category_text)
+            user_category = models.UserCategory.objects.get(
+                user=request.user, text=category_text)
         except models.UserCategory.DoesNotExist:
             return HttpResponseNotFound('category not found')
 

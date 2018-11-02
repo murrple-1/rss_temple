@@ -8,7 +8,8 @@ from . import cleanup, logger
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', '--force-now', help='Clear the expired sessions immediately, then exit', action='store_true')
+parser.add_argument('-f', '--force-now',
+                    help='Clear the expired sessions immediately, then exit', action='store_true')
 args = parser.parse_args()
 
 logger().setLevel(logging.DEBUG)

@@ -59,11 +59,13 @@ def _user_category_get(request, _uuid):
 
     user_category = None
     try:
-        user_category = models.UserCategory.objects.get(uuid=_uuid_, user=request.user)
+        user_category = models.UserCategory.objects.get(
+            uuid=_uuid_, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
-    ret_obj = searchqueries.generate_return_object(field_maps, user_category, context)
+    ret_obj = searchqueries.generate_return_object(
+        field_maps, user_category, context)
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
@@ -107,7 +109,8 @@ def _user_category_post(request):
     except IntegrityError:
         return HttpResponse('user category already exists', status=409)
 
-    ret_obj = searchqueries.generate_return_object(field_maps, user_category, context)
+    ret_obj = searchqueries.generate_return_object(
+        field_maps, user_category, context)
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
@@ -130,7 +133,8 @@ def _user_category_put(request, _uuid):
 
     user_category = None
     try:
-        user_category = models.UserCategory.objects.get(uuid=_uuid_, user=request.user)
+        user_category = models.UserCategory.objects.get(
+            uuid=_uuid_, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
@@ -162,7 +166,8 @@ def _user_category_delete(request, _uuid):
     except ValueError:
         return HttpResponseBadRequest('uuid malformed')
 
-    count, _ = models.UserCategory.object.filter(uuid=_uuid_, user=request.user).delete()
+    count, _ = models.UserCategory.object.filter(
+        uuid=_uuid_, user=request.user).delete()
 
     if count < 1:
         return HttpResponseNotFound('user category not found')

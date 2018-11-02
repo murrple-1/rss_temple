@@ -81,7 +81,8 @@ def _feed_entry_get(request, _uuid):
     except models.FeedEnrty.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
-    ret_obj = searchqueries.generate_return_object(field_maps, feed_entry, context)
+    ret_obj = searchqueries.generate_return_object(
+        field_maps, feed_entry, context)
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
@@ -171,7 +172,8 @@ def _feed_entry_read_post(request, _uuid):
     except models.FeedEnrty.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
-    read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
+    read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(
+        feed_entry=feed_entry, user=request.user)
 
     try:
         read_feed_entry_user_mapping.save()
@@ -188,7 +190,8 @@ def _feed_entry_read_delete(request, _uuid):
     except ValueError:
         return HttpResponseBadRequest('uuid malformed')
 
-    models.ReadFeedEntryUserMapping.objects.filter(feed_entry_id=_uuid_, user=request.user).delete()
+    models.ReadFeedEntryUserMapping.objects.filter(
+        feed_entry_id=_uuid_, user=request.user).delete()
 
     return HttpResponse()
 
@@ -222,7 +225,8 @@ def _feed_entries_read_post(request):
         return HttpResponseNotFound('feed entry not found')
 
     for feed_entry in feed_entries:
-        read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
+        read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(
+            feed_entry=feed_entry, user=request.user)
 
         try:
             read_feed_entry_user_mapping.save()
@@ -255,6 +259,7 @@ def _feed_entries_read_delete(request):
     except ValueError:
         return HttpResponseBadRequest('uuid malformed')
 
-    models.ReadFeedEntryUserMapping.objects.filter(feed_entry_id__in=_ids, user=request.user).delete()
+    models.ReadFeedEntryUserMapping.objects.filter(
+        feed_entry_id__in=_ids, user=request.user).delete()
 
     return HttpResponse()

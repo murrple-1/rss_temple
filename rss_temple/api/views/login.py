@@ -159,14 +159,15 @@ def _google_login_post(request):
 
     idinfo = None
     try:
-        idinfo = g_id_token.verify_oauth2_token(_json['token'], g_requests.Request(), _google_client_id)
+        idinfo = g_id_token.verify_oauth2_token(
+            _json['token'], g_requests.Request(), _google_client_id)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
-        ):
+        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists() or
+        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+    ):
         return HttpResponse('login already exists', status=409)
 
     with transaction.atomic():
@@ -231,9 +232,9 @@ def _facebook_login_post(request):
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
-        ):
+        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists() or
+        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+    ):
         return HttpResponse('login already exists', status=409)
 
     with transaction.atomic():
@@ -329,7 +330,8 @@ def _google_login_session_post(request):
 
     idinfo = None
     try:
-        idinfo = g_id_token.verify_oauth2_token(_json['token'], g_requests.Request(), _google_client_id)
+        idinfo = g_id_token.verify_oauth2_token(
+            _json['token'], g_requests.Request(), _google_client_id)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
@@ -385,7 +387,8 @@ def _facebook_login_session_post(request):
 
     facebook_login = None
     try:
-        facebook_login = models.FacebookLogin.objects.get(profile_id=profile['id'])
+        facebook_login = models.FacebookLogin.objects.get(
+            profile_id=profile['id'])
     except models.FacebookLogin.DoesNotExist:
         ret_obj = {
             'token': _json['token'],

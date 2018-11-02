@@ -13,7 +13,8 @@ _logger = logging.getLogger('rss_temple')
 
 
 def _feed_subscribed(context, search_obj):
-    q = Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user).values('feed_id'))
+    q = Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(
+        user=context.request.user).values('feed_id'))
 
     if not convertto.Bool.convertto(search_obj):
         q = ~q
@@ -22,7 +23,8 @@ def _feed_subscribed(context, search_obj):
 
 
 def _feedentry_subscribed(context, search_obj):
-    q = Q(feed__in=models.Feed.objects.filter(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user).values('feed_id')))
+    q = Q(feed__in=models.Feed.objects.filter(uuid__in=models.SubscribedFeedUserMapping.objects.filter(
+        user=context.request.user).values('feed_id')))
 
     if not convertto.Bool.convertto(search_obj):
         q = ~q
@@ -31,7 +33,8 @@ def _feedentry_subscribed(context, search_obj):
 
 
 def _feedentry_is_read(context, search_obj):
-    q = Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user).values('feed_entry_id'))
+    q = Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
+        user=context.request.user).values('feed_entry_id'))
 
     if not convertto.Bool.convertto(search_obj):
         q = ~q

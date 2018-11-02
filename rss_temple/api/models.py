@@ -24,7 +24,8 @@ class User(models.Model):
 
     def read_feed_entry_uuids(self):
         if not hasattr(self, '_read_feed_entry_uuids'):
-            self._read_feed_entry_uuids = frozenset(_uuid for _uuid in self.read_feed_entries().values_list('uuid', flat=True))
+            self._read_feed_entry_uuids = frozenset(
+                _uuid for _uuid in self.read_feed_entries().values_list('uuid', flat=True))
 
         return self._read_feed_entry_uuids
 
@@ -70,7 +71,8 @@ class Feed(models.Model):
 
     def subscribed(self, user):
         if not hasattr(self, '_subscribed'):
-            self._subscribed = self.uuid in (f.uuid for f in user.subscribed_feeds())
+            self._subscribed = self.uuid in (
+                f.uuid for f in user.subscribed_feeds())
 
         return self._subscribed
 
@@ -82,7 +84,8 @@ class SubscribedFeedUserMapping(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    user_category = models.ForeignKey(UserCategory, null=True, on_delete=models.SET_NULL)
+    user_category = models.ForeignKey(
+        UserCategory, null=True, on_delete=models.SET_NULL)
 
 
 class FeedEntry(models.Model):
@@ -108,14 +111,14 @@ class FeedEntry(models.Model):
     def __eq__(self, other):
         if isinstance(other, FeedEntry):
             return (
-                self.id == other.id
-                and self.created_at == other.created_at
-                and self.published_at == other.published_at
-                and self.updated_at == other.updated_at
-                and self.title == other.title
-                and self.url == other.url
-                and self.content == other.content
-                and self.author_name == other.author_name
+                self.id == other.id and
+                self.created_at == other.created_at and
+                self.published_at == other.published_at and
+                self.updated_at == other.updated_at and
+                self.title == other.title and
+                self.url == other.url and
+                self.content == other.content and
+                self.author_name == other.author_name
             )
         else:
             return False
@@ -125,7 +128,8 @@ class FeedEntry(models.Model):
 
     def from_subscription(self, user):
         if not hasattr(self, '_from_subscription'):
-            self._from_subscription = self.feed_id in (f.uuid for f in user.subscribed_feeds())
+            self._from_subscription = self.feed_id in (
+                f.uuid for f in user.subscribed_feeds())
 
         return self._from_subscription
 

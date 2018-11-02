@@ -11,11 +11,14 @@ import filelock
 from . import logger, scrape_feed
 from api import models
 
+
 def _scrape_loop(count):
-    feeds = models.Feed.objects.select_for_update(skip_locked=True).order_by(F('db_updated_at').desc(nulls_first=True))[:count]
+    feeds = models.Feed.objects.select_for_update(skip_locked=True).order_by(
+        F('db_updated_at').desc(nulls_first=True))[:count]
     with transaction.atomic():
         for feed in feeds:
             scrape_feed(feed)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--count', type=int, default=1000)

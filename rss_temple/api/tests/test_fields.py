@@ -20,6 +20,7 @@ _object_configs = [
     _ObjectConfig('feedentry', 11, 1, 'uuid'),
 ]
 
+
 class FieldsTestCase(TestCase):
     def test_default_field_maps(self):
         for oc in _object_configs:
