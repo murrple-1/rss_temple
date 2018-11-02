@@ -1,13 +1,21 @@
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
+import uuid
 
-from api import models
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
+from django.db import IntegrityError
+
+import ujson
+
+from api import models, searchqueries
+from api.exceptions import QueryException
+from api.context import Context
 
 
 _OBJECT_NAME = 'user_category'
 
 
 def user_category(request, _uuid):
-    permitted_methods = {'GET', 'POST', 'DELETE'}
+    permitted_methods = {'GET', 'POST', 'PUT', 'DELETE'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
@@ -16,8 +24,10 @@ def user_category(request, _uuid):
         return _user_category_get(request)
     elif request.method == 'POST':
         return _user_category_post(request)
+    elif request.method == 'PUT':
+        return _user_category_put(request, _uuid)
     elif request.method == 'DELETE':
-        return _user_category_delete(request)
+        return _user_category_delete(request, _uuid)
 
 
 def user_categories(request):
@@ -49,7 +59,7 @@ def _user_category_get(request, _uuid):
 
     user_category = None
     try:
-        user_category = models.UserCategory.objects.get(uuid=_uuid_)
+        user_category = models.UserCategory.objects.get(uuid=_uuid_, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
@@ -59,4 +69,107 @@ def _user_category_get(request, _uuid):
 
     return HttpResponse(content, content_type)
 
-# TODO
+
+def _user_category_post(request):
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(request.GET)
+
+    field_maps = None
+    try:
+        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    if 'text' not in _json:
+        return HttpResponseBadRequest('\'text\' missing')
+
+    if not isinstance(_json['text'], str):
+        return HttpResponseBadRequest('\'text\' must be string')
+
+    user_category = models.UserCategory(user=request.user, text=_json['text'])
+
+    try:
+        user_category.save()
+    except IntegrityError:
+        return HttpResponse('user category already exists', status=409)
+
+    ret_obj = searchqueries.generate_return_object(field_maps, user_category, context)
+
+    content, content_type = searchqueries.serialize_content(ret_obj)
+
+    return HttpResponse(content, content_type)
+
+
+def _user_category_put(request, _uuid):
+    _uuid_ = None
+    try:
+        _uuid_ = uuid.UUID(_uuid)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    user_category = None
+    try:
+        user_category = models.UserCategory.objects.get(uuid=_uuid_, user=request.user)
+    except models.UserCategory.DoesNotExist:
+        return HttpResponseNotFound('user category not found')
+
+    has_changed = False
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    if 'text' in _json:
+        if not isinstance(_json['text'], str):
+            return HttpResponseBadRequest('\'text\' must be string')
+
+        user_category.text = _json['text']
+        has_changed = True
+
+    if has_changed:
+        try:
+            user_category.save()
+        except IntegrityError:
+            return HttpResponse('user category already exists', status=409)
+
+    return HttpResponse()
+
+
+def _user_category_delete(request, _uuid):
+    _uuid_ = None
+    try:
+        _uuid_ = uuid.UUID(_uuid)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    count, _ = models.UserCategory.object.filter(uuid=_uuid_, user=request.user).delete()
+
+    if count < 1:
+        return HttpResponseNotFound('user category not found')
+
+    return HttpResponse()
+
+
+def _user_categories_get(request):
+    # TODO
+    pass
