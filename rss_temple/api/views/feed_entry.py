@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 

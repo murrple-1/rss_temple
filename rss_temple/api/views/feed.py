@@ -1,7 +1,6 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 from django.db import transaction
-from django.db.models import Q
 
 from api import models, searchqueries, feed_handler
 from api.exceptions import QueryException

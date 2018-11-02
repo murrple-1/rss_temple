@@ -55,7 +55,7 @@ def d_feed_2_feed(d_feed, url):
     if 'published_parsed' in d_feed:
         time_tuple = d_feed.published_parsed
 
-        feed.published_at = __time_tuple_to_datetime(time_tuple)
+        feed.published_at = _time_tuple_to_datetime(time_tuple)
     else:
         # field auto-filled by DB
         pass
@@ -63,7 +63,7 @@ def d_feed_2_feed(d_feed, url):
     if 'updated_parsed' in d_feed:
         time_tuple = d_feed.updated_parsed
 
-        feed.updated_at = __time_tuple_to_datetime(time_tuple)
+        feed.updated_at = _time_tuple_to_datetime(time_tuple)
     else:
         feed.updated_at = None
 
@@ -76,14 +76,14 @@ def d_entry_2_feed_entry(d_entry):
     if 'created_parsed' in d_entry:
         time_tuple = d_entry.created_parsed
 
-        feed_entry.created_at = __time_tuple_to_datetime(time_tuple)
+        feed_entry.created_at = _time_tuple_to_datetime(time_tuple)
     else:
         feed_entry.created_at = None
 
     if 'published_parsed' in d_entry:
         time_tuple = d_entry.published_parsed
 
-        feed_entry.published_at = __time_tuple_to_datetime(time_tuple)
+        feed_entry.published_at = _time_tuple_to_datetime(time_tuple)
     else:
         # field auto-filled by DB
         pass
@@ -91,7 +91,7 @@ def d_entry_2_feed_entry(d_entry):
     if 'updated_parsed' in d_entry:
         time_tuple = d_entry.updated_parsed
 
-        feed_entry.updated_at = __time_tuple_to_datetime(time_tuple)
+        feed_entry.updated_at = _time_tuple_to_datetime(time_tuple)
     else:
         feed_entry.updated_at = None
 
@@ -144,5 +144,5 @@ def d_entry_2_entry_tags(d_entry):
     return entry_tags
 
 
-def __time_tuple_to_datetime(t):
+def _time_tuple_to_datetime(t):
     return datetime.datetime(t[0], t[1], t[2], t[3], t[4], t[5])
