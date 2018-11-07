@@ -24,6 +24,6 @@ urlpatterns = [
             views.feed_entry_read),
     re_path(r'^feedentries/read/?$', views.feed_entries_read),
 
-    re_path(r'^usercategory/({})/?$'.format(_uuid_regex), views.user_category),
+    re_path(r'^usercategory(?:/({}))?/?$'.format(_uuid_regex), views.user_category),
     re_path(r'^usercategories/?$', views.user_categories),
 ]
