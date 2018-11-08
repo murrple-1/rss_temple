@@ -17,7 +17,7 @@ class _ObjectConfig:
 _object_configs = [
     _ObjectConfig('user', 3, 1, 'uuid'),
     _ObjectConfig('feed', 7, 1, 'uuid'),
-    _ObjectConfig('feedentry', 11, 1, 'uuid'),
+    _ObjectConfig('feedentry', 12, 1, 'uuid'),
 ]
 
 
