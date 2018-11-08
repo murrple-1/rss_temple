@@ -29,6 +29,20 @@ class User(models.Model):
 
         return self._read_feed_entry_uuids
 
+    def favorite_feed_entries(self):
+        if not hasattr(self, '_favorite_feed_entries'):
+            self._favorite_feed_entries = FeedEntry.objects.filter(
+                uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
+
+        return self._favorite_feed_entries
+
+    def favorite_feed_entry_uuids(self):
+        if not hasattr(self, '_favorite_feed_entry_uuids'):
+            self._favorite_feed_entry_uuids = frozenset(
+                _uuid for _uuid in self.favorite_feed_entries().values_list('uuid', flat=True))
+
+        return self._favorite_feed_entry_uuids
+
 
 class Login(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -139,6 +153,12 @@ class FeedEntry(models.Model):
 
         return self._is_read
 
+    def is_favorite(self, user):
+        if not hasattr(self, '_is_favorite'):
+            self._is_favorite = self.uuid in user.favorite_feed_entry_uuids()
+
+        return self._is_favorite
+
 
 class Tag(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -171,3 +191,12 @@ class ReadFeedEntryUserMapping(models.Model):
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     read_at = models.DateTimeField(default=timezone.now)
+
+
+class FavoriteFeedEntryUserMapping(models.Model):
+    class Meta:
+        unique_together = (('feed_entry', 'user'))
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)

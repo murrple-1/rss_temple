@@ -58,6 +58,30 @@ def feed_entries_read(request):
         return _feed_entries_read_delete(request)
 
 
+def feed_entry_favorite(request, _uuid):
+    permitted_methods = {'POST', 'DELETE'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _feed_entry_favorite_post(request, _uuid)
+    elif request.method == 'DELETE':
+        return _feed_entry_favorite_delete(request, _uuid)
+
+
+def feed_entries_favorite(request):
+    permitted_methods = {'POST', 'DELETE'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _feed_entries_favorite_post(request)
+    elif request.method == 'DELETE':
+        return _feed_entries_favorite_delete(request)
+
+
 def _feed_entry_get(request, _uuid):
     context = Context()
     context.parse_request(request)
@@ -260,6 +284,112 @@ def _feed_entries_read_delete(request):
         return HttpResponseBadRequest('uuid malformed')
 
     models.ReadFeedEntryUserMapping.objects.filter(
+        feed_entry_id__in=_ids, user=request.user).delete()
+
+    return HttpResponse()
+
+
+def _feed_entry_favorite_post(request, _uuid):
+    _uuid_ = None
+    try:
+        _uuid_ = uuid.UUID(_uuid)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    feed_entry = None
+    try:
+        feed_entry = models.FeedEntry.objects.get(uuid=_uuid_)
+    except models.FeedEnrty.DoesNotExist:
+        return HttpResponseNotFound('feed entry not found')
+
+    favorite_feed_entry_user_mapping = models.FavoriteFeedEntryUserMapping(
+        feed_entry=feed_entry, user=request.user)
+
+    try:
+        favorite_feed_entry_user_mapping.save()
+    except IntegrityError:
+        pass
+
+    return HttpResponse()
+
+
+def _feed_entry_favorite_delete(request, _uuid):
+    _uuid_ = None
+    try:
+        _uuid_ = uuid.UUID(_uuid)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    models.FavoriteFeedEntryUserMapping.objects.filter(
+        feed_entry_id=_uuid_, user=request.user).delete()
+
+    return HttpResponse()
+
+
+def _feed_entries_favorite_post(request):
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, list):
+        return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
+
+    if len(_json) < 1:
+        return HttpResponse()
+
+    _ids = None
+    try:
+        _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
+
+    if len(feed_entries) != len(_ids):
+        return HttpResponseNotFound('feed entry not found')
+
+    for feed_entry in feed_entries:
+        favorite_feed_entry_user_mapping = models.FavoriteFeedEntryUserMapping(
+            feed_entry=feed_entry, user=request.user)
+
+        try:
+            favorite_feed_entry_user_mapping.save()
+        except IntegrityError:
+            pass
+
+    return HttpResponse()
+
+
+def _feed_entries_favorite_delete(request):
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, list):
+        return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
+
+    if len(_json) < 1:
+        return HttpResponse()
+
+    _ids = None
+    try:
+        _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
+    except ValueError:
+        return HttpResponseBadRequest('uuid malformed')
+
+    models.FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id__in=_ids, user=request.user).delete()
 
     return HttpResponse()

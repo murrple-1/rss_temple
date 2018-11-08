@@ -43,6 +43,7 @@ __field_configs = {
 
         'fromSubscription': _FieldConfig(lambda context, db_obj: db_obj.from_subscription(context.request.user), False),
         'isRead': _FieldConfig(lambda context, db_obj: db_obj.is_read(context.request.user), False),
+        'isFavorite': _FieldConfig(lambda context, db_obj: db_obj.is_favorite(context.request.user), False),
     },
 }
 

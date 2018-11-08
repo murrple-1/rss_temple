@@ -42,6 +42,16 @@ def _feedentry_is_read(context, search_obj):
     return q
 
 
+def _feedentry_is_favorite(context, search_obj):
+    q = Q(uuid__in=models.FavoriteFeedEntryUserMapping.objects.filter(
+        user=context.request.user).values('feed_entry_id'))
+
+    if not convertto.Bool.convertto(search_obj):
+        q = ~q
+
+    return q
+
+
 __search_fns = {
     'user': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
@@ -86,6 +96,7 @@ __search_fns = {
 
         'subscribed': _feedentry_subscribed,
         'isRead': _feedentry_is_read,
+        'isFavorite': _feedentry_is_favorite,
     },
 }
 
