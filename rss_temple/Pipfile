@@ -15,6 +15,8 @@ filelock = "*"
 google-auth = "*"
 facebook-sdk = "*"
 html-sanitizer = "*"
+lxml = "*"
+xmlschema = "*"
 
 [dev-packages]
 coveralls = "*"

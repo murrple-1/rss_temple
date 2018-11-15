@@ -3,6 +3,7 @@ from .user import user
 from .feed import feed, feeds, feed_subscribe
 from .feed_entry import feed_entry, feed_entries, feed_entry_read, feed_entries_read, feed_entry_favorite, feed_entries_favorite
 from .user_category import user_category, user_categories
+from .opml import opml
 
 __all__ = [
     my_login,
@@ -23,4 +24,5 @@ __all__ = [
     feed_entries_favorite,
     user_category,
     user_categories,
+    opml,
 ]
