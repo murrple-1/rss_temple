@@ -10,11 +10,16 @@ class _FieldConfig:
         self.default = default
 
 
+def _feed_calculatedTitle(context, db_obj):
+    custom_title = db_obj.custom_title(context.request.user)
+    return custom_title if custom_title is not None else db_obj.title
+
+
 __field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
-        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(_uuid) for _uuid in db_obj.subscribed_feeds().values_list('uuid', flat=True)), False),
+        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(feed.uuid) for feed in db_obj.subscribed_feeds()), False),
     },
     'usercategory': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
@@ -29,6 +34,8 @@ __field_configs = {
         'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
 
         'subscribed': _FieldConfig(lambda context, db_obj: db_obj.subscribed(context.request.user), False),
+        'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title(context.request.user), False),
+        'calculatedTitle': _FieldConfig(_feed_calculatedTitle, False),
     },
     'feedentry': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),

@@ -186,8 +186,10 @@ def _feed_subscribe_post(request):
         except models.UserCategory.DoesNotExist:
             return HttpResponseNotFound('category not found')
 
+    custom_title = request.GET.get('customtitle')
+
     subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-        user=user, feed=feed, user_category=user_category)
+        user=user, feed=feed, user_category=user_category, custom_feed_title=custom_title)
 
     try:
         subscribed_feed_user_mapping.save()

@@ -8,10 +8,36 @@ class User(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     email = models.CharField(max_length=64, unique=True)
 
+    def category_dict(self):
+        if not hasattr(self, '_category_dict'):
+            subcribed_feed_user_mappings = SubscribedFeedUserMapping.objects.select_related('feed', 'user_category').filter(user=self)
+
+            category_dict = {}
+
+            for subcribed_feed_user_mapping in subcribed_feed_user_mappings:
+                key = subcribed_feed_user_mapping.user_category.text if subcribed_feed_user_mapping.user_category is not None else None
+
+                if key not in category_dict:
+                    category_dict[key] = []
+
+                feed = subcribed_feed_user_mapping.feed
+
+                feed._custom_title = subcribed_feed_user_mapping.custom_feed_title
+
+                category_dict[key].append(feed)
+
+            self._category_dict = category_dict
+
+        return self._category_dict
+
     def subscribed_feeds(self):
         if not hasattr(self, '_subscribed_feeds'):
-            self._subscribed_feeds = Feed.objects.filter(
-                uuid__in=SubscribedFeedUserMapping.objects.filter(user=self).values('feed_id'))
+            feeds = []
+
+            for _feeds in self.category_dict().values():
+                feeds.extend(_feeds)
+
+            self._subscribed_feeds = feeds
 
         return self._subscribed_feeds
 
@@ -86,9 +112,17 @@ class Feed(models.Model):
     def subscribed(self, user):
         if not hasattr(self, '_subscribed'):
             self._subscribed = self.uuid in (
-                f.uuid for f in user.subscribed_feeds())
+                feed.uuid for feed in user.subscribed_feeds())
 
         return self._subscribed
+
+    def custom_title(self, user):
+        if not hasattr(self, '_custom_title'):
+            subscribed_feed = next((feed for feed in user.subscribed_feeds() if feed.uuid == self.uuid), None)
+
+            self._custom_title = subscribed_feed._custom_title if subscribed_feed is not None else None
+
+        return self._custom_title
 
 
 class SubscribedFeedUserMapping(models.Model):
@@ -97,6 +131,7 @@ class SubscribedFeedUserMapping(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    custom_feed_title = models.TextField(null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     user_category = models.ForeignKey(
         UserCategory, null=True, on_delete=models.SET_NULL)
