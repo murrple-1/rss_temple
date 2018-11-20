@@ -4,6 +4,8 @@ from django.db import transaction
 
 from lxml import etree
 
+from defusedxml.ElementTree import fromstring as defused_fromstring, ParseError as defused_ParseError
+
 import xmlschema
 
 from api import models, searchqueries, feed_handler, opml as opml_util
@@ -51,14 +53,24 @@ def _opml_post(request):
 
     opml_element = None
     try:
-        opml_element = etree.fromstring(request.body)
-    except etree.XMLSyntaxError:
+        opml_element = defused_fromstring(request.body)
+    except defused_ParseError:
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
     try:
         opml_util.schema().validate(opml_element)
     except xmlschema.XMLSchemaException:
         return HttpResponseBadRequest('OPML not valid')
+
+    for outer_outline_element in opml_element.findall('./body/outline'):
+        outer_outline_name = outer_outline_element.attrib['title']
+
+        for outline_element in outer_outline_element.findall('./outline'):
+            outline_name = outline_element.attrib['title']
+
+            outline_xml_url = outline_element.attrib['xmlUrl']
+
+            # TODO build feeds
 
     # TODO finish
 

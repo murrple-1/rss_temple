@@ -15,6 +15,7 @@ filelock = "*"
 google-auth = "*"
 facebook-sdk = "*"
 html-sanitizer = "*"
+defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
 
