@@ -129,7 +129,7 @@ class Feed(models.Model):
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
-        unique_together = (('feed', 'user'),)
+        unique_together = (('user', 'feed'), ('user', 'custom_feed_title'))
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
