@@ -125,6 +125,16 @@ def _opml_post(request):
         rss_detail_tuples.update(inner_rss_detail_tuples)
 
     subscribed_feed_user_mappings = []
+
+    for user_category in user_categories:
+        for feed in user_category._feeds:
+            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
+                    user=user, custom_feed_title=feed._custom_title_)
+            subscribed_feed_user_mapping._user_category = user_category
+            subscribed_feed_user_mapping._feed = feed
+
+            subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
+
     with transaction.atomic():
         for user_category in user_categories:
             if user_category._is_new:
@@ -139,10 +149,10 @@ def _opml_post(request):
 
                     models.FeedEntry.objects.bulk_create(feed._feed_entries)
 
-                subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-                    feed=feed, user=user, custom_feed_title=feed._custom_title_, user_category=user_category)
-                subscribed_feed_user_mappings.append(
-                    subscribed_feed_user_mapping)
+
+        for subscribed_feed_user_mapping in subscribed_feed_user_mappings:
+            subscribed_feed_user_mapping.feed = subscribed_feed_user_mapping._feed
+            subscribed_feed_user_mapping._user_category = subscribed_feed_user_mapping._user_category
 
         models.SubscribedFeedUserMapping.objects.bulk_create(
             subscribed_feed_user_mappings)
