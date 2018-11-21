@@ -78,9 +78,29 @@ def _opml_post(request):
 
     user_categories = []
 
-    rss_detail_tuples = set()
+    outer_outline_tuples = set()
+    outline_tuples = set()
     for outer_outline_element in opml_element.findall('./body/outline'):
         outer_outline_name = outer_outline_element.attrib['title']
+
+        if outer_outline_name in (outer_outline_tuple[0] for outer_outline_tuple in outer_outline_tuples):
+            return HttpResponseBadRequest('outer outline names cannot be duplicated')
+
+        outer_outline_tuples.add((outer_outline_name,))
+
+        current_outline_tuples = set()
+
+        for outline_element in outer_outline_element.findall('./outline'):
+            outline_name = outline_element.attrib['title']
+            outline_xml_url = outline_element.attrib['xmlUrl']
+
+            if outline_name in (outline_tuple[0] for outline_tuple in outline_tuples):
+                return HttpResponseBadRequest('outline names cannot be duplicated')
+
+            if outline_xml_url in (outline_tuple[1] for outline_tuple in outline_tuples):
+                return HttpResponseBadRequest('outline URLs cannot be duplicated')
+
+            current_outline_tuples.add((outline_name, outline_xml_url))
 
         user_category = None
         try:
@@ -92,17 +112,9 @@ def _opml_post(request):
                 user=user, text=outer_outline_name)
             user_category._is_new = True
 
-        inner_rss_detail_tuples = set()
-
-        for outline_element in outer_outline_element.findall('./outline'):
-            outline_name = outline_element.attrib['title']
-            outline_xml_url = outline_element.attrib['xmlUrl']
-
-            inner_rss_detail_tuples.add((outline_name, outline_xml_url))
-
         user_category._feeds = []
 
-        for name, xml_url in inner_rss_detail_tuples.difference(rss_detail_tuples):
+        for name, xml_url in current_outline_tuples.difference(outline_tuples):
             if models.SubscribedFeedUserMapping.objects.filter(user=user, feed__feed_url=xml_url).exists():
                 continue
 
@@ -123,7 +135,7 @@ def _opml_post(request):
 
         user_categories.append(user_category)
 
-        rss_detail_tuples.update(inner_rss_detail_tuples)
+        outline_tuples.update(current_outline_tuples)
 
     subscribed_feed_user_mappings = []
 
