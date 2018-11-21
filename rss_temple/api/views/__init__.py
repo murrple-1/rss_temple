@@ -21,6 +21,7 @@ __all__ = [
     feed_entry_read,
     feed_entries_read,
     feed_entry_read,
+    feed_entry_favorite,
     feed_entries_favorite,
     user_category,
     user_categories,
