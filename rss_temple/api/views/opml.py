@@ -47,12 +47,13 @@ def _opml_get(request):
     for key, feeds in category_dict.items():
         outer_outline_name = key if key is not None else 'Not Categorized'
 
-        outer_outline_element = lxml_etree.SubElement(body_element, 'outline', text=outer_outline_name, title=outer_outline_name)
+        outer_outline_element = lxml_etree.SubElement(
+            body_element, 'outline', text=outer_outline_name, title=outer_outline_name)
 
         for feed in feeds:
             outline_name = feed._custom_title if feed._custom_title is not None else feed.title
             lxml_etree.SubElement(outer_outline_element, 'outline',
-                type='rss', text=outline_name, title=outline_name, xmlUrl=feed.feed_url, htmlUrl=feed.home_url)
+                                  type='rss', text=outline_name, title=outline_name, xmlUrl=feed.feed_url, htmlUrl=feed.home_url)
 
     return HttpResponse(lxml_etree.tostring(opml_element), 'text/xml')
 
@@ -82,10 +83,12 @@ def _opml_post(request):
 
         user_category = None
         try:
-            user_category = models.UserCategory.objects.get(user=user, text=outer_outline_name)
+            user_category = models.UserCategory.objects.get(
+                user=user, text=outer_outline_name)
             user_category._is_new = False
         except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory(user=user, text=outer_outline_name)
+            user_category = models.UserCategory(
+                user=user, text=outer_outline_name)
             user_category._is_new = True
 
         inner_rss_detail_tuples = set()
@@ -138,8 +141,10 @@ def _opml_post(request):
 
                 subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
                     feed=feed, user=user, custom_feed_title=feed._custom_title_, user_category=user_category)
-                subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
+                subscribed_feed_user_mappings.append(
+                    subscribed_feed_user_mapping)
 
-        models.SubscribedFeedUserMapping.objects.bulk_create(subscribed_feed_user_mappings)
+        models.SubscribedFeedUserMapping.objects.bulk_create(
+            subscribed_feed_user_mappings)
 
     return HttpResponse()

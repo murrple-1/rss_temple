@@ -10,7 +10,8 @@ class User(models.Model):
 
     def category_dict(self):
         if not hasattr(self, '_category_dict'):
-            subcribed_feed_user_mappings = SubscribedFeedUserMapping.objects.select_related('feed', 'user_category').filter(user=self)
+            subcribed_feed_user_mappings = SubscribedFeedUserMapping.objects.select_related(
+                'feed', 'user_category').filter(user=self)
 
             category_dict = {}
 
@@ -118,7 +119,8 @@ class Feed(models.Model):
 
     def custom_title(self, user):
         if not hasattr(self, '_custom_title'):
-            subscribed_feed = next((feed for feed in user.subscribed_feeds() if feed.uuid == self.uuid), None)
+            subscribed_feed = next(
+                (feed for feed in user.subscribed_feeds() if feed.uuid == self.uuid), None)
 
             self._custom_title = subscribed_feed._custom_title if subscribed_feed is not None else None
 
@@ -160,14 +162,14 @@ class FeedEntry(models.Model):
     def __eq__(self, other):
         if isinstance(other, FeedEntry):
             return (
-                self.id == other.id and
-                self.created_at == other.created_at and
-                self.published_at == other.published_at and
-                self.updated_at == other.updated_at and
-                self.title == other.title and
-                self.url == other.url and
-                self.content == other.content and
-                self.author_name == other.author_name
+                self.id == other.id
+                and self.created_at == other.created_at
+                and self.published_at == other.published_at
+                and self.updated_at == other.updated_at
+                and self.title == other.title
+                and self.url == other.url
+                and self.content == other.content
+                and self.author_name == other.author_name
             )
         else:
             return False

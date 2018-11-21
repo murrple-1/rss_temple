@@ -203,7 +203,8 @@ def _user_categories_get(request):
 
     search = None
     try:
-        search = [Q(user=request.user)] + searchqueries.get_search(context, query_dict, _OBJECT_NAME)
+        search = [Q(user=request.user)] + \
+            searchqueries.get_search(context, query_dict, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
