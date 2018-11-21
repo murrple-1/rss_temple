@@ -30,6 +30,7 @@ def _generate_feed(url):
 
     for d_entry in d.get('entries', []):
         feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+        feed_entry.feed = feed
         feed._feed_entries.append(feed_entry)
 
     return feed
@@ -129,9 +130,7 @@ def _opml_post(request):
     for user_category in user_categories:
         for feed in user_category._feeds:
             subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-                    user=user, custom_feed_title=feed._custom_title_)
-            subscribed_feed_user_mapping._user_category = user_category
-            subscribed_feed_user_mapping._feed = feed
+                    feed=feed, user=user, custom_feed_title=feed._custom_title_, user_category=user_category)
 
             subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
 
@@ -144,15 +143,7 @@ def _opml_post(request):
                 if feed._is_new:
                     feed.save()
 
-                    for feed_entry in feed._feed_entries:
-                        feed_entry.feed = feed
-
                     models.FeedEntry.objects.bulk_create(feed._feed_entries)
-
-
-        for subscribed_feed_user_mapping in subscribed_feed_user_mappings:
-            subscribed_feed_user_mapping.feed = subscribed_feed_user_mapping._feed
-            subscribed_feed_user_mapping._user_category = subscribed_feed_user_mapping._user_category
 
         models.SubscribedFeedUserMapping.objects.bulk_create(
             subscribed_feed_user_mappings)
