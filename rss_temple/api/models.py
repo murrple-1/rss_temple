@@ -9,7 +9,8 @@ class User(models.Model):
     email = models.CharField(max_length=64, unique=True)
 
     def category_dict(self):
-        if not hasattr(self, '_category_dict'):
+        category_dict = getattr(self, '_category_dict', None)
+        if category_dict is None:
             subcribed_feed_user_mappings = SubscribedFeedUserMapping.objects.select_related(
                 'feed', 'user_category').filter(user=self)
 
@@ -29,46 +30,55 @@ class User(models.Model):
 
             self._category_dict = category_dict
 
-        return self._category_dict
+        return category_dict
 
     def subscribed_feeds(self):
-        if not hasattr(self, '_subscribed_feeds'):
-            feeds = []
+        subscribed_feeds = getattr(self, '_subscribed_feeds', None)
+        if subscribed_feeds is None:
+            subscribed_feeds = []
 
             for _feeds in self.category_dict().values():
-                feeds.extend(_feeds)
+                subscribed_feeds.extend(_feeds)
 
-            self._subscribed_feeds = feeds
+            self._subscribed_feeds = subscribed_feeds
 
-        return self._subscribed_feeds
+        return subscribed_feeds
 
     def read_feed_entries(self):
-        if not hasattr(self, '_read_feed_entries'):
-            self._read_feed_entries = FeedEntry.objects.filter(
+        read_feed_entries = getattr(self, '_read_feed_entries', None)
+        if read_feed_entries is None:
+            read_feed_entries = FeedEntry.objects.filter(
                 uuid__in=ReadFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
+            self._read_feed_entries = read_feed_entries
 
-        return self._read_feed_entries
+        return read_feed_entries
 
     def read_feed_entry_uuids(self):
-        if not hasattr(self, '_read_feed_entry_uuids'):
-            self._read_feed_entry_uuids = frozenset(
+        read_feed_entry_uuids = getattr(self, '_read_feed_entry_uuids', None)
+        if read_feed_entry_uuids is None:
+            read_feed_entry_uuids = frozenset(
                 _uuid for _uuid in self.read_feed_entries().values_list('uuid', flat=True))
+            self._read_feed_entry_uuids = read_feed_entry_uuids
 
-        return self._read_feed_entry_uuids
+        return read_feed_entry_uuids
 
     def favorite_feed_entries(self):
-        if not hasattr(self, '_favorite_feed_entries'):
-            self._favorite_feed_entries = FeedEntry.objects.filter(
+        favorite_feed_entries = getattr(self, '_favorite_feed_entries', None)
+        if favorite_feed_entries is None:
+            favorite_feed_entries = FeedEntry.objects.filter(
                 uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
+            self._favorite_feed_entries = favorite_feed_entries
 
-        return self._favorite_feed_entries
+        return favorite_feed_entries
 
     def favorite_feed_entry_uuids(self):
-        if not hasattr(self, '_favorite_feed_entry_uuids'):
-            self._favorite_feed_entry_uuids = frozenset(
+        favorite_feed_entry_uuids = getattr(self, '_favorite_feed_entry_uuids', None)
+        if favorite_feed_entry_uuids is None:
+            favorite_feed_entry_uuids = frozenset(
                 _uuid for _uuid in self.favorite_feed_entries().values_list('uuid', flat=True))
+            self._favorite_feed_entry_uuids = favorite_feed_entry_uuids
 
-        return self._favorite_feed_entry_uuids
+        return favorite_feed_entry_uuids
 
 
 class Login(models.Model):
@@ -111,11 +121,13 @@ class Feed(models.Model):
     db_updated_at = models.DateTimeField(null=True)
 
     def subscribed(self, user):
-        if not hasattr(self, '_subscribed'):
-            self._subscribed = self.uuid in (
+        subscribed = getattr(self, '_subscribed', None)
+        if subscribed is None:
+            subscribed = self.uuid in (
                 feed.uuid for feed in user.subscribed_feeds())
+            self._subscribed = subscribed
 
-        return self._subscribed
+        return subscribed
 
     def custom_title(self, user):
         if not hasattr(self, '_custom_title'):
@@ -178,23 +190,29 @@ class FeedEntry(models.Model):
         return hash((self.id, self.created_at, self.published_at, self.updated_at, self.title, self.url, self.content, self.author_name))
 
     def from_subscription(self, user):
-        if not hasattr(self, '_from_subscription'):
-            self._from_subscription = self.feed_id in (
+        from_subscription = getattr(self, '_from_subscription', None)
+        if from_subscription is None:
+            from_subscription = self.feed_id in (
                 f.uuid for f in user.subscribed_feeds())
+            self._from_subscription = from_subscription
 
-        return self._from_subscription
+        return from_subscription
 
     def is_read(self, user):
-        if not hasattr(self, '_is_read'):
-            self._is_read = self.uuid in user.read_feed_entry_uuids()
+        is_read = getattr(self, '_is_read', None)
+        if is_read is None:
+            is_read = self.uuid in user.read_feed_entry_uuids()
+            self._is_read = is_read
 
-        return self._is_read
+        return is_read
 
     def is_favorite(self, user):
-        if not hasattr(self, '_is_favorite'):
-            self._is_favorite = self.uuid in user.favorite_feed_entry_uuids()
+        is_favorite = getattr(self, '_is_favorite', None)
+        if is_favorite is None:
+            is_favorite = self.uuid in user.favorite_feed_entry_uuids()
+            self._is_favorite = is_favorite
 
-        return self._is_favorite
+        return is_favorite
 
 
 class Tag(models.Model):

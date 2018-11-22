@@ -38,19 +38,19 @@ class AuthenticationMiddleware:
             return response
 
     def _should_authenticate(self, request):
-        if not hasattr(self, '_disable_entries'):
+        disable_entries = getattr(self, '_disable_entries', None)
+        if disable_entries is None:
+            disable_entries = []
             if _AUTHENTICATION_DISABLE is not None:
-                self._disable_entries = []
                 for disable_tuple in _AUTHENTICATION_DISABLE:
-                    self._disable_entries.append(
+                    disable_entries.append(
                         AuthenticationMiddleware.DisableEntry(
                             *disable_tuple))
-            else:
-                self._disable_entries = None
 
-        if self._disable_entries is not None:
-            for disable_entry in self._disable_entries:
-                if disable_entry.matches(request):
-                    return False
+            self._disable_entries = disable_entries
+
+        for disable_entry in disable_entries:
+            if disable_entry.matches(request):
+                return False
 
         return True
