@@ -155,16 +155,18 @@ def _opml_post(request):
                         feed=feeds_dict[outline_xml_url], user_category=user_category)
                     feed_user_category_mappings.append(feed_user_category_mapping)
 
+    # save feeds, even if the rest fails, so we can use them for other users, or to speed up repeat attempts
+    with transaction.atomic():
+        for feed in feeds_dict.values():
+            if feed is not None and feed._is_new:
+                feed.save()
+
+                models.FeedEntry.objects.bulk_create(feed._feed_entries)
+
     with transaction.atomic():
         for user_category in user_categories:
             if user_category._is_new:
                 user_category.save()
-
-        for feed in feeds_dict.values():
-            if feed._is_new:
-                feed.save()
-
-                models.FeedEntry.objects.bulk_create(feed._feed_entries)
 
         models.SubscribedFeedUserMapping.objects.bulk_create(
             subscribed_feed_user_mappings)
