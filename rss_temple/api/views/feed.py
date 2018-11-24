@@ -2,7 +2,9 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFou
 from django.db.utils import IntegrityError
 from django.db import transaction
 
-from api import models, searchqueries, feed_handler
+import requests
+
+from api import models, searchqueries, feed_handler, rss_requests
 from api.exceptions import QueryException
 from api.context import Context
 
@@ -43,8 +45,15 @@ def feed_subscribe(request):
 
 
 def _save_feed(url):
+    response = None
+    try:
+        response = rss_requests.get(url)
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        raise QueryException('feed not found', 404)
+
     with transaction.atomic():
-        d = feed_handler.url_2_d(url)
+        d = feed_handler.text_2_d(response.text)
         feed = feed_handler.d_feed_2_feed(d.feed, url)
         feed.save()
 

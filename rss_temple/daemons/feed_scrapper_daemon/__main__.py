@@ -8,8 +8,10 @@ from django.db.models import F
 
 import filelock
 
+import requests
+
 from . import logger, scrape_feed
-from api import models
+from api import models, rss_requests
 
 
 def _scrape_loop(count):
@@ -17,7 +19,14 @@ def _scrape_loop(count):
         F('db_updated_at').desc(nulls_first=True))[:count]
     with transaction.atomic():
         for feed in feeds:
-            scrape_feed(feed)
+            response = None
+            try:
+                response = rss_requests.get(feed.feed_url)
+                response.raise_for_status()
+            except requests.exceptions.RequestException:
+                continue
+
+            scrape_feed(feed, response.text)
 
 
 parser = argparse.ArgumentParser()

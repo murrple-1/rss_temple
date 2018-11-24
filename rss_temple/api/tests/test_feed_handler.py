@@ -1,6 +1,5 @@
 import logging
 import time
-from multiprocessing import Process
 
 from django.test import TestCase
 
@@ -8,22 +7,7 @@ from api import feed_handler, models
 from api.exceptions import QueryException
 
 
-def _http_server_process():
-    import os
-    import sys
-    from http.server import HTTPServer, SimpleHTTPRequestHandler
-
-    sys.stdout = open('/dev/null', 'w')
-    sys.stderr = sys.stdout
-
-    os.chdir('api/tests/test_files/')
-
-    with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
-        httpd.serve_forever()
-
 # TODO finish tests
-
-
 class FeedHandlerTestCase(TestCase):
     FEED_TYPES = [
         'atom_0.3',
@@ -41,26 +25,7 @@ class FeedHandlerTestCase(TestCase):
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
-        cls.http_process = Process(target=_http_server_process)
-        cls.http_process.start()
-
         time.sleep(2.0)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        cls.http_process.terminate()
-
-        time.sleep(2.0)
-
-    def test_url_2_d(self):
-        feed_handler.url_2_d('http://localhost:8080/rss_2.0/well_formed.xml')
-
-    def test_request_fail(self):
-        with self.assertRaises(QueryException):
-            feed_handler.url_2_d(
-                'http://localhost:8080/rss_2.0/sample-404.xml')
 
     def test_well_formed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:

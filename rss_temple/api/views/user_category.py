@@ -280,24 +280,23 @@ def _user_category_feeds_post(request, _uuid):
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
-    feeds = None
-
+    feed_uuids = None
     if isinstance(_json, list):
         try:
-            feeds = models.Feed.objects.filter(uuid__in=(uuid.UUID(s) for s in _json))
+            feed_uuids = frozenset(uuid.UUID(s) for s in _json)
         except (ValueError, TypeError):
             return HttpResponseBadRequest('element must be UUID')
     elif isinstance(_json, str):
         try:
-            feeds = models.Feed.objects.filter(uuid=uuid.UUID(_json))
+            feed_uuids = [uuid.UUID(_json)]
         except ValueError:
             return HttpResponseBadRequest('JSON body must be UUID')
     else:
         return HttpResponseBadRequest('JSON body must be array or UUID')
 
-    feeds = list(feeds)
+    feeds = list(models.Feed.objects.filter(uuid__in=feed_uuids))
 
-    if len(feeds) < len(uuids):
+    if len(feeds) < len(feed_uuids):
         return HttpResponseNotFound('feed not found')
 
     feed_user_category_mappings = []
@@ -340,12 +339,12 @@ def _user_category_feeds_delete(request, _uuid):
 
     if isinstance(_json, list):
         try:
-            uuids = frozenset(uuid.UUID(s) for s in _json)
+            feed_uuids = frozenset(uuid.UUID(s) for s in _json)
         except (ValueError, TypeError):
             return HttpResponseBadRequest('element must be UUID')
     elif isinstance(_json, str):
         try:
-            uuids = frozenset([uuid.UUID(_json)])
+            feed_uuids = [uuid.UUID(_json)]
         except ValueError:
             return HttpResponseBadRequest('JSON body must be UUID')
     else:

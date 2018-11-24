@@ -4,8 +4,6 @@ import logging
 
 import feedparser
 
-import requests
-
 from html_sanitizer import Sanitizer
 
 from api import models
@@ -22,19 +20,6 @@ def logger():
         _logger = logging.getLogger('rss_temple')
 
     return _logger
-
-
-def url_2_d(url):
-    response = None
-    try:
-        response = requests.get(url, headers={
-            'User-Agent': 'RSS Temple',
-        })
-        response.raise_for_status()
-    except requests.exceptions.RequestException:
-        raise QueryException('feed not found', 404)
-
-    return text_2_d(response.text)
 
 
 def text_2_d(text):

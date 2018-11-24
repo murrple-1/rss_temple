@@ -1,13 +1,15 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db import transaction
 
+import requests
+
 from lxml import etree as lxml_etree
 
 from defusedxml.ElementTree import fromstring as defused_fromstring, ParseError as defused_ParseError
 
 import xmlschema
 
-from api import models, feed_handler, opml as opml_util
+from api import models, feed_handler, opml as opml_util, rss_requests
 from api.exceptions import QueryException
 
 
@@ -24,7 +26,14 @@ def opml(request):
 
 
 def _generate_feed(url):
-    d = feed_handler.url_2_d(url)
+    response = None
+    try:
+        response = rss_requests.get(url)
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        raise QueryException('feed not found', 404)
+
+    d = feed_handler.text_2_d(response.text)
     feed = feed_handler.d_feed_2_feed(d.feed, url)
     feed._feed_entries = []
 
@@ -99,7 +108,7 @@ def _opml_post(request):
         if feed_user_category_mapping.user_category.text not in existing_category_mappings:
             existing_category_mappings[feed_user_category_mapping.user_category.text] = set()
 
-        existing_category_mappings[feed_user_category_mapping.user_category.text].add(feed.feed_url)
+        existing_category_mappings[feed_user_category_mapping.user_category.text].add(feed_user_category_mapping.feed.feed_url)
 
     feeds_dict = {}
     subscribed_feed_user_mappings = []
@@ -114,7 +123,7 @@ def _opml_post(request):
                 except models.Feed.DoesNotExist:
                     try:
                         feed = _generate_feed(outline_xml_url)
-                    except QueryException as e:
+                    except QueryException:
                         feeds_dict[outline_xml_url] = None
                         continue
 

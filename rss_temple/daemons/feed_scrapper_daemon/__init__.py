@@ -49,8 +49,8 @@ def logger():
     return _logger
 
 
-def scrape_feed(feed):
-    d = feed_handler.url_2_d(feed.feed_url)
+def scrape_feed(feed, response_text):
+    d = feed_handler.text_2_d(response_text)
 
     feed_entries = []
 
