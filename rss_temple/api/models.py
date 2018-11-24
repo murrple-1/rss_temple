@@ -22,7 +22,7 @@ class User(models.Model):
                 else:
                     keys = [None]
 
-                feed = feed_user_category_mapping.feed
+                feed = subscribed_feed_user_mapping.feed
 
                 feed._custom_title = subscribed_feed_user_mapping.custom_feed_title
 
