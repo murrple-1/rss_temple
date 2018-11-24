@@ -19,11 +19,12 @@ __field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
-        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(feed.uuid) for feed in db_obj.subscribed_feeds()), False),
+        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(key) for key in db_obj.subscribed_feeds_dict().keys()), False),
     },
     'usercategory': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'text': _FieldConfig(lambda context, db_obj: db_obj.text, True),
+        'feedUuids': _FieldConfig(lambda context, db_obj: (str(feed.uuid) for feed in db_obj.feeds()), False),
     },
     'feed': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),

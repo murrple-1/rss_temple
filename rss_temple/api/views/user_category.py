@@ -31,6 +31,18 @@ def user_category(request, _uuid):
         return _user_category_delete(request, _uuid)
 
 
+def user_category_feeds(request, _uuid):
+    permitted_methods = {'POST', 'DELETE'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _user_category_feeds_post(request, _uuid)
+    elif request.method == 'DELETE':
+        return _user_category_feeds_delete(request, _uuid)
+
+
 def user_categories(request):
     permitted_methods = {'GET'}
 
@@ -245,3 +257,13 @@ def _user_categories_get(request):
 
     content, content_type = searchqueries.serialize_content(ret_obj)
     return HttpResponse(content, content_type)
+
+
+def _user_category_feeds_post(request, _uuid):
+    # TODO
+    return HttpResponse()
+
+
+def _user_category_feeds_delete(request, _uuid):
+    # TODO
+    return HttpResponse()

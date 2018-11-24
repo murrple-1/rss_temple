@@ -52,7 +52,9 @@ def _opml_get(request):
             body_element, 'outline', text=outer_outline_name, title=outer_outline_name)
 
         for feed in feeds:
-            outline_name = feed._custom_title if feed._custom_title is not None else feed.title
+            title = feed.title
+            custom_title = feed.custom_title()
+            outline_name = custom_title if custom_title is not None else title
             lxml_etree.SubElement(outer_outline_element, 'outline',
                                   type='rss', text=outline_name, title=outline_name, xmlUrl=feed.feed_url, htmlUrl=feed.home_url)
 
@@ -76,32 +78,62 @@ def _opml_post(request):
     except xmlschema.XMLSchemaException:
         return HttpResponseBadRequest('OPML not valid')
 
-    user_categories = []
+    outline_dict = {}
 
-    outer_outline_tuples = set()
-    outline_tuples = set()
     for outer_outline_element in opml_element.findall('./body/outline'):
         outer_outline_name = outer_outline_element.attrib['title']
 
-        if outer_outline_name in (outer_outline_tuple[0] for outer_outline_tuple in outer_outline_tuples):
-            return HttpResponseBadRequest('outer outline names cannot be duplicated')
-
-        outer_outline_tuples.add((outer_outline_name,))
-
-        current_outline_tuples = set()
+        if outer_outline_name not in outline_dict:
+            outline_dict[outer_outline_name] = set()
 
         for outline_element in outer_outline_element.findall('./outline'):
             outline_name = outline_element.attrib['title']
             outline_xml_url = outline_element.attrib['xmlUrl']
 
-            if outline_name in (outline_tuple[0] for outline_tuple in outline_tuples):
-                return HttpResponseBadRequest('outline names cannot be duplicated')
+            outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
 
-            if outline_xml_url in (outline_tuple[1] for outline_tuple in outline_tuples):
-                return HttpResponseBadRequest('outline URLs cannot be duplicated')
+    existing_subscriptions = frozenset(models.SubscribedFeedUserMapping.objects.filter(user=user).values_list('feed__feed_url', flat=True))
 
-            current_outline_tuples.add((outline_name, outline_xml_url))
+    existing_category_mappings = {}
+    for feed_user_category_mapping in models.FeedUserCategoryMapping.objects.select_related('feed', 'user_category').filter(user_category__user=user):
+        if feed_user_category_mapping.user_category.text not in existing_category_mappings:
+            existing_category_mappings[feed_user_category_mapping.user_category.text] = set()
 
+        existing_category_mappings[feed_user_category_mapping.user_category.text].add(feed.feed_url)
+
+    feeds_dict = {}
+    subscribed_feed_user_mappings = []
+
+    for outline_set in outline_dict.values():
+        for outline_name, outline_xml_url in outline_set:
+            if outline_xml_url not in feeds_dict:
+                feed = None
+                try:
+                    feed = models.Feed.objects.get(feed_url=outline_xml_url)
+                    feed._is_new = False
+                except models.Feed.DoesNotExist:
+                    try:
+                        feed = _generate_feed(outline_xml_url)
+                    except QueryException as e:
+                        feeds_dict[outline_xml_url] = None
+                        continue
+
+                    feed._is_new = True
+
+                feeds_dict[outline_xml_url] = feed
+
+                custom_title = outline_name if outline_name != feed.title else None
+
+                if outline_xml_url not in existing_subscriptions:
+                    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
+                        feed=feed, user=user, custom_feed_title=custom_title)
+
+                    subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
+
+    user_categories = []
+    feed_user_category_mappings = []
+
+    for outer_outline_name, outline_set in outline_dict.items():
         user_category = None
         try:
             user_category = models.UserCategory.objects.get(
@@ -112,52 +144,31 @@ def _opml_post(request):
                 user=user, text=outer_outline_name)
             user_category._is_new = True
 
-        user_category._feeds = []
-
-        for name, xml_url in current_outline_tuples.difference(outline_tuples):
-            if models.SubscribedFeedUserMapping.objects.filter(user=user, feed__feed_url=xml_url).exists():
-                continue
-
-            feed = None
-            try:
-                feed = models.Feed.objects.get(feed_url=xml_url)
-                feed._is_new = False
-            except models.Feed.DoesNotExist:
-                try:
-                    feed = _generate_feed(xml_url)
-                except QueryException as e:
-                    return HttpResponse(e.message, status=e.httpcode)
-                feed._is_new = True
-
-            feed._custom_title_ = name if name != feed.title else None
-
-            user_category._feeds.append(feed)
-
         user_categories.append(user_category)
 
-        outline_tuples.update(current_outline_tuples)
-
-    subscribed_feed_user_mappings = []
-
-    for user_category in user_categories:
-        for feed in user_category._feeds:
-            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-                    feed=feed, user=user, custom_feed_title=feed._custom_title_, user_category=user_category)
-
-            subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
+        existing_category_mapping_set = existing_category_mappings.get(outer_outline_name)
+        for _, outline_xml_url in outline_set:
+            feed = feeds_dict[outline_xml_url]
+            if feed is not None:
+                if existing_category_mapping_set is None or outline_xml_url not in existing_category_mapping_set:
+                    feed_user_category_mapping = models.FeedUserCategoryMapping(
+                        feed=feeds_dict[outline_xml_url], user_category=user_category)
+                    feed_user_category_mappings.append(feed_user_category_mapping)
 
     with transaction.atomic():
         for user_category in user_categories:
             if user_category._is_new:
                 user_category.save()
 
-            for feed in user_category._feeds:
-                if feed._is_new:
-                    feed.save()
+        for feed in feeds_dict.values():
+            if feed._is_new:
+                feed.save()
 
-                    models.FeedEntry.objects.bulk_create(feed._feed_entries)
+                models.FeedEntry.objects.bulk_create(feed._feed_entries)
 
         models.SubscribedFeedUserMapping.objects.bulk_create(
             subscribed_feed_user_mappings)
+        models.FeedUserCategoryMapping.objects.bulk_create(
+            feed_user_category_mappings)
 
     return HttpResponse()

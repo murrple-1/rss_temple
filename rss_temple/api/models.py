@@ -11,38 +11,43 @@ class User(models.Model):
     def category_dict(self):
         category_dict = getattr(self, '_category_dict', None)
         if category_dict is None:
-            subcribed_feed_user_mappings = SubscribedFeedUserMapping.objects.select_related(
-                'feed', 'user_category').filter(user=self)
-
             category_dict = {}
 
-            for subcribed_feed_user_mapping in subcribed_feed_user_mappings:
-                key = subcribed_feed_user_mapping.user_category.text if subcribed_feed_user_mapping.user_category is not None else None
+            for subscribed_feed_user_mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self):
+                feed_user_category_mappings = list(FeedUserCategoryMapping.objects.select_related('user_category').filter(feed=subscribed_feed_user_mapping.feed))
 
-                if key not in category_dict:
-                    category_dict[key] = []
+                keys = None
+                if len(feed_user_category_mappings) > 0:
+                    keys = frozenset(feed_user_category_mapping.user_category.text for feed_user_category_mapping in feed_user_category_mappings)
+                else:
+                    keys = [None]
 
-                feed = subcribed_feed_user_mapping.feed
+                feed = feed_user_category_mapping.feed
 
-                feed._custom_title = subcribed_feed_user_mapping.custom_feed_title
+                feed._custom_title = subscribed_feed_user_mapping.custom_feed_title
 
-                category_dict[key].append(feed)
+                for key in keys:
+                    if key not in category_dict:
+                        category_dict[key] = []
+
+                    category_dict[key].append(feed)
 
             self._category_dict = category_dict
 
         return category_dict
 
-    def subscribed_feeds(self):
-        subscribed_feeds = getattr(self, '_subscribed_feeds', None)
-        if subscribed_feeds is None:
-            subscribed_feeds = []
+    def subscribed_feeds_dict(self):
+        subscribed_feeds_dict = getattr(self, '_subscribed_feeds_dict', None)
+        if subscribed_feeds_dict is None:
+            subscribed_feeds_dict = {}
 
-            for _feeds in self.category_dict().values():
-                subscribed_feeds.extend(_feeds)
+            for feeds in self.category_dict().values():
+                for feed in feeds:
+                    subscribed_feeds_dict[feed.uuid] = feed
 
-            self._subscribed_feeds = subscribed_feeds
+            self._subscribed_feeds_dict = subscribed_feeds_dict
 
-        return subscribed_feeds
+        return subscribed_feeds_dict
 
     def read_feed_entries(self):
         read_feed_entries = getattr(self, '_read_feed_entries', None)
@@ -109,6 +114,14 @@ class UserCategory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField(unique=True)
 
+    def feeds(self):
+        feeds = getattr(self, '_feeds', None)
+        if feeds is None:
+            feeds = Feed.objects.filter(uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self))
+            self._feeds = feeds
+
+        return feeds
+
 
 class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -123,16 +136,14 @@ class Feed(models.Model):
     def subscribed(self, user):
         subscribed = getattr(self, '_subscribed', None)
         if subscribed is None:
-            subscribed = self.uuid in (
-                feed.uuid for feed in user.subscribed_feeds())
+            subscribed = self.uuid in user.subscribed_feeds_dict()
             self._subscribed = subscribed
 
         return subscribed
 
     def custom_title(self, user):
         if not hasattr(self, '_custom_title'):
-            subscribed_feed = next(
-                (feed for feed in user.subscribed_feeds() if feed.uuid == self.uuid), None)
+            subscribed_feed = user.subscribed_feeds_dict().get(self.uuid)
 
             self._custom_title = subscribed_feed._custom_title if subscribed_feed is not None else None
 
@@ -147,8 +158,13 @@ class SubscribedFeedUserMapping(models.Model):
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     custom_feed_title = models.TextField(null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class FeedUserCategoryMapping(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user_category = models.ForeignKey(
-        UserCategory, null=True, on_delete=models.SET_NULL)
+        UserCategory, on_delete=models.CASCADE)
 
 
 class FeedEntry(models.Model):
