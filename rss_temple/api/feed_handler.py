@@ -102,19 +102,6 @@ def d_entry_2_feed_entry(d_entry):
     content = None
     if 'summary' in d_entry:
         content = d_entry.summary
-    elif 'content' in d_entry:
-        content_dicts = d_entry.content
-
-        for content_dict in content_dicts:
-            if content_dict.type in ['text/html', 'application/xhtml+xml']:
-                # prioritize these types
-                content = content_dict.value
-                break
-            elif content_dict.type in ['text/plain']:
-                # these types are fine too
-                content = content_dict.value
-
-        content = content
 
     if isinstance(content, str):
         content = _sanitizer.sanitize(content)
