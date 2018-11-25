@@ -30,6 +30,7 @@ urlpatterns = [
     re_path(r'^usercategory(?:/({}))?/?$'.format(_uuid_regex),
             views.user_category),
     re_path(r'^usercategories/?$', views.user_categories),
+    re_path(r'^usercategory/({})/feeds/?$'.format(_uuid_regex), views.user_category_feeds),
 
     re_path(r'^opml/?$', views.opml),
 ]
