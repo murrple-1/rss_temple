@@ -22,7 +22,7 @@ from api import feed_handler, models
 _logger = None
 
 
-def logger():
+def logger(): # pragma: no cover
     global _logger
 
     if _logger is None:
