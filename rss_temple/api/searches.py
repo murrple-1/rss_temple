@@ -52,7 +52,7 @@ def _feedentry_is_favorite(context, search_obj):
     return q
 
 
-__search_fns = {
+_search_fns = {
     'user': {
         'uuid': lambda context, search_obj: Q(uuid__in=convertto.UuidList.convertto(search_obj)),
         'email': lambda context, search_obj: Q(email__icontains=search_obj),
@@ -115,7 +115,7 @@ def to_filter_args(object_name, context, search):
         _logger.warning('Parsing of \'%s\' failed: %s', search, e)
         raise QueryException('\'search\' malformed', 400)
 
-    object_search_fns = __search_fns[object_name]
+    object_search_fns = _search_fns[object_name]
 
     return [_handle_parse_result(context, parse_results, object_search_fns)]
 
