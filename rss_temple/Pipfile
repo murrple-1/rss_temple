@@ -21,5 +21,6 @@ xmlschema = "*"
 
 [dev-packages]
 coveralls = "*"
+Faker = "*"
 
 [requires]
