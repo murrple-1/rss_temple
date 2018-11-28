@@ -209,7 +209,7 @@ class FeedEntry(models.Model):
         from_subscription = getattr(self, '_from_subscription', None)
         if from_subscription is None:
             from_subscription = self.feed_id in (
-                f.uuid for f in user.subscribed_feeds())
+                f.uuid for f in user.subscribed_feeds_dict().values())
             self._from_subscription = from_subscription
 
         return from_subscription
