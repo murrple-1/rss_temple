@@ -15,7 +15,7 @@ def _feed_calculatedTitle(context, db_obj):
     return custom_title if custom_title is not None else db_obj.title
 
 
-__field_configs = {
+_field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
@@ -57,7 +57,7 @@ __field_configs = {
 
 
 def get_default_field_maps(object_name):
-    object_field_configs = __field_configs[object_name]
+    object_field_configs = _field_configs[object_name]
     default_field_maps = []
 
     for field_name, field_config in object_field_configs.items():
@@ -73,7 +73,7 @@ def get_default_field_maps(object_name):
 
 
 def get_all_field_maps(object_name):
-    object_field_configs = __field_configs[object_name]
+    object_field_configs = _field_configs[object_name]
     all_field_maps = []
 
     for field_name, field_config in object_field_configs.items():
@@ -88,7 +88,7 @@ def get_all_field_maps(object_name):
 
 
 def to_field_map(object_name, field_name):
-    object_field_configs = __field_configs[object_name]
+    object_field_configs = _field_configs[object_name]
 
     for _field_name, field_config in object_field_configs.items():
         if field_name.lower() == _field_name.lower():
@@ -100,4 +100,4 @@ def to_field_map(object_name, field_name):
 
 
 def field_list(object_name):
-    return __field_configs[object_name].keys()
+    return _field_configs[object_name].keys()
