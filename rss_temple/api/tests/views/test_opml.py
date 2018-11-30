@@ -15,14 +15,17 @@ class OPMLTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
+        user = None
         try:
-            cls.user = models.User.objects.get(email='test@test.com')
+            user = models.User.objects.get(email='test@test.com')
         except models.User.DoesNotExist:
-            cls.user = models.User(email='test@test.com')
-            cls.user.save()
+            user = models.User(email='test@test.com')
+            user.save()
+
+        cls.user = user
 
         session = models.Session(
-            user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
+            user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
         session.save()
 
         cls.session = session

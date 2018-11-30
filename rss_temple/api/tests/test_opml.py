@@ -13,7 +13,7 @@ class OPMLTestCase(TestCase):
 
     def test_schema_success(self):
         text = None
-        with open('api/tests/test_files/opml/murray.opml') as f:
+        with open('api/tests/test_files/opml/opml.xml') as f:
             text = f.read()
 
         element = fromstring(text)
@@ -22,7 +22,7 @@ class OPMLTestCase(TestCase):
 
     def test_schema_failed(self):
         text = None
-        with open('api/tests/test_files/opml/murray.opml') as f:
+        with open('api/tests/test_files/opml/opml.xml') as f:
             text = f.read()
 
         element = fromstring(text)
