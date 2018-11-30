@@ -22,7 +22,7 @@ def user_category(request, _uuid):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
-        return _user_category_get(request)
+        return _user_category_get(request, _uuid)
     elif request.method == 'POST':
         return _user_category_post(request)
     elif request.method == 'PUT':
