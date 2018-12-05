@@ -179,7 +179,7 @@ def _user_category_delete(request, _uuid):
     except ValueError:
         return HttpResponseBadRequest('uuid malformed')
 
-    count, _ = models.UserCategory.object.filter(
+    count, _ = models.UserCategory.objects.filter(
         uuid=_uuid_, user=request.user).delete()
 
     if count < 1:
