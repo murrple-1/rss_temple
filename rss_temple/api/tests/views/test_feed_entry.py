@@ -102,3 +102,85 @@ class FeedEntryTestCase(TestCase):
         response = c.get('/api/feedentries',
             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_feedentry_read_post(self):
+        feed = None
+        try:
+            feed = models.Feed.objects.get(
+                feed_url='http://example.com/rss.xml')
+        except models.Feed.DoesNotExist:
+            feed = models.Feed(
+                feed_url='http://example.com/rss.xml',
+                title='Sample Feed',
+                home_url='http://example.com',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+            feed.save()
+
+        feed_entry = models.FeedEntry.objects.filter(feed=feed).first()
+        if feed_entry is None:
+            feed_entry = models.FeedEntry(
+                id=None,
+                feed=feed,
+                created_at=None,
+                updated_at=None,
+                title='Feed Entry Title',
+                url='http://example.com/entry1.html',
+                content='Some Entry content',
+                author_name='John Doe',
+                db_updated_at=None)
+            feed_entry.hash = hash(feed_entry)
+            feed_entry.save()
+
+        models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).delete()
+
+        c = Client()
+
+        response = c.post('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
+
+    def test_feedentry_read_delete(self):
+        feed = None
+        try:
+            feed = models.Feed.objects.get(
+                feed_url='http://example.com/rss.xml')
+        except models.Feed.DoesNotExist:
+            feed = models.Feed(
+                feed_url='http://example.com/rss.xml',
+                title='Sample Feed',
+                home_url='http://example.com',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+            feed.save()
+
+        feed_entry = models.FeedEntry.objects.filter(feed=feed).first()
+        if feed_entry is None:
+            feed_entry = models.FeedEntry(
+                id=None,
+                feed=feed,
+                created_at=None,
+                updated_at=None,
+                title='Feed Entry Title',
+                url='http://example.com/entry1.html',
+                content='Some Entry content',
+                author_name='John Doe',
+                db_updated_at=None)
+            feed_entry.hash = hash(feed_entry)
+            feed_entry.save()
+
+        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists():
+            models.ReadFeedEntryUserMapping(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry).save()
+
+        c = Client()
+
+        response = c.delete('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertFalse(models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
