@@ -198,12 +198,12 @@ class UserCategoryTestCase(TestCase):
 
 
         if not models.FeedUserCategoryMapping.objects.filter(user_category=user_category, feed=feed1).exists():
-            models.FeedUserCategoryMapping(
-                user_category=user_category, feed=feed1).save()
+            models.FeedUserCategoryMapping.objects.create(
+                user_category=user_category, feed=feed1)
 
         if not models.FeedUserCategoryMapping.objects.filter(user_category=user_category, feed=feed2).exists():
-            models.FeedUserCategoryMapping(
-                user_category=user_category, feed=feed2).save()
+            models.FeedUserCategoryMapping.objects.create(
+                user_category=user_category, feed=feed2)
 
         c = Client()
 
