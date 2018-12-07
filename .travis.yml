@@ -10,7 +10,7 @@ install:
 script:
   - coverage run manage.py test api.tests daemons.tests
 after_script:
-  - coveralls
+  - codecov
 addons:
   apt:
     update: false

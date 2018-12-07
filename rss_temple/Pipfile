@@ -20,7 +20,7 @@ lxml = "*"
 xmlschema = "*"
 
 [dev-packages]
-coveralls = "*"
+codecov = "*"
 Faker = "*"
 
 [requires]
