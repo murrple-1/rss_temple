@@ -87,11 +87,7 @@ def _feed_entry_get(request, _uuid):
     context.parse_request(request)
     context.parse_query_dict(request.GET)
 
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     field_maps = None
     try:
@@ -101,8 +97,8 @@ def _feed_entry_get(request, _uuid):
 
     feed_entry = None
     try:
-        feed_entry = models.FeedEntry.objects.get(uuid=_uuid_)
-    except models.FeedEnrty.DoesNotExist:
+        feed_entry = models.FeedEntry.objects.get(uuid=_uuid)
+    except models.FeedEntry.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
     ret_obj = searchqueries.generate_return_object(
@@ -189,7 +185,7 @@ def _feed_entry_read_post(request, _uuid):
     feed_entry = None
     try:
         feed_entry = models.FeedEntry.objects.get(uuid=_uuid)
-    except models.FeedEnrty.DoesNotExist:
+    except models.FeedEntry.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
     read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(
@@ -287,7 +283,7 @@ def _feed_entry_favorite_post(request, _uuid):
     feed_entry = None
     try:
         feed_entry = models.FeedEntry.objects.get(uuid=_uuid)
-    except models.FeedEnrty.DoesNotExist:
+    except models.FeedEntry.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
     favorite_feed_entry_user_mapping = models.FavoriteFeedEntryUserMapping(

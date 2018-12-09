@@ -1,7 +1,9 @@
 import logging
 import datetime
+import uuid
 
 from django.test import TestCase, Client
+from django.db import transaction
 
 import ujson
 
@@ -66,6 +68,13 @@ class FeedEntryTestCase(TestCase):
             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
+    def test_feedentry_get_not_found(self):
+        c = Client()
+
+        response = c.get('/api/feedentry/{}'.format(str(uuid.uuid4())),
+            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
     def test_feedentries_get(self):
         feed_entry = models.FeedEntry.objects.filter(feed=FeedEntryTestCase.feed).first()
         if feed_entry is None:
@@ -111,6 +120,42 @@ class FeedEntryTestCase(TestCase):
         response = c.post('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
+
+    def test_feedentry_read_post_not_found(self):
+        c = Client()
+
+        response = c.post('/api/feedentry/{}/read'.format(str(uuid.uuid4())),
+            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
+    def test_feedentry_read_post_duplicate(self):
+        feed_entry = models.FeedEntry.objects.filter(feed=FeedEntryTestCase.feed).first()
+        if feed_entry is None:
+            feed_entry = models.FeedEntry(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title='Feed Entry Title',
+                url='http://example.com/entry1.html',
+                content='Some Entry content',
+                author_name='John Doe',
+                db_updated_at=None)
+            feed_entry.hash = hash(feed_entry)
+            feed_entry.save()
+
+        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists():
+            models.ReadFeedEntryUserMapping.objects.create(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry)
+
+        c = Client()
+
+        with transaction.atomic():
+            response = c.post('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+                HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+            self.assertEqual(response.status_code, 200)
 
         self.assertTrue(models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
