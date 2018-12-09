@@ -184,15 +184,11 @@ def _feed_entries_get(request):
 
 
 def _feed_entry_read_post(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     feed_entry = None
     try:
-        feed_entry = models.FeedEntry.objects.get(uuid=_uuid_)
+        feed_entry = models.FeedEntry.objects.get(uuid=_uuid)
     except models.FeedEnrty.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
@@ -208,14 +204,10 @@ def _feed_entry_read_post(request, _uuid):
 
 
 def _feed_entry_read_delete(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     models.ReadFeedEntryUserMapping.objects.filter(
-        feed_entry_id=_uuid_, user=request.user).delete()
+        feed_entry_id=_uuid, user=request.user).delete()
 
     return HttpResponse()
 
@@ -290,15 +282,11 @@ def _feed_entries_read_delete(request):
 
 
 def _feed_entry_favorite_post(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     feed_entry = None
     try:
-        feed_entry = models.FeedEntry.objects.get(uuid=_uuid_)
+        feed_entry = models.FeedEntry.objects.get(uuid=_uuid)
     except models.FeedEnrty.DoesNotExist:
         return HttpResponseNotFound('feed entry not found')
 
@@ -314,14 +302,10 @@ def _feed_entry_favorite_post(request, _uuid):
 
 
 def _feed_entry_favorite_delete(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     models.FavoriteFeedEntryUserMapping.objects.filter(
-        feed_entry_id=_uuid_, user=request.user).delete()
+        feed_entry_id=_uuid, user=request.user).delete()
 
     return HttpResponse()
 
