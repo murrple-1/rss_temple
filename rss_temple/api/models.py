@@ -161,6 +161,9 @@ class SubscribedFeedUserMapping(models.Model):
 
 
 class FeedUserCategoryMapping(models.Model):
+    class Meta:
+        unique_together = (('feed', 'user_category'),)
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user_category = models.ForeignKey(

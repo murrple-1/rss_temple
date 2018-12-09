@@ -260,11 +260,7 @@ def _user_categories_get(request):
 
 
 def _user_category_feeds_post(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     _json = None
     try:
@@ -276,7 +272,7 @@ def _user_category_feeds_post(request, _uuid):
     user_category = None
     try:
         user_category = models.UserCategory.objects.get(
-            uuid=_uuid_, user=request.user)
+            uuid=_uuid, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
@@ -315,11 +311,7 @@ def _user_category_feeds_post(request, _uuid):
 
 
 def _user_category_feeds_delete(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
+    _uuid = uuid.UUID(_uuid)
 
     _json = None
     try:
@@ -331,7 +323,7 @@ def _user_category_feeds_delete(request, _uuid):
     user_category = None
     try:
         user_category = models.UserCategory.objects.get(
-            uuid=_uuid_, user=request.user)
+            uuid=_uuid, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 

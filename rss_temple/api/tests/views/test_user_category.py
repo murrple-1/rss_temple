@@ -226,7 +226,7 @@ class UserCategoryTestCase(TestCase):
 
         response = c.delete('/api/usercategory',
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.status_code, 400)
 
     def test_usercategory_delete_not_found(self):
         c = Client()
@@ -297,10 +297,115 @@ class UserCategoryTestCase(TestCase):
             ujson.dumps(data),
             'application/json',
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.status_code, 200)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(user_category=user_category, feed=feed1))
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(user_category=user_category, feed=feed2))
+
+    def test_usercategory_feed_post_malformed(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = ['bad-uuid']
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = 'bad-uuid'
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = {
+            'test': 'test',
+        }
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_usercategory_feed_post_not_found(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = []
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(uuid.uuid4())),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
+        data = [
+            str(uuid.uuid4()),
+        ]
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
+    def test_usercategory_feed_post_already_exists(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        feed = None
+        try:
+            feed = models.Feed.objects.get(
+                feed_url='http://example.com/rss.xml')
+        except models.Feed.DoesNotExist:
+            feed = models.Feed(
+                feed_url='http://example.com/rss.xml',
+                title='Sample Feed',
+                home_url='http://example.com',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+            feed.save()
+
+        if not models.FeedUserCategoryMapping.objects.filter(feed=feed, user_category=user_category).exists():
+            models.FeedUserCategoryMapping.objects.create(
+                feed=feed, user_category=user_category)
+
+        c = Client()
+
+        data = [
+            str(feed.uuid),
+        ]
+
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
 
     def test_usercategory_feed_delete(self):
         user_category = None
@@ -356,10 +461,76 @@ class UserCategoryTestCase(TestCase):
             ujson.dumps(data),
             'application/json',
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.status_code, 200)
 
         with self.assertRaises(models.FeedUserCategoryMapping.DoesNotExist):
             models.FeedUserCategoryMapping.objects.get(user_category=user_category, feed=feed1)
 
         with self.assertRaises(models.FeedUserCategoryMapping.DoesNotExist):
             models.FeedUserCategoryMapping.objects.get(user_category=user_category, feed=feed2)
+
+    def test_usercategory_feed_delete_malformed(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = ['bad-uuid']
+
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = 'bad-uuid'
+
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = {
+            'test': 'test',
+        }
+
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_usercategory_feed_delete_not_found(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = []
+
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(uuid.uuid4())),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
+        data = [
+            str(uuid.uuid4()),
+        ]
+
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
