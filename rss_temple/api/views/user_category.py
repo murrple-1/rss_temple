@@ -61,7 +61,7 @@ def _user_category_get(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     field_maps = None
@@ -134,7 +134,7 @@ def _user_category_put(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     _json = None
@@ -176,7 +176,7 @@ def _user_category_delete(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     count, _ = models.UserCategory.objects.filter(
@@ -263,7 +263,7 @@ def _user_category_feeds_post(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     _json = None
@@ -318,7 +318,7 @@ def _user_category_feeds_delete(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     _json = None

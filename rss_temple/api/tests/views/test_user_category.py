@@ -1,5 +1,6 @@
 import logging
 import datetime
+import uuid
 
 from django.test import TestCase, Client
 
@@ -46,6 +47,20 @@ class UserCategoryTestCase(TestCase):
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
+    def test_usercategory_get_malformed_uuid(self):
+        c = Client()
+
+        response = c.get('/api/usercategory',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_usercategory_get_not_found(self):
+        c = Client()
+
+        response = c.get('/api/usercategory/{}'.format(str(uuid.uuid4())),
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
     def test_usercategory_post(self):
         c = Client()
 
@@ -53,9 +68,53 @@ class UserCategoryTestCase(TestCase):
             'text': 'test_usercategory_post',
         }
 
-        response = c.post('/api/usercategory', data,
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = c.post('/api/usercategory',
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_usercategory_post_malformed(self):
+        c = Client()
+
+        data = {}
+
+        response = c.post('/api/usercategory',
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = {
+            'text': 0,
+        }
+
+        response = c.post('/api/usercategory',
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_usercategory_post_already_exists(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = {
+            'text': 'Test User Category',
+        }
+
+        response = c.post('/api/usercategory',
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
 
     def test_usercategory_put(self):
         user_category = None
@@ -72,9 +131,80 @@ class UserCategoryTestCase(TestCase):
             'text': 'Test User Category 2',
         }
 
-        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)), data,
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_usercategory_put_malformed(self):
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = {
+            'text': 'Does not matter :)',
+        }
+
+        response = c.put('/api/usercategory',
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        data = {
+            'text': 0,
+        }
+
+        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_usercategory_put_not_found(self):
+        c = Client()
+
+        data = {
+            'text': 'Does not matter :)',
+        }
+
+        response = c.put('/api/usercategory/{}'.format(str(uuid.uuid4())),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+
+    def test_usercategory_put_already_exists(self):
+        if not models.UserCategory.objects.filter(user=UserCategoryTestCase.user, text='Already Exists Text'):
+            models.UserCategory.objects.create(
+                user=UserCategoryTestCase.user, text='Already Exists Text')
+
+        user_category = None
+        try:
+            user_category = models.UserCategory.objects.get(user=UserCategoryTestCase.user, text='Test User Category')
+        except models.UserCategory.DoesNotExist:
+            user_category = models.UserCategory(
+                user=UserCategoryTestCase.user, text='Test User Category')
+            user_category.save()
+
+        c = Client()
+
+        data = {
+            'text': 'Already Exists Text',
+        }
+
+        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+            ujson.dumps(data),
+            'application/json',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
 
     def test_usercategory_delete(self):
         user_category = None
@@ -90,6 +220,20 @@ class UserCategoryTestCase(TestCase):
         response = c.delete('/api/usercategory/{}'.format(str(user_category.uuid)),
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_usercategory_delete_malformed_uuid(self):
+        c = Client()
+
+        response = c.delete('/api/usercategory',
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_usercategory_delete_not_found(self):
+        c = Client()
+
+        response = c.delete('/api/usercategory/{}'.format(str(uuid.uuid4())),
+            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
 
     def test_usercategories_get(self):
         user_category = None
@@ -149,8 +293,7 @@ class UserCategoryTestCase(TestCase):
 
         data = [str(feed1.uuid), str(feed2.uuid)]
 
-        response = c.post(
-            '/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+        response = c.post('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
             ujson.dumps(data),
             'application/json',
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
@@ -209,8 +352,7 @@ class UserCategoryTestCase(TestCase):
 
         data = [str(feed1.uuid), str(feed2.uuid)]
 
-        response = c.delete(
-            '/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
+        response = c.delete('/api/usercategory/{}/feeds'.format(str(user_category.uuid)),
             ujson.dumps(data),
             'application/json',
             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)

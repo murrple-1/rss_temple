@@ -90,7 +90,7 @@ def _feed_entry_get(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     field_maps = None
@@ -187,7 +187,7 @@ def _feed_entry_read_post(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     feed_entry = None
@@ -211,7 +211,7 @@ def _feed_entry_read_delete(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     models.ReadFeedEntryUserMapping.objects.filter(
@@ -293,7 +293,7 @@ def _feed_entry_favorite_post(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     feed_entry = None
@@ -317,7 +317,7 @@ def _feed_entry_favorite_delete(request, _uuid):
     _uuid_ = None
     try:
         _uuid_ = uuid.UUID(_uuid)
-    except ValueError:
+    except (ValueError, TypeError):
         return HttpResponseBadRequest('uuid malformed')
 
     models.FavoriteFeedEntryUserMapping.objects.filter(
