@@ -33,18 +33,15 @@ class OPMLTestCase(TestCase):
         cls.session_token = session.uuid
         cls.session_token_str = str(session.uuid)
 
-    def send_opml(self, client):
+    def test_opml_get(self):
+        c = Client()
+
         text = None
         with open('api/tests/test_files/opml/opml.xml', 'r') as f:
             text = f.read()
 
-        return client.post('/api/opml', text,
+        c.post('/api/opml', text,
             content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
-
-    def test_opml_get(self):
-        c = Client()
-
-        self.send_opml(c)
 
         response = c.get('/api/opml',
             HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
@@ -54,5 +51,33 @@ class OPMLTestCase(TestCase):
         models.SubscribedFeedUserMapping.objects.filter(user=OPMLTestCase.user).delete()
 
         c = Client()
-        response = self.send_opml(c)
+
+        text = None
+        with open('api/tests/test_files/opml/opml.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_opml_post_malformed_xml(self):
+        c = Client()
+
+        text = None
+        with open('api/tests/test_files/opml/invalid_xml.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+    def test_opml_post_malformed_opml(self):
+        c = Client()
+
+        text = None
+        with open('api/tests/test_files/opml/invalid_opml.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
