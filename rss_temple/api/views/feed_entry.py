@@ -228,7 +228,7 @@ def _feed_entries_read_post(request):
     _ids = None
     try:
         _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest('uuid malformed')
 
     feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
@@ -268,7 +268,7 @@ def _feed_entries_read_delete(request):
     _ids = None
     try:
         _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest('uuid malformed')
 
     models.ReadFeedEntryUserMapping.objects.filter(
@@ -326,7 +326,7 @@ def _feed_entries_favorite_post(request):
     _ids = None
     try:
         _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest('uuid malformed')
 
     feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
@@ -366,7 +366,7 @@ def _feed_entries_favorite_delete(request):
     _ids = None
     try:
         _ids = frozenset(uuid.UUID(_uuid) for _uuid in _json)
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest('uuid malformed')
 
     models.FavoriteFeedEntryUserMapping.objects.filter(

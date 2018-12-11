@@ -280,7 +280,7 @@ def _user_category_feeds_post(request, _uuid):
     if isinstance(_json, list):
         try:
             feed_uuids = frozenset(uuid.UUID(s) for s in _json)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             return HttpResponseBadRequest('element must be UUID')
     elif isinstance(_json, str):
         try:
@@ -332,7 +332,7 @@ def _user_category_feeds_delete(request, _uuid):
     if isinstance(_json, list):
         try:
             feed_uuids = frozenset(uuid.UUID(s) for s in _json)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, AttributeError):
             return HttpResponseBadRequest('element must be UUID')
     elif isinstance(_json, str):
         try:
