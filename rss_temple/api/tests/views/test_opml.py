@@ -3,6 +3,7 @@ import logging
 import datetime
 
 from django.test import TestCase, Client
+from django.core.management import call_command
 
 from api import models
 
@@ -15,40 +16,35 @@ class OPMLTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        user = None
-        try:
-            user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            user = models.User(email='test@test.com')
-            user.save()
+    @staticmethod
+    def _reset_db(fixture_path):
+        call_command('flush', verbosity=0, interactive=False)
+        call_command('loaddata', fixture_path, verbosity=0)
 
-        cls.user = user
+    @staticmethod
+    def _login():
+        user = models.User.objects.get(email='test@test.com')
 
-        session = models.Session(
+        session = models.Session.objects.create(
             user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
-        session.save()
 
-        cls.session = session
-
-        cls.session_token = session.uuid
-        cls.session_token_str = str(session.uuid)
+        return str(session.uuid)
 
     def test_opml_get(self):
+        OPMLTestCase._reset_db('api/tests/fixtures/opml.json')
+
+        session_token_str = OPMLTestCase._login()
+
         c = Client()
 
-        text = None
-        with open('api/tests/test_files/opml/opml.xml', 'r') as f:
-            text = f.read()
-
-        c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
-
         response = c.get('/api/opml',
-            HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+            HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_opml_post(self):
-        models.SubscribedFeedUserMapping.objects.filter(user=OPMLTestCase.user).delete()
+        OPMLTestCase._reset_db('api/fixtures/default.json')
+
+        session_token_str = OPMLTestCase._login()
 
         c = Client()
 
@@ -57,10 +53,14 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_opml_post_malformed_xml(self):
+        OPMLTestCase._reset_db('api/fixtures/default.json')
+
+        session_token_str = OPMLTestCase._login()
+
         c = Client()
 
         text = None
@@ -68,10 +68,14 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 400)
 
     def test_opml_post_malformed_opml(self):
+        OPMLTestCase._reset_db('api/fixtures/default.json')
+
+        session_token_str = OPMLTestCase._login()
+
         c = Client()
 
         text = None
@@ -79,5 +83,20 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=OPMLTestCase.session_token_str)
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 400)
+
+    def test_opml_post_duplicates(self):
+        OPMLTestCase._reset_db('api/tests/fixtures/opml.json')
+
+        session_token_str = OPMLTestCase._login()
+
+        c = Client()
+
+        text = None
+        with open('api/tests/test_files/opml/opml.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+        self.assertEqual(response.status_code, 200)
