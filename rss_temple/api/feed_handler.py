@@ -34,8 +34,8 @@ def text_2_d(text):
 
 
 def d_feed_2_feed(d_feed, url):
-    feed = models.Feed(feed_url=url, title=d_feed.get(
-        'title'), home_url=d_feed.get('link'))
+    feed = models.Feed(
+        feed_url=url, title=d_feed.get('title', url), home_url=d_feed.get('link'))
 
     if 'published_parsed' in d_feed:
         time_tuple = d_feed.published_parsed

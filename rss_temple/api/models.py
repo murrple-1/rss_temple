@@ -129,7 +129,7 @@ class UserCategory(models.Model):
 class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
-    title = models.TextField(null=True)
+    title = models.TextField()
     home_url = models.TextField(null=True)
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
@@ -277,3 +277,22 @@ class FavoriteFeedEntryUserMapping(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class FeedSubscriptionProgressEntry(models.Model):
+    NOT_STARTED = 0
+    STARTED = 1
+    FINISHED = 2
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.IntegerField(default=NOT_STARTED, choices=[(NOT_STARTED, 'Not Started'), (STARTED, 'Started'), (FINISHED, 'Finished')])
+
+
+class FeedSubscriptionProgressEntryDescriptor(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    feed_subscription_progress_entry = models.ForeignKey(FeedSubscriptionProgressEntry, on_delete=models.CASCADE)
+    feed_url = models.TextField()
+    custom_feed_title = models.TextField(null=True)
+    user_category_text = models.TextField(null=True)
+    is_finished = models.BooleanField(default=False)

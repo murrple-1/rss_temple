@@ -13,7 +13,7 @@ class OPMLTestCase(TestCase):
 
     def test_schema_success(self):
         text = None
-        with open('api/tests/test_files/opml/opml.xml') as f:
+        with open('api/tests/test_files/opml/opml-mix.xml') as f:
             text = f.read()
 
         element = fromstring(text)
@@ -22,12 +22,10 @@ class OPMLTestCase(TestCase):
 
     def test_schema_failed(self):
         text = None
-        with open('api/tests/test_files/opml/opml.xml') as f:
+        with open('api/tests/test_files/opml/invalid_opml.xml') as f:
             text = f.read()
 
         element = fromstring(text)
-        head_element = element.find('./head')
-        element.remove(head_element)
 
         with self.assertRaises(xmlschema.XMLSchemaException):
             opml.schema().validate(element)

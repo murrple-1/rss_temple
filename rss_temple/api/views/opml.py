@@ -1,8 +1,6 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.db import transaction
 
-import requests
-
 from lxml import etree as lxml_etree
 
 from defusedxml.ElementTree import fromstring as defused_fromstring, ParseError as defused_ParseError
@@ -11,8 +9,7 @@ import xmlschema
 
 from url_normalize import url_normalize
 
-from api import models, feed_handler, opml as opml_util, rss_requests
-from api.exceptions import QueryException
+from api import models, opml as opml_util
 
 
 def opml(request):
@@ -25,26 +22,6 @@ def opml(request):
         return _opml_get(request)
     elif request.method == 'POST':
         return _opml_post(request)
-
-
-def _generate_feed(url):
-    response = None
-    try:
-        response = rss_requests.get(url)
-        response.raise_for_status()
-    except requests.exceptions.RequestException:
-        raise QueryException('feed not found', 404)
-
-    d = feed_handler.text_2_d(response.text)
-    feed = feed_handler.d_feed_2_feed(d.feed, url)
-    feed._feed_entries = []
-
-    for d_entry in d.get('entries', []):
-        feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
-        feed_entry.feed = feed
-        feed._feed_entries.append(feed_entry)
-
-    return feed
 
 
 def _opml_get(request):
@@ -73,8 +50,6 @@ def _opml_get(request):
 
 
 def _opml_post(request):
-    user = request.user
-
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -103,85 +78,82 @@ def _opml_post(request):
 
             outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
 
-    existing_subscriptions = frozenset(models.SubscribedFeedUserMapping.objects.filter(user=user).values_list('feed__feed_url', flat=True))
+    existing_subscriptions = frozenset(models.SubscribedFeedUserMapping.objects.filter(user=request.user).values_list('feed__feed_url', flat=True))
+
+    existing_categories = dict((user_category.text, user_category) for user_category in models.UserCategory.objects.filter(user=request.user))
 
     existing_category_mappings = {}
-    for feed_user_category_mapping in models.FeedUserCategoryMapping.objects.select_related('feed', 'user_category').filter(user_category__user=user):
+    for feed_user_category_mapping in models.FeedUserCategoryMapping.objects.select_related('feed', 'user_category').filter(user_category__user=request.user):
         if feed_user_category_mapping.user_category.text not in existing_category_mappings:
             existing_category_mappings[feed_user_category_mapping.user_category.text] = set()
 
         existing_category_mappings[feed_user_category_mapping.user_category.text].add(feed_user_category_mapping.feed.feed_url)
 
     feeds_dict = {}
-    subscribed_feed_user_mappings = []
 
-    for outline_set in outline_dict.values():
+    feed_subscription_progress_entry = None
+    feed_subscription_progress_entry_descriptors = []
+
+    for outer_outline_name, outline_set in outline_dict.items():
         for outline_name, outline_xml_url in outline_set:
             if outline_xml_url not in feeds_dict:
-                feed = None
                 try:
-                    feed = models.Feed.objects.get(feed_url=outline_xml_url)
-                    feed._is_new = False
+                    feeds_dict[outline_xml_url] = models.Feed.objects.get(feed_url=outline_xml_url)
                 except models.Feed.DoesNotExist:
-                    try:
-                        feed = _generate_feed(outline_xml_url)
-                    except QueryException:
-                        feeds_dict[outline_xml_url] = None
-                        continue
+                    if feed_subscription_progress_entry is None:
+                        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry(
+                            user=request.user)
 
-                    feed._is_new = True
+                    feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor(
+                        feed_subscription_progress_entry=feed_subscription_progress_entry, feed_url=outline_xml_url,
+                        custom_feed_title=outline_name, user_category_text=outer_outline_name)
+                    feed_subscription_progress_entry_descriptors.append(feed_subscription_progress_entry_descriptor)
 
-                feeds_dict[outline_xml_url] = feed
+                    feeds_dict[outline_xml_url] = None
 
+    user_categories = []
+    subscribed_feed_user_mappings = []
+    feed_user_category_mappings = []
+
+    for outer_outline_name, outline_set in outline_dict.items():
+        user_category = existing_categories.get(outer_outline_name)
+        if user_category is None:
+            user_category = models.UserCategory(
+                user=request.user, text=outer_outline_name)
+            user_categories.append(user_category)
+
+        existing_category_mapping_set = existing_category_mappings.get(outer_outline_name)
+
+        for outline_name, outline_xml_url in outline_set:
+            feed = feeds_dict[outline_xml_url]
+            if feed is not None:
                 custom_title = outline_name if outline_name != feed.title else None
 
                 if outline_xml_url not in existing_subscriptions:
                     subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-                        feed=feed, user=user, custom_feed_title=custom_title)
-
+                        feed=feed, user=request.user, custom_feed_title=custom_title)
                     subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
 
-    user_categories = []
-    feed_user_category_mappings = []
-
-    for outer_outline_name, outline_set in outline_dict.items():
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=user, text=outer_outline_name)
-            user_category._is_new = False
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory(
-                user=user, text=outer_outline_name)
-            user_category._is_new = True
-
-        user_categories.append(user_category)
-
-        existing_category_mapping_set = existing_category_mappings.get(outer_outline_name)
-        for _, outline_xml_url in outline_set:
-            feed = feeds_dict[outline_xml_url]
-            if feed is not None:
                 if existing_category_mapping_set is None or outline_xml_url not in existing_category_mapping_set:
                     feed_user_category_mapping = models.FeedUserCategoryMapping(
                         feed=feeds_dict[outline_xml_url], user_category=user_category)
                     feed_user_category_mappings.append(feed_user_category_mapping)
 
-    # save feeds, even if the rest fails, so we can use them for other users, or to speed up repeat attempts
-    with transaction.atomic():
-        for feed in feeds_dict.values():
-            if feed is not None and feed._is_new:
-                feed.save()
-
-                models.FeedEntry.objects.bulk_create(feed._feed_entries)
-
     with transaction.atomic():
         for user_category in user_categories:
-            if user_category._is_new:
-                user_category.save()
+            user_category.save()
 
         models.SubscribedFeedUserMapping.objects.bulk_create(
             subscribed_feed_user_mappings)
         models.FeedUserCategoryMapping.objects.bulk_create(
             feed_user_category_mappings)
 
-    return HttpResponse()
+        if feed_subscription_progress_entry is not None:
+            feed_subscription_progress_entry.save()
+
+            models.FeedSubscriptionProgressEntryDescriptor.objects.bulk_create(feed_subscription_progress_entry_descriptors)
+
+    if feed_subscription_progress_entry is None:
+        return HttpResponse()
+    else:
+        return HttpResponse(status=202)

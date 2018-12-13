@@ -15,14 +15,10 @@ class DaemonTestCase(TestCase):
 
         logging.getLogger('session_cleanup_daemon').setLevel(logging.CRITICAL)
 
-        cls.user = models.User(email='example@example.com')
-        cls.user.save()
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        cls.user.delete()
+        try:
+            cls.user = models.User.objects.get(email='test@test.com')
+        except models.User.DoesNotExist:
+            cls.user = models.User.objects.create(email='test@test.com')
 
     def test_none(self):
         user = DaemonTestCase.user

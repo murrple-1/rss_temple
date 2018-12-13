@@ -4,6 +4,7 @@ from .feed import feed, feeds, feed_subscribe
 from .feed_entry import feed_entry, feed_entries, feed_entry_read, feed_entries_read, feed_entry_favorite, feed_entries_favorite
 from .user_category import user_category, user_categories, user_category_feeds
 from .opml import opml
+from .progress import feed_subscription_progress
 
 __all__ = [
     my_login,
@@ -27,4 +28,5 @@ __all__ = [
     user_categories,
     user_category_feeds,
     opml,
+    feed_subscription_progress,
 ]
