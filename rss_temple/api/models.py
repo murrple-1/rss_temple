@@ -110,9 +110,12 @@ class Session(models.Model):
 
 
 class UserCategory(models.Model):
+    class Meta:
+        unique_together = (('user', 'text'),)
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField(unique=True)
+    text = models.TextField()
 
     def feeds(self):
         feeds = getattr(self, '_feeds', None)
