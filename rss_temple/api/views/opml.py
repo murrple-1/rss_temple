@@ -9,6 +9,8 @@ from defusedxml.ElementTree import fromstring as defused_fromstring, ParseError 
 
 import xmlschema
 
+from url_normalize import url_normalize
+
 from api import models, feed_handler, opml as opml_util, rss_requests
 from api.exceptions import QueryException
 
@@ -97,7 +99,7 @@ def _opml_post(request):
 
         for outline_element in outer_outline_element.findall('./outline'):
             outline_name = outline_element.attrib['title']
-            outline_xml_url = outline_element.attrib['xmlUrl']
+            outline_xml_url = url_normalize(outline_element.attrib['xmlUrl'])
 
             outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
 

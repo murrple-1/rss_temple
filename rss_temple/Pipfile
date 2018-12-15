@@ -18,6 +18,7 @@ html-sanitizer = "*"
 defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
+url-normalize = "*"
 
 [dev-packages]
 codecov = "*"

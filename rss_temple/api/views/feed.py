@@ -4,6 +4,8 @@ from django.db import transaction
 
 import requests
 
+from url_normalize import url_normalize
+
 from api import models, searchqueries, feed_handler, rss_requests
 from api.exceptions import QueryException
 from api.context import Context
@@ -76,6 +78,8 @@ def _feed_get(request):
     url = request.GET.get('url')
     if not url:
         return HttpResponseBadRequest('\'url\' missing')
+
+    url = url_normalize(url)
 
     field_maps = None
     try:
@@ -176,6 +180,8 @@ def _feed_subscribe_post(request):
     if not url:
         return HttpResponseBadRequest('\'url\' missing')
 
+    url = url_normalize(url)
+
     feed = None
     try:
         feed = models.Feed.objects.get(feed_url=url)
@@ -202,6 +208,8 @@ def _feed_subscribe_delete(request):
     url = request.GET.get('url')
     if not url:
         return HttpResponseBadRequest('\'url\' missing')
+
+    url = url_normalize(url)
 
     count, _ = models.SubscribedFeedUserMapping.objects.filter(
         user=request.user, feed__feed_url=url).delete()
