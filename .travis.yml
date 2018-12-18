@@ -10,7 +10,7 @@ install:
 script:
   - coverage run manage.py test api.tests daemons.tests
 after_script:
-  - codecov
+  - codecov -X gcov
 addons:
   apt:
     update: false
