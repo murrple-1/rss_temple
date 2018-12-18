@@ -1,7 +1,7 @@
 [run]
-source =
-    api
-    daemons
+include =
+    api/*
+    daemons/*
 omit =
     api/tests/*
     daemons/tests/*
