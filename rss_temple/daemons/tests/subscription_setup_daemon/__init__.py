@@ -1,5 +1,6 @@
 import logging
 import time
+import datetime
 from multiprocessing import Process
 
 from django.test import TestCase
@@ -65,25 +66,62 @@ class DaemonTestCase(TestCase):
         self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.STARTED)
 
     def test_do_subscription(self):
+        feed1 = None
+        try:
+            feed1 = models.Feed.objects.get(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing')
+        except models.Feed.DoesNotExist:
+            feed1 = models.Feed.objects.create(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+
+        feed2 = None
+        try:
+            feed2 = models.Feed.objects.get(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title')
+        except models.Feed.DoesNotExist:
+            feed2 = models.Feed.objects.create(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+
+        models.SubscribedFeedUserMapping.objects.filter(user=DaemonTestCase.user).delete()
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed1,
+            user=DaemonTestCase.user)
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed2,
+            user=DaemonTestCase.user,
+            custom_feed_title='Old Custom Title')
+
+        try:
+            models.UserCategory.objects.get(user=DaemonTestCase.user, text='Old User Category')
+        except models.UserCategory.DoesNotExist:
+            models.UserCategory.objects.create(user=DaemonTestCase.user, text='Old User Category')
+
         feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(user=DaemonTestCase.user)
 
         self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.NOT_STARTED)
 
-        feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
-            feed_subscription_progress_entry=feed_subscription_progress_entry, feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
-        self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
+        count = 0
+        for feed_url in ['http://localhost:8080/rss_2.0/well_formed.xml', 'http://localhost:8080/rss_2.0/well_formed.xml?_={s}', 'http://localhost:8080/rss_2.0/sample-404.xml', 'http://localhost:8080/rss_2.0/sample-404.xml?_={s}']:
+            for custom_feed_title in [None, 'Old Custom Title', 'New Custom Title', 'New Custom Title {s}', 'Sample Feed']:
+                for user_category_text in [None, 'Old User Category', 'New User Category', 'New User Category {s}']:
+                    feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
+                        feed_subscription_progress_entry=feed_subscription_progress_entry,
+                        feed_url=feed_url.format(s=count),
+                        custom_feed_title=None if custom_feed_title is None else custom_feed_title.format(s=count),
+                        user_category_text=None if user_category_text is None else user_category_text.format(s=count))
+                    self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
 
-        feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
-            feed_subscription_progress_entry=feed_subscription_progress_entry, feed_url='http://localhost:8080/rss_2.0_ns/well_formed.xml', custom_feed_title='Custom Title')
-        self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
-
-        feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
-            feed_subscription_progress_entry=feed_subscription_progress_entry, feed_url='http://localhost:8080/atom_1.0/well_formed.xml', user_category_text='User Category')
-        self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
-
-        feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
-            feed_subscription_progress_entry=feed_subscription_progress_entry, feed_url='http://localhost:8080/atom_0.3/well_formed.xml', custom_feed_title='Custom Title', user_category_text='User Category')
-        self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
+                    count += 1
 
         feed_subscription_progress_entry = get_first_entry()
 
