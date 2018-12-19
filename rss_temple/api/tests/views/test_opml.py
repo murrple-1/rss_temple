@@ -114,3 +114,22 @@ class OPMLTestCase(TestCase):
         response = c.post('/api/opml', text,
             content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)
+
+    def test_opml_post_quick_subscribe(self):
+        OPMLTestCase._reset_db('api/tests/fixtures/opml_no_404-post.json')
+
+        user = models.User.objects.get(email='test@test.com')
+
+        models.SubscribedFeedUserMapping.objects.filter(user=user).first().delete()
+
+        session_token_str = OPMLTestCase._login()
+
+        c = Client()
+
+        text = None
+        with open('api/tests/test_files/opml/opml-no-404.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+        self.assertEqual(response.status_code, 200)
