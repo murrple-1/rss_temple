@@ -150,6 +150,32 @@ class FeedTestCase(TestCase):
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 409)
 
+    def test_feed_subscribe_post_existing_custom_title(self):
+        feed = None
+        try:
+            feed = models.Feed.objects.get(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
+        except models.Feed.DoesNotExist:
+            feed = models.Feed(
+                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+                title='Sample Feed',
+                home_url='http://localhost:8080',
+                published_at=datetime.datetime.utcnow(),
+                updated_at=None,
+                db_updated_at=None)
+            feed.save()
+
+        models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user).delete()
+        subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.create(
+            feed=feed,
+            user=FeedTestCase.user,
+            custom_feed_title='Custom Title')
+
+        c = Client()
+        response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0_ns/well_formed.xml&customtitle=Custom%20Title',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
+
     def test_feed_subscribe_post_no_url(self):
         c = Client()
         response = c.post('/api/feed/subscribe',
