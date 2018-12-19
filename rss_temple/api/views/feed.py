@@ -193,13 +193,19 @@ def _feed_subscribe_post(request):
 
     custom_title = request.GET.get('customtitle')
 
-    subscribed_feed_user_mapping = models.SubscribedFeedUserMapping(
-        user=user, feed=feed, custom_feed_title=custom_title)
+    existing_subscription_list = list(models.SubscribedFeedUserMapping.objects.filter(user=user).values_list('feed__feed_url', 'custom_feed_title'))
 
-    try:
-        subscribed_feed_user_mapping.save()
-    except IntegrityError:
+    existing_feed_urls = frozenset(t[0] for t in existing_subscription_list)
+    existing_custom_titles = frozenset(t[1] for t in existing_subscription_list if t[1] is not None)
+
+    if custom_title is not None and custom_title in existing_custom_titles:
+        return HttpResponse('custom  title already used', status=409)
+
+    if feed.feed_url in existing_feed_urls:
         return HttpResponse('user already subscribed', status=409)
+
+    models.SubscribedFeedUserMapping.objects.create(
+        user=user, feed=feed, custom_feed_title=custom_title)
 
     return HttpResponse()
 
