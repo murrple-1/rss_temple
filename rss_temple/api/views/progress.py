@@ -30,7 +30,7 @@ def _feed_subscription_progress_get(request, _uuid):
             'state': 'notstarted',
         }
     elif feed_subscription_progress_entry.status == models.FeedSubscriptionProgressEntry.STARTED:
-        progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished'))
+        progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished', flat=True))
 
         total_count = len(progress_statuses)
 

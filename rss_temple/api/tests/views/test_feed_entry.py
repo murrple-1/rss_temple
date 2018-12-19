@@ -21,12 +21,10 @@ class FeedEntryTestCase(TestCase):
         try:
             cls.user = models.User.objects.get(email='test@test.com')
         except models.User.DoesNotExist:
-            cls.user = models.User(email='test@test.com')
-            cls.user.save()
+            cls.user = models.User.objects.create(email='test@test.com')
 
-        session = models.Session(
+        session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
-        session.save()
 
         cls.session = session
 
