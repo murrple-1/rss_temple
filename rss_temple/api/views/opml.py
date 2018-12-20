@@ -9,7 +9,7 @@ import xmlschema
 
 from url_normalize import url_normalize
 
-from api import models, opml as opml_util
+from api import models, opml as opml_util, searchqueries
 
 
 def opml(request):
@@ -156,4 +156,7 @@ def _opml_post(request):
     if feed_subscription_progress_entry is None:
         return HttpResponse()
     else:
-        return HttpResponse(status=202)
+        content, content_type = searchqueries.serialize_content({
+                'progressUuid': str(feed_subscription_progress_entry.uuid),
+            })
+        return HttpResponse(content, content_type, status=202)
