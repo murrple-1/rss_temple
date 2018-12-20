@@ -9,7 +9,7 @@ def feed_subscription_progress(request, _uuid):
     permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)
+        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
 
     if request.method == 'GET':
         return _feed_subscription_progress_get(request, _uuid)

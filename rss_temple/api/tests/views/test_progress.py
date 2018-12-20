@@ -99,3 +99,25 @@ class ProgressTestCase(TestCase):
         self.assertEqual(_json['totalCount'], len(feed_subscription_progress_entry_descriptors))
         self.assertIn('finishedCount', _json)
         self.assertEqual(_json['finishedCount'], finished_count)
+
+    def test_feed_subscription_progress_get_finished(self):
+        feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors = ProgressTestCase.generate_entry()
+
+        feed_subscription_progress_entry.status = models.FeedSubscriptionProgressEntry.FINISHED
+        feed_subscription_progress_entry.save()
+
+        for feed_subscription_progress_entry_descriptor in feed_subscription_progress_entry_descriptors:
+            feed_subscription_progress_entry_descriptor.is_finished = True
+            feed_subscription_progress_entry_descriptor.save()
+
+        c = Client()
+
+        response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
+            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        _json = response.json()
+
+        self.assertIsInstance(_json, dict)
+        self.assertIn('state', _json)
+        self.assertEqual(_json['state'], 'finished')
