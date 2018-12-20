@@ -156,7 +156,5 @@ def _opml_post(request):
     if feed_subscription_progress_entry is None:
         return HttpResponse()
     else:
-        content, content_type = searchqueries.serialize_content({
-                'progressUuid': str(feed_subscription_progress_entry.uuid),
-            })
+        content, content_type = searchqueries.serialize_content(str(feed_subscription_progress_entry.uuid))
         return HttpResponse(content, content_type, status=202)

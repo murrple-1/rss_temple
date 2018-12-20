@@ -24,27 +24,22 @@ def _feed_subscription_progress_get(request, _uuid):
     except models.FeedSubscriptionProgressEntry.DoesNotExist:
         return HttpResponseNotFound('progress not found')
 
-    ret_obj = None
+    progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished', flat=True))
+
+    total_count = len(progress_statuses)
+
+    finished_count = sum(1 for is_finished in progress_statuses if is_finished)
+
+    ret_obj = {
+        'totalCount': total_count,
+        'finishedCount': finished_count,
+    }
     if feed_subscription_progress_entry.status == models.FeedSubscriptionProgressEntry.NOT_STARTED:
-        ret_obj = {
-            'state': 'notstarted',
-        }
+        ret_obj['state'] = 'notstarted'
     elif feed_subscription_progress_entry.status == models.FeedSubscriptionProgressEntry.STARTED:
-        progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished', flat=True))
-
-        total_count = len(progress_statuses)
-
-        finished_count = sum(1 for is_finished in progress_statuses if is_finished)
-
-        ret_obj = {
-            'state': 'started',
-            'totalCount': total_count,
-            'finishedCount': finished_count,
-        }
+        ret_obj['state'] = 'started'
     else:
-        ret_obj = {
-            'state': 'finished',
-        }
+        ret_obj['state'] = 'finished'
 
     content, content_type = searchqueries.serialize_content(ret_obj)
 
