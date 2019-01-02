@@ -15,7 +15,7 @@ class CustomConvertTo:
 class Bool(CustomConvertTo):
     @staticmethod
     def convertto(search_obj):
-        return search_obj == 'true'
+        return search_obj.lower() == 'true'
 
 
 class Int(CustomConvertTo):
@@ -30,7 +30,7 @@ class IntList(CustomConvertTo):
         if search_obj.strip() == '':
             return []
 
-        return [int(part.strip()) for part in search_obj.split(',')]
+        return [int(part) for part in search_obj.split(',')]
 
 
 class IntRange(CustomConvertTo):
@@ -55,14 +55,16 @@ class Date(CustomConvertTo):
 
 class DateRange(CustomConvertTo):
     @staticmethod
+    def _to_datetime(part):
+        return datetime.datetime.strptime(part, '%Y-%m-%d %H:%M:%S')
+
+    @staticmethod
     def convertto(search_obj):
         parts = search_obj.split('|')
 
-        def _to_datetime(part):
-            return datetime.datetime.strptime(part, '%Y-%m-%d %H:%M:%S')
-        start_datetime = _to_datetime('{0} 00:00:00'.format(
+        start_datetime = DateRange._to_datetime('{0} 00:00:00'.format(
             parts[0])) if parts[0] else datetime.datetime.min
-        end_datetime = _to_datetime('{0} 23:59:59'.format(
+        end_datetime = DateRange._to_datetime('{0} 23:59:59'.format(
             parts[1])) if parts[1] else datetime.datetime.max
         return start_datetime, end_datetime
 

@@ -27,8 +27,8 @@ class ConvertToTestCase(TestCase):
         self.assertTrue(Bool.convertto('true'))
         self.assertFalse(Bool.convertto('false'))
         self.assertFalse(Bool.convertto(''))
-        self.assertFalse(Bool.convertto('True'))
-        self.assertFalse(Bool.convertto('TRUE'))
+        self.assertTrue(Bool.convertto('True'))
+        self.assertTrue(Bool.convertto('TRUE'))
 
     def test_int(self):
         self.assertEqual(Int.convertto('1'), 1)
