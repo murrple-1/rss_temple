@@ -166,7 +166,7 @@ class FeedTestCase(TestCase):
             feed.save()
 
         models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user).delete()
-        subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.create(
+        models.SubscribedFeedUserMapping.objects.create(
             feed=feed,
             user=FeedTestCase.user,
             custom_feed_title='Custom Title')

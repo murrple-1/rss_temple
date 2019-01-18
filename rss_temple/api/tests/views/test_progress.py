@@ -4,7 +4,6 @@ import uuid
 import random
 
 from django.test import TestCase, Client
-from django.core.management import call_command
 
 from api import models
 

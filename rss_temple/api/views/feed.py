@@ -1,5 +1,4 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
-from django.db.utils import IntegrityError
 from django.db import transaction
 
 import requests
