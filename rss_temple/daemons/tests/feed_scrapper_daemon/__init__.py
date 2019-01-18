@@ -7,6 +7,8 @@ from api import models
 from daemons.feed_scrapper_daemon import scrape_feed
 
 # TODO write tests
+
+
 class DaemonTestCase(TestCase):
     @classmethod
     def setUpClass(cls):

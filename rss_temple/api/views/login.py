@@ -30,7 +30,7 @@ def my_login(request):
         return _my_login_post(request)
 
 
-def google_login(request): # pragma: no cover
+def google_login(request):  # pragma: no cover
     permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
@@ -40,7 +40,7 @@ def google_login(request): # pragma: no cover
         return _google_login_post(request)
 
 
-def facebook_login(request): # pragma: no cover
+def facebook_login(request):  # pragma: no cover
     permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
@@ -60,7 +60,7 @@ def my_login_session(request):
         return _my_login_session_post(request)
 
 
-def google_login_session(request): # pragma: no cover
+def google_login_session(request):  # pragma: no cover
     permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
@@ -70,7 +70,7 @@ def google_login_session(request): # pragma: no cover
         return _google_login_session_post(request)
 
 
-def facebook_login_session(request): # pragma: no cover
+def facebook_login_session(request):  # pragma: no cover
     permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
@@ -125,7 +125,7 @@ def _my_login_post(request):
     return HttpResponse()
 
 
-def _google_login_post(request): # pragma: no cover
+def _google_login_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -165,8 +165,8 @@ def _google_login_post(request): # pragma: no cover
         return HttpResponseBadRequest('bad Google token')
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists() or
-        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
+        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -191,7 +191,7 @@ def _google_login_post(request): # pragma: no cover
     return HttpResponse()
 
 
-def _facebook_login_post(request): # pragma: no cover
+def _facebook_login_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -232,8 +232,8 @@ def _facebook_login_post(request): # pragma: no cover
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists() or
-        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
+        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -308,7 +308,7 @@ def _my_login_session_post(request):
     return HttpResponse(content, content_type)
 
 
-def _google_login_session_post(request): # pragma: no cover
+def _google_login_session_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -357,7 +357,7 @@ def _google_login_session_post(request): # pragma: no cover
     return HttpResponse(content, content_type)
 
 
-def _facebook_login_session_post(request): # pragma: no cover
+def _facebook_login_session_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 

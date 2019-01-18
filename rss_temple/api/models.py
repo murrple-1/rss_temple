@@ -14,11 +14,13 @@ class User(models.Model):
             category_dict = {}
 
             for subscribed_feed_user_mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self):
-                feed_user_category_mappings = list(FeedUserCategoryMapping.objects.select_related('user_category').filter(feed=subscribed_feed_user_mapping.feed))
+                feed_user_category_mappings = list(FeedUserCategoryMapping.objects.select_related(
+                    'user_category').filter(feed=subscribed_feed_user_mapping.feed))
 
                 keys = None
                 if len(feed_user_category_mappings) > 0:
-                    keys = frozenset(feed_user_category_mapping.user_category.text for feed_user_category_mapping in feed_user_category_mappings)
+                    keys = frozenset(
+                        feed_user_category_mapping.user_category.text for feed_user_category_mapping in feed_user_category_mappings)
                 else:
                     keys = [None]
 
@@ -77,7 +79,8 @@ class User(models.Model):
         return favorite_feed_entries
 
     def favorite_feed_entry_uuids(self):
-        favorite_feed_entry_uuids = getattr(self, '_favorite_feed_entry_uuids', None)
+        favorite_feed_entry_uuids = getattr(
+            self, '_favorite_feed_entry_uuids', None)
         if favorite_feed_entry_uuids is None:
             favorite_feed_entry_uuids = frozenset(
                 _uuid for _uuid in self.favorite_feed_entries().values_list('uuid', flat=True))
@@ -120,7 +123,8 @@ class UserCategory(models.Model):
     def feeds(self):
         feeds = getattr(self, '_feeds', None)
         if feeds is None:
-            feeds = Feed.objects.filter(uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self))
+            feeds = Feed.objects.filter(
+                uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self))
             self._feeds = feeds
 
         return feeds
@@ -196,14 +200,14 @@ class FeedEntry(models.Model):
     def __eq__(self, other):
         if isinstance(other, FeedEntry):
             return (
-                self.id == other.id
-                and self.created_at == other.created_at
-                and self.published_at == other.published_at
-                and self.updated_at == other.updated_at
-                and self.title == other.title
-                and self.url == other.url
-                and self.content == other.content
-                and self.author_name == other.author_name
+                self.id == other.id and
+                self.created_at == other.created_at and
+                self.published_at == other.published_at and
+                self.updated_at == other.updated_at and
+                self.title == other.title and
+                self.url == other.url and
+                self.content == other.content and
+                self.author_name == other.author_name
             )
         else:
             return False
@@ -286,12 +290,14 @@ class FeedSubscriptionProgressEntry(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.IntegerField(default=NOT_STARTED, choices=[(NOT_STARTED, 'Not Started'), (STARTED, 'Started'), (FINISHED, 'Finished')])
+    status = models.IntegerField(default=NOT_STARTED, choices=[(
+        NOT_STARTED, 'Not Started'), (STARTED, 'Started'), (FINISHED, 'Finished')])
 
 
 class FeedSubscriptionProgressEntryDescriptor(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed_subscription_progress_entry = models.ForeignKey(FeedSubscriptionProgressEntry, on_delete=models.CASCADE)
+    feed_subscription_progress_entry = models.ForeignKey(
+        FeedSubscriptionProgressEntry, on_delete=models.CASCADE)
     feed_url = models.TextField()
     custom_feed_title = models.TextField(null=True)
     user_category_text = models.TextField(null=True)

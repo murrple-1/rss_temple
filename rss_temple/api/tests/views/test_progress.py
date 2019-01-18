@@ -7,6 +7,7 @@ from django.test import TestCase, Client
 
 from api import models
 
+
 class ProgressTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -30,7 +31,8 @@ class ProgressTestCase(TestCase):
 
     @staticmethod
     def generate_entry(desc_count=10):
-        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(user=ProgressTestCase.user)
+        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
+            user=ProgressTestCase.user)
 
         feed_subscription_progress_entry_descriptors = []
 
@@ -39,7 +41,8 @@ class ProgressTestCase(TestCase):
                 feed_subscription_progress_entry=feed_subscription_progress_entry,
                 feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_={s}'.format(s=step))
 
-            feed_subscription_progress_entry_descriptors.append(feed_subscription_progress_entry_descriptor)
+            feed_subscription_progress_entry_descriptors.append(
+                feed_subscription_progress_entry_descriptor)
 
         return feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors
 
@@ -47,7 +50,7 @@ class ProgressTestCase(TestCase):
         c = Client()
 
         response = c.get('/api/feed/subscribe/progress/{}'.format(str(uuid.uuid4())),
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
     def test_feed_subscription_progress_get_not_started(self):
@@ -56,7 +59,7 @@ class ProgressTestCase(TestCase):
         c = Client()
 
         response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         _json = response.json()
@@ -71,7 +74,8 @@ class ProgressTestCase(TestCase):
         feed_subscription_progress_entry.status = models.FeedSubscriptionProgressEntry.STARTED
         feed_subscription_progress_entry.save()
 
-        feed_subscription_progress_entry_descriptor = feed_subscription_progress_entry_descriptors[0]
+        feed_subscription_progress_entry_descriptor = feed_subscription_progress_entry_descriptors[
+            0]
         feed_subscription_progress_entry_descriptor.is_finished = True
         feed_subscription_progress_entry_descriptor.save()
 
@@ -86,7 +90,7 @@ class ProgressTestCase(TestCase):
         c = Client()
 
         response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         _json = response.json()
@@ -95,7 +99,8 @@ class ProgressTestCase(TestCase):
         self.assertIn('state', _json)
         self.assertEqual(_json['state'], 'started')
         self.assertIn('totalCount', _json)
-        self.assertEqual(_json['totalCount'], len(feed_subscription_progress_entry_descriptors))
+        self.assertEqual(_json['totalCount'], len(
+            feed_subscription_progress_entry_descriptors))
         self.assertIn('finishedCount', _json)
         self.assertEqual(_json['finishedCount'], finished_count)
 
@@ -112,7 +117,7 @@ class ProgressTestCase(TestCase):
         c = Client()
 
         response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         _json = response.json()

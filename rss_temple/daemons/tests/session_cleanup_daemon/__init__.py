@@ -38,11 +38,11 @@ class DaemonTestCase(TestCase):
 
         self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
 
-        models.Session.objects.create(expires_at=datetime.datetime.utcnow() +
-                       datetime.timedelta(days=-1), user=user)
+        models.Session.objects.create(expires_at=datetime.datetime.utcnow()
+                                      + datetime.timedelta(days=-1), user=user)
 
-        models.Session.objects.create(expires_at=datetime.datetime.utcnow() +
-                       datetime.timedelta(days=1), user=user)
+        models.Session.objects.create(expires_at=datetime.datetime.utcnow()
+                                      + datetime.timedelta(days=1), user=user)
 
         self.assertEquals(models.Session.objects.filter(user=user).count(), 2)
 

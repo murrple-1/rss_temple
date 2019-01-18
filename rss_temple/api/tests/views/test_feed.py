@@ -165,7 +165,8 @@ class FeedTestCase(TestCase):
                 db_updated_at=None)
             feed.save()
 
-        models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user).delete()
+        models.SubscribedFeedUserMapping.objects.filter(
+            user=FeedTestCase.user).delete()
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed,
             user=FeedTestCase.user,

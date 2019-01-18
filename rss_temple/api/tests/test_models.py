@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from api import models
 
+
 class FeedEntryTestCase(TestCase):
     def test_eq(self):
         feed = models.Feed(

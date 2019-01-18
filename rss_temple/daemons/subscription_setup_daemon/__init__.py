@@ -26,7 +26,7 @@ from api.exceptions import QueryException
 _logger = None
 
 
-def logger(): # pragma: no cover
+def logger():  # pragma: no cover
     global _logger
 
     if _logger is None:
@@ -55,7 +55,8 @@ def logger(): # pragma: no cover
 
 def get_first_entry():
     with transaction.atomic():
-        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.filter(status=models.FeedSubscriptionProgressEntry.NOT_STARTED).select_for_update(skip_locked=True).first()
+        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.filter(
+            status=models.FeedSubscriptionProgressEntry.NOT_STARTED).select_for_update(skip_locked=True).first()
 
         if feed_subscription_progress_entry is not None:
             feed_subscription_progress_entry.status = models.FeedSubscriptionProgressEntry.STARTED
@@ -77,7 +78,8 @@ def do_subscription(feed_subscription_progress_entry):
     user_category_mapping_dict = {}
     for user_category in models.UserCategory.objects.filter(user_id=feed_subscription_progress_entry.user_id):
         user_categories[user_category.text] = user_category
-        user_category_mapping_dict[user_category.text] = set(models.FeedUserCategoryMapping.objects.filter(user_category=user_category).values_list('feed__feed_url'))
+        user_category_mapping_dict[user_category.text] = set(models.FeedUserCategoryMapping.objects.filter(
+            user_category=user_category).values_list('feed__feed_url'))
 
     for feed_subscription_progress_entry_descriptor in models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry, is_finished=False):
         feed_url = feed_subscription_progress_entry_descriptor.feed_url
@@ -105,7 +107,8 @@ def do_subscription(feed_subscription_progress_entry):
                 if custom_title is not None and feed.title == custom_title:
                     custom_title = None
 
-                models.SubscribedFeedUserMapping.objects.create(feed=feed, user_id=feed_subscription_progress_entry.user_id, custom_feed_title=custom_title)
+                models.SubscribedFeedUserMapping.objects.create(
+                    feed=feed, user_id=feed_subscription_progress_entry.user_id, custom_feed_title=custom_title)
 
                 subscriptions.add(feed_url)
 
@@ -118,11 +121,13 @@ def do_subscription(feed_subscription_progress_entry):
                 user_category = user_categories.get(user_category_text)
 
                 if user_category is None:
-                    user_category = models.UserCategory.objects.create(user_id=feed_subscription_progress_entry.user_id, text=user_category_text)
+                    user_category = models.UserCategory.objects.create(
+                        user_id=feed_subscription_progress_entry.user_id, text=user_category_text)
 
                     user_categories[user_category_text] = user_category
 
-                user_category_feeds = user_category_mapping_dict.get(user_category_text)
+                user_category_feeds = user_category_mapping_dict.get(
+                    user_category_text)
 
                 if user_category_feeds is None:
                     user_category_feeds = set()
@@ -130,7 +135,8 @@ def do_subscription(feed_subscription_progress_entry):
                     user_category_mapping_dict[user_category_text] = user_category_feeds
 
                 if feed_url not in user_category_feeds:
-                    models.FeedUserCategoryMapping.objects.create(feed=feed, user_category=user_category)
+                    models.FeedUserCategoryMapping.objects.create(
+                        feed=feed, user_category=user_category)
 
                     user_category_feeds.add(feed_url)
 

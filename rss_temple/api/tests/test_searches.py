@@ -127,8 +127,8 @@ class AllSearchesTestCase(TestCase):
     }
 
     class MockRequest:
-            def __init__(self):
-                self.user = AllSearchesTestCase.user
+        def __init__(self):
+            self.user = AllSearchesTestCase.user
 
     @classmethod
     def setUpClass(cls):
@@ -143,7 +143,8 @@ class AllSearchesTestCase(TestCase):
         cls.user.save()
 
     def test_run(self):
-        self.assertEqual(len(AllSearchesTestCase.TRIALS), len(searches._search_fns))
+        self.assertEqual(len(AllSearchesTestCase.TRIALS),
+                         len(searches._search_fns))
 
         for key, trial_dict in AllSearchesTestCase.TRIALS.items():
             search_fns_dict = searches._search_fns[key]

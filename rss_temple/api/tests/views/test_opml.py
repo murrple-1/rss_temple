@@ -37,7 +37,7 @@ class OPMLTestCase(TestCase):
         c = Client()
 
         response = c.get('/api/opml',
-            HTTP_X_SESSION_TOKEN=session_token_str)
+                         HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_opml_post(self):
@@ -52,7 +52,7 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 202)
 
     def test_opml_post_malformed_xml(self):
@@ -67,7 +67,7 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 400)
 
     def test_opml_post_malformed_opml(self):
@@ -82,7 +82,7 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 400)
 
     def test_opml_post_duplicates(self):
@@ -97,7 +97,7 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 202)
 
     def test_opml_post_done_before(self):
@@ -112,7 +112,7 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_opml_post_quick_subscribe(self):
@@ -120,7 +120,8 @@ class OPMLTestCase(TestCase):
 
         user = models.User.objects.get(email='test@test.com')
 
-        models.SubscribedFeedUserMapping.objects.filter(user=user).first().delete()
+        models.SubscribedFeedUserMapping.objects.filter(
+            user=user).first().delete()
 
         session_token_str = OPMLTestCase._login()
 
@@ -131,5 +132,5 @@ class OPMLTestCase(TestCase):
             text = f.read()
 
         response = c.post('/api/opml', text,
-            content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 200)

@@ -14,7 +14,7 @@ _sanitizer = Sanitizer()
 _logger = None
 
 
-def logger(): # pragma: no cover
+def logger():  # pragma: no cover
     global _logger
     if _logger is None:
         _logger = logging.getLogger('rss_temple')

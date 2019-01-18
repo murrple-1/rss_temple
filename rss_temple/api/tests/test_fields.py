@@ -102,8 +102,8 @@ class AllFieldsTestCase(TestCase):
         return [cls.feed_entry]
 
     class MockRequest:
-            def __init__(self):
-                self.user = AllFieldsTestCase.user
+        def __init__(self):
+            self.user = AllFieldsTestCase.user
 
     @classmethod
     def setUpClass(cls):
@@ -170,7 +170,8 @@ class AllFieldsTestCase(TestCase):
         user_category_mapping.save()
 
     def test_run(self):
-        self.assertEqual(len(AllFieldsTestCase.TRIALS), len(fields._field_configs))
+        self.assertEqual(len(AllFieldsTestCase.TRIALS),
+                         len(fields._field_configs))
 
         for key, generator in AllFieldsTestCase.TRIALS.items():
             db_objs = generator()

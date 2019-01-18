@@ -303,7 +303,8 @@ def _user_category_feeds_post(request, _uuid):
         feed_user_category_mappings.append(feed_user_category_mapping)
 
     try:
-        models.FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
+        models.FeedUserCategoryMapping.objects.bulk_create(
+            feed_user_category_mappings)
     except IntegrityError:
         return HttpResponse('mapping already exists', status=409)
 
@@ -342,7 +343,8 @@ def _user_category_feeds_delete(request, _uuid):
     else:
         return HttpResponseBadRequest('JSON body must be array or UUID')
 
-    feed_user_category_mappings = models.FeedUserCategoryMapping.objects.filter(user_category=user_category, feed_id__in=feed_uuids)
+    feed_user_category_mappings = models.FeedUserCategoryMapping.objects.filter(
+        user_category=user_category, feed_id__in=feed_uuids)
 
     if feed_user_category_mappings.count() < len(feed_uuids):
         return HttpResponseNotFound('mapping not found')

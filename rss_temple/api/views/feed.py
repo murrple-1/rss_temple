@@ -192,10 +192,12 @@ def _feed_subscribe_post(request):
 
     custom_title = request.GET.get('customtitle')
 
-    existing_subscription_list = list(models.SubscribedFeedUserMapping.objects.filter(user=user).values_list('feed__feed_url', 'custom_feed_title'))
+    existing_subscription_list = list(models.SubscribedFeedUserMapping.objects.filter(
+        user=user).values_list('feed__feed_url', 'custom_feed_title'))
 
     existing_feed_urls = frozenset(t[0] for t in existing_subscription_list)
-    existing_custom_titles = frozenset(t[1] for t in existing_subscription_list if t[1] is not None)
+    existing_custom_titles = frozenset(
+        t[1] for t in existing_subscription_list if t[1] is not None)
 
     if custom_title is not None and custom_title in existing_custom_titles:
         return HttpResponse('custom  title already used', status=409)

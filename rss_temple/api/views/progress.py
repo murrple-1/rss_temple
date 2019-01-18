@@ -9,7 +9,7 @@ def feed_subscription_progress(request, _uuid):
     permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods) # pragma: no cover
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
         return _feed_subscription_progress_get(request, _uuid)
@@ -20,11 +20,13 @@ def _feed_subscription_progress_get(request, _uuid):
 
     feed_subscription_progress_entry = None
     try:
-        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.get(uuid=_uuid, user=request.user)
+        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.get(
+            uuid=_uuid, user=request.user)
     except models.FeedSubscriptionProgressEntry.DoesNotExist:
         return HttpResponseNotFound('progress not found')
 
-    progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished', flat=True))
+    progress_statuses = list(models.FeedSubscriptionProgressEntryDescriptor.objects.filter(
+        feed_subscription_progress_entry=feed_subscription_progress_entry).values_list('is_finished', flat=True))
 
     total_count = len(progress_statuses)
 

@@ -29,7 +29,8 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.getLogger('subscription_setup_daemon').setLevel(logging.CRITICAL)
+        logging.getLogger('subscription_setup_daemon').setLevel(
+            logging.CRITICAL)
 
         try:
             cls.user = models.User.objects.get(email='test@test.com')
@@ -56,14 +57,17 @@ class DaemonTestCase(TestCase):
 
         self.assertIsNone(feed_subscription_progress_entry)
 
-        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(user=DaemonTestCase.user)
+        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
+            user=DaemonTestCase.user)
 
-        self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.NOT_STARTED)
+        self.assertEqual(feed_subscription_progress_entry.status,
+                         models.FeedSubscriptionProgressEntry.NOT_STARTED)
 
         feed_subscription_progress_entry = get_first_entry()
 
         self.assertIsNotNone(feed_subscription_progress_entry)
-        self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.STARTED)
+        self.assertEqual(feed_subscription_progress_entry.status,
+                         models.FeedSubscriptionProgressEntry.STARTED)
 
     def test_do_subscription(self):
         feed1 = None
@@ -92,7 +96,8 @@ class DaemonTestCase(TestCase):
                 updated_at=None,
                 db_updated_at=None)
 
-        models.SubscribedFeedUserMapping.objects.filter(user=DaemonTestCase.user).delete()
+        models.SubscribedFeedUserMapping.objects.filter(
+            user=DaemonTestCase.user).delete()
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed1,
             user=DaemonTestCase.user)
@@ -102,13 +107,17 @@ class DaemonTestCase(TestCase):
             custom_feed_title='Old Custom Title')
 
         try:
-            models.UserCategory.objects.get(user=DaemonTestCase.user, text='Old User Category')
+            models.UserCategory.objects.get(
+                user=DaemonTestCase.user, text='Old User Category')
         except models.UserCategory.DoesNotExist:
-            models.UserCategory.objects.create(user=DaemonTestCase.user, text='Old User Category')
+            models.UserCategory.objects.create(
+                user=DaemonTestCase.user, text='Old User Category')
 
-        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(user=DaemonTestCase.user)
+        feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
+            user=DaemonTestCase.user)
 
-        self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.NOT_STARTED)
+        self.assertEqual(feed_subscription_progress_entry.status,
+                         models.FeedSubscriptionProgressEntry.NOT_STARTED)
 
         count = 0
         for feed_url in ['http://localhost:8080/rss_2.0/well_formed.xml', 'http://localhost:8080/rss_2.0/well_formed.xml?_={s}', 'http://localhost:8080/rss_2.0/sample-404.xml', 'http://localhost:8080/rss_2.0/sample-404.xml?_={s}']:
@@ -117,16 +126,20 @@ class DaemonTestCase(TestCase):
                     feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
                         feed_subscription_progress_entry=feed_subscription_progress_entry,
                         feed_url=feed_url.format(s=count),
-                        custom_feed_title=None if custom_feed_title is None else custom_feed_title.format(s=count),
+                        custom_feed_title=None if custom_feed_title is None else custom_feed_title.format(
+                            s=count),
                         user_category_text=None if user_category_text is None else user_category_text.format(s=count))
-                    self.assertFalse(feed_subscription_progress_entry_descriptor.is_finished)
+                    self.assertFalse(
+                        feed_subscription_progress_entry_descriptor.is_finished)
 
                     count += 1
 
         feed_subscription_progress_entry = get_first_entry()
 
-        self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.STARTED)
+        self.assertEqual(feed_subscription_progress_entry.status,
+                         models.FeedSubscriptionProgressEntry.STARTED)
 
         do_subscription(feed_subscription_progress_entry)
 
-        self.assertEqual(feed_subscription_progress_entry.status, models.FeedSubscriptionProgressEntry.FINISHED)
+        self.assertEqual(feed_subscription_progress_entry.status,
+                         models.FeedSubscriptionProgressEntry.FINISHED)
