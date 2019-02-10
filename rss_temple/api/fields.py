@@ -56,7 +56,7 @@ _field_configs = {
 }
 
 
-def get_default_field_maps(object_name):
+def get_default_field_maps(object_name: str):
     object_field_configs = _field_configs[object_name]
     default_field_maps = []
 
@@ -72,7 +72,7 @@ def get_default_field_maps(object_name):
     return default_field_maps
 
 
-def get_all_field_maps(object_name):
+def get_all_field_maps(object_name: str):
     object_field_configs = _field_configs[object_name]
     all_field_maps = []
 
@@ -87,7 +87,7 @@ def get_all_field_maps(object_name):
     return all_field_maps
 
 
-def to_field_map(object_name, field_name):
+def to_field_map(object_name: str, field_name: str):
     object_field_configs = _field_configs[object_name]
 
     for _field_name, field_config in object_field_configs.items():
@@ -99,5 +99,5 @@ def to_field_map(object_name, field_name):
     return None
 
 
-def field_list(object_name):
+def field_list(object_name: str):
     return _field_configs[object_name].keys()

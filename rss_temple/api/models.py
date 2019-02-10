@@ -1,6 +1,11 @@
+from typing import Mapping, List, FrozenSet
+from uuid import UUID
+from django.db.models.query import QuerySet
+
 import uuid
 
 from django.db import models
+
 from django.utils import timezone
 
 
@@ -8,7 +13,7 @@ class User(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     email = models.CharField(max_length=64, unique=True)
 
-    def category_dict(self):
+    def category_dict(self) -> Mapping[str, List['Feed']]:
         category_dict = getattr(self, '_category_dict', None)
         if category_dict is None:
             category_dict = {}
@@ -38,7 +43,7 @@ class User(models.Model):
 
         return category_dict
 
-    def subscribed_feeds_dict(self):
+    def subscribed_feeds_dict(self) -> Mapping[UUID, 'Feed']:
         subscribed_feeds_dict = getattr(self, '_subscribed_feeds_dict', None)
         if subscribed_feeds_dict is None:
             subscribed_feeds_dict = {}
@@ -51,7 +56,7 @@ class User(models.Model):
 
         return subscribed_feeds_dict
 
-    def read_feed_entries(self):
+    def read_feed_entries(self) -> QuerySet:
         read_feed_entries = getattr(self, '_read_feed_entries', None)
         if read_feed_entries is None:
             read_feed_entries = FeedEntry.objects.filter(
@@ -60,7 +65,7 @@ class User(models.Model):
 
         return read_feed_entries
 
-    def read_feed_entry_uuids(self):
+    def read_feed_entry_uuids(self) -> FrozenSet[UUID]:
         read_feed_entry_uuids = getattr(self, '_read_feed_entry_uuids', None)
         if read_feed_entry_uuids is None:
             read_feed_entry_uuids = frozenset(
