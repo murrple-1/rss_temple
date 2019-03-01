@@ -98,12 +98,12 @@ class MyLogin(Login):
     pw_hash = models.CharField(max_length=96)
 
 
-class FacebookLogin(Login):
-    profile_id = models.CharField(max_length=96)
-
-
 class GoogleLogin(Login):
     g_user_id = models.CharField(max_length=96)
+
+
+class FacebookLogin(Login):
+    profile_id = models.CharField(max_length=96)
 
 
 class Session(models.Model):

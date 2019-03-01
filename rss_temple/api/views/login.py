@@ -8,6 +8,8 @@ import argon2
 
 import ujson
 
+from validate_email import validate_email
+
 import facebook
 
 from google.oauth2 import id_token as g_id_token
@@ -100,6 +102,9 @@ def _my_login_post(request):
     if not isinstance(_json['email'], str):
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
+    if not validate_email(_json['email']):
+        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
+
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
@@ -144,6 +149,9 @@ def _google_login_post(request):  # pragma: no cover
 
     if not isinstance(_json['email'], str):
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+
+    if not validate_email(_json['email']):
+        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
 
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
@@ -210,6 +218,9 @@ def _facebook_login_post(request):  # pragma: no cover
 
     if not isinstance(_json['email'], str):
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+
+    if not validate_email(_json['email']):
+        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
 
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover

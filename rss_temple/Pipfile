@@ -19,6 +19,7 @@ defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
 url-normalize = "*"
+validate-email = "*"
 
 [dev-packages]
 codecov = "*"
