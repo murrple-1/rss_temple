@@ -20,6 +20,9 @@ _field_configs = {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
         'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(key) for key in db_obj.subscribed_feeds_dict().keys()), False),
+
+        'hasGoogleLogin': _FieldConfig(lambda context, db_obj: db_obj.google_login() is not None, False),
+        'hasFacebookLogin': _FieldConfig(lambda context, db_obj: db_obj.facebook_login() is not None, False),
     },
     'usercategory': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),

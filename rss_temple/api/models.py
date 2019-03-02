@@ -88,6 +88,30 @@ class User(models.Model):
 
         return favorite_feed_entry_uuids
 
+    def my_login(self):
+        if not hasattr(self, '_my_login'):
+            self._my_login = MyLogin.objects.get(user=self)
+
+        return self._my_login
+
+    def google_login(self):
+        if not hasattr(self, '_google_login'):
+            try:
+                self._google_login = GoogleLogin.objects.get(user=self)
+            except GoogleLogin.DoesNotExist:
+                self._google_login = None
+
+        return self._google_login
+
+    def facebook_login(self):
+        if not hasattr(self, '_facebook_login'):
+            try:
+                self._facebook_login = FacebookLogin.objects.get(user=self)
+            except FacebookLogin.DoesNotExist:
+                self._facebook_login = None
+
+        return self._facebook_login
+
 
 class Login(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
