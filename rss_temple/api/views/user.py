@@ -22,6 +22,8 @@ _OBJECT_NAME = 'user'
 
 _password_hasher = argon2.PasswordHasher()
 
+_google_client_id = settings.GOOGLE_CLIENT_ID
+
 
 def user(request):
     permitted_methods = {'GET', 'PUT'}
@@ -140,7 +142,7 @@ def _user_put(request):
                 idinfo = None
                 try:
                     idinfo = g_id_token.verify_oauth2_token(
-                        _json['token'], g_requests.Request(), _google_client_id)
+                        google_json['token'], g_requests.Request(), _google_client_id)
                 except ValueError:
                     return HttpResponseBadRequest('bad Google token')
 
@@ -169,7 +171,7 @@ def _user_put(request):
                 if not isinstance(facebook_json['token'], str):
                     return HttpResponseBadRequest('\'token\' must be string')
 
-                graph = facebook.GraphAPI(_json['token'])
+                graph = facebook.GraphAPI(facebook_json['token'])
 
                 profile = None
                 try:
