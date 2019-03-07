@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed
@@ -80,6 +81,16 @@ def facebook_login_session(request):  # pragma: no cover
 
     if request.method == 'POST':
         return _facebook_login_session_post(request)
+
+
+def session(request):
+    permitted_methods = {'DELETE'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)
+
+    if request.method == 'DELETE':
+        return _session_delete(request)
 
 
 def _my_login_post(request):
@@ -417,3 +428,19 @@ def _facebook_login_session_post(request):  # pragma: no cover
 
     content, content_type = searchqueries.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
+
+
+def _session_delete(request):
+    session_token = request.META.get('HTTP_X_SESSION_TOKEN')
+    if session_token is None:
+        return HttpResponseBadRequest('\'X-Session-Token\' header missing')
+
+    session_token_uuid = None
+    try:
+        session_token_uuid = uuid.UUID(session_token)
+    except ValueError:
+        return HttpResponseBadRequest('\'X-Session-Token\' header malformed')
+
+    models.Session.objects.filter(uuid=session_token_uuid).delete()
+
+    return HttpResponse()

@@ -104,6 +104,7 @@ AUTHENTICATION_DISABLE = [
     (r'^/api/login/my/session/?$', ['POST']),
     (r'^/api/login/google/session/?$', ['POST']),
     (r'^/api/login/facebook/session/?$', ['POST']),
+    (r'^api/session/?$', ['DELETE']),
 ]
 
 REALM = 'RSS Temple'
