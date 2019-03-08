@@ -2,9 +2,9 @@ from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadReq
 from django.db import transaction
 from django.conf import settings
 
-import ujson
-
 import argon2
+
+import ujson
 
 from validate_email import validate_email
 
@@ -16,11 +16,10 @@ from google.auth.transport import requests as g_requests
 from api.exceptions import QueryException
 from api import searchqueries, models
 from api.context import Context
+from api.password_hasher import password_hasher
 
 
 _OBJECT_NAME = 'user'
-
-_password_hasher = argon2.PasswordHasher()
 
 _google_client_id = settings.GOOGLE_CLIENT_ID
 
@@ -112,11 +111,11 @@ def _user_put(request):
                 return HttpResponseBadRequest('\'new\' must be string')
 
             try:
-                _password_hasher.verify(my_login.pw_hash, password_json['old'])
+                password_hasher().verify(my_login.pw_hash, password_json['old'])
             except argon2.exceptions.VerifyMismatchError:
                 return HttpResponseForbidden()
 
-            my_login.pw_hash = _password_hasher.hash(password_json['new'])
+            my_login.pw_hash = password_hasher().hash(password_json['new'])
 
             has_changed = True
 

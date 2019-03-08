@@ -17,8 +17,7 @@ from google.oauth2 import id_token as g_id_token
 from google.auth.transport import requests as g_requests
 
 from api import models, searchqueries
-
-_password_hasher = argon2.PasswordHasher()
+from api.password_hasher import password_hasher
 
 _google_client_id = settings.GOOGLE_CLIENT_ID
 
@@ -134,7 +133,7 @@ def _my_login_post(request):
             user.save()
 
         my_login = models.MyLogin(
-            pw_hash=_password_hasher.hash(_json['password']),
+            pw_hash=password_hasher().hash(_json['password']),
             user=user)
         my_login.save()
 
@@ -198,7 +197,7 @@ def _google_login_post(request):  # pragma: no cover
             user.save()
 
         my_login = models.MyLogin(
-            pw_hash=_password_hasher.hash(_json['password']),
+            pw_hash=password_hasher().hash(_json['password']),
             user=user)
         my_login.save()
 
@@ -268,7 +267,7 @@ def _facebook_login_post(request):  # pragma: no cover
             user.save()
 
         my_login = models.MyLogin(
-            pw_hash=_password_hasher.hash(_json['password']),
+            pw_hash=password_hasher().hash(_json['password']),
             user=user)
         my_login.save()
 
@@ -316,7 +315,7 @@ def _my_login_session_post(request):
         return HttpResponseForbidden()
 
     try:
-        _password_hasher.verify(my_login.pw_hash, _json['password'])
+        password_hasher().verify(my_login.pw_hash, _json['password'])
     except argon2.exceptions.VerifyMismatchError:
         return HttpResponseForbidden()
 
