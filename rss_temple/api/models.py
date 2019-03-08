@@ -136,6 +136,12 @@ class Session(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
+class PasswordResetToken(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    expires_at = models.DateTimeField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
 class UserCategory(models.Model):
     class Meta:
         unique_together = (('user', 'text'),)

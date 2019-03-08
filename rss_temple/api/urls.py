@@ -12,6 +12,8 @@ urlpatterns = [
     re_path(r'^login/google/session/?$', views.google_login_session),
     re_path(r'^login/facebook/session/?$', views.facebook_login_session),
     re_path(r'^session/?$', views.session),
+    re_path(r'^passwordresettoken/request/?$', views.passwordresettoken_request),
+    re_path(r'^passwordresettoken/reset/?$', views.passwordresettoken_reset),
 
     re_path(r'^user/?$', views.user),
 
