@@ -76,7 +76,7 @@ class FeedEntryTestCase(TestCase):
                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
-    def test_feedentries_get(self):
+    def test_feedentries_query_post(self):
         feed_entry = models.FeedEntry.objects.filter(
             feed=FeedEntryTestCase.feed).first()
         if feed_entry is None:
@@ -95,8 +95,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/feedentries',
-                         HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query', '{}', 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feedentry_read_post(self):

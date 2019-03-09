@@ -12,17 +12,18 @@ urlpatterns = [
     re_path(r'^login/google/session/?$', views.google_login_session),
     re_path(r'^login/facebook/session/?$', views.facebook_login_session),
     re_path(r'^session/?$', views.session),
-    re_path(r'^passwordresettoken/request/?$', views.passwordresettoken_request),
+    re_path(r'^passwordresettoken/request/?$',
+            views.passwordresettoken_request),
     re_path(r'^passwordresettoken/reset/?$', views.passwordresettoken_reset),
 
     re_path(r'^user/?$', views.user),
 
     re_path(r'^feed/?$', views.feed),
-    re_path(r'^feeds/?$', views.feeds),
+    re_path(r'^feeds/query/?$', views.feeds_query),
     re_path(r'^feed/subscribe/?$', views.feed_subscribe),
 
     re_path(r'^feedentry/({})/?$'.format(_uuid_regex), views.feed_entry),
-    re_path(r'^feedentries/?$', views.feed_entries),
+    re_path(r'^feedentries/query/?$', views.feed_entries_query),
     re_path(r'^feedentry/({})/read/?$'.format(_uuid_regex),
             views.feed_entry_read),
     re_path(r'^feedentries/read/?$', views.feed_entries_read),
@@ -32,7 +33,7 @@ urlpatterns = [
 
     re_path(r'^usercategory(?:/({}))?/?$'.format(_uuid_regex),
             views.user_category),
-    re_path(r'^usercategories/?$', views.user_categories),
+    re_path(r'^usercategories/query/?$', views.user_categories_query),
     re_path(r'^usercategory/({})/feeds/?$'.format(_uuid_regex),
             views.user_category_feeds),
 

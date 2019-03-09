@@ -14,7 +14,7 @@ from google.oauth2 import id_token as g_id_token
 from google.auth.transport import requests as g_requests
 
 from api.exceptions import QueryException
-from api import searchqueries, models
+from api import query_utils, models
 from api.context import Context
 from api.password_hasher import password_hasher
 
@@ -45,13 +45,14 @@ def _user_get(request):
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+        fields = query_utils.get_fields__query_dict(request.GET)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    ret_obj = searchqueries.generate_return_object(field_maps, user, context)
+    ret_obj = query_utils.generate_return_object(field_maps, user, context)
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
@@ -79,7 +80,7 @@ def _user_put(request):
             return HttpResponseBadRequest('\'email\' must be string')
 
         if not validate_email(_json['email']):
-            return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
+            return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
         user.email = _json['email']
 
@@ -111,7 +112,8 @@ def _user_put(request):
                 return HttpResponseBadRequest('\'new\' must be string')
 
             try:
-                password_hasher().verify(my_login.pw_hash, password_json['old'])
+                password_hasher().verify(
+                    my_login.pw_hash, password_json['old'])
             except argon2.exceptions.VerifyMismatchError:
                 return HttpResponseForbidden()
 
@@ -119,11 +121,11 @@ def _user_put(request):
 
             has_changed = True
 
-    google_login_db_fn = lambda: None
+    def google_login_db_fn(): return None
     if 'google' in _json:
         google_json = _json['google']
         if google_json is None:
-            google_login_db_fn = lambda: _google_login_delete(user)
+            def google_login_db_fn(): return _google_login_delete(user)
             has_changed = True
         elif isinstance(google_json, dict):
             google_login = None
@@ -132,7 +134,7 @@ def _user_put(request):
             except models.GoogleLogin.DoesNotExist:
                 google_login = models.GoogleLogin(user=user)
 
-            google_login_db_fn = lambda: _google_login_save(google_login)
+            def google_login_db_fn(): return _google_login_save(google_login)
 
             if 'token' in google_json:
                 if not isinstance(google_json['token'], str):
@@ -155,7 +157,7 @@ def _user_put(request):
     if 'facebook' in _json:
         facebook_json = _json['facebook']
         if facebook_json is None:
-            facebook_login_db_fn = lambda: _facebook_login_delete(user)
+            def facebook_login_db_fn(): return _facebook_login_delete(user)
             has_changed = True
         elif isinstance(facebook_json, dict):
             facebook_login = None
@@ -164,7 +166,7 @@ def _user_put(request):
             except models.FacebookLogin.DoesNotExist:
                 facebook_login = models.FacebookLogin(user=user)
 
-            facebook_login_db_fn = lambda: _facebook_login_save(facebook_login)
+            def facebook_login_db_fn(): return _facebook_login_save(facebook_login)
 
             if 'token' in facebook_json:
                 if not isinstance(facebook_json['token'], str):

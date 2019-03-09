@@ -2,7 +2,7 @@ import uuid
 
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseNotAllowed
 
-from api import models, searchqueries
+from api import models, query_utils
 
 
 def feed_subscription_progress(request, _uuid):
@@ -43,6 +43,6 @@ def _feed_subscription_progress_get(request, _uuid):
     else:
         ret_obj['state'] = 'finished'
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)

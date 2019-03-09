@@ -2,6 +2,8 @@ import argon2
 
 
 _password_hasher = None
+
+
 def password_hasher():
     global _password_hasher
 

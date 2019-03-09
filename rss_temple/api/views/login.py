@@ -16,7 +16,7 @@ import facebook
 from google.oauth2 import id_token as g_id_token
 from google.auth.transport import requests as g_requests
 
-from api import models, searchqueries
+from api import models, query_utils
 from api.password_hasher import password_hasher
 
 _google_client_id = settings.GOOGLE_CLIENT_ID
@@ -113,7 +113,7 @@ def _my_login_post(request):
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
     if not validate_email(_json['email']):
-        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
@@ -161,7 +161,7 @@ def _google_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
     if not validate_email(_json['email']):
-        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
@@ -183,8 +183,8 @@ def _google_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('bad Google token')
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists() or
+        models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -230,7 +230,7 @@ def _facebook_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
     if not validate_email(_json['email']):
-        return HttpResponseBadRequest('\'email\' malformed') # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
     if 'password' not in _json:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
@@ -253,8 +253,8 @@ def _facebook_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists() or
+        models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -325,7 +325,7 @@ def _my_login_session_post(request):
     )
     session.save()
 
-    content, content_type = searchqueries.serialize_content(str(session.uuid))
+    content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
 
 
@@ -365,7 +365,7 @@ def _google_login_session_post(request):  # pragma: no cover
             'email': idinfo.get('email'),
         }
 
-        content, content_type = searchqueries.serialize_content(ret_obj)
+        content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
     session = models.Session(
@@ -374,7 +374,7 @@ def _google_login_session_post(request):  # pragma: no cover
     )
     session.save()
 
-    content, content_type = searchqueries.serialize_content(str(session.uuid))
+    content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
 
 
@@ -416,7 +416,7 @@ def _facebook_login_session_post(request):  # pragma: no cover
             'email': profile.get('email'),
         }
 
-        content, content_type = searchqueries.serialize_content(ret_obj)
+        content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
     session = models.Session(
@@ -425,7 +425,7 @@ def _facebook_login_session_post(request):  # pragma: no cover
     )
     session.save()
 
-    content, content_type = searchqueries.serialize_content(str(session.uuid))
+    content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
 
 

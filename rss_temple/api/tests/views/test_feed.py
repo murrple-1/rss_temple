@@ -84,7 +84,7 @@ class FeedTestCase(TestCase):
         }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
-    def test_feeds_get(self):
+    def test_feeds_query_post(self):
         feed = None
         try:
             feed = models.Feed.objects.get(
@@ -100,9 +100,9 @@ class FeedTestCase(TestCase):
             feed.save()
 
         c = Client()
-        response = c.get('/api/feeds', {'fields': ','.join(fields.field_list(
-            'feed'))}, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        response = c.post('/api/feeds/query', ujson.dumps({'fields': fields.field_list(
+            'feed')}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200, response.content)
 
         _json = ujson.loads(response.content)
 

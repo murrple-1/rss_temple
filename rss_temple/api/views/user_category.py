@@ -7,7 +7,7 @@ from django.db.models import Q
 
 import ujson
 
-from api import models, searchqueries
+from api import models, query_utils
 from api.exceptions import QueryException
 from api.context import Context
 
@@ -43,14 +43,14 @@ def user_category_feeds(request, _uuid):
         return _user_category_feeds_delete(request, _uuid)
 
 
-def user_categories(request):
-    permitted_methods = {'GET'}
+def user_categories_query(request):
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
-    if request.method == 'GET':
-        return _user_categories_get(request)
+    if request.method == 'POST':
+        return _user_categories_query_post(request)
 
 
 def _user_category_get(request, _uuid):
@@ -66,7 +66,8 @@ def _user_category_get(request, _uuid):
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+        fields = query_utils.get_fields__query_dict(request.GET)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -77,10 +78,10 @@ def _user_category_get(request, _uuid):
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
-    ret_obj = searchqueries.generate_return_object(
+    ret_obj = query_utils.generate_return_object(
         field_maps, user_category, context)
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
@@ -92,7 +93,8 @@ def _user_category_post(request):
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+        fields = query_utils.get_fields__query_dict(request.GET)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -122,10 +124,10 @@ def _user_category_post(request):
     except IntegrityError:
         return HttpResponse('user category already exists', status=409)
 
-    ret_obj = searchqueries.generate_return_object(
+    ret_obj = query_utils.generate_return_object(
         field_maps, user_category, context)
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
@@ -188,53 +190,65 @@ def _user_category_delete(request, _uuid):
     return HttpResponse()
 
 
-def _user_categories_get(request):
-    query_dict = request.GET
-
+def _user_categories_query_post(request):
     context = Context()
     context.parse_request(request)
-    context.parse_query_dict(query_dict)
+    context.parse_query_dict(request.GET)
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
     try:
-        count = searchqueries.get_count(query_dict)
+        count = query_utils.get_count(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     skip = None
     try:
-        skip = searchqueries.get_skip(query_dict)
+        skip = query_utils.get_skip(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     sort = None
     try:
-        sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
+        sort = query_utils.get_sort(_json, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     search = None
     try:
         search = [Q(user=request.user)] + \
-            searchqueries.get_search(context, query_dict, _OBJECT_NAME)
+            query_utils.get_search(context, _json, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
+        fields = query_utils.get_fields__json(_json)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_objects = None
     try:
-        return_objects = searchqueries.get_return_objects(query_dict)
+        return_objects = query_utils.get_return_objects(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_total_count = None
     try:
-        return_total_count = searchqueries.get_return_total_count(query_dict)
+        return_total_count = query_utils.get_return_total_count(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -246,7 +260,7 @@ def _user_categories_get(request):
         objs = []
         for user_category in user_categories.order_by(
                 *sort)[skip:skip + count]:
-            obj = searchqueries.generate_return_object(
+            obj = query_utils.generate_return_object(
                 field_maps, user_category, context)
             objs.append(obj)
 
@@ -255,7 +269,7 @@ def _user_categories_get(request):
     if return_total_count:
         ret_obj['totalCount'] = user_categories.count()
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
     return HttpResponse(content, content_type)
 
 

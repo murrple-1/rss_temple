@@ -1,11 +1,14 @@
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db import transaction
 
 import requests
 
+import ujson
+
 from url_normalize import url_normalize
 
-from api import models, searchqueries, feed_handler, rss_requests
+from api import models, query_utils, feed_handler, rss_requests
 from api.exceptions import QueryException
 from api.context import Context
 
@@ -23,14 +26,14 @@ def feed(request):
         return _feed_get(request)
 
 
-def feeds(request):
-    permitted_methods = {'GET'}
+def feeds_query(request):
+    permitted_methods = {'POST'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
-    if request.method == 'GET':
-        return _feeds_get(request)
+    if request.method == 'POST':
+        return _feeds_query_post(request)
 
 
 def feed_subscribe(request):
@@ -82,7 +85,8 @@ def _feed_get(request):
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(request.GET, _OBJECT_NAME)
+        fields = query_utils.get_fields__query_dict(request.GET)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -95,59 +99,71 @@ def _feed_get(request):
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
 
-    ret_obj = searchqueries.generate_return_object(field_maps, feed, context)
+    ret_obj = query_utils.generate_return_object(field_maps, feed, context)
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
 
     return HttpResponse(content, content_type)
 
 
-def _feeds_get(request):
-    query_dict = request.GET
-
+def _feeds_query_post(request):
     context = Context()
     context.parse_request(request)
-    context.parse_query_dict(query_dict)
+    context.parse_query_dict(request.GET)
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    _json = None
+    try:
+        _json = ujson.loads(
+            request.body, request.encoding or settings.DEFAULT_CHARSET)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
     try:
-        count = searchqueries.get_count(query_dict)
+        count = query_utils.get_count(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     skip = None
     try:
-        skip = searchqueries.get_skip(query_dict)
+        skip = query_utils.get_skip(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     sort = None
     try:
-        sort = searchqueries.get_sort(query_dict, _OBJECT_NAME)
+        sort = query_utils.get_sort(_json, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     search = None
     try:
-        search = searchqueries.get_search(context, query_dict, _OBJECT_NAME)
+        search = query_utils.get_search(context, _json, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     field_maps = None
     try:
-        field_maps = searchqueries.get_field_maps(query_dict, _OBJECT_NAME)
+        fields = query_utils.get_fields__json(_json)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_objects = None
     try:
-        return_objects = searchqueries.get_return_objects(query_dict)
+        return_objects = query_utils.get_return_objects(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_total_count = None
     try:
-        return_total_count = searchqueries.get_return_total_count(query_dict)
+        return_total_count = query_utils.get_return_total_count(_json)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -159,7 +175,7 @@ def _feeds_get(request):
         objs = []
         for feed in feeds.order_by(
                 *sort)[skip:skip + count]:
-            obj = searchqueries.generate_return_object(
+            obj = query_utils.generate_return_object(
                 field_maps, feed, context)
             objs.append(obj)
 
@@ -168,7 +184,7 @@ def _feeds_get(request):
     if return_total_count:
         ret_obj['totalCount'] = feeds.count()
 
-    content, content_type = searchqueries.serialize_content(ret_obj)
+    content, content_type = query_utils.serialize_content(ret_obj)
     return HttpResponse(content, content_type)
 
 

@@ -241,7 +241,7 @@ class UserCategoryTestCase(TestCase):
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
-    def test_usercategories_get(self):
+    def test_usercategories_query_get(self):
         user_category = None
         try:
             user_category = models.UserCategory.objects.get(
@@ -253,7 +253,7 @@ class UserCategoryTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/usercategories',
+        response = c.post('/api/usercategories/query', '{}', 'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
