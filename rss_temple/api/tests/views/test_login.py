@@ -35,16 +35,14 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(email='test@test.com')
-            user.save()
+            user = models.User.objects.create(email='test@test.com')
 
         my_login = None
         try:
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin(
+            my_login = models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
-            my_login.save()
 
         c = Client()
         response = c.post('/api/login/my', ujson.dumps({
@@ -59,8 +57,7 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(email='test@test.com')
-            user.save()
+            user = models.User.objects.create(email='test@test.com')
 
         my_login = None
         try:
@@ -93,8 +90,7 @@ class LoginTestCase(TestCase):
             user = models.User.objects.get(
                 email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(email='test@test.com')
-            user.save()
+            user = models.User.objects.create(email='test@test.com')
 
         my_login = None
         try:
@@ -111,3 +107,24 @@ class LoginTestCase(TestCase):
         }), 'application/json')
 
         self.assertEqual(response.status_code, 403)
+
+    def test_session_delete(self):
+        user = None
+        try:
+            user = models.User.objects.get(
+                email='test@test.com')
+        except models.User.DoesNotExist:
+            user = models.User.objects.create(email='test@test.com')
+
+        session = models.Session.objects.create(user=user, expires_at=None)
+
+        c = Client()
+
+        response = c.delete('/api/session')
+        self.assertEqual(response.status_code, 400)
+
+        response = c.delete('/api/session', HTTP_X_SESSION_TOKEN='bad-uuid')
+        self.assertEqual(response.status_code, 400)
+
+        response = c.delete('/api/session', HTTP_X_SESSION_TOKEN=str(session.uuid))
+        self.assertEqual(response.status_code, 200)
