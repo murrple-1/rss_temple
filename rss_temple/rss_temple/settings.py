@@ -105,6 +105,10 @@ AUTHENTICATION_DISABLE = [
     (r'^/api/login/google/session/?$', ['POST']),
     (r'^/api/login/facebook/session/?$', ['POST']),
     (r'^/api/session/?$', ['DELETE']),
+    (r'^/api/passwordresettoken/request/?$', ['POST']),
+    (r'^/api/passwordresettoken/reset/?$', ['POST']),
+    (r'^/api/passwordresettoken/reset/?$', ['POST']),
+    (r'^/api/user/verify/?$', ['POST']),
 ]
 
 REALM = 'RSS Temple'
@@ -123,4 +127,5 @@ SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 
 GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
 
-USER_VERIFICATION_INTERVAL = datetime.timedelta(days=30)
+USER_VERIFICATION_EXPIRY_INTERVAL = datetime.timedelta(days=30)
+PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)

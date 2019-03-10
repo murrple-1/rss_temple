@@ -20,7 +20,7 @@ from api import models, query_utils
 from api.password_hasher import password_hasher
 
 _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
-_USER_VERIFICATION_INTERVAL = settings.USER_VERIFICATION_INTERVAL
+_USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
 
 
 def my_login(request):
@@ -134,7 +134,7 @@ def _my_login_post(request):
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
@@ -204,7 +204,7 @@ def _google_login_post(request):  # pragma: no cover
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         my_login = models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
@@ -279,7 +279,7 @@ def _facebook_login_post(request):  # pragma: no cover
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         my_login = models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),

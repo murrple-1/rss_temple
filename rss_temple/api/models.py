@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
+from django.db.models.functions import Now
 
 
 class User(models.Model):
@@ -115,8 +116,11 @@ class User(models.Model):
 
 
 class Login(models.Model):
+    class Meta:
+        abstract = True
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
 class MyLogin(Login):
@@ -140,13 +144,45 @@ class Session(models.Model):
 class VerificationToken(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    def token_str(self):
+        return str(self.uuid)
+
+    @staticmethod
+    def find_by_token(token):
+        _uuid = None
+        try:
+            _uuid = uuid.UUID(token)
+        except (ValueError, TypeError):
+            return None
+
+        try:
+            return VerificationToken.objects.get(uuid=_uuid, expires_at__lt=Now())
+        except VerificationToken.DoesNotExist:
+            return None
 
 
 class PasswordResetToken(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    def token_str(self):
+        return str(self.uuid)
+
+    @staticmethod
+    def find_by_token(token):
+        _uuid = None
+        try:
+            _uuid = uuid.UUID(token)
+        except (ValueError, TypeError):
+            return None
+
+        try:
+            return PasswordResetToken.objects.get(uuid=_uuid, expires_at__lt=Now())
+        except PasswordResetToken.DoesNotExist:
+            return None
 
 
 class UserCategory(models.Model):

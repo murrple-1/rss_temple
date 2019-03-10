@@ -1,6 +1,6 @@
 import datetime
 
-from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound
 from django.db import transaction
 from django.conf import settings
 
@@ -24,7 +24,7 @@ from api.password_hasher import password_hasher
 _OBJECT_NAME = 'user'
 
 _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
-_USER_VERIFICATION_INTERVAL = settings.USER_VERIFICATION_INTERVAL
+_USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
 
 
 def user(request):
@@ -96,10 +96,13 @@ def _user_put(request):
         if not validate_email(_json['email']):
             return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
+        if models.User.object.filter(email=_json['email']).exists():
+            return HttpResponse('email already in use', 409)
+
         if user.email != _json['email']:
             user.email = _json['email']
 
-            verification_token = models.VerificationToken(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+            verification_token = models.VerificationToken(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
             has_changed = True
 
@@ -217,6 +220,7 @@ def _user_put(request):
                 facebook_login_db_fn()
 
             if verification_token is not None:
+                models.VerificationToken.objects.filter(user=user).delete()
                 verification_token.save()
 
     if verification_token is not None:
@@ -243,4 +247,16 @@ def _facebook_login_delete(user):
 
 
 def _user_verify_post(request):
+    token = request.GET.get('token')
+
+    if token is None:
+        return HttpResponseBadRequest('\'token\' missing')
+
+    verification_token = models.VerificationToken.find_by_token(token)
+
+    if verification_token is None:
+        return HttpResponseNotFound('token not found')
+
+    verification_token.delete()
+
     return HttpResponse()
