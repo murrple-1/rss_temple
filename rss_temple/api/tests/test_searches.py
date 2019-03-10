@@ -138,9 +138,8 @@ class AllSearchesTestCase(TestCase):
 
         models.User.objects.all().delete()
 
-        cls.user = models.User(
+        cls.user = models.User.objects.create(
             email='test_searches@test.com')
-        cls.user.save()
 
     def test_run(self):
         self.assertEqual(len(AllSearchesTestCase.TRIALS),

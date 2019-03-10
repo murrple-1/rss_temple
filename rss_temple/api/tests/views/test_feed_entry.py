@@ -37,14 +37,13 @@ class FeedEntryTestCase(TestCase):
             cls.feed = models.Feed.objects.get(
                 feed_url='http://example.com/rss.xml')
         except models.Feed.DoesNotExist:
-            cls.feed = models.Feed(
+            cls.feed = models.Feed.objects.create(
                 feed_url='http://example.com/rss.xml',
                 title='Sample Feed',
                 home_url='http://example.com',
                 published_at=datetime.datetime.utcnow(),
                 updated_at=None,
                 db_updated_at=None)
-            cls.feed.save()
 
     def test_feedentry_get(self):
         feed_entry = models.FeedEntry.objects.filter(

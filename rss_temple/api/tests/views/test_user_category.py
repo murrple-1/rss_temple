@@ -20,17 +20,13 @@ class UserCategoryTestCase(TestCase):
         try:
             cls.user = models.User.objects.get(email='test@test.com')
         except models.User.DoesNotExist:
-            cls.user = models.User(email='test@test.com')
-            cls.user.save()
+            cls.user = models.User.objects.create(email='test@test.com')
 
-        session = models.Session(
+        cls.session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
-        session.save()
 
-        cls.session = session
-
-        cls.session_token = session.uuid
-        cls.session_token_str = str(session.uuid)
+        cls.session_token = cls.session.uuid
+        cls.session_token_str = str(cls.session.uuid)
 
     def test_usercategory_get(self):
         user_category = None
@@ -38,9 +34,8 @@ class UserCategoryTestCase(TestCase):
             user_category = models.UserCategory.objects.get(
                 user=UserCategoryTestCase.user, text='Test User Category')
         except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory(
+            user_category = models.UserCategory.objects.create(
                 user=UserCategoryTestCase.user, text='Test User Category')
-            user_category.save()
 
         c = Client()
 
@@ -102,9 +97,8 @@ class UserCategoryTestCase(TestCase):
             user_category = models.UserCategory.objects.get(
                 user=UserCategoryTestCase.user, text='Test User Category')
         except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory(
+            user_category = models.UserCategory.objects.create(
                 user=UserCategoryTestCase.user, text='Test User Category')
-            user_category.save()
 
         c = Client()
 

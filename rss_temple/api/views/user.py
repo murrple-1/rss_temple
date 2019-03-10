@@ -39,6 +39,16 @@ def user(request):
         return _user_put(request)
 
 
+def user_verify(request):
+    permitted_methods = {'POST'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _user_verify_post(request)
+
+
 def _user_get(request):
     context = Context()
     context.parse_request(request)
@@ -78,6 +88,7 @@ def _user_put(request):
 
     has_changed = False
 
+    verification_token = None
     if 'email' in _json:
         if not isinstance(_json['email'], str):
             return HttpResponseBadRequest('\'email\' must be string')
@@ -87,9 +98,8 @@ def _user_put(request):
 
         if user.email != _json['email']:
             user.email = _json['email']
-            user.verification_deadline = datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL
 
-            # TODO new email verification
+            verification_token = models.VerificationToken(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
 
             has_changed = True
 
@@ -206,6 +216,13 @@ def _user_put(request):
             if facebook_login_db_fn is not None:
                 facebook_login_db_fn()
 
+            if verification_token is not None:
+                verification_token.save()
+
+    if verification_token is not None:
+        # TODO new email verification
+        pass
+
     return HttpResponse()
 
 
@@ -223,3 +240,7 @@ def _facebook_login_save(facebook_login):
 
 def _facebook_login_delete(user):
     models.FacebookLogin.objects.filter(user=user).delete()
+
+
+def _user_verify_post(request):
+    return HttpResponse()

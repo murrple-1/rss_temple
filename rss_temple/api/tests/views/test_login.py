@@ -63,9 +63,8 @@ class LoginTestCase(TestCase):
         try:
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin(
+            my_login = models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
-            my_login.save()
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({
@@ -96,9 +95,8 @@ class LoginTestCase(TestCase):
         try:
             my_login = models.MyLogin.objects.get(user=user)
         except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin(
+            my_login = models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
-            my_login.save()
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({

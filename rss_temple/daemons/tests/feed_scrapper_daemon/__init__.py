@@ -19,9 +19,8 @@ class DaemonTestCase(TestCase):
 
         models.Feed.objects.all().delete()
 
-        cls.feed = models.Feed(
+        cls.feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
-        cls.feed.save()
 
     def test_scrape_feed(self):
         text = None

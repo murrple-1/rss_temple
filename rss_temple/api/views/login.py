@@ -125,17 +125,24 @@ def _my_login_post(request):
     if models.MyLogin.objects.filter(user__email=_json['email']).exists():
         return HttpResponse('login already exists', status=409)
 
+    verification_token = None
+
     with transaction.atomic():
         user = None
         try:
             user = models.User.objects.get(email=_json['email'])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=_json['email'], verification_deadline=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+            user = models.User.objects.create(email=_json['email'])
 
-        my_login = models.MyLogin(
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+
+        models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
             user=user)
-        my_login.save()
+
+    if verification_token is not None:
+        # TODO new email verification
+        pass
 
     return HttpResponse()
 
@@ -188,23 +195,28 @@ def _google_login_post(request):  # pragma: no cover
     ):
         return HttpResponse('login already exists', status=409)
 
+    verification_token = None
+
     with transaction.atomic():
         user = None
         try:
             user = models.User.objects.get(email=_json['email'])
         except models.User.DoesNotExist:
-            user = models.User(email=_json['email'])
-            user.save()
+            user = models.User.objects.create(email=_json['email'])
 
-        my_login = models.MyLogin(
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+
+        my_login = models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
             user=user)
-        my_login.save()
 
-        google_login = models.GoogleLogin(
+        google_login = models.GoogleLogin.objects.create(
             g_user_id=idinfo['sub'],
             user=user)
-        google_login.save()
+
+    if verification_token is not None:
+        # TODO new email verification
+        pass
 
     return HttpResponse()
 
@@ -258,23 +270,28 @@ def _facebook_login_post(request):  # pragma: no cover
     ):
         return HttpResponse('login already exists', status=409)
 
+    verification_token = None
+
     with transaction.atomic():
         user = None
         try:
             user = models.User.objects.get(email=_json['email'])
         except models.User.DoesNotExist:
-            user = models.User(email=_json['email'])
-            user.save()
+            user = models.User.objects.create(email=_json['email'])
 
-        my_login = models.MyLogin(
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
+
+        my_login = models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
             user=user)
-        my_login.save()
 
-        facebook_login = models.FacebookLogin(
+        facebook_login = models.FacebookLogin.objects.create(
             profile_id=profile['id'],
             user=user)
-        facebook_login.save()
+
+    if verification_token is not None:
+        # TODO new email verification
+        pass
 
     return HttpResponse()
 
@@ -319,11 +336,10 @@ def _my_login_session_post(request):
     except argon2.exceptions.VerifyMismatchError:
         return HttpResponseForbidden()
 
-    session = models.Session(
+    session = models.Session.objects.create(
         user=my_login.user,
         expires_at=datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL,
     )
-    session.save()
 
     content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
@@ -368,11 +384,10 @@ def _google_login_session_post(request):  # pragma: no cover
         content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
-    session = models.Session(
+    session = models.Session.objects.create(
         user=google_login.user,
         expires_at=datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL,
     )
-    session.save()
 
     content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)
@@ -419,11 +434,10 @@ def _facebook_login_session_post(request):  # pragma: no cover
         content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
-    session = models.Session(
+    session = models.Session.objects.create(
         user=facebook_login.user,
         expires_at=datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL,
     )
-    session.save()
 
     content, content_type = query_utils.serialize_content(str(session.uuid))
     return HttpResponse(content, content_type)

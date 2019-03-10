@@ -123,31 +123,27 @@ class AllFieldsTestCase(TestCase):
         models.Feed.objects.all().delete()
         models.FeedEntry.objects.all().delete()
 
-        cls.user = models.User(
+        cls.user = models.User.objects.create(
             email='test_fields@test.com')
-        cls.user.save()
 
-        cls.user_category = models.UserCategory(
+        cls.user_category = models.UserCategory.objects.create(
             user=cls.user, text='Test Category')
-        cls.user_category.save()
 
-        cls.feed_with_category = models.Feed(
+        cls.feed_with_category = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml',
             title='Sample Feed',
             home_url='http://example.com',
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
-        cls.feed_with_category.save()
 
-        cls.feed_without_category = models.Feed(
+        cls.feed_without_category = models.Feed.objects.create(
             feed_url='http://example2.com/rss.xml',
             title='Sample Feed 2',
             home_url='http://example2.com',
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
-        cls.feed_without_category.save()
 
         cls.feed_entry = models.FeedEntry(
             feed=cls.feed_with_category,
@@ -157,17 +153,14 @@ class AllFieldsTestCase(TestCase):
         cls.feed_entry.hash = hash(cls.feed_entry)
         cls.feed_entry.save()
 
-        subscription1 = models.SubscribedFeedUserMapping(
+        subscription1 = models.SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_with_category, user=cls.user, custom_feed_title='Custom Title 1')
-        subscription1.save()
 
-        subscription2 = models.SubscribedFeedUserMapping(
+        subscription2 = models.SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_without_category, user=cls.user, custom_feed_title=None)
-        subscription2.save()
 
-        user_category_mapping = models.FeedUserCategoryMapping(
+        user_category_mapping = models.FeedUserCategoryMapping.objects.create(
             feed=cls.feed_with_category, user_category=cls.user_category)
-        user_category_mapping.save()
 
     def test_run(self):
         self.assertEqual(len(AllFieldsTestCase.TRIALS),

@@ -17,6 +17,7 @@ urlpatterns = [
     re_path(r'^passwordresettoken/reset/?$', views.passwordresettoken_reset),
 
     re_path(r'^user/?$', views.user),
+    re_path(r'^user/verify/?$', views.user_verify),
 
     re_path(r'^feed/?$', views.feed),
     re_path(r'^feeds/query/?$', views.feeds_query),

@@ -8,8 +8,6 @@ class User(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     email = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
-    # TODO handle verification
-    verification_deadline = models.DateTimeField(null=True)
 
     def category_dict(self):
         category_dict = getattr(self, '_category_dict', None)
@@ -136,6 +134,12 @@ class FacebookLogin(Login):
 class Session(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField(null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class VerificationToken(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    expires_at = models.DateTimeField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 

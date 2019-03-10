@@ -16,28 +16,16 @@ class UserTestCase(TestCase):
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        user = None
         try:
-            user = models.User.objects.get(email='test@test.com')
+            cls.user = models.User.objects.get(email='test@test.com')
         except models.User.DoesNotExist:
-            user = models.User(
+            cls.user = models.User.objects.create(
                 email='test@test.com')
 
-            user.save()
+        cls.session = models.Session.objects.create(user=cls.user, expires_at=(datetime.datetime.utcnow() + datetime.timedelta(days=2)))
 
-        cls.user = user
-
-        session = models.Session()
-        session.user = user
-        session.expires_at = (datetime.datetime.utcnow() +
-                              datetime.timedelta(days=2))
-
-        session.save()
-
-        cls.session = session
-
-        cls.session_token = session.uuid
-        cls.session_token_str = str(session.uuid)
+        cls.session_token = cls.session.uuid
+        cls.session_token_str = str(cls.session.uuid)
 
     def test_user_get(self):
         c = Client()
