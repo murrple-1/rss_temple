@@ -122,3 +122,5 @@ DEFAULT_TIME_FORMAT = '%H:%M:%S'
 SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 
 GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
+
+USER_VERIFICATION_INTERVAL = datetime.timedelta(days=30)

@@ -1,3 +1,5 @@
+import datetime
+
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseForbidden
 from django.db import transaction
 from django.conf import settings
@@ -21,7 +23,8 @@ from api.password_hasher import password_hasher
 
 _OBJECT_NAME = 'user'
 
-_google_client_id = settings.GOOGLE_CLIENT_ID
+_GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+_USER_VERIFICATION_INTERVAL = settings.USER_VERIFICATION_INTERVAL
 
 
 def user(request):
@@ -82,9 +85,13 @@ def _user_put(request):
         if not validate_email(_json['email']):
             return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-        user.email = _json['email']
+        if user.email != _json['email']:
+            user.email = _json['email']
+            user.verification_deadline = datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL
 
-        has_changed = True
+            # TODO new email verification
+
+            has_changed = True
 
     my_login = None
     if 'my' in _json:
@@ -143,7 +150,7 @@ def _user_put(request):
                 idinfo = None
                 try:
                     idinfo = g_id_token.verify_oauth2_token(
-                        google_json['token'], g_requests.Request(), _google_client_id)
+                        google_json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
                 except ValueError:
                     return HttpResponseBadRequest('bad Google token')
 

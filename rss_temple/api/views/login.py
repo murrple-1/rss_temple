@@ -19,7 +19,8 @@ from google.auth.transport import requests as g_requests
 from api import models, query_utils
 from api.password_hasher import password_hasher
 
-_google_client_id = settings.GOOGLE_CLIENT_ID
+_GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+_USER_VERIFICATION_INTERVAL = settings.USER_VERIFICATION_INTERVAL
 
 
 def my_login(request):
@@ -129,8 +130,7 @@ def _my_login_post(request):
         try:
             user = models.User.objects.get(email=_json['email'])
         except models.User.DoesNotExist:
-            user = models.User(email=_json['email'])
-            user.save()
+            user = models.User.objects.create(email=_json['email'], verification_deadline=(datetime.datetime.utcnow() + _USER_VERIFICATION_INTERVAL))
 
         my_login = models.MyLogin(
             pw_hash=password_hasher().hash(_json['password']),
@@ -178,7 +178,7 @@ def _google_login_post(request):  # pragma: no cover
     idinfo = None
     try:
         idinfo = g_id_token.verify_oauth2_token(
-            _json['token'], g_requests.Request(), _google_client_id)
+            _json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
@@ -352,7 +352,7 @@ def _google_login_session_post(request):  # pragma: no cover
     idinfo = None
     try:
         idinfo = g_id_token.verify_oauth2_token(
-            _json['token'], g_requests.Request(), _google_client_id)
+            _json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
