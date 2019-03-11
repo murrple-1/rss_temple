@@ -112,7 +112,7 @@ def _user_put(request):
         if not isinstance(my_json, dict):
             return HttpResponseBadRequest('\'my\' must be object')
 
-        my_login = models.MyLogin.objects.get(user=user)
+        my_login = user.my_login()
 
         if 'password' in my_json:
             password_json = my_json['password']
