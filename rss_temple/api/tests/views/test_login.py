@@ -37,11 +37,8 @@ class LoginTestCase(TestCase):
         except models.User.DoesNotExist:
             user = models.User.objects.create(email='test@test.com')
 
-        my_login = None
-        try:
-            my_login = models.MyLogin.objects.get(user=user)
-        except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin.objects.create(
+        if not models.MyLogin.objects.filter(user=user).exists():
+            models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()
@@ -59,11 +56,8 @@ class LoginTestCase(TestCase):
         except models.User.DoesNotExist:
             user = models.User.objects.create(email='test@test.com')
 
-        my_login = None
-        try:
-            my_login = models.MyLogin.objects.get(user=user)
-        except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin.objects.create(
+        if not models.MyLogin.objects.filter(user=user).exists():
+            models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()
@@ -91,11 +85,8 @@ class LoginTestCase(TestCase):
         except models.User.DoesNotExist:
             user = models.User.objects.create(email='test@test.com')
 
-        my_login = None
-        try:
-            my_login = models.MyLogin.objects.get(user=user)
-        except models.MyLogin.DoesNotExist:
-            my_login = models.MyLogin.objects.create(
+        if not models.MyLogin.objects.filter(user=user).exists():
+            models.MyLogin.objects.create(
                 user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()

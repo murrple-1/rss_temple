@@ -141,11 +141,11 @@ def _user_put(request):
 
             has_changed = True
 
-    def google_login_db_fn(): return None
+    google_login_db_fn = None
     if 'google' in _json:
         google_json = _json['google']
         if google_json is None:
-            def google_login_db_fn(): return _google_login_delete(user)
+            google_login_db_fn = lambda: _google_login_delete(user)
             has_changed = True
         elif isinstance(google_json, dict):
             google_login = None
@@ -154,7 +154,7 @@ def _user_put(request):
             except models.GoogleLogin.DoesNotExist:
                 google_login = models.GoogleLogin(user=user)
 
-            def google_login_db_fn(): return _google_login_save(google_login)
+            google_login_db_fn = lambda: _google_login_save(google_login)
 
             if 'token' in google_json:
                 if not isinstance(google_json['token'], str):
@@ -177,7 +177,7 @@ def _user_put(request):
     if 'facebook' in _json:
         facebook_json = _json['facebook']
         if facebook_json is None:
-            def facebook_login_db_fn(): return _facebook_login_delete(user)
+            facebook_login_db_fn = lambda: _facebook_login_delete(user)
             has_changed = True
         elif isinstance(facebook_json, dict):
             facebook_login = None
@@ -186,7 +186,7 @@ def _user_put(request):
             except models.FacebookLogin.DoesNotExist:
                 facebook_login = models.FacebookLogin(user=user)
 
-            def facebook_login_db_fn(): return _facebook_login_save(facebook_login)
+            facebook_login_db_fn = lambda: _facebook_login_save(facebook_login)
 
             if 'token' in facebook_json:
                 if not isinstance(facebook_json['token'], str):

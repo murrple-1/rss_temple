@@ -83,12 +83,8 @@ class FeedTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feeds_query_post(self):
-        feed = None
-        try:
-            feed = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
-        except models.Feed.DoesNotExist:
-            feed = models.Feed.objects.create(
+        if not models.Feed.objects.filter(feed_url='http://localhost:8080/rss_2.0/well_formed.xml').exists():
+            models.Feed.objects.create(
                 feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
                 title='Sample Feed',
                 home_url='http://localhost:8080',
@@ -131,12 +127,8 @@ class FeedTestCase(TestCase):
                 updated_at=None,
                 db_updated_at=None)
 
-        subscribed_feed_user_mapping = None
-        try:
-            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.get(
-                user=FeedTestCase.user, feed=feed)
-        except models.SubscribedFeedUserMapping.DoesNotExist:
-            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.create(
+        if not models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user, feed=feed).exists():
+            models.SubscribedFeedUserMapping.objects.create(
                 feed=feed,
                 user=FeedTestCase.user)
 
@@ -197,12 +189,8 @@ class FeedTestCase(TestCase):
                 updated_at=None,
                 db_updated_at=None)
 
-        subscribed_feed_user_mapping = None
-        try:
-            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.get(
-                user=FeedTestCase.user, feed=feed)
-        except models.SubscribedFeedUserMapping.DoesNotExist:
-            subscribed_feed_user_mapping = models.SubscribedFeedUserMapping.objects.create(
+        if not models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user, feed=feed).exists():
+            models.SubscribedFeedUserMapping.objects.create(
                 feed=feed,
                 user=FeedTestCase.user)
 

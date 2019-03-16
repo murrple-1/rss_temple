@@ -153,13 +153,13 @@ class AllFieldsTestCase(TestCase):
         cls.feed_entry.hash = hash(cls.feed_entry)
         cls.feed_entry.save()
 
-        subscription1 = models.SubscribedFeedUserMapping.objects.create(
+        models.SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_with_category, user=cls.user, custom_feed_title='Custom Title 1')
 
-        subscription2 = models.SubscribedFeedUserMapping.objects.create(
+        models.SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_without_category, user=cls.user, custom_feed_title=None)
 
-        user_category_mapping = models.FeedUserCategoryMapping.objects.create(
+        models.FeedUserCategoryMapping.objects.create(
             feed=cls.feed_with_category, user_category=cls.user_category)
 
     def test_run(self):

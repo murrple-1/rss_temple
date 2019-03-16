@@ -92,12 +92,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_usercategory_post_already_exists(self):
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
+        if not models.UserCategory.objects.filter(user=UserCategoryTestCase.user, text='Test User Category').exists():
+            models.UserCategory.objects.create(
                 user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()

@@ -206,11 +206,11 @@ def _google_login_post(request):  # pragma: no cover
 
             verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
-        my_login = models.MyLogin.objects.create(
+        models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
             user=user)
 
-        google_login = models.GoogleLogin.objects.create(
+        models.GoogleLogin.objects.create(
             g_user_id=idinfo['sub'],
             user=user)
 
@@ -281,11 +281,11 @@ def _facebook_login_post(request):  # pragma: no cover
 
             verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
-        my_login = models.MyLogin.objects.create(
+        models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
             user=user)
 
-        facebook_login = models.FacebookLogin.objects.create(
+        models.FacebookLogin.objects.create(
             profile_id=profile['id'],
             user=user)
 
