@@ -115,5 +115,6 @@ class LoginTestCase(TestCase):
         response = c.delete('/api/session', HTTP_X_SESSION_TOKEN='bad-uuid')
         self.assertEqual(response.status_code, 400)
 
-        response = c.delete('/api/session', HTTP_X_SESSION_TOKEN=str(session.uuid))
+        response = c.delete(
+            '/api/session', HTTP_X_SESSION_TOKEN=str(session.uuid))
         self.assertEqual(response.status_code, 200)

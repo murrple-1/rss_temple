@@ -197,9 +197,12 @@ class QueryUtilsTestCase(TestCase):
         }, 'user', param_name='tsearch'), query_utils.searchutils.to_filter_args('user', Context(), 'email:"test"'))
 
     def test_get_fields__query_dict(self):
-        self.assertEquals(query_utils.get_fields__query_dict(QueryDict('')), [])
-        self.assertEquals(query_utils.get_fields__query_dict(QueryDict('fields=uuid,name')), ['uuid', 'name'])
-        self.assertEquals(query_utils.get_fields__query_dict(QueryDict('tfields=uuid,name'), param_name='tfields'), ['uuid', 'name'])
+        self.assertEquals(
+            query_utils.get_fields__query_dict(QueryDict('')), [])
+        self.assertEquals(query_utils.get_fields__query_dict(
+            QueryDict('fields=uuid,name')), ['uuid', 'name'])
+        self.assertEquals(query_utils.get_fields__query_dict(
+            QueryDict('tfields=uuid,name'), param_name='tfields'), ['uuid', 'name'])
 
     def test_get_fields__json(self):
         self.assertEquals(query_utils.get_fields__json({}), [])

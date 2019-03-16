@@ -22,7 +22,8 @@ class UserTestCase(TestCase):
             cls.user = models.User.objects.create(
                 email='test@test.com')
 
-        cls.session = models.Session.objects.create(user=cls.user, expires_at=(datetime.datetime.utcnow() + datetime.timedelta(days=2)))
+        cls.session = models.Session.objects.create(user=cls.user, expires_at=(
+            datetime.datetime.utcnow() + datetime.timedelta(days=2)))
 
         cls.session_token = cls.session.uuid
         cls.session_token_str = str(cls.session.uuid)

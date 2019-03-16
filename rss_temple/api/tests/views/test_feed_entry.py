@@ -94,7 +94,8 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.post('/api/feedentries/query', '{}', 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query', '{}', 'application/json',
+                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feedentry_read_post(self):

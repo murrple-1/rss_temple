@@ -46,7 +46,8 @@ def _passwordresettoken_request_post(request):
 
     with transaction.atomic():
         models.PasswordResetToken.objects.filter(user=user).delete()
-        models.PasswordResetToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
+        models.PasswordResetToken.objects.create(user=user, expires_at=(
+            datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
 
     # TODO send out emails
 
@@ -79,7 +80,8 @@ def _passwordresettoken_reset_post(request):
     if not isinstance(_json['password'], str):
         return HttpResponseBadRequest('\'password\' must be string')
 
-    password_reset_token = models.PasswordResetToken.find_by_token(_json['token'])
+    password_reset_token = models.PasswordResetToken.find_by_token(
+        _json['token'])
 
     if password_reset_token is None:
         return HttpResponseNotFound('token not valid')

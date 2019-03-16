@@ -244,7 +244,7 @@ class UserCategoryTestCase(TestCase):
         c = Client()
 
         response = c.post('/api/usercategories/query', '{}', 'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_usercategory_feed_post(self):

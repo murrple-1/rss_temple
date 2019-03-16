@@ -134,7 +134,8 @@ def _my_login_post(request):
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
+                datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
@@ -190,8 +191,8 @@ def _google_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('bad Google token')
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists() or
-        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
+        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -204,7 +205,8 @@ def _google_login_post(request):  # pragma: no cover
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
+                datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),
@@ -265,8 +267,8 @@ def _facebook_login_post(request):  # pragma: no cover
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists() or
-        models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
+        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -279,7 +281,8 @@ def _facebook_login_post(request):  # pragma: no cover
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=_json['email'])
 
-            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
+            verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
+                datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
             pw_hash=password_hasher().hash(_json['password']),

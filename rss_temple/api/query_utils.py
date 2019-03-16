@@ -70,7 +70,8 @@ def get_return_objects(
     return_objects = _json[param_name]
 
     if not isinstance(return_objects, bool):
-        raise QueryException('\'{0}\' must be boolean'.format(param_name), 400)  # pragma: no cover
+        raise QueryException('\'{0}\' must be boolean'.format(
+            param_name), 400)  # pragma: no cover
 
     return return_objects
 
@@ -88,7 +89,8 @@ def get_return_total_count(
     return_total_count = _json[param_name]
 
     if not isinstance(return_total_count, bool):
-        raise QueryException('\'{0}\' must be boolean'.format(param_name), 400)  # pragma: no cover
+        raise QueryException('\'{0}\' must be boolean'.format(
+            param_name), 400)  # pragma: no cover
 
     return return_total_count
 
@@ -101,12 +103,14 @@ def get_sort(_json, object_name, param_name='sort',
 
         if sort is not None:
             if not isinstance(sort, str):
-                raise QueryException('\'{0}\' must be null or string', 400)  # pragma: no cover
+                raise QueryException(
+                    '\'{0}\' must be null or string', 400)  # pragma: no cover
 
     default_sort_enabled = True
     if disable_default_sort_param_name in _json:
         if not isinstance(_json[disable_default_sort_param_name], bool):
-            raise QueryException('\'{0}\' must be boolean'.format(disable_default_sort_param_name), 400)  # pragma: no cover
+            raise QueryException('\'{0}\' must be boolean'.format(
+                disable_default_sort_param_name), 400)  # pragma: no cover
 
         default_sort_enabled = not _json[disable_default_sort_param_name]
 
@@ -124,7 +128,8 @@ def get_search(context, _json, object_name, param_name='search'):
     search = _json[param_name]
 
     if not isinstance(search, str):
-        raise QueryException('\'{0}\' must be string'.format(param_name), 400)  # pragma: no cover
+        raise QueryException('\'{0}\' must be string'.format(
+            param_name), 400)  # pragma: no cover
 
     filter_args = searchutils.to_filter_args(object_name, context, search)
     return filter_args
@@ -146,7 +151,8 @@ def get_fields__json(_json, param_name='fields'):
     fields = _json[param_name]
 
     if not isinstance(fields, list):
-        raise QueryException('\'{0}\' must be array'.format(param_name), 400)  # pragma: no cover
+        raise QueryException('\'{0}\' must be array'.format(
+            param_name), 400)  # pragma: no cover
 
     for field in fields:
         if not isinstance(field, str):
