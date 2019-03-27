@@ -7,12 +7,15 @@ from django.db import IntegrityError
 import ujson
 
 from api import models, fields
+from api.password_hasher import password_hasher
 
 
 class UserTestCase(TestCase):
     USER_EMAIL = 'test@test.com'
     NON_UNIQUE_EMAIL = 'nonunique@test.com'
     UNIQUE_EMAIL = 'unique@test.com'
+
+    USER_PASSWORD = 'password'
 
     # TODO
     @classmethod
@@ -27,14 +30,21 @@ class UserTestCase(TestCase):
             cls.user = models.User.objects.create(
                 email=UserTestCase.USER_EMAIL)
 
+        try:
+            models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+        except IntegrityError:
+            pass
+
         cls.session = models.Session.objects.create(user=cls.user, expires_at=(
             datetime.datetime.utcnow() + datetime.timedelta(days=2)))
 
         cls.session_token = cls.session.uuid
         cls.session_token_str = str(cls.session.uuid)
 
+        user2 = None
         try:
-            models.User.objects.create(email=UserTestCase.NON_UNIQUE_EMAIL)
+            user2 = models.User.objects.create(email=UserTestCase.NON_UNIQUE_EMAIL)
+            models.MyLogin.objects.create(user=user2, pw_hash=password_hasher().hash('password2'))
         except IntegrityError:
             logging.getLogger(__name__).exception('unable to create non-unique user...this isn\'t expected')
 
@@ -135,7 +145,7 @@ class UserTestCase(TestCase):
         body = {
             'my': {
                 'password': {
-                    'old': 'oldpassword',
+                    'old': UserTestCase.USER_PASSWORD,
                 },
             },
         }
@@ -146,7 +156,7 @@ class UserTestCase(TestCase):
         body = {
             'my': {
                 'password': {
-                    'old': 'oldpassword',
+                    'old': UserTestCase.USER_PASSWORD,
                     'new': None,
                 },
             },
@@ -154,3 +164,31 @@ class UserTestCase(TestCase):
         response = c.put('/api/user', ujson.dumps(body),
             content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
+
+        body = {
+            'my': {
+                'password': {
+                    'old': 'badpassword',
+                    'new': 'newpassword',
+                },
+            },
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 403)
+
+        body = {
+            'my': {
+                'password': {
+                    'old': UserTestCase.USER_PASSWORD,
+                    'new': 'newpassword',
+                },
+            },
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        my_login = UserTestCase.user.my_login()
+        my_login.pw_hash = password_hasher().hash(UserTestCase.USER_PASSWORD)
+        my_login.save()

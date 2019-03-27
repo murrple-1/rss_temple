@@ -143,7 +143,7 @@ def _user_put(request):
             has_changed = True
 
     google_login_db_fn = None
-    if 'google' in _json:
+    if 'google' in _json:  # pragma: no cover
         google_json = _json['google']
         if google_json is None:
             def google_login_db_fn(): return _google_login_delete(user)
@@ -175,7 +175,7 @@ def _user_put(request):
             return HttpResponseBadRequest('\'google\' must be object or null')
 
     facebook_login_db_fn = None
-    if 'facebook' in _json:
+    if 'facebook' in _json:  # pragma: no cover
         facebook_json = _json['facebook']
         if facebook_json is None:
             def facebook_login_db_fn(): return _facebook_login_delete(user)
@@ -214,10 +214,10 @@ def _user_put(request):
             if my_login is not None:
                 my_login.save()
 
-            if google_login_db_fn is not None:
+            if google_login_db_fn is not None:  # pragma: no cover
                 google_login_db_fn()
 
-            if facebook_login_db_fn is not None:
+            if facebook_login_db_fn is not None:  # pragma: no cover
                 facebook_login_db_fn()
 
             if verification_token is not None:
@@ -231,19 +231,19 @@ def _user_put(request):
     return HttpResponse()
 
 
-def _google_login_save(google_login):
+def _google_login_save(google_login):  # pragma: no cover
     google_login.save()
 
 
-def _google_login_delete(user):
+def _google_login_delete(user):  # pragma: no cover
     models.GoogleLogin.objects.filter(user=user).delete()
 
 
-def _facebook_login_save(facebook_login):
+def _facebook_login_save(facebook_login):  # pragma: no cover
     facebook_login.save()
 
 
-def _facebook_login_delete(user):
+def _facebook_login_delete(user):  # pragma: no cover
     models.FacebookLogin.objects.filter(user=user).delete()
 
 
