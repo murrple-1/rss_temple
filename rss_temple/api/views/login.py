@@ -87,7 +87,7 @@ def session(request):
     permitted_methods = {'DELETE'}
 
     if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'DELETE':
         return _session_delete(request)
