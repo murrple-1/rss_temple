@@ -10,4 +10,8 @@ INITIAL_DIR=`dirname $0`
 
 cd $INITIAL_DIR/../rss_temple/
 
-pipenv run python manage.py test api.tests daemons.tests
+if [ "$1" = "" ]; then 
+	pipenv run python manage.py test api.tests daemons.tests
+else
+	pipenv run python manage.py test "$1"
+fi
