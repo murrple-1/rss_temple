@@ -96,10 +96,10 @@ def _user_put(request):
         if not validate_email(_json['email']):
             return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-        if models.User.object.filter(email=_json['email']).exists():
-            return HttpResponse('email already in use', 409)
-
         if user.email != _json['email']:
+            if models.User.objects.filter(email=_json['email']).exists():
+                return HttpResponse('email already in use', 409)
+
             user.email = _json['email']
 
             verification_token = models.VerificationToken(user=user, expires_at=(

@@ -9,6 +9,8 @@ from api import models, fields
 
 
 class UserTestCase(TestCase):
+    STANDARD_EMAIL = 'test@test.com'
+
     # TODO
     @classmethod
     def setUpClass(cls):
@@ -17,7 +19,7 @@ class UserTestCase(TestCase):
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
         try:
-            cls.user = models.User.objects.get(email='test@test.com')
+            cls.user = models.User.objects.get(email=UserTestCase.STANDARD_EMAIL)
         except models.User.DoesNotExist:
             cls.user = models.User.objects.create(
                 email='test@test.com')
@@ -37,3 +39,41 @@ class UserTestCase(TestCase):
         _json = ujson.loads(response.content)
 
         self.assertTrue('subscribedFeedUuids' in _json)
+
+    def test_user_put(self):
+        c = Client()
+
+        body = {
+            'email': 1,
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        body = {
+            'email': '',
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        body = {
+            'email': 'malformed',
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+
+        body = {
+            'email': UserTestCase.STANDARD_EMAIL,
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
+
+        body = {
+            'email': 'uniqueemail@test.com',
+        }
+        response = c.put('/api/user', ujson.dumps(body),
+            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
