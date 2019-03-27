@@ -98,7 +98,7 @@ def _user_put(request):
 
         if user.email != _json['email']:
             if models.User.objects.filter(email=_json['email']).exists():
-                return HttpResponse('email already in use', 409)
+                return HttpResponse('email already in use', status=409)
 
             user.email = _json['email']
 
