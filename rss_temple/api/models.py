@@ -158,7 +158,7 @@ class VerificationToken(models.Model):
             return None
 
         try:
-            return VerificationToken.objects.get(uuid=_uuid, expires_at__lt=Now())
+            return VerificationToken.objects.get(uuid=_uuid, expires_at__gt=Now())
         except VerificationToken.DoesNotExist:
             return None
 

@@ -248,7 +248,7 @@ def _facebook_login_delete(user):  # pragma: no cover
 
 
 def _user_verify_post(request):
-    token = request.GET.get('token')
+    token = request.POST.get('token')
 
     if token is None:
         return HttpResponseBadRequest('\'token\' missing')

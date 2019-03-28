@@ -1,5 +1,6 @@
 import datetime
 import logging
+import uuid
 
 from django.test import TestCase, Client
 from django.db import IntegrityError
@@ -192,3 +193,30 @@ class UserTestCase(TestCase):
         my_login = UserTestCase.user.my_login()
         my_login.pw_hash = password_hasher().hash(UserTestCase.USER_PASSWORD)
         my_login.save()
+
+    def test_user_verify_post(self):
+        c = Client()
+
+        response = c.post('/api/user/verify')
+        self.assertEqual(response.status_code, 400)
+
+        params = {
+            'token': 'BAD_TOKEN',
+        }
+        response = c.post('/api/user/verify', params)
+        self.assertEqual(response.status_code, 404)
+
+        params = {
+            'token': str(uuid.uuid4()),
+        }
+        response = c.post('/api/user/verify', params)
+        self.assertEqual(response.status_code, 404)
+
+        verification_token = models.VerificationToken.objects.create(expires_at=(
+            datetime.datetime.utcnow() + datetime.timedelta(days=2)), user=UserTestCase.user)
+
+        params = {
+            'token': verification_token.token_str(),
+        }
+        response = c.post('/api/user/verify', params)
+        self.assertEqual(response.status_code, 200)
