@@ -180,7 +180,7 @@ class PasswordResetToken(models.Model):
             return None
 
         try:
-            return PasswordResetToken.objects.get(uuid=_uuid, expires_at__lt=Now())
+            return PasswordResetToken.objects.get(uuid=_uuid, expires_at__gt=Now())
         except PasswordResetToken.DoesNotExist:
             return None
 

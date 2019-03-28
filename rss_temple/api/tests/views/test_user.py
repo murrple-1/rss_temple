@@ -18,7 +18,6 @@ class UserTestCase(TestCase):
 
     USER_PASSWORD = 'password'
 
-    # TODO
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

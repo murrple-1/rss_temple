@@ -33,7 +33,7 @@ def passwordresettoken_reset(request):
 
 
 def _passwordresettoken_request_post(request):
-    email = request.GET.get('email')
+    email = request.POST.get('email')
 
     if email is None:
         return HttpResponseBadRequest('\'email\' missing')
@@ -55,40 +55,22 @@ def _passwordresettoken_request_post(request):
 
 
 def _passwordresettoken_reset_post(request):
-    if not request.body:
-        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
-
-    _json = None
-    try:
-        _json = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest('HTTP body cannot be parsed')
-
-    if not isinstance(_json, dict):
-        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
-
-    if 'token' not in _json:
+    token = request.POST.get('token')
+    if token is None:
         return HttpResponseBadRequest('\'token\' missing')
 
-    if not isinstance(_json['token'], str):
-        return HttpResponseBadRequest('\'token\' must be string')
-
-    if 'password' not in _json:
+    password = request.POST.get('password')
+    if password is None:
         return HttpResponseBadRequest('\'password\' missing')
 
-    if not isinstance(_json['password'], str):
-        return HttpResponseBadRequest('\'password\' must be string')
-
-    password_reset_token = models.PasswordResetToken.find_by_token(
-        _json['token'])
+    password_reset_token = models.PasswordResetToken.find_by_token(token)
 
     if password_reset_token is None:
         return HttpResponseNotFound('token not valid')
 
     my_login = models.MyLogin.objects.get(user_id=password_reset_token.user_id)
 
-    my_login.pw_hash = password_hasher().hash(_json['password'])
+    my_login.pw_hash = password_hasher().hash(password)
 
     with transaction.atomic():
         my_login.save()
