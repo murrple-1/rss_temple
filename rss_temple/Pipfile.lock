@@ -120,10 +120,10 @@
         },
         "elementpath": {
             "hashes": [
-                "sha256:94d5496fcbb0046378c1a383ae793f74cfa60a48b8fa9cc397c202b2f7d98c91",
-                "sha256:d00f85e0942d7a4096be02f7475361cafe346e52b64313855638e352c6774e0d"
+                "sha256:53e4424382ab928ee29528b345270571007727ef4fda6757a0a0acd5f42d2515",
+                "sha256:9b4627a97fec7e0e62aaf1d1aea8a064b6138f2f64bf58bfcfd07274a58fdc82"
             ],
-            "version": "==1.1.5"
+            "version": "==1.1.6"
         },
         "enum34": {
             "hashes": [
