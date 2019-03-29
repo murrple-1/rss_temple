@@ -90,6 +90,15 @@ LOGGING = {
     },
 }
 
+_test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'xml').lower()
+if _test_runner_type == 'xml':
+    TEST_RUNNER = 'xmlrunner.extra.djangotestrunner.XMLTestRunner'
+    TEST_OUTPUT_DIR = './test-results/'
+elif _test_runner_type == 'standard':
+    pass
+else:
+    raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
+
 CORS_ALLOW_ORIGINS = '*'
 CORS_ALLOW_METHODS = 'GET,POST,PUT,DELETE,OPTIONS,HEAD'
 CORS_ALLOW_HEADERS = 'Pragma,Cache-Control,Content-Type,If-Modified-Since,X-Requested-With,Authorization,X-Session-Token'

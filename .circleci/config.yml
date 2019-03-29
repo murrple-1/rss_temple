@@ -31,6 +31,8 @@ jobs:
           name: tests
           command: pipenv run coverage run manage.py test api.tests daemons.tests
           working_directory: ~/rss_temple/rss_temple/
+      - store_test_results:
+          path: ~/rss_temple/rss_temple/test-results
       - run:
           name: codecov
           command: pipenv run codecov -X gcov

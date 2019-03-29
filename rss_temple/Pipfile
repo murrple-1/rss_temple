@@ -20,11 +20,12 @@ lxml = "*"
 xmlschema = "*"
 url-normalize = "*"
 validate-email = "*"
-enum34 = {version = "*", python_version = "<'3.4'"}
+enum34 = {version = "*",python_version = "<'3.4'"}
 
 [dev-packages]
 codecov = "*"
 Faker = "*"
+unittest-xml-reporting = "*"
 
 [requires]
 python_version = "3.6"
