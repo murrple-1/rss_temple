@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6.1
+        environment:
+          PIPENV_VERBOSITY: -1
+    working_directory: ~/rss_temple/
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
+      - restore_cache:
+          key: dependency-cache-{{ checksum "~/rss_temple/rss_temple/Pipfile.lock" }}
+      - run:
+          name: pipenv setup
+          command: |
+            sudo pip install -U pip
+            sudo pip install -U pipenv
+      - run:
+          name: pipenv install
+          command: pipenv sync --dev
+          working_directory: ~/rss_temple/rss_temple/
+      - save_cache:
+          key: dependency-cache-{{ checksum "~/rss_temple/rss_temple/Pipfile.lock" }}
+          paths:
+            - "~/.local/share/virtualenvs/"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.6/site-packages"
+      - run:
+          name: tests
+          command: pipenv run coverage run manage.py test api.tests daemons.tests
+          working_directory: ~/rss_temple/rss_temple/
+      - run:
+          name: codecov
+          command: pipenv run codecov -X gcov
+          working_directory: ~/rss_temple/rss_temple/
