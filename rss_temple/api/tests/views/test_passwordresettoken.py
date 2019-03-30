@@ -27,7 +27,8 @@ class UserTestCase(TestCase):
                 email=UserTestCase.USER_EMAIL)
 
         try:
-            models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+            models.MyLogin.objects.create(
+                user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
         except IntegrityError:
             pass
 

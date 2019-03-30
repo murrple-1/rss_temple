@@ -31,7 +31,8 @@ class UserTestCase(TestCase):
                 email=UserTestCase.USER_EMAIL)
 
         try:
-            models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+            models.MyLogin.objects.create(
+                user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
         except IntegrityError:
             pass
 
@@ -43,10 +44,13 @@ class UserTestCase(TestCase):
 
         user2 = None
         try:
-            user2 = models.User.objects.create(email=UserTestCase.NON_UNIQUE_EMAIL)
-            models.MyLogin.objects.create(user=user2, pw_hash=password_hasher().hash('password2'))
+            user2 = models.User.objects.create(
+                email=UserTestCase.NON_UNIQUE_EMAIL)
+            models.MyLogin.objects.create(
+                user=user2, pw_hash=password_hasher().hash('password2'))
         except IntegrityError:
-            logging.getLogger(__name__).exception('unable to create non-unique user...this isn\'t expected')
+            logging.getLogger(__name__).exception(
+                'unable to create non-unique user...this isn\'t expected')
 
     def test_user_get(self):
         c = Client()
@@ -65,42 +69,42 @@ class UserTestCase(TestCase):
             'email': 1,
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
             'email': '',
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
             'email': 'malformed',
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
             'email': UserTestCase.USER_EMAIL,
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         body = {
             'email': UserTestCase.NON_UNIQUE_EMAIL,
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 409)
 
         body = {
             'email': UserTestCase.UNIQUE_EMAIL,
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         UserTestCase.user.email = UserTestCase.USER_EMAIL
@@ -110,7 +114,7 @@ class UserTestCase(TestCase):
             'my': None,
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -119,7 +123,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -128,7 +132,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -139,7 +143,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -150,7 +154,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -162,7 +166,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         body = {
@@ -174,7 +178,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 403)
 
         body = {
@@ -186,7 +190,7 @@ class UserTestCase(TestCase):
             },
         }
         response = c.put('/api/user', ujson.dumps(body),
-            content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         my_login = UserTestCase.user.my_login()
