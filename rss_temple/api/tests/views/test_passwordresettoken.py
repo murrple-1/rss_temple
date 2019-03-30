@@ -5,7 +5,7 @@ import uuid
 from django.test import TestCase, Client
 from django.db import IntegrityError
 
-from api import models, fields
+from api import models
 from api.password_hasher import password_hasher
 
 

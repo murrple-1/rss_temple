@@ -4,8 +4,6 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseNotFound
 from django.db import transaction
 
-import ujson
-
 from api import models
 from api.password_hasher import password_hasher
 
