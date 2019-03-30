@@ -90,12 +90,12 @@ LOGGING = {
     },
 }
 
-_test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'xml').lower()
-if _test_runner_type == 'xml':
+_test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'standard').lower()
+if _test_runner_type == 'standard':
+    pass
+elif _test_runner_type == 'xml':
     TEST_RUNNER = 'xmlrunner.extra.djangotestrunner.XMLTestRunner'
     TEST_OUTPUT_DIR = './test-results/'
-elif _test_runner_type == 'standard':
-    pass
 else:
     raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
 

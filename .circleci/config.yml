@@ -31,6 +31,8 @@ jobs:
           name: tests
           command: pipenv run coverage run manage.py test api.tests daemons.tests
           working_directory: ~/rss_temple/rss_temple/
+          environment:
+            TEST_RUNNER_TYPE: xml
       - store_test_results:
           path: ~/rss_temple/rss_temple/test-results/
       - store_artifacts:
