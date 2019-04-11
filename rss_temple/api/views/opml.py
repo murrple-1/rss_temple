@@ -25,6 +25,8 @@ def opml(request):
 
 
 def _opml_get(request):
+    user_category_text_dict = dict(user_category_tuple for user_category_tuple in models.UserCategory.objects.filter(user=request.user).values_list('uuid', 'text'))
+
     category_dict = request.user.category_dict()
 
     opml_element = lxml_etree.Element('opml', version='1.0')
@@ -33,8 +35,8 @@ def _opml_get(request):
     title_element.text = 'RSS Temple OMPL'
     body_element = lxml_etree.SubElement(opml_element, 'body')
 
-    for key, feeds in category_dict.items():
-        outer_outline_name = key if key is not None else 'Not Categorized'
+    for uuid_, feeds in category_dict.items():
+        outer_outline_name = user_category_text_dict[uuid_] if uuid_ is not None else 'Not Categorized'
 
         outer_outline_element = lxml_etree.SubElement(
             body_element, 'outline', text=outer_outline_name, title=outer_outline_name)

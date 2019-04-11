@@ -22,7 +22,7 @@ class User(models.Model):
                 keys = None
                 if len(feed_user_category_mappings) > 0:
                     keys = frozenset(
-                        feed_user_category_mapping.user_category.text for feed_user_category_mapping in feed_user_category_mappings)
+                        feed_user_category_mapping.user_category.uuid for feed_user_category_mapping in feed_user_category_mappings)
                 else:
                     keys = [None]
 
@@ -228,6 +228,22 @@ class Feed(models.Model):
             self._custom_title = subscribed_feed._custom_title if subscribed_feed is not None else None
 
         return self._custom_title
+
+    def user_categories(self, user):
+        if not hasattr(self, '_user_categories'):
+            category_dict = user.category_dict()
+
+            user_category_uuids = set()
+
+            for uuid_, feeds in category_dict.items():
+                feed_uuids = frozenset(feed.uuid for feed in feeds)
+
+                if self.uuid in feed_uuids:
+                    user_category_uuids.add(uuid_)
+
+            self._user_categories = UserCategory.objects.filter(uuid__in=user_category_uuids)
+
+        return self._user_categories
 
 
 class SubscribedFeedUserMapping(models.Model):

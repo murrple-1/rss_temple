@@ -216,7 +216,7 @@ def _feed_subscribe_post(request):
         t[1] for t in existing_subscription_list if t[1] is not None)
 
     if custom_title is not None and custom_title in existing_custom_titles:
-        return HttpResponse('custom  title already used', status=409)
+        return HttpResponse('custom title already used', status=409)
 
     if feed.feed_url in existing_feed_urls:
         return HttpResponse('user already subscribed', status=409)

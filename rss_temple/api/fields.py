@@ -40,6 +40,7 @@ _field_configs = {
         'subscribed': _FieldConfig(lambda context, db_obj: db_obj.subscribed(context.request.user), False),
         'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title(context.request.user), False),
         'calculatedTitle': _FieldConfig(_feed_calculatedTitle, False),
+        'userCategoryUuids': _FieldConfig(lambda context, db_obj: (str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)), False),
     },
     'feedentry': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
