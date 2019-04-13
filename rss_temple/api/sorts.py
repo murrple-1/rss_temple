@@ -44,6 +44,9 @@ __sort_configs = {
         'homeUrl': _SortConfig('home_url', None),
         'publishedAt': _SortConfig('published_at', None),
         'updatedAt': _SortConfig('updated_at', None),
+        # TODO this is super wrong
+        'customTitle': _SortConfig('title', None),
+        'calculatedTitle': _SortConfig('title', None),
     },
     'feedentry': {
         'uuid': _SortConfig('uuid', _DefaultDescriptor(0, 'ASC')),
