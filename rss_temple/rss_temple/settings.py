@@ -77,15 +77,15 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
         },
         'rss_temple': {
             'handlers': ['console'],
-            'level': os.getenv('RSS_TEMPLE_LOG_LEVEL', 'INFO'),
+            'level': os.environ.get('RSS_TEMPLE_LOG_LEVEL', 'INFO'),
         },
         'metrics': {
             'handlers': ['console'],
-            'level': os.getenv('METRICS_LOG_LEVEL', 'INFO'),
+            'level': os.environ.get('METRICS_LOG_LEVEL', 'INFO'),
         },
     },
 }
