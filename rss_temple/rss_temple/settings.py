@@ -96,6 +96,9 @@ if _test_runner_type == 'standard':
 elif _test_runner_type == 'xml':
     TEST_RUNNER = 'xmlrunner.extra.djangotestrunner.XMLTestRunner'
     TEST_OUTPUT_DIR = './test-results/'
+elif _test_runner_type == 'timed':
+    TEST_RUNNER = 'rss_temple.testrunner.DjangoTimedTestRunner'
+    TEST_SLOW_TEST_THRESHOLD = 0.5
 else:
     raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
 
