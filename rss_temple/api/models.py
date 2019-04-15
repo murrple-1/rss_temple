@@ -207,7 +207,10 @@ class _FeedManager(models.Manager):
     def with_subscription_data(self, user):
         qs = self.get_queryset()
         subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(user=user, feed_id=models.OuterRef('uuid'))
-        return qs.annotate(custom_title=models.Subquery(subscribed_user_feed_mappings.values('custom_feed_title')))
+        return qs.annotate(
+            custom_title=models.Subquery(subscribed_user_feed_mappings.values('custom_feed_title')),
+            is_subscribed=models.Exists(subscribed_user_feed_mappings),
+        )
 
 
 class Feed(models.Model):
@@ -222,13 +225,9 @@ class Feed(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 
-    def subscribed(self, user):
-        subscribed = getattr(self, '_subscribed', None)
-        if subscribed is None:
-            subscribed = self.uuid in user.subscribed_feeds_dict()
-            self._subscribed = subscribed
-
-        return subscribed
+    def with_subscription_data(self):
+        self.custom_title = None
+        self.is_subscribed = False
 
     def user_categories(self, user):
         if not hasattr(self, '_user_categories'):

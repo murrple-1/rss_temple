@@ -99,6 +99,7 @@ class AllFieldsTestCase(TestCase):
 
         for feed in feeds:
             feed.custom_title = None
+            feed.is_subscribed = False
 
         return feeds
 

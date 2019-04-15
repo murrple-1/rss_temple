@@ -32,7 +32,7 @@ _field_configs = {
         'publishedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.published_at), False),
         'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
 
-        'subscribed': _FieldConfig(lambda context, db_obj: db_obj.subscribed(context.request.user), False),
+        'subscribed': _FieldConfig(lambda context, db_obj: db_obj.is_subscribed, False),
         'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title, False),
         'calculatedTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title if db_obj.custom_title is not None else db_obj.title, False),
         'userCategoryUuids': _FieldConfig(lambda context, db_obj: (str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)), False),

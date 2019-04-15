@@ -59,6 +59,7 @@ def _save_feed(url):
     with transaction.atomic():
         d = feed_handler.text_2_d(response.text)
         feed = feed_handler.d_feed_2_feed(d.feed, url)
+        feed.with_subscription_data()
         feed.save()
 
         feed_entries = []
@@ -96,7 +97,6 @@ def _feed_get(request):
     except models.Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
-            feed.custom_title = None
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
 

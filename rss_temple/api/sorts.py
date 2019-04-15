@@ -49,6 +49,7 @@ __sort_configs = {
         'publishedAt': _SortConfig(['published_at'], None),
         'updatedAt': _SortConfig(['updated_at'], None),
 
+        'subscribed': _SortConfig(['is_subscribed'], None),
         'customTitle': _SortConfig(['custom_title'], None),
         'calculatedTitle': _SortConfig(['custom_title', 'title'], None),
     },

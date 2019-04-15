@@ -75,8 +75,8 @@ _search_fns = {
         'updatedAt': lambda context, search_obj: Q(updated_at__range=DateRange.convertto(search_obj)),
         'updatedAt_exact': lambda context, search_obj: Q(updated_at__date=Date.convertto(search_obj)),
         'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateDeltaRange.convertto(search_obj)),
-        'subscribed': _feed_subscribed,
 
+        'subscribed': lambda context, search_obj: Q(is_subscribed=Bool.convertto(search_obj)),
         'customTitle': lambda context, search_obj: Q(custom_title__icontains=search_obj),
         'customTitle_exact': lambda context, search_obj: Q(custom_title__iexact=search_obj),
         'customTitle_null': lambda context, search_obj: Q(custom_title__isnull=Bool.convertto(search_obj)),
