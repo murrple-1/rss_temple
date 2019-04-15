@@ -88,7 +88,16 @@ class SortsTestCase(TestCase):
             sorts._SortConfig(None, None)
 
         with self.assertRaises(TypeError):
-            sorts._SortConfig('testField', object())
+            sorts._SortConfig('testField', None)
+
+        with self.assertRaises(TypeError):
+            sorts._SortConfig([None], None)
+
+        with self.assertRaises(TypeError):
+            sorts._SortConfig(['testField'], object())
+
+        with self.assertRaises(ValueError):
+            sorts._SortConfig([], None)
 
     def test_bad_sort_list(self):
         with self.assertRaises(QueryException):

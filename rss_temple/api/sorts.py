@@ -20,6 +20,9 @@ class _SortConfig:
         if not isinstance(field_names, list):
             raise TypeError('field_names must be list')
 
+        if len(field_names) < 1:
+            raise ValueError('field_names must not be empty')
+
         for field_name in field_names:
             if not isinstance(field_name, str):
                 raise TypeError('field_names element must be str')
