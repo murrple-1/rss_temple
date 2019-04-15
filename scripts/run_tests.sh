@@ -19,5 +19,5 @@ cd $INITIAL_DIR/../rss_temple/
 if [ "$1" = "" ]; then
 	pipenv run python manage.py test api.tests daemons.tests
 else
-	pipenv run python manage.py test "$1"
+	pipenv run python manage.py test "$@"
 fi
