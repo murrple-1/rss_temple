@@ -43,7 +43,7 @@ def _opml_get(request):
 
         for feed in feeds:
             title = feed.title
-            custom_title = feed.custom_title(request.user)
+            custom_title = feed.custom_title
             outline_name = custom_title if custom_title is not None else title
             lxml_etree.SubElement(outer_outline_element, 'outline',
                                   type='rss', text=outline_name, title=outline_name, xmlUrl=feed.feed_url, htmlUrl=feed.home_url)

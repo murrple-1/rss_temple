@@ -62,7 +62,7 @@ class SearchesTestCase(TestCase):
 class AllSearchesTestCase(TestCase):
     TRIALS = {
         'user': {
-            'class': models.User,
+            'get_queryset': lambda: models.User.objects,
             'searches': {
                 'uuid': [str(uuid.uuid4())],
                 'email': ['test@test.com'],
@@ -70,7 +70,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         'usercategory': {
-            'class': models.UserCategory,
+            'get_queryset': lambda: models.UserCategory.objects,
             'searches': {
                 'uuid': [str(uuid.uuid4())],
                 'text': ['test'],
@@ -78,7 +78,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         'feed': {
-            'class': models.Feed,
+            'get_queryset': lambda: models.Feed.objects.with_subscription_data(AllSearchesTestCase.user),
             'searches': {
                 'uuid': [str(uuid.uuid4())],
                 'title': ['test'],
@@ -101,7 +101,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         'feedentry': {
-            'class': models.FeedEntry,
+            'get_queryset': lambda: models.FeedEntry.objects,
             'searches': {
                 'uuid': [str(uuid.uuid4())],
                 'feedUuid': [str(uuid.uuid4())],
@@ -151,7 +151,7 @@ class AllSearchesTestCase(TestCase):
             trial_searches = trial_dict['searches']
             self.assertEqual(len(trial_searches), len(search_fns_dict))
 
-            clazz = trial_dict['class']
+            queryset = trial_dict['get_queryset']()
 
             for field, test_values in trial_searches.items():
                 for test_value in test_values:
@@ -160,6 +160,6 @@ class AllSearchesTestCase(TestCase):
                     context.request = AllSearchesTestCase.MockRequest()
 
                     q = search_fns_dict[field](context, test_value)
-                    result = list(clazz.objects.filter(q))
+                    result = list(queryset.filter(q))
 
                     self.assertIsNotNone(result)

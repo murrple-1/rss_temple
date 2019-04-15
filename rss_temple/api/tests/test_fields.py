@@ -95,7 +95,12 @@ class AllFieldsTestCase(TestCase):
 
     @classmethod
     def generate_feeds(cls):
-        return [cls.feed_with_category, cls.feed_without_category]
+        feeds = [cls.feed_with_category, cls.feed_without_category]
+
+        for feed in feeds:
+            feed.custom_title = None
+
+        return feeds
 
     @classmethod
     def generate_feedentries(cls):

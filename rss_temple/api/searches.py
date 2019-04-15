@@ -77,11 +77,11 @@ _search_fns = {
         'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateDeltaRange.convertto(search_obj)),
         'subscribed': _feed_subscribed,
 
-        'customTitle': lambda context, search_obj: Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user, custom_feed_title__icontains=search_obj).values('feed_id')),
-        'customTitle_exact': lambda context, search_obj: Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user, custom_feed_title__iexact=search_obj).values('feed_id')),
-        'customTitle_null': lambda context, search_obj: Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user, custom_feed_title__isnull=Bool.convertto(search_obj)).values('feed_id')),
-        'calculatedTitle': lambda context, search_obj: Q(title__icontains=search_obj) | Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user, custom_feed_title__icontains=search_obj).values('feed_id')),
-        'calculatedTitle_exact': lambda context, search_obj: Q(title__iexact=search_obj) | Q(uuid__in=models.SubscribedFeedUserMapping.objects.filter(user=context.request.user, custom_feed_title__iexact=search_obj).values('feed_id')),
+        'customTitle': lambda context, search_obj: Q(custom_title__icontains=search_obj),
+        'customTitle_exact': lambda context, search_obj: Q(custom_title__iexact=search_obj),
+        'customTitle_null': lambda context, search_obj: Q(custom_title__isnull=Bool.convertto(search_obj)),
+        'calculatedTitle': lambda context, search_obj: Q(title__icontains=search_obj) | Q(custom_title__icontains=search_obj),
+        'calculatedTitle_exact': lambda context, search_obj: Q(title__iexact=search_obj) | Q(custom_title__iexact=search_obj),
     },
     'feedentry': {
         'uuid': lambda context, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),

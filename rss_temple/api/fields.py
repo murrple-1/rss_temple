@@ -10,11 +10,6 @@ class _FieldConfig:
         self.default = default
 
 
-def _feed_calculatedTitle(context, db_obj):
-    custom_title = db_obj.custom_title(context.request.user)
-    return custom_title if custom_title is not None else db_obj.title
-
-
 _field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
@@ -38,8 +33,8 @@ _field_configs = {
         'updatedAt': _FieldConfig(lambda context, db_obj: context.format_datetime(db_obj.updated_at) if db_obj.updated_at is not None else None, False),
 
         'subscribed': _FieldConfig(lambda context, db_obj: db_obj.subscribed(context.request.user), False),
-        'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title(context.request.user), False),
-        'calculatedTitle': _FieldConfig(_feed_calculatedTitle, False),
+        'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title, False),
+        'calculatedTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title if db_obj.custom_title is not None else db_obj.title, False),
         'userCategoryUuids': _FieldConfig(lambda context, db_obj: (str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)), False),
     },
     'feedentry': {

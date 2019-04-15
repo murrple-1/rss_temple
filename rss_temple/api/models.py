@@ -28,7 +28,7 @@ class User(models.Model):
 
                 feed = subscribed_feed_user_mapping.feed
 
-                feed._custom_title = subscribed_feed_user_mapping.custom_feed_title
+                feed.custom_title = subscribed_feed_user_mapping.custom_feed_title
 
                 for key in keys:
                     if key not in category_dict:
@@ -203,7 +203,16 @@ class UserCategory(models.Model):
         return feeds
 
 
+class _FeedManager(models.Manager):
+    def with_subscription_data(self, user):
+        qs = self.get_queryset()
+        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(user=user, feed_id=models.OuterRef('uuid'))
+        return qs.annotate(custom_title=models.Subquery(subscribed_user_feed_mappings.values('custom_feed_title')))
+
+
 class Feed(models.Model):
+    objects = _FeedManager()
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
     title = models.TextField()
@@ -220,14 +229,6 @@ class Feed(models.Model):
             self._subscribed = subscribed
 
         return subscribed
-
-    def custom_title(self, user):
-        if not hasattr(self, '_custom_title'):
-            subscribed_feed = user.subscribed_feeds_dict().get(self.uuid)
-
-            self._custom_title = subscribed_feed._custom_title if subscribed_feed is not None else None
-
-        return self._custom_title
 
     def user_categories(self, user):
         if not hasattr(self, '_user_categories'):
