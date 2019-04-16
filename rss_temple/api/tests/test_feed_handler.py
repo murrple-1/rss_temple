@@ -79,7 +79,8 @@ class FeedHandlerTestCase(TestCase):
             feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
             self.assertIsInstance(feed_tags, frozenset)
 
-            self.assertGreater(len(feed_tags), 0, '{} is empty'.format(feed_type))
+            self.assertGreater(len(feed_tags), 0,
+                               '{} is empty'.format(feed_type))
 
             for feed_tag in feed_tags:
                 self.assertIsInstance(feed_tag, str)
@@ -95,7 +96,8 @@ class FeedHandlerTestCase(TestCase):
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
             self.assertIsInstance(entry_tags, frozenset)
 
-            self.assertGreater(len(entry_tags), 0, '{} is empty'.format(feed_type))
+            self.assertGreater(len(entry_tags), 0,
+                               '{} is empty'.format(feed_type))
 
             for entry_tag in entry_tags:
                 self.assertIsInstance(entry_tag, str)

@@ -25,7 +25,8 @@ def opml(request):
 
 
 def _opml_get(request):
-    user_category_text_dict = dict(user_category_tuple for user_category_tuple in models.UserCategory.objects.filter(user=request.user).values_list('uuid', 'text'))
+    user_category_text_dict = dict(user_category_tuple for user_category_tuple in models.UserCategory.objects.filter(
+        user=request.user).values_list('uuid', 'text'))
 
     category_dict = request.user.category_dict()
 

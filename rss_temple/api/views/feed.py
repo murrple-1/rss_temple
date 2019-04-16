@@ -93,7 +93,8 @@ def _feed_get(request):
 
     feed = None
     try:
-        feed = models.Feed.objects.with_subscription_data(request.user).get(feed_url=url)
+        feed = models.Feed.objects.with_subscription_data(
+            request.user).get(feed_url=url)
     except models.Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
@@ -168,7 +169,8 @@ def _feeds_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feeds = models.Feed.objects.with_subscription_data(request.user).filter(*search)
+    feeds = models.Feed.objects.with_subscription_data(
+        request.user).filter(*search)
 
     ret_obj = {}
 

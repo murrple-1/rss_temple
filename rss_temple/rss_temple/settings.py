@@ -98,7 +98,8 @@ elif _test_runner_type == 'xml':
     TEST_OUTPUT_DIR = './test-results/'
 elif _test_runner_type == 'timed':
     TEST_RUNNER = 'rss_temple.testrunner.DjangoTimedTestRunner'
-    TEST_SLOW_TEST_THRESHOLD = float(os.environ.get('TEST_SLOW_TEST_THRESHOLD', '0.5'))
+    TEST_SLOW_TEST_THRESHOLD = float(
+        os.environ.get('TEST_SLOW_TEST_THRESHOLD', '0.5'))
 else:
     raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
 

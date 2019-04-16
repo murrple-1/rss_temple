@@ -12,7 +12,8 @@ class DjangoTimedTestRunner(DiscoverRunner):
 
 class TimeLoggingTestResult(unittest.TextTestResult):
     def __init__(self, stream, descriptions, verbosity):
-        self.slow_test_threshold = getattr(settings, 'TEST_SLOW_TEST_THRESHOLD', 0.3)
+        self.slow_test_threshold = getattr(
+            settings, 'TEST_SLOW_TEST_THRESHOLD', 0.3)
         super().__init__(stream, descriptions, verbosity)
 
     def startTest(self, test):

@@ -206,9 +206,11 @@ class UserCategory(models.Model):
 class _FeedManager(models.Manager):
     def with_subscription_data(self, user):
         qs = self.get_queryset()
-        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(user=user, feed_id=models.OuterRef('uuid'))
+        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
+            user=user, feed_id=models.OuterRef('uuid'))
         return qs.annotate(
-            custom_title=models.Subquery(subscribed_user_feed_mappings.values('custom_feed_title')),
+            custom_title=models.Subquery(
+                subscribed_user_feed_mappings.values('custom_feed_title')),
             is_subscribed=models.Exists(subscribed_user_feed_mappings),
         )
 
@@ -241,7 +243,8 @@ class Feed(models.Model):
                 if self.uuid in feed_uuids:
                     user_category_uuids.add(uuid_)
 
-            self._user_categories = UserCategory.objects.filter(uuid__in=user_category_uuids)
+            self._user_categories = UserCategory.objects.filter(
+                uuid__in=user_category_uuids)
 
         return self._user_categories
 
@@ -289,14 +292,14 @@ class FeedEntry(models.Model):
     def __eq__(self, other):
         if isinstance(other, FeedEntry):
             return (
-                self.id == other.id and
-                self.created_at == other.created_at and
-                self.published_at == other.published_at and
-                self.updated_at == other.updated_at and
-                self.title == other.title and
-                self.url == other.url and
-                self.content == other.content and
-                self.author_name == other.author_name
+                self.id == other.id
+                and self.created_at == other.created_at
+                and self.published_at == other.published_at
+                and self.updated_at == other.updated_at
+                and self.title == other.title
+                and self.url == other.url
+                and self.content == other.content
+                and self.author_name == other.author_name
             )
         else:
             return False
