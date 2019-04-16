@@ -9,8 +9,6 @@ import ujson
 
 from api import models
 
-# TODO finish tests
-
 
 class FeedEntryTestCase(TestCase):
     @classmethod

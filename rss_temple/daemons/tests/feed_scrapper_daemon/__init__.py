@@ -6,8 +6,6 @@ from api import models
 
 from daemons.feed_scrapper_daemon import scrape_feed
 
-# TODO write tests
-
 
 class DaemonTestCase(TestCase):
     @classmethod
@@ -29,5 +27,11 @@ class DaemonTestCase(TestCase):
 
         scrape_feed(DaemonTestCase.feed, text)
 
+        feed_count = models.Feed.objects.count()
+        feed_entry_count = models.FeedEntry.objects.count()
+
         # do it twice to make sure duplicate entries aren't added
         scrape_feed(DaemonTestCase.feed, text)
+
+        self.assertEqual(feed_count, models.Feed.objects.count())
+        self.assertEqual(feed_entry_count, models.FeedEntry.objects.count())
