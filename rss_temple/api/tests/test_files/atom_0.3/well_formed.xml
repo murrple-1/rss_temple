@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://purl.org/atom/ns#" version="0.3" xml:base="http://example.org/" xml:lang="en">
+<feed xmlns="http://purl.org/atom/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" version="0.3" xml:base="http://example.org/" xml:lang="en">
     <title type="text/plain" mode="escaped">Sample Feed</title>
     <tagline type="text/html" mode="escaped">For documentation &lt;em&gt;only&lt;/em&gt;</tagline>
     <link rel="alternate" type="text/html" href="/" />
@@ -12,6 +12,8 @@
             <p>This is an Atom syndication feed.</p>
         </div>
     </info>
+    <dc:subject>Feed Tag</dc:subject>
+    <dc:subject>Feed Subject</dc:subject>
     <entry>
         <title>First entry title</title>
         <link rel="alternate" type="text/html" href="/entry/3" />
@@ -43,5 +45,7 @@
                 <span style="background-image: url(javascript:window.location=’http://example.org/’)">nasty tricks</span>
             </div>
         </content>
+        <dc:subject>Entry Tag</dc:subject>
+        <dc:subject>Entry Subject</dc:subject>
     </entry>
 </feed>

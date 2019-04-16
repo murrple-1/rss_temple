@@ -7,7 +7,6 @@ from api import feed_handler, models
 from api.exceptions import QueryException
 
 
-# TODO finish tests
 class FeedHandlerTestCase(TestCase):
     FEED_TYPES = [
         'atom_0.3',
@@ -20,8 +19,6 @@ class FeedHandlerTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
-        cls.logger = logging.getLogger(__name__)
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
@@ -71,8 +68,6 @@ class FeedHandlerTestCase(TestCase):
             feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
             self.assertIsInstance(feed_entry, models.FeedEntry)
 
-            # TODO finish
-
     def test_d_feed_2_feed_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
             text = None
@@ -84,14 +79,10 @@ class FeedHandlerTestCase(TestCase):
             feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
             self.assertIsInstance(feed_tags, frozenset)
 
-            if len(feed_tags):
-                for feed_tag in feed_tags:
-                    self.assertIsInstance(feed_tag, str)
-            else:
-                FeedHandlerTestCase.logger.warning(
-                    '%s feed_tags empty', feed_type)
+            self.assertGreater(len(feed_tags), 0, '{} is empty'.format(feed_type))
 
-            # TODO finish
+            for feed_tag in feed_tags:
+                self.assertIsInstance(feed_tag, str)
 
     def test_d_entry_2_entry_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
@@ -104,14 +95,10 @@ class FeedHandlerTestCase(TestCase):
             entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
             self.assertIsInstance(entry_tags, frozenset)
 
-            if len(entry_tags):
-                for entry_tag in entry_tags:
-                    self.assertIsInstance(entry_tag, str)
-            else:
-                FeedHandlerTestCase.logger.warning(
-                    '%s entry_tags empty', feed_type)
+            self.assertGreater(len(entry_tags), 0, '{} is empty'.format(feed_type))
 
-            # TODO finish
+            for entry_tag in entry_tags:
+                self.assertIsInstance(entry_tag, str)
 
     def test_d_feed_2_feed_entry_plaintext(self):
         text = None
@@ -122,5 +109,3 @@ class FeedHandlerTestCase(TestCase):
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
         self.assertIsInstance(feed_entry, models.FeedEntry)
-
-        # TODO finish

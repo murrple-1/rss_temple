@@ -8,6 +8,8 @@
     <generator uri="http://example.org/generator/" version="4.0">Sample Toolkit</generator>
     <id>tag:feedparser.org,2005-11-09:/docs/examples/atom10.xml</id>
     <updated>2005-11-09T11:56:34Z</updated>
+    <category>Feed Category</category>
+    <category>Feed Tag</category>
     <entry>
         <title>First entry title</title>
         <link rel="alternate" href="/entry/3" />
@@ -34,5 +36,7 @@
         </contributor>
         <summary type="text">Watch out for nasty tricks</summary>
         <content type="text">Watch out for nasty tricks</content>
+        <category>Entry Category</category>
+        <category>Entry Tag</category>
     </entry>
 </feed>

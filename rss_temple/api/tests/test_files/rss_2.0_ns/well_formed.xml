@@ -10,6 +10,9 @@
         <dc:date>2004-06-04T17:40:33-05:00</dc:date>
         <admin:generatorAgent rdf:resource="http://www.exampletoolkit.org/" />
         <admin:errorReportsTo rdf:resource="mailto:mark@example.org" />
+        <category>Feed Category</category>
+        <dc:subject>Feed Subject</dc:subject>
+        <category>Feed Tag</category>
         <item>
             <title>First of all</title>
             <link>http://example.org/archives/2002/09/04.html#first_of_all</link>
