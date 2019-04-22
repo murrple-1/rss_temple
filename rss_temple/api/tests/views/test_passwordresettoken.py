@@ -43,12 +43,6 @@ class UserTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
         params = {
-            'email': None,
-        }
-        response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 200)
-
-        params = {
             'email': '',
         }
         response = c.post('/api/passwordresettoken/request', params)
