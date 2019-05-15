@@ -3,7 +3,7 @@ from .passwordresettoken import passwordresettoken_request, passwordresettoken_r
 from .user import user, user_verify
 from .feed import feed, feeds_query, feed_subscribe
 from .feed_entry import feed_entry, feed_entries_query, feed_entry_read, feed_entries_read, feed_entry_favorite, feed_entries_favorite
-from .user_category import user_category, user_categories_query, user_category_feeds
+from .user_category import user_category, user_categories_query, user_categories_apply
 from .opml import opml
 from .progress import feed_subscription_progress
 
@@ -31,7 +31,7 @@ __all__ = [
     feed_entries_favorite,
     user_category,
     user_categories_query,
-    user_category_feeds,
+    user_categories_apply,
     opml,
     feed_subscription_progress,
 ]

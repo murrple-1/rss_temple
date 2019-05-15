@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 
 import ujson
@@ -31,18 +31,6 @@ def user_category(request, _uuid):
         return _user_category_delete(request, _uuid)
 
 
-def user_category_feeds(request, _uuid):
-    permitted_methods = {'POST', 'DELETE'}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == 'POST':
-        return _user_category_feeds_post(request, _uuid)
-    elif request.method == 'DELETE':
-        return _user_category_feeds_delete(request, _uuid)
-
-
 def user_categories_query(request):
     permitted_methods = {'POST'}
 
@@ -51,6 +39,16 @@ def user_categories_query(request):
 
     if request.method == 'POST':
         return _user_categories_query_post(request)
+
+
+def user_categories_apply(request):
+    permitted_methods = {'PUT'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'PUT':
+        return _user_categories_apply_put(request)
 
 
 def _user_category_get(request, _uuid):
@@ -273,9 +271,7 @@ def _user_categories_query_post(request):
     return HttpResponse(content, content_type)
 
 
-def _user_category_feeds_post(request, _uuid):
-    _uuid = uuid.UUID(_uuid)
-
+def _user_categories_apply_put(request):
     _json = None
     try:
         _json = ujson.loads(
@@ -283,86 +279,55 @@ def _user_category_feeds_post(request, _uuid):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    user_category = None
-    try:
-        user_category = models.UserCategory.objects.get(
-            uuid=_uuid, user=request.user)
-    except models.UserCategory.DoesNotExist:
-        return HttpResponseNotFound('user category not found')
+    if not isinstance(_json, dict):
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    feed_uuids = None
-    if isinstance(_json, list):
+    all_feed_uuids = set()
+    all_user_category_uuids = set()
+
+    mappings = {}
+
+    for feed_uuid, user_category_uuids in _json.items():
+        _feed_uuid = None
         try:
-            feed_uuids = frozenset(uuid.UUID(s) for s in _json)
-        except (ValueError, TypeError, AttributeError):
-            return HttpResponseBadRequest('element must be UUID')
-    elif isinstance(_json, str):
-        try:
-            feed_uuids = [uuid.UUID(_json)]
+            _feed_uuid = uuid.UUID(feed_uuid)
         except ValueError:
-            return HttpResponseBadRequest('JSON body must be UUID')
-    else:
-        return HttpResponseBadRequest('JSON body must be array or UUID')
+            return HttpResponseBadRequest('JSON body key malformed')
 
-    feeds = list(models.Feed.objects.filter(uuid__in=feed_uuids))
+        all_feed_uuids.add(_feed_uuid)
 
-    if len(feeds) < len(feed_uuids):
+        if not isinstance(user_category_uuids, list):
+            return HttpResponseBadRequest('JSON body element must be array')
+
+        try:
+            user_category_uuids = frozenset(uuid.UUID(s) for s in user_category_uuids)
+        except (ValueError, TypeError):
+            return HttpResponseBadRequest('JSON body value malformed')
+
+        all_user_category_uuids.update(user_category_uuids)
+
+        mappings[_feed_uuid] = user_category_uuids
+
+    feeds = dict((feed.uuid, feed) for feed in models.Feed.objects.filter(uuid__in=all_feed_uuids))
+
+    if len(feeds) < len(all_feed_uuids):
         return HttpResponseNotFound('feed not found')
+
+    user_categories = dict((user_category.uuid, user_category) for user_category in models.UserCategory.objects.filter(uuid__in=all_user_category_uuids, user=request.user))
+
+    if len(user_categories) < len(all_user_category_uuids):
+        return HttpResponseNotFound('user category not found')
 
     feed_user_category_mappings = []
 
-    for feed in feeds:
-        feed_user_category_mapping = models.FeedUserCategoryMapping(
-            user_category=user_category, feed=feed)
-        feed_user_category_mappings.append(feed_user_category_mapping)
+    for feed_uuid, user_category_uuids in mappings.items():
+        for user_category_uuid in user_category_uuids:
+            feed_user_category_mapping = models.FeedUserCategoryMapping(
+                user_category=user_categories[user_category_uuid], feed=feeds[feed_uuid])
+            feed_user_category_mappings.append(feed_user_category_mapping)
 
-    try:
-        models.FeedUserCategoryMapping.objects.bulk_create(
-            feed_user_category_mappings)
-    except IntegrityError:
-        return HttpResponse('mapping already exists', status=409)
-
-    return HttpResponse()
-
-
-def _user_category_feeds_delete(request, _uuid):
-    _uuid = uuid.UUID(_uuid)
-
-    _json = None
-    try:
-        _json = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest('HTTP body cannot be parsed')
-
-    user_category = None
-    try:
-        user_category = models.UserCategory.objects.get(
-            uuid=_uuid, user=request.user)
-    except models.UserCategory.DoesNotExist:
-        return HttpResponseNotFound('user category not found')
-
-    feed_uuids = None
-
-    if isinstance(_json, list):
-        try:
-            feed_uuids = frozenset(uuid.UUID(s) for s in _json)
-        except (ValueError, TypeError, AttributeError):
-            return HttpResponseBadRequest('element must be UUID')
-    elif isinstance(_json, str):
-        try:
-            feed_uuids = [uuid.UUID(_json)]
-        except ValueError:
-            return HttpResponseBadRequest('JSON body must be UUID')
-    else:
-        return HttpResponseBadRequest('JSON body must be array or UUID')
-
-    feed_user_category_mappings = models.FeedUserCategoryMapping.objects.filter(
-        user_category=user_category, feed_id__in=feed_uuids)
-
-    if feed_user_category_mappings.count() < len(feed_uuids):
-        return HttpResponseNotFound('mapping not found')
-
-    feed_user_category_mappings.delete()
+    with transaction.atomic():
+        models.FeedUserCategoryMapping.objects.filter(feed__in=feeds.values()).delete()
+        models.FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
 
     return HttpResponse()
