@@ -300,7 +300,8 @@ def _user_categories_apply_put(request):
             return HttpResponseBadRequest('JSON body element must be array')
 
         try:
-            user_category_uuids = frozenset(uuid.UUID(s) for s in user_category_uuids)
+            user_category_uuids = frozenset(
+                uuid.UUID(s) for s in user_category_uuids)
         except (ValueError, TypeError):
             return HttpResponseBadRequest('JSON body value malformed')
 
@@ -308,12 +309,14 @@ def _user_categories_apply_put(request):
 
         mappings[_feed_uuid] = user_category_uuids
 
-    feeds = dict((feed.uuid, feed) for feed in models.Feed.objects.filter(uuid__in=all_feed_uuids))
+    feeds = dict((feed.uuid, feed)
+                 for feed in models.Feed.objects.filter(uuid__in=all_feed_uuids))
 
     if len(feeds) < len(all_feed_uuids):
         return HttpResponseNotFound('feed not found')
 
-    user_categories = dict((user_category.uuid, user_category) for user_category in models.UserCategory.objects.filter(uuid__in=all_user_category_uuids, user=request.user))
+    user_categories = dict((user_category.uuid, user_category) for user_category in models.UserCategory.objects.filter(
+        uuid__in=all_user_category_uuids, user=request.user))
 
     if len(user_categories) < len(all_user_category_uuids):
         return HttpResponseNotFound('user category not found')
@@ -327,7 +330,9 @@ def _user_categories_apply_put(request):
             feed_user_category_mappings.append(feed_user_category_mapping)
 
     with transaction.atomic():
-        models.FeedUserCategoryMapping.objects.filter(feed__in=feeds.values()).delete()
-        models.FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
+        models.FeedUserCategoryMapping.objects.filter(
+            feed__in=feeds.values()).delete()
+        models.FeedUserCategoryMapping.objects.bulk_create(
+            feed_user_category_mappings)
 
     return HttpResponse()

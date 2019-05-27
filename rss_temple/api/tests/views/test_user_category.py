@@ -295,9 +295,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
@@ -316,9 +316,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
@@ -344,9 +344,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         data = {
@@ -354,9 +354,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
         data = {
@@ -364,9 +364,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
 
     def test_usercategories_apply_put_not_found(self):
@@ -390,9 +390,9 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
         data = {
@@ -400,7 +400,7 @@ class UserCategoryTestCase(TestCase):
         }
 
         response = c.put('/api/usercategories/apply',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+                         ujson.dumps(data),
+                         'application/json',
+                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
