@@ -228,12 +228,11 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_usercategories_query_get(self):
-        user_category = None
         try:
-            user_category = models.UserCategory.objects.get(
+            models.UserCategory.objects.get(
                 user=UserCategoryTestCase.user, text='Test User Category')
         except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
+            models.UserCategory.objects.create(
                 user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
@@ -329,12 +328,11 @@ class UserCategoryTestCase(TestCase):
             user_category=user_category2, feed=feed2))
 
     def test_usercategories_apply_put_malformed(self):
-        user_category = None
         try:
-            user_category = models.UserCategory.objects.get(
+            models.UserCategory.objects.get(
                 user=UserCategoryTestCase.user, text='Test User Category')
         except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
+            models.UserCategory.objects.create(
                 user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
