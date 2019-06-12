@@ -47,6 +47,7 @@ _field_configs = {
         'url': _FieldConfig(lambda context, db_obj: db_obj.url, False),
         'content': _FieldConfig(lambda context, db_obj: db_obj.content, False),
         'authorName': _FieldConfig(lambda context, db_obj: db_obj.author_name, False),
+        'feedUuid': _FieldConfig(lambda context, db_obj: str(db_obj.feed_id), False),
 
         'fromSubscription': _FieldConfig(lambda context, db_obj: db_obj.from_subscription(context.request.user), False),
         'isRead': _FieldConfig(lambda context, db_obj: db_obj.is_read(context.request.user), False),
