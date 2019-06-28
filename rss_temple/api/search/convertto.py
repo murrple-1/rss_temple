@@ -78,7 +78,7 @@ class Uuid(CustomConvertTo):
 class UuidList(CustomConvertTo):
     @staticmethod
     def convertto(search_obj):
-        return [uuid.UUID(uuid_str) for uuid_str in search_obj.split('|')]
+        return [uuid.UUID(uuid_str) for uuid_str in search_obj.split(',')]
 
 
 _DATE_DELTA_RANGE_OLDER_THAN_REGEX = re.compile(r'^older_than:(\d+)([dmy])$')

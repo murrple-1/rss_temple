@@ -100,7 +100,7 @@ class ConvertToTestCase(TestCase):
 
         self.assertEqual(UuidList.convertto(uuid_str1), [uuid_1])
         self.assertEqual(UuidList.convertto(
-            '{}|{}'.format(uuid_str1, uuid_str2)), [uuid_1, uuid_2])
+            '{},{}'.format(uuid_str1, uuid_str2)), [uuid_1, uuid_2])
 
         with self.assertRaises(ValueError):
             UuidList.convertto('test')
