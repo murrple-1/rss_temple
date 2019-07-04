@@ -1,4 +1,5 @@
 import importlib
+import shutil
 
 from django.test import TestCase
 from django.http.request import HttpRequest
@@ -41,3 +42,5 @@ class ProfilingTestCase(TestCase):
 
             response = middleware(request)
             assert response  # PyFlakes
+
+        shutil.rmtree('api/tests/test_files/profiling/')
