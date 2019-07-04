@@ -23,6 +23,7 @@ validate-email = "*"
 enum34 = {version = "*",python_version = "<'3.4'"}
 
 [dev-packages]
+coverage = "*"
 codecov = "*"
 Faker = "*"
 unittest-xml-reporting = "*"

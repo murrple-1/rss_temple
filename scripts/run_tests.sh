@@ -17,7 +17,9 @@ INITIAL_DIR=`dirname $0`
 cd $INITIAL_DIR/../rss_temple/
 
 if [ "$1" = "" ]; then
-	pipenv run python manage.py test api.tests daemons.tests
+	pipenv run coverage run manage.py test api.tests daemons.tests
 else
-	pipenv run python manage.py test "$@"
+	pipenv run coverage run manage.py test "$@"
 fi
+
+pipenv run coverage html
