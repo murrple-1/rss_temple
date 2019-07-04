@@ -35,7 +35,7 @@ class _SortConfig:
         self.default_descriptor = default_descriptor
 
 
-__sort_configs = {
+_sort_configs = {
     'user': {
         'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
         'email': _SortConfig(['email'], None),
@@ -100,7 +100,7 @@ def to_sort_list(object_name, sort, default_sort_enabled):
 
 
 def _to_default_sort_list(object_name):
-    object_sort_configs = __sort_configs[object_name]
+    object_sort_configs = _sort_configs[object_name]
 
     field_name_dict = {}
     for field_name, object_sort_config in object_sort_configs.items():
@@ -143,7 +143,7 @@ def sort_list_to_db_sort_list(object_name, sort_list):
 def _to_db_sort_field_names(object_name, field_name):
     field_name = field_name.lower()
 
-    object_sort_configs = __sort_configs[object_name]
+    object_sort_configs = _sort_configs[object_name]
 
     for _field_name, object_sort_config in object_sort_configs.items():
         if field_name == _field_name.lower():

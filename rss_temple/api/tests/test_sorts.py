@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from api import sorts
+from api import sorts, models
 from api.exceptions import QueryException
 
 
@@ -107,3 +107,47 @@ class SortsTestCase(TestCase):
                     'direction': 'ASC',
                 }
             ])
+
+
+class AllSortsTestCase(TestCase):
+    TRIALS = {
+        'user': {
+            'get_queryset': lambda: models.User.objects,
+        },
+        'usercategory': {
+            'get_queryset': lambda: models.UserCategory.objects,
+        },
+        'feed': {
+            'get_queryset': lambda: models.Feed.objects.with_subscription_data(AllSortsTestCase.user),
+        },
+        'feedentry': {
+            'get_queryset': lambda: models.FeedEntry.objects,
+        },
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        models.User.objects.all().delete()
+
+        cls.user = models.User.objects.create(
+            email='test_searches@test.com')
+
+    def test_run(self):
+        self.assertEqual(len(AllSortsTestCase.TRIALS), len(sorts._sort_configs))
+
+        for key, trial_dict in AllSortsTestCase.TRIALS.items():
+            sorts_dict = sorts._sort_configs[key]
+
+            sort_keys = sorts_dict.keys()
+
+            sort_list = sorts.to_sort_list(key, ','.join(f'{sort_key}:ASC' for sort_key in sort_keys), False)
+
+            db_sort_list = sorts.sort_list_to_db_sort_list(key, sort_list)
+
+            sort = sorts.to_order_by_fields(db_sort_list)
+
+            result = list(trial_dict['get_queryset']().order_by(*sort))
+
+            self.assertIsNotNone(result)
