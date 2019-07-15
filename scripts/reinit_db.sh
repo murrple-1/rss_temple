@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
-INITIAL_DIR=`dirname $0`
+INITIAL_DIR=$(dirname "$0")
 
 export GOOGLE_CLIENT_ID=''
 
-cd $INITIAL_DIR/../rss_temple/
+cd "$INITIAL_DIR/../rss_temple/" || exit
 
 rm db.sqlite3
 pipenv run python manage.py migrate

@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
-INITIAL_DIR=$(cd `dirname $0` && pwd)
+INITIAL_DIR=$(cd "$(dirname "$0")" && pwd)
 
 export GOOGLE_CLIENT_ID=''
 
-cd $INITIAL_DIR/../rss_temple/
+cd "$INITIAL_DIR/../rss_temple/" || exit
 
 rm api/migrations/0001_initial.py
 pipenv run python manage.py makemigrations
-$INITIAL_DIR/reinit_db.sh
+"$INITIAL_DIR/reinit_db.sh"
