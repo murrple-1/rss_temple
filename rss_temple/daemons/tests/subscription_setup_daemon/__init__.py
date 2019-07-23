@@ -6,22 +6,9 @@ from multiprocessing import Process
 from django.test import TestCase
 
 from api import models
+from api.tests.http_server import http_server_target
 
 from daemons.subscription_setup_daemon import get_first_entry, do_subscription
-
-
-def _http_server_process():
-    import os
-    import sys
-    from http.server import HTTPServer, SimpleHTTPRequestHandler
-
-    sys.stdout = open('/dev/null', 'w')
-    sys.stderr = sys.stdout
-
-    os.chdir('api/tests/test_files/')
-
-    with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
-        httpd.serve_forever()
 
 
 class DaemonTestCase(TestCase):
@@ -37,7 +24,7 @@ class DaemonTestCase(TestCase):
         except models.User.DoesNotExist:
             cls.user = models.User.objects.create(email='test@test.com')
 
-        cls.http_process = Process(target=_http_server_process)
+        cls.http_process = Process(target=http_server_target, args=(8080,))
         cls.http_process.start()
 
         time.sleep(2.0)

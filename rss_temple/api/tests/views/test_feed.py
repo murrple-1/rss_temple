@@ -8,20 +8,7 @@ from django.test import TestCase, Client
 import ujson
 
 from api import models, fields
-
-
-def _http_server_process():
-    import os
-    import sys
-    from http.server import HTTPServer, SimpleHTTPRequestHandler
-
-    sys.stdout = open('/dev/null', 'w')
-    sys.stderr = sys.stdout
-
-    os.chdir('api/tests/test_files/')
-
-    with HTTPServer(('', 8080), SimpleHTTPRequestHandler) as httpd:
-        httpd.serve_forever()
+from api.tests.http_server import http_server_target
 
 
 class FeedTestCase(TestCase):
@@ -48,7 +35,7 @@ class FeedTestCase(TestCase):
         cls.session_token = session.uuid
         cls.session_token_str = str(session.uuid)
 
-        cls.http_process = Process(target=_http_server_process)
+        cls.http_process = Process(target=http_server_target, args=(8080,))
         cls.http_process.start()
 
         time.sleep(2.0)
@@ -67,7 +54,7 @@ class FeedTestCase(TestCase):
             'url': 'http://localhost:8080/rss_2.0/well_formed.xml',
             'fields': ','.join(fields.field_list('feed')),
         }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
     def test_feed_get_no_url(self):
         c = Client()

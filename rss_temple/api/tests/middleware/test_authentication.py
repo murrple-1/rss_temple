@@ -64,7 +64,7 @@ class AuthenticationTestCase(TestCase):
 
             response = middleware(request)
 
-            self.assertTrue('WWW-Authenticate' in response)
+            self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'],
                              'X-Basic realm="Test Realm"')
             self.assertEqual(response.status_code, 401)
@@ -102,7 +102,7 @@ class AuthenticationTestCase(TestCase):
 
             response = middleware(request)
 
-            self.assertTrue('WWW-Authenticate' in response)
+            self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'],
                              'X-Basic realm="Test Realm"')
             self.assertEqual(response.status_code, 401)
@@ -121,6 +121,6 @@ class AuthenticationTestCase(TestCase):
 
             response = middleware(request)
 
-            self.assertTrue('WWW-Authenticate' in response)
+            self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'], 'X-Basic')
             self.assertEqual(response.status_code, 401)

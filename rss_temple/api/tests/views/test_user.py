@@ -60,7 +60,7 @@ class UserTestCase(TestCase):
 
         _json = ujson.loads(response.content)
 
-        self.assertTrue('subscribedFeedUuids' in _json)
+        self.assertIn('subscribedFeedUuids', _json)
 
     def test_user_put(self):
         c = Client()
