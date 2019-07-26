@@ -29,7 +29,8 @@ class LoginTestCase(TestCase):
     def test_my_login_post_already_exists(self):
         user = models.User.objects.create(email='test@test.com')
 
-        models.MyLogin.objects.create(user=user, pw_hash=_password_hasher.hash('mypassword'))
+        models.MyLogin.objects.create(
+            user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my', ujson.dumps({
@@ -41,7 +42,8 @@ class LoginTestCase(TestCase):
     def test_my_login_session_post(self):
         user = models.User.objects.create(email='test@test.com')
 
-        models.MyLogin.objects.create(user=user, pw_hash=_password_hasher.hash('mypassword'))
+        models.MyLogin.objects.create(
+            user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({
@@ -63,7 +65,8 @@ class LoginTestCase(TestCase):
     def test_my_login_session_post_bad_password(self):
         user = models.User.objects.create(email='test@test.com')
 
-        models.MyLogin.objects.create(user=user, pw_hash=_password_hasher.hash('mypassword'))
+        models.MyLogin.objects.create(
+            user=user, pw_hash=_password_hasher.hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({

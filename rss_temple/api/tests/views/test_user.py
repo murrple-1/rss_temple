@@ -24,7 +24,8 @@ class UserTestCase(TestCase):
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
-        models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+        models.MyLogin.objects.create(
+            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
         cls.session = models.Session.objects.create(user=cls.user, expires_at=(
             datetime.datetime.utcnow() + datetime.timedelta(days=2)))

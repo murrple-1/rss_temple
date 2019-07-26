@@ -21,7 +21,8 @@ class UserTestCase(TestCase):
 
         cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
 
-        models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+        models.MyLogin.objects.create(
+            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
     def test_passwordresettoken_request_post(self):
         c = Client()

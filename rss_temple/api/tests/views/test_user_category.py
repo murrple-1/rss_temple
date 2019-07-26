@@ -26,7 +26,8 @@ class UserCategoryTestCase(TestCase):
         cls.session_token_str = str(cls.session.uuid)
 
     def test_usercategory_get(self):
-        user_category = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -223,8 +224,10 @@ class UserCategoryTestCase(TestCase):
             updated_at=None,
             db_updated_at=None)
 
-        user_category1 = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category 1')
-        user_category2 = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category 2')
+        user_category1 = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category 1')
+        user_category2 = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category 2')
 
         c = Client()
 
@@ -268,7 +271,8 @@ class UserCategoryTestCase(TestCase):
             user_category=user_category2, feed=feed2))
 
     def test_usercategories_apply_put_malformed(self):
-        models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category')
+        models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 

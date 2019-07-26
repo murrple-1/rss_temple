@@ -133,14 +133,16 @@ class AllSortsTestCase(TestCase):
             email='test_searches@test.com')
 
     def test_run(self):
-        self.assertEqual(len(AllSortsTestCase.TRIALS), len(sorts._sort_configs))
+        self.assertEqual(len(AllSortsTestCase.TRIALS),
+                         len(sorts._sort_configs))
 
         for key, trial_dict in AllSortsTestCase.TRIALS.items():
             sorts_dict = sorts._sort_configs[key]
 
             sort_keys = sorts_dict.keys()
 
-            sort_list = sorts.to_sort_list(key, ','.join(f'{sort_key}:ASC' for sort_key in sort_keys), False)
+            sort_list = sorts.to_sort_list(key, ','.join(
+                f'{sort_key}:ASC' for sort_key in sort_keys), False)
 
             db_sort_list = sorts.sort_list_to_db_sort_list(key, sort_list)
 
