@@ -9,11 +9,7 @@ from api import authenticate, models
 
 class AuthenticateTestCase(TestCase):
     def test_success(self):
-        user = None
-        try:
-            user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            user = models.User.objects.create(email='test@test.com')
+        user = models.User.objects.create(email='test@test.com')
 
         session = models.Session.objects.create(
             user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))

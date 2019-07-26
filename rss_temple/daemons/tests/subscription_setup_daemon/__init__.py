@@ -19,10 +19,7 @@ class DaemonTestCase(TestCase):
         logging.getLogger('subscription_setup_daemon').setLevel(
             logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email='test@test.com')
 
         cls.http_process = Process(target=http_server_target, args=(8080,))
         cls.http_process.start()
@@ -38,8 +35,6 @@ class DaemonTestCase(TestCase):
         time.sleep(2.0)
 
     def test_get_first_entry(self):
-        models.FeedSubscriptionProgressEntry.objects.all().delete()
-
         feed_subscription_progress_entry = get_first_entry()
 
         self.assertIsNone(feed_subscription_progress_entry)
@@ -57,34 +52,22 @@ class DaemonTestCase(TestCase):
                          models.FeedSubscriptionProgressEntry.STARTED)
 
     def test_do_subscription(self):
-        feed1 = None
-        try:
-            feed1 = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing')
-        except models.Feed.DoesNotExist:
-            feed1 = models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed1 = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        feed2 = None
-        try:
-            feed2 = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title')
-        except models.Feed.DoesNotExist:
-            feed2 = models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed2 = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        models.SubscribedFeedUserMapping.objects.filter(
-            user=DaemonTestCase.user).delete()
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed1,
             user=DaemonTestCase.user)
@@ -93,12 +76,8 @@ class DaemonTestCase(TestCase):
             user=DaemonTestCase.user,
             custom_feed_title='Old Custom Title')
 
-        try:
-            models.UserCategory.objects.get(
-                user=DaemonTestCase.user, text='Old User Category')
-        except models.UserCategory.DoesNotExist:
-            models.UserCategory.objects.create(
-                user=DaemonTestCase.user, text='Old User Category')
+        models.UserCategory.objects.create(
+            user=DaemonTestCase.user, text='Old User Category')
 
         feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
             user=DaemonTestCase.user)

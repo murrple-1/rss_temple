@@ -18,10 +18,7 @@ class FeedEntryTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email='test@test.com')
 
         session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
@@ -31,34 +28,27 @@ class FeedEntryTestCase(TestCase):
         cls.session_token = session.uuid
         cls.session_token_str = str(session.uuid)
 
-        try:
-            cls.feed = models.Feed.objects.get(
-                feed_url='http://example.com/rss.xml')
-        except models.Feed.DoesNotExist:
-            cls.feed = models.Feed.objects.create(
-                feed_url='http://example.com/rss.xml',
-                title='Sample Feed',
-                home_url='http://example.com',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        cls.feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
     def test_feedentry_get(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
         c = Client()
 
@@ -74,21 +64,18 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feedentries_query_post(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
         c = Client()
 
@@ -97,24 +84,18 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_feedentry_read_post(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
-
-        models.ReadFeedEntryUserMapping.objects.filter(
-            user=FeedEntryTestCase.user, feed_entry=feed_entry).delete()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
         c = Client()
 
@@ -133,25 +114,21 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feedentry_read_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists():
-            models.ReadFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry)
+        models.ReadFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
         c = Client()
 
@@ -164,25 +141,21 @@ class FeedEntryTestCase(TestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
     def test_feedentry_read_delete(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists():
-            models.ReadFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry)
+        models.ReadFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
         c = Client()
 
@@ -194,44 +167,31 @@ class FeedEntryTestCase(TestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
     def test_feedentries_read_post(self):
-        feed_entry1 = None
-        try:
-            feed_entry1 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[0]
-        except IndexError:
-            feed_entry1 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 1 Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content 1',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry1.hash = hash(feed_entry1)
-            feed_entry1.save()
+        feed_entry1 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 1 Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content 1',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry1.hash = hash(feed_entry1)
+        feed_entry1.save()
 
-        feed_entry2 = None
-        try:
-            feed_entry2 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[1]
-        except IndexError:
-            feed_entry2 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 2 Title',
-                url='http://example.com/entry2.html',
-                content='Some Entry content 2',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry2.hash = hash(feed_entry2)
-            feed_entry2.save()
-
-        models.ReadFeedEntryUserMapping.objects.filter(
-            user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).delete()
+        feed_entry2 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 2 Title',
+            url='http://example.com/entry2.html',
+            content='Some Entry content 2',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry2.hash = hash(feed_entry2)
+        feed_entry2.save()
 
         c = Client()
 
@@ -280,25 +240,21 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feedentries_read_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.ReadFeedEntryUserMapping.objects.filter(feed_entry=feed_entry, user=FeedEntryTestCase.user).exists():
-            models.ReadFeedEntryUserMapping.objects.create(
-                feed_entry=feed_entry, user=FeedEntryTestCase.user)
+        models.ReadFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
         c = Client()
 
@@ -311,49 +267,37 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_feedentries_read_delete(self):
-        feed_entry1 = None
-        try:
-            feed_entry1 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[0]
-        except IndexError:
-            feed_entry1 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 1 Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content 1',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry1.hash = hash(feed_entry1)
-            feed_entry1.save()
+        feed_entry1 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 1 Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content 1',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry1.hash = hash(feed_entry1)
+        feed_entry1.save()
 
-        feed_entry2 = None
-        try:
-            feed_entry2 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[1]
-        except IndexError:
-            feed_entry2 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 2 Title',
-                url='http://example.com/entry2.html',
-                content='Some Entry content 2',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry2.hash = hash(feed_entry2)
-            feed_entry2.save()
+        feed_entry2 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 2 Title',
+            url='http://example.com/entry2.html',
+            content='Some Entry content 2',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry2.hash = hash(feed_entry2)
+        feed_entry2.save()
 
-        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry1).exists():
-            models.ReadFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry1)
+        models.ReadFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry1)
 
-        if not models.ReadFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry2).exists():
-            models.ReadFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry2)
+        models.ReadFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry2)
 
         c = Client()
 
@@ -391,24 +335,18 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_feedentry_favorite_post(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
-
-        models.FavoriteFeedEntryUserMapping.objects.filter(
-            user=FeedEntryTestCase.user, feed_entry=feed_entry).delete()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
         c = Client()
 
@@ -427,25 +365,21 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feedentry_favorite_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.FavoriteFeedEntryUserMapping.objects.filter(feed_entry=feed_entry, user=FeedEntryTestCase.user).exists():
-            models.FavoriteFeedEntryUserMapping.objects.create(
-                feed_entry=feed_entry, user=FeedEntryTestCase.user)
+        models.FavoriteFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
         c = Client()
 
@@ -454,25 +388,21 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_feedentry_favorite_delete(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.FavoriteFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry).exists():
-            models.FavoriteFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry)
+        models.FavoriteFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
         c = Client()
 
@@ -484,44 +414,31 @@ class FeedEntryTestCase(TestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
     def test_feedentries_favorite_post(self):
-        feed_entry1 = None
-        try:
-            feed_entry1 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[0]
-        except IndexError:
-            feed_entry1 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 1 Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content 1',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry1.hash = hash(feed_entry1)
-            feed_entry1.save()
+        feed_entry1 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 1 Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content 1',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry1.hash = hash(feed_entry1)
+        feed_entry1.save()
 
-        feed_entry2 = None
-        try:
-            feed_entry2 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[1]
-        except IndexError:
-            feed_entry2 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 2 Title',
-                url='http://example.com/entry2.html',
-                content='Some Entry content 2',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry2.hash = hash(feed_entry2)
-            feed_entry2.save()
-
-        models.FavoriteFeedEntryUserMapping.objects.filter(
-            user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).delete()
+        feed_entry2 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 2 Title',
+            url='http://example.com/entry2.html',
+            content='Some Entry content 2',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry2.hash = hash(feed_entry2)
+        feed_entry2.save()
 
         c = Client()
 
@@ -570,25 +487,21 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feedentries_favorite_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.filter(
-            feed=FeedEntryTestCase.feed).first()
-        if feed_entry is None:
-            feed_entry = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry.hash = hash(feed_entry)
-            feed_entry.save()
+        feed_entry = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry.hash = hash(feed_entry)
+        feed_entry.save()
 
-        if not models.FavoriteFeedEntryUserMapping.objects.filter(feed_entry=feed_entry, user=FeedEntryTestCase.user).exists():
-            models.FavoriteFeedEntryUserMapping.objects.create(
-                feed_entry=feed_entry, user=FeedEntryTestCase.user)
+        models.FavoriteFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
         c = Client()
 
@@ -601,49 +514,37 @@ class FeedEntryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_feedentries_favorite_delete(self):
-        feed_entry1 = None
-        try:
-            feed_entry1 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[0]
-        except IndexError:
-            feed_entry1 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 1 Title',
-                url='http://example.com/entry1.html',
-                content='Some Entry content 1',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry1.hash = hash(feed_entry1)
-            feed_entry1.save()
+        feed_entry1 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 1 Title',
+            url='http://example.com/entry1.html',
+            content='Some Entry content 1',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry1.hash = hash(feed_entry1)
+        feed_entry1.save()
 
-        feed_entry2 = None
-        try:
-            feed_entry2 = models.FeedEntry.objects.filter(
-                feed=FeedEntryTestCase.feed).order_by('uuid')[1]
-        except IndexError:
-            feed_entry2 = models.FeedEntry(
-                id=None,
-                feed=FeedEntryTestCase.feed,
-                created_at=None,
-                updated_at=None,
-                title='Feed Entry 2 Title',
-                url='http://example.com/entry2.html',
-                content='Some Entry content 2',
-                author_name='John Doe',
-                db_updated_at=None)
-            feed_entry2.hash = hash(feed_entry2)
-            feed_entry2.save()
+        feed_entry2 = models.FeedEntry(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title='Feed Entry 2 Title',
+            url='http://example.com/entry2.html',
+            content='Some Entry content 2',
+            author_name='John Doe',
+            db_updated_at=None)
+        feed_entry2.hash = hash(feed_entry2)
+        feed_entry2.save()
 
-        if not models.FavoriteFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry1).exists():
-            models.FavoriteFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry1)
+        models.FavoriteFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry1)
 
-        if not models.FavoriteFeedEntryUserMapping.objects.filter(user=FeedEntryTestCase.user, feed_entry=feed_entry2).exists():
-            models.FavoriteFeedEntryUserMapping.objects.create(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry2)
+        models.FavoriteFeedEntryUserMapping.objects.create(
+            user=FeedEntryTestCase.user, feed_entry=feed_entry2)
 
         c = Client()
 

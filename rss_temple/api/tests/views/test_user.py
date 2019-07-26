@@ -24,17 +24,8 @@ class UserTestCase(TestCase):
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email=UserTestCase.USER_EMAIL)
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(
-                email=UserTestCase.USER_EMAIL)
-
-        try:
-            models.MyLogin.objects.create(
-                user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
-        except IntegrityError:
-            pass
+        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
+        models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
         cls.session = models.Session.objects.create(user=cls.user, expires_at=(
             datetime.datetime.utcnow() + datetime.timedelta(days=2)))
@@ -42,15 +33,10 @@ class UserTestCase(TestCase):
         cls.session_token = cls.session.uuid
         cls.session_token_str = str(cls.session.uuid)
 
-        user2 = None
-        try:
-            user2 = models.User.objects.create(
-                email=UserTestCase.NON_UNIQUE_EMAIL)
-            models.MyLogin.objects.create(
-                user=user2, pw_hash=password_hasher().hash('password2'))
-        except IntegrityError:
-            logging.getLogger(__name__).exception(
-                'unable to create non-unique user...this isn\'t expected')
+        user2 = models.User.objects.create(
+            email=UserTestCase.NON_UNIQUE_EMAIL)
+        models.MyLogin.objects.create(
+            user=user2, pw_hash=password_hasher().hash('password2'))
 
     def test_user_get(self):
         c = Client()

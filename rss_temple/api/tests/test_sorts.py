@@ -129,8 +129,6 @@ class AllSortsTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        models.User.objects.all().delete()
-
         cls.user = models.User.objects.create(
             email='test_searches@test.com')
 

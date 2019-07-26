@@ -124,11 +124,6 @@ class AllFieldsTestCase(TestCase):
             'feedentry': AllFieldsTestCase.generate_feedentries,
         }
 
-        models.User.objects.all().delete()
-        models.UserCategory.objects.all().delete()
-        models.Feed.objects.all().delete()
-        models.FeedEntry.objects.all().delete()
-
         cls.user = models.User.objects.create(
             email='test_fields@test.com')
 

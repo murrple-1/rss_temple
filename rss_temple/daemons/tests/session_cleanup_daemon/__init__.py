@@ -15,15 +15,10 @@ class DaemonTestCase(TestCase):
 
         logging.getLogger('session_cleanup_daemon').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email='test@test.com')
 
     def test_none(self):
         user = DaemonTestCase.user
-
-        models.Session.objects.filter(user=user).delete()
 
         self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
 
@@ -33,8 +28,6 @@ class DaemonTestCase(TestCase):
 
     def test_some(self):
         user = DaemonTestCase.user
-
-        models.Session.objects.filter(user=user).delete()
 
         self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
 

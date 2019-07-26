@@ -17,10 +17,7 @@ class UserCategoryTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email='test@test.com')
 
         cls.session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
@@ -29,13 +26,7 @@ class UserCategoryTestCase(TestCase):
         cls.session_token_str = str(cls.session.uuid)
 
     def test_usercategory_get(self):
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -92,9 +83,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_usercategory_post_already_exists(self):
-        if not models.UserCategory.objects.filter(user=UserCategoryTestCase.user, text='Test User Category').exists():
-            models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -109,13 +99,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 409)
 
     def test_usercategory_put(self):
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -130,13 +115,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_usercategory_put_malformed(self):
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -174,17 +154,11 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_usercategory_put_already_exists(self):
-        if not models.UserCategory.objects.filter(user=UserCategoryTestCase.user, text='Already Exists Text'):
-            models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Already Exists Text')
+        models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Already Exists Text')
 
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -199,13 +173,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 409)
 
     def test_usercategory_delete(self):
-        user_category = None
-        try:
-            user_category = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            user_category = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        user_category = models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -228,12 +197,8 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_usercategories_query_get(self):
-        try:
-            models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        models.UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -242,49 +207,24 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_usercategories_apply_put(self):
-        feed1 = None
-        try:
-            feed1 = models.Feed.objects.get(
-                feed_url='http://example.com/rss.xml')
-        except models.Feed.DoesNotExist:
-            feed1 = models.Feed.objects.create(
-                feed_url='http://example.com/rss.xml',
-                title='Sample Feed',
-                home_url='http://example.com',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed1 = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        try:
-            feed2 = models.Feed.objects.get(
-                feed_url='http://example.com/rss2.xml')
-        except models.Feed.DoesNotExist:
-            feed2 = models.Feed.objects.create(
-                feed_url='http://example.com/rss2.xml',
-                title='Sample Feed',
-                home_url='http://example.com',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed2 = models.Feed.objects.create(
+            feed_url='http://example.com/rss2.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        user_category1 = None
-        try:
-            user_category1 = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category 1')
-        except models.UserCategory.DoesNotExist:
-            user_category1 = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category 1')
-
-        user_category2 = None
-        try:
-            user_category2 = models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category 2')
-        except models.UserCategory.DoesNotExist:
-            user_category2 = models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category 2')
-
-        models.FeedUserCategoryMapping.objects.filter(
-            user_category__in=[user_category1, user_category2], feed__in=[feed1, feed2]).delete()
+        user_category1 = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category 1')
+        user_category2 = models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category 2')
 
         c = Client()
 
@@ -328,12 +268,7 @@ class UserCategoryTestCase(TestCase):
             user_category=user_category2, feed=feed2))
 
     def test_usercategories_apply_put_malformed(self):
-        try:
-            models.UserCategory.objects.get(
-                user=UserCategoryTestCase.user, text='Test User Category')
-        except models.UserCategory.DoesNotExist:
-            models.UserCategory.objects.create(
-                user=UserCategoryTestCase.user, text='Test User Category')
+        models.UserCategory.objects.create(user=UserCategoryTestCase.user, text='Test User Category')
 
         c = Client()
 
@@ -368,18 +303,13 @@ class UserCategoryTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_usercategories_apply_put_not_found(self):
-        feed = None
-        try:
-            feed = models.Feed.objects.get(
-                feed_url='http://example.com/rss.xml')
-        except models.Feed.DoesNotExist:
-            feed = models.Feed.objects.create(
-                feed_url='http://example.com/rss.xml',
-                title='Sample Feed',
-                home_url='http://example.com',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
         c = Client()
 

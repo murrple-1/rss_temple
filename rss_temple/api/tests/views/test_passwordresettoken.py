@@ -3,7 +3,6 @@ import logging
 import uuid
 
 from django.test import TestCase, Client
-from django.db import IntegrityError
 
 from api import models
 from api.password_hasher import password_hasher
@@ -20,17 +19,9 @@ class UserTestCase(TestCase):
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email=UserTestCase.USER_EMAIL)
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(
-                email=UserTestCase.USER_EMAIL)
+        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
 
-        try:
-            models.MyLogin.objects.create(
-                user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
-        except IntegrityError:
-            pass
+        models.MyLogin.objects.create(user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
     def test_passwordresettoken_request_post(self):
         c = Client()

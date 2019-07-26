@@ -19,16 +19,10 @@ class FeedTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        user = None
-        try:
-            user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            user = models.User.objects.create(email='test@test.com')
-
-        cls.user = user
+        cls.user = models.User.objects.create(email='test@test.com')
 
         session = models.Session.objects.create(
-            user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
+            user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
 
         cls.session = session
 
@@ -70,14 +64,13 @@ class FeedTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feeds_query_post(self):
-        if not models.Feed.objects.filter(feed_url='http://localhost:8080/rss_2.0/well_formed.xml').exists():
-            models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
         c = Client()
         response = c.post('/api/feeds/query', ujson.dumps({'fields': fields.field_list(
@@ -92,32 +85,23 @@ class FeedTestCase(TestCase):
         self.assertGreaterEqual(len(_json['objects']), 1)
 
     def test_feed_subscribe_post(self):
-        models.SubscribedFeedUserMapping.objects.filter(
-            user=FeedTestCase.user).delete()
-
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feed_subscribe_post_duplicate(self):
-        feed = None
-        try:
-            feed = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
-        except models.Feed.DoesNotExist:
-            feed = models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        if not models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user, feed=feed).exists():
-            models.SubscribedFeedUserMapping.objects.create(
-                feed=feed,
-                user=FeedTestCase.user)
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed,
+            user=FeedTestCase.user)
 
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
@@ -125,21 +109,14 @@ class FeedTestCase(TestCase):
         self.assertEqual(response.status_code, 409)
 
     def test_feed_subscribe_post_existing_custom_title(self):
-        feed = None
-        try:
-            feed = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
-        except models.Feed.DoesNotExist:
-            feed = models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        models.SubscribedFeedUserMapping.objects.filter(
-            user=FeedTestCase.user).delete()
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed,
             user=FeedTestCase.user,
@@ -163,23 +140,17 @@ class FeedTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_feed_subscribe_delete(self):
-        feed = None
-        try:
-            feed = models.Feed.objects.get(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml')
-        except models.Feed.DoesNotExist:
-            feed = models.Feed.objects.create(
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
-                title='Sample Feed',
-                home_url='http://localhost:8080',
-                published_at=datetime.datetime.utcnow(),
-                updated_at=None,
-                db_updated_at=None)
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
 
-        if not models.SubscribedFeedUserMapping.objects.filter(user=FeedTestCase.user, feed=feed).exists():
-            models.SubscribedFeedUserMapping.objects.create(
-                feed=feed,
-                user=FeedTestCase.user)
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed,
+            user=FeedTestCase.user)
 
         c = Client()
         response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',

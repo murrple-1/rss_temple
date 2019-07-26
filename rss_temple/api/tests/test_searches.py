@@ -136,8 +136,6 @@ class AllSearchesTestCase(TestCase):
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
-        models.User.objects.all().delete()
-
         cls.user = models.User.objects.create(
             email='test_searches@test.com')
 

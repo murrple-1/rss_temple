@@ -15,8 +15,6 @@ class DaemonTestCase(TestCase):
         logging.getLogger('feed_scrapper_daemon').setLevel(logging.CRITICAL)
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
-        models.Feed.objects.all().delete()
-
         cls.feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
 

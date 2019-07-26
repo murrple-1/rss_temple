@@ -16,10 +16,7 @@ class ProgressTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        try:
-            cls.user = models.User.objects.get(email='test@test.com')
-        except models.User.DoesNotExist:
-            cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email='test@test.com')
 
         session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
