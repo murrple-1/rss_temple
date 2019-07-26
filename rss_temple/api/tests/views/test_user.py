@@ -3,7 +3,6 @@ import logging
 import uuid
 
 from django.test import TestCase, Client
-from django.db import IntegrityError
 
 import ujson
 
