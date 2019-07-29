@@ -48,7 +48,7 @@ class FeedTestCase(TestCase):
             'url': 'http://localhost:8080/rss_2.0/well_formed.xml',
             'fields': ','.join(fields.field_list('feed')),
         }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.status_code, 200)
 
     def test_feed_get_no_url(self):
         c = Client()
@@ -75,7 +75,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feeds/query', ujson.dumps({'fields': fields.field_list(
             'feed')}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.status_code, 200)
 
         _json = ujson.loads(response.content)
 
