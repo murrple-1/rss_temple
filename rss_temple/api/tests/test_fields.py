@@ -34,7 +34,7 @@ class FieldsTestCase(TestCase):
 
             for field_map in default_field_maps:
                 self.assertIn('field_name', field_map)
-                self.assertIsInstance(field_map['field_name'], str)
+                self.assertIs(type(field_map['field_name']), str)
                 self.assertIn('accessor', field_map)
                 self.assertTrue(callable(field_map['accessor']))
 
@@ -46,7 +46,7 @@ class FieldsTestCase(TestCase):
 
             for field_map in all_field_maps:
                 self.assertIn('field_name', field_map)
-                self.assertIsInstance(field_map['field_name'], str)
+                self.assertIs(type(field_map['field_name']), str)
                 self.assertIn('accessor', field_map)
                 self.assertTrue(callable(field_map['accessor']))
 
@@ -77,8 +77,8 @@ class FieldsTestCase(TestCase):
 
             test_context = TestContext()
             test_obj = TestObject()
-            self.assertIsInstance(field_map['accessor'](
-                test_context, test_obj), str)
+            self.assertIs(type(field_map['accessor'](
+                test_context, test_obj)), str)
 
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)

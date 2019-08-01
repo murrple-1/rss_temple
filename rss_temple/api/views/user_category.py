@@ -106,13 +106,13 @@ def _user_category_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'text' not in _json:
         return HttpResponseBadRequest('\'text\' missing')
 
-    if not isinstance(_json['text'], str):
+    if type(_json['text']) is not str:
         return HttpResponseBadRequest('\'text\' must be string')
 
     user_category = models.UserCategory(user=request.user, text=_json['text'])
@@ -153,11 +153,11 @@ def _user_category_put(request, _uuid):
 
     has_changed = False
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'text' in _json:
-        if not isinstance(_json['text'], str):
+        if type(_json['text']) is not str:
             return HttpResponseBadRequest('\'text\' must be string')
 
         user_category.text = _json['text']
@@ -203,7 +203,7 @@ def _user_categories_query_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
@@ -279,7 +279,7 @@ def _user_categories_apply_put(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     all_feed_uuids = set()
@@ -296,7 +296,7 @@ def _user_categories_apply_put(request):
 
         all_feed_uuids.add(_feed_uuid)
 
-        if not isinstance(user_category_uuids, list):
+        if type(user_category_uuids) is not list:
             return HttpResponseBadRequest('JSON body element must be array')
 
         try:

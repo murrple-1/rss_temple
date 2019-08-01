@@ -30,14 +30,14 @@ class CORSMiddleware:
             if 'HTTP_ORIGIN' in request.META:
                 origin = request.META['HTTP_ORIGIN']
 
-                if isinstance(_CORS_ALLOW_ORIGINS, str):
+                if type(_CORS_ALLOW_ORIGINS) is str:
                     if _CORS_ALLOW_ORIGINS == '*':
                         response['Access-Control-Allow-Origin'] = '*'
                         cors_enabled = True
                     elif origin == _CORS_ALLOW_ORIGINS:
                         response['Access-Control-Allow-Origin'] = origin
                         cors_enabled = True
-                elif isinstance(_CORS_ALLOW_ORIGINS, list):
+                elif type(_CORS_ALLOW_ORIGINS) is list:
                     if origin in _CORS_ALLOW_ORIGINS:
                         response['Access-Control-Allow-Origin'] = origin
                         cors_enabled = True

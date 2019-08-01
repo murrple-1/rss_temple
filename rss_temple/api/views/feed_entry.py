@@ -125,7 +125,7 @@ def _feed_entries_query_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
@@ -232,7 +232,7 @@ def _feed_entries_read_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, list):
+    if type(_json) is not list:
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(_json) < 1:
@@ -272,7 +272,7 @@ def _feed_entries_read_delete(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, list):
+    if type(_json) is not list:
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(_json) < 1:
@@ -330,7 +330,7 @@ def _feed_entries_favorite_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, list):
+    if type(_json) is not list:
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(_json) < 1:
@@ -370,7 +370,7 @@ def _feed_entries_favorite_delete(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, list):
+    if type(_json) is not list:
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(_json) < 1:

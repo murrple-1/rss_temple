@@ -123,7 +123,7 @@ def _feeds_query_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None

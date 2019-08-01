@@ -81,7 +81,7 @@ def _user_put(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if not isinstance(_json, dict):
+    if type(_json) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     user = request.user
@@ -90,7 +90,7 @@ def _user_put(request):
 
     verification_token = None
     if 'email' in _json:
-        if not isinstance(_json['email'], str):
+        if type(_json['email']) is not str:
             return HttpResponseBadRequest('\'email\' must be string')
 
         if not validate_email(_json['email']):
@@ -110,26 +110,26 @@ def _user_put(request):
     my_login = None
     if 'my' in _json:
         my_json = _json['my']
-        if not isinstance(my_json, dict):
+        if type(my_json) is not dict:
             return HttpResponseBadRequest('\'my\' must be object')
 
         my_login = user.my_login()
 
         if 'password' in my_json:
             password_json = my_json['password']
-            if not isinstance(password_json, dict):
+            if type(password_json) is not dict:
                 return HttpResponseBadRequest('\'password\' must be object')
 
             if 'old' not in password_json:
                 return HttpResponseBadRequest('\'old\' missing')
 
-            if not isinstance(password_json['old'], str):
+            if type(password_json['old']) is not str:
                 return HttpResponseBadRequest('\'old\' must be string')
 
             if 'new' not in password_json:
                 return HttpResponseBadRequest('\'new\' missing')
 
-            if not isinstance(password_json['new'], str):
+            if type(password_json['new']) is not str:
                 return HttpResponseBadRequest('\'new\' must be string')
 
             try:
@@ -148,7 +148,7 @@ def _user_put(request):
         if google_json is None:
             def google_login_db_fn(): return _google_login_delete(user)
             has_changed = True
-        elif isinstance(google_json, dict):
+        elif type(google_json) is dict:
             google_login = None
             try:
                 google_login = models.GoogleLogin.objects.get(user=user)
@@ -158,7 +158,7 @@ def _user_put(request):
             def google_login_db_fn(): return _google_login_save(google_login)
 
             if 'token' in google_json:
-                if not isinstance(google_json['token'], str):
+                if type(google_json['token']) is not str:
                     return HttpResponseBadRequest('\'token\' must be string')
 
                 idinfo = None
@@ -180,7 +180,7 @@ def _user_put(request):
         if facebook_json is None:
             def facebook_login_db_fn(): return _facebook_login_delete(user)
             has_changed = True
-        elif isinstance(facebook_json, dict):
+        elif type(facebook_json) is dict:
             facebook_login = None
             try:
                 facebook_login = models.FacebookLogin.objects.get(user=user)
@@ -190,7 +190,7 @@ def _user_put(request):
             def facebook_login_db_fn(): return _facebook_login_save(facebook_login)
 
             if 'token' in facebook_json:
-                if not isinstance(facebook_json['token'], str):
+                if type(facebook_json['token']) is not str:
                     return HttpResponseBadRequest('\'token\' must be string')
 
                 graph = facebook.GraphAPI(facebook_json['token'])

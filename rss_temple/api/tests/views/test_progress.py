@@ -61,7 +61,7 @@ class ProgressTestCase(TestCase):
 
         _json = response.json()
 
-        self.assertIsInstance(_json, dict)
+        self.assertIs(type(_json), dict)
         self.assertIn('state', _json)
         self.assertEqual(_json['state'], 'notstarted')
 
@@ -92,7 +92,7 @@ class ProgressTestCase(TestCase):
 
         _json = response.json()
 
-        self.assertIsInstance(_json, dict)
+        self.assertIs(type(_json), dict)
         self.assertIn('state', _json)
         self.assertEqual(_json['state'], 'started')
         self.assertIn('totalCount', _json)
@@ -119,6 +119,6 @@ class ProgressTestCase(TestCase):
 
         _json = response.json()
 
-        self.assertIsInstance(_json, dict)
+        self.assertIs(type(_json), dict)
         self.assertIn('state', _json)
         self.assertEqual(_json['state'], 'finished')

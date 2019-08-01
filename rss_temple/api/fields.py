@@ -3,7 +3,7 @@ class _FieldConfig:
         if not callable(accessor):
             raise TypeError('accessor must be callable')
 
-        if not isinstance(default, bool):
+        if type(default) is not bool:
             raise TypeError('default must be bool')
 
         self.accessor = accessor

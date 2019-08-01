@@ -25,7 +25,7 @@ def get_count(
 
     count = _json[param_name]
 
-    if not isinstance(count, int):
+    if type(count) is not int:
         raise QueryException('\'{0}\' must be int'.format(param_name), 400)
 
     if count < 0:
@@ -47,7 +47,7 @@ def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
 
     skip = _json[param_name]
 
-    if not isinstance(skip, int):
+    if type(skip) is not int:
         raise QueryException('\'{0}\' must be int'.format(param_name), 400)
 
     if skip < 0:
@@ -69,7 +69,7 @@ def get_return_objects(
 
     return_objects = _json[param_name]
 
-    if not isinstance(return_objects, bool):
+    if type(return_objects) is not bool:
         raise QueryException('\'{0}\' must be boolean'.format(
             param_name), 400)  # pragma: no cover
 
@@ -88,7 +88,7 @@ def get_return_total_count(
 
     return_total_count = _json[param_name]
 
-    if not isinstance(return_total_count, bool):
+    if type(return_total_count) is not bool:
         raise QueryException('\'{0}\' must be boolean'.format(
             param_name), 400)  # pragma: no cover
 
@@ -102,13 +102,13 @@ def get_sort(_json, object_name, param_name='sort',
         sort = _json[param_name]
 
         if sort is not None:
-            if not isinstance(sort, str):
+            if type(sort) is not str:
                 raise QueryException(
                     '\'{0}\' must be null or string', 400)  # pragma: no cover
 
     default_sort_enabled = True
     if disable_default_sort_param_name in _json:
-        if not isinstance(_json[disable_default_sort_param_name], bool):
+        if type(_json[disable_default_sort_param_name]) is not bool:
             raise QueryException('\'{0}\' must be boolean'.format(
                 disable_default_sort_param_name), 400)  # pragma: no cover
 
@@ -127,7 +127,7 @@ def get_search(context, _json, object_name, param_name='search'):
 
     search = _json[param_name]
 
-    if not isinstance(search, str):
+    if type(search) is not str:
         raise QueryException('\'{0}\' must be string'.format(
             param_name), 400)  # pragma: no cover
 
@@ -150,12 +150,12 @@ def get_fields__json(_json, param_name='fields'):
 
     fields = _json[param_name]
 
-    if not isinstance(fields, list):
+    if type(fields) is not list:
         raise QueryException('\'{0}\' must be array'.format(
             param_name), 400)  # pragma: no cover
 
     for field in fields:
-        if not isinstance(field, str):
+        if type(field) is not str:
             raise QueryException(
                 '\'{0}\' element must be string'.format(param_name), 400)  # pragma: no cover
 

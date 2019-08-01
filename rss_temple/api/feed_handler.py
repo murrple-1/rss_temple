@@ -88,7 +88,7 @@ def d_entry_2_feed_entry(d_entry):
     if 'summary' in d_entry:
         content = d_entry.summary
 
-    if isinstance(content, str):
+    if type(content) is str:
         content = _sanitizer.sanitize(content)
 
     feed_entry.content = content

@@ -5,7 +5,7 @@ from api.exceptions import QueryException
 
 class _DefaultDescriptor:
     def __init__(self, sort_key, direction):
-        if not isinstance(sort_key, int):
+        if type(sort_key) is not int:
             raise TypeError('sort_key must be int')
 
         if direction not in ['ASC', 'DESC']:
@@ -17,17 +17,17 @@ class _DefaultDescriptor:
 
 class _SortConfig:
     def __init__(self, field_names, default_descriptor):
-        if not isinstance(field_names, list):
+        if type(field_names) is not list:
             raise TypeError('field_names must be list')
 
         if len(field_names) < 1:
             raise ValueError('field_names must not be empty')
 
         for field_name in field_names:
-            if not isinstance(field_name, str):
+            if type(field_name) is not str:
                 raise TypeError('field_names element must be str')
 
-        if default_descriptor is not None and not isinstance(default_descriptor, _DefaultDescriptor):
+        if default_descriptor is not None and type(default_descriptor) is not _DefaultDescriptor:
             raise TypeError(
                 'default_descriptor must be None or _DefaultDescriptor')
 

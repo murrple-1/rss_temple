@@ -79,9 +79,9 @@ class FeedTestCase(TestCase):
 
         _json = ujson.loads(response.content)
 
-        self.assertIsInstance(_json, dict)
+        self.assertIs(type(_json), dict)
         self.assertIn('objects', _json)
-        self.assertIsInstance(_json['objects'], list)
+        self.assertIs(type(_json['objects']), list)
         self.assertGreaterEqual(len(_json['objects']), 1)
 
     def test_feed_subscribe_post(self):
