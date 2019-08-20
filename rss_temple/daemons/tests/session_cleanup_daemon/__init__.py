@@ -20,16 +20,16 @@ class DaemonTestCase(TestCase):
     def test_none(self):
         user = DaemonTestCase.user
 
-        self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
+        self.assertEqual(models.Session.objects.filter(user=user).count(), 0)
 
         cleanup()
 
-        self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
+        self.assertEqual(models.Session.objects.filter(user=user).count(), 0)
 
     def test_some(self):
         user = DaemonTestCase.user
 
-        self.assertEquals(models.Session.objects.filter(user=user).count(), 0)
+        self.assertEqual(models.Session.objects.filter(user=user).count(), 0)
 
         models.Session.objects.create(expires_at=datetime.datetime.utcnow()
                                       + datetime.timedelta(days=-1), user=user)
@@ -37,8 +37,8 @@ class DaemonTestCase(TestCase):
         models.Session.objects.create(expires_at=datetime.datetime.utcnow()
                                       + datetime.timedelta(days=1), user=user)
 
-        self.assertEquals(models.Session.objects.filter(user=user).count(), 2)
+        self.assertEqual(models.Session.objects.filter(user=user).count(), 2)
 
         cleanup()
 
-        self.assertEquals(models.Session.objects.filter(user=user).count(), 1)
+        self.assertEqual(models.Session.objects.filter(user=user).count(), 1)

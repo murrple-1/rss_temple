@@ -30,7 +30,7 @@ class FieldsTestCase(TestCase):
         for oc in _object_configs:
             default_field_maps = fields.get_default_field_maps(oc.object_name)
 
-            self.assertEquals(len(default_field_maps), oc.default_count)
+            self.assertEqual(len(default_field_maps), oc.default_count)
 
             for field_map in default_field_maps:
                 self.assertIn('field_name', field_map)
@@ -42,7 +42,7 @@ class FieldsTestCase(TestCase):
         for oc in _object_configs:
             all_field_maps = fields.get_all_field_maps(oc.object_name)
 
-            self.assertEquals(len(all_field_maps), oc.all_count)
+            self.assertEqual(len(all_field_maps), oc.all_count)
 
             for field_map in all_field_maps:
                 self.assertIn('field_name', field_map)
@@ -53,7 +53,7 @@ class FieldsTestCase(TestCase):
     def test_fieldconfig(self):
         fc = fields._FieldConfig(lambda context, db_obj: 'test', True)
 
-        self.assertEquals(fc.accessor(object(), object()), 'test')
+        self.assertEqual(fc.accessor(object(), object()), 'test')
         self.assertTrue(fc.default)
 
         with self.assertRaises(TypeError):
@@ -66,7 +66,7 @@ class FieldsTestCase(TestCase):
         for oc in _object_configs:
             field_map = fields.to_field_map(oc.object_name, oc.good_field_name)
 
-            self.assertEquals(field_map['field_name'], oc.good_field_name)
+            self.assertEqual(field_map['field_name'], oc.good_field_name)
 
             class TestContext:
                 pass
