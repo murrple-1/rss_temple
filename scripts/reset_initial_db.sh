@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-INITIAL_DIR=$(cd "$(dirname "$0")" && pwd)
+INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
 export GOOGLE_CLIENT_ID=''
 

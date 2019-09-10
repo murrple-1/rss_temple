@@ -6,7 +6,7 @@ fi
 
 export GOOGLE_CLIENT_ID
 
-INITIAL_DIR=$(dirname "$0")
+INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
 cd "$INITIAL_DIR/../rss_temple/" || exit
 

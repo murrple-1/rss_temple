@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-INITIAL_DIR=$(dirname "$0")
+INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
 export GOOGLE_CLIENT_ID=''
 
