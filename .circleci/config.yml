@@ -5,6 +5,7 @@ jobs:
       - image: circleci/python:3.6.1
         environment:
           PIPENV_VERBOSITY: -1
+          SUBSCRIPTION_SETUP_DAEMON_TEST_DO_SUBSCRIPTION: ""
     working_directory: ~/rss_temple/
     steps:
       - checkout
