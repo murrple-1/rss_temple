@@ -26,14 +26,14 @@ def get_count(
     count = _json[param_name]
 
     if type(count) is not int:
-        raise QueryException('\'{0}\' must be int'.format(param_name), 400)
+        raise QueryException(f'\'{param_name}\' must be int', 400)
 
     if count < 0:
         raise QueryException(
-            '\'{0}\' must be greater than or equal to 0'.format(param_name), 400)
+            f'\'{param_name}\' must be greater than or equal to 0', 400)
     elif count > max_:
         raise QueryException(
-            '\'{0}\' must be less than or equal to {1}'.format(param_name, max_), 400)
+            f'\'{param_name}\' must be less than or equal to {max_}', 400)
 
     return count
 
@@ -48,11 +48,11 @@ def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
     skip = _json[param_name]
 
     if type(skip) is not int:
-        raise QueryException('\'{0}\' must be int'.format(param_name), 400)
+        raise QueryException(f'\'{param_name}\' must be int', 400)
 
     if skip < 0:
         raise QueryException(
-            '\'{0}\' must be greater than 0'.format(param_name), 400)
+            f'\'{param_name}\' must be greater than 0', 400)
 
     return skip
 
@@ -70,8 +70,7 @@ def get_return_objects(
     return_objects = _json[param_name]
 
     if type(return_objects) is not bool:
-        raise QueryException('\'{0}\' must be boolean'.format(
-            param_name), 400)  # pragma: no cover
+        raise QueryException(f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
 
     return return_objects
 
@@ -89,8 +88,7 @@ def get_return_total_count(
     return_total_count = _json[param_name]
 
     if type(return_total_count) is not bool:
-        raise QueryException('\'{0}\' must be boolean'.format(
-            param_name), 400)  # pragma: no cover
+        raise QueryException(f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
 
     return return_total_count
 
@@ -109,8 +107,7 @@ def get_sort(_json, object_name, param_name='sort',
     default_sort_enabled = True
     if disable_default_sort_param_name in _json:
         if type(_json[disable_default_sort_param_name]) is not bool:
-            raise QueryException('\'{0}\' must be boolean'.format(
-                disable_default_sort_param_name), 400)  # pragma: no cover
+            raise QueryException(f'\'{disable_default_sort_param_name}\' must be boolean', 400)  # pragma: no cover
 
         default_sort_enabled = not _json[disable_default_sort_param_name]
 
@@ -128,8 +125,7 @@ def get_search(context, _json, object_name, param_name='search'):
     search = _json[param_name]
 
     if type(search) is not str:
-        raise QueryException('\'{0}\' must be string'.format(
-            param_name), 400)  # pragma: no cover
+        raise QueryException(f'\'{param_name}\' must be string', 400)  # pragma: no cover
 
     filter_args = searchutils.to_filter_args(object_name, context, search)
     return filter_args
@@ -151,13 +147,12 @@ def get_fields__json(_json, param_name='fields'):
     fields = _json[param_name]
 
     if type(fields) is not list:
-        raise QueryException('\'{0}\' must be array'.format(
-            param_name), 400)  # pragma: no cover
+        raise QueryException(f'\'{param_name}\' must be array', 400)  # pragma: no cover
 
     for field in fields:
         if type(field) is not str:
             raise QueryException(
-                '\'{0}\' element must be string'.format(param_name), 400)  # pragma: no cover
+                f'\'{param_name}\' element must be string', 400)  # pragma: no cover
 
     return fields
 

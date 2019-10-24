@@ -135,7 +135,7 @@ def sort_list_to_db_sort_list(object_name, sort_list):
                 })
         else:
             raise QueryException(
-                '\'{0}\' field not recognized for \'sort\''.format(field_name), 400)
+                f'\'{field_name}\' field not recognized for \'sort\'', 400)
 
     return db_sort_list
 
@@ -159,9 +159,8 @@ def to_order_by_fields(sort_list):
         field_name = sort_desc['field_name']
         direction = sort_desc['direction']
 
-        order_by_fields.append(
-            '{1}{0}'.format(
-                field_name,
-                '-' if direction.upper() == 'DESC' else ''))
+        order_by_direction = '-' if direction.upper() == 'DESC' else ''
+
+        order_by_fields.append(f'{order_by_direction}{field_name}')
 
     return order_by_fields

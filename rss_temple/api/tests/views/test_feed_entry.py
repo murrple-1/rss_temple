@@ -52,14 +52,14 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/feedentry/{}'.format(str(feed_entry.uuid)),
+        response = c.get(f'/api/feedentry/{feed_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
     def test_feedentry_get_not_found(self):
         c = Client()
 
-        response = c.get('/api/feedentry/{}'.format(str(uuid.uuid4())),
+        response = c.get(f'/api/feedentry/{uuid.uuid4()}',
                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
@@ -99,7 +99,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.post('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+        response = c.post(f'/api/feedentry/{feed_entry.uuid}/read',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -109,7 +109,7 @@ class FeedEntryTestCase(TestCase):
     def test_feedentry_read_post_not_found(self):
         c = Client()
 
-        response = c.post('/api/feedentry/{}/read'.format(str(uuid.uuid4())),
+        response = c.post(f'/api/feedentry/{uuid.uuid4()}/read',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
@@ -133,7 +133,7 @@ class FeedEntryTestCase(TestCase):
         c = Client()
 
         with transaction.atomic():
-            response = c.post('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+            response = c.post(f'/api/feedentry/{feed_entry.uuid}/read',
                               HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
             self.assertEqual(response.status_code, 200)
 
@@ -159,7 +159,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.delete('/api/feedentry/{}/read'.format(str(feed_entry.uuid)),
+        response = c.delete(f'/api/feedentry/{feed_entry.uuid}/read',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -350,7 +350,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.post('/api/feedentry/{}/favorite'.format(str(feed_entry.uuid)),
+        response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -360,7 +360,7 @@ class FeedEntryTestCase(TestCase):
     def test_feedentry_favorite_post_not_found(self):
         c = Client()
 
-        response = c.post('/api/feedentry/{}/favorite'.format(str(uuid.uuid4())),
+        response = c.post(f'/api/feedentry/{uuid.uuid4()}/favorite',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
@@ -383,7 +383,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.post('/api/feedentry/{}/favorite'.format(str(feed_entry.uuid)),
+        response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -406,7 +406,7 @@ class FeedEntryTestCase(TestCase):
 
         c = Client()
 
-        response = c.delete('/api/feedentry/{}/favorite'.format(str(feed_entry.uuid)),
+        response = c.delete(f'/api/feedentry/{feed_entry.uuid}/favorite',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 

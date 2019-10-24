@@ -24,5 +24,5 @@ class TimeLoggingTestResult(unittest.TextTestResult):
         elapsed = time.time() - self._started_at
         if elapsed > self.slow_test_threshold:
             name = self.getDescription(test)
-            self.stream.write('\n{} ({:.03}s)\n'.format(name, elapsed))
+            self.stream.write(f'\n{name} ({elapsed:.03}s)\n')
         super().addSuccess(test)

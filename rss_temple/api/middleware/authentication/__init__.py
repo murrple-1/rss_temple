@@ -33,8 +33,7 @@ class AuthenticationMiddleware:
             # usually, this would be type:"Basic", but that causes popups in browsers, which we want to avoid
             # see:
             # http://loudvchar.blogspot.ca/2010/11/avoiding-browser-popup-for-401.html
-            response['WWW-Authenticate'] = 'X-Basic realm="{0}"'.format(
-                _REALM) if _REALM else 'X-Basic'
+            response['WWW-Authenticate'] = f'X-Basic realm="{_REALM}"' if _REALM else 'X-Basic'
             return response
 
     def _should_authenticate(self, request):

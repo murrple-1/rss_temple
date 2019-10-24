@@ -31,7 +31,7 @@ class UserCategoryTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/usercategory/{}'.format(str(user_category.uuid)),
+        response = c.get(f'/api/usercategory/{user_category.uuid}',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -45,7 +45,7 @@ class UserCategoryTestCase(TestCase):
     def test_usercategory_get_not_found(self):
         c = Client()
 
-        response = c.get('/api/usercategory/{}'.format(str(uuid.uuid4())),
+        response = c.get(f'/api/usercategory/{uuid.uuid4()}',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
@@ -109,7 +109,7 @@ class UserCategoryTestCase(TestCase):
             'text': 'Test User Category 2',
         }
 
-        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+        response = c.put(f'/api/usercategory/{user_category.uuid}',
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
@@ -135,7 +135,7 @@ class UserCategoryTestCase(TestCase):
             'text': 0,
         }
 
-        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+        response = c.put(f'/api/usercategory/{user_category.uuid}',
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
@@ -148,7 +148,7 @@ class UserCategoryTestCase(TestCase):
             'text': 'Does not matter :)',
         }
 
-        response = c.put('/api/usercategory/{}'.format(str(uuid.uuid4())),
+        response = c.put(f'/api/usercategory/{uuid.uuid4()}',
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
@@ -167,7 +167,7 @@ class UserCategoryTestCase(TestCase):
             'text': 'Already Exists Text',
         }
 
-        response = c.put('/api/usercategory/{}'.format(str(user_category.uuid)),
+        response = c.put(f'/api/usercategory/{user_category.uuid}',
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
@@ -179,7 +179,7 @@ class UserCategoryTestCase(TestCase):
 
         c = Client()
 
-        response = c.delete('/api/usercategory/{}'.format(str(user_category.uuid)),
+        response = c.delete(f'/api/usercategory/{user_category.uuid}',
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -193,7 +193,7 @@ class UserCategoryTestCase(TestCase):
     def test_usercategory_delete_not_found(self):
         c = Client()
 
-        response = c.delete('/api/usercategory/{}'.format(str(uuid.uuid4())),
+        response = c.delete(f'/api/usercategory/{uuid.uuid4()}',
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 

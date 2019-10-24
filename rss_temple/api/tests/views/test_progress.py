@@ -36,7 +36,7 @@ class ProgressTestCase(TestCase):
         for step in range(desc_count):
             feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
                 feed_subscription_progress_entry=feed_subscription_progress_entry,
-                feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_={s}'.format(s=step))
+                feed_url=f'http://localhost:8080/rss_2.0/well_formed.xml?_={step}')
 
             feed_subscription_progress_entry_descriptors.append(
                 feed_subscription_progress_entry_descriptor)
@@ -46,7 +46,7 @@ class ProgressTestCase(TestCase):
     def test_feed_subscription_progress_get_404(self):
         c = Client()
 
-        response = c.get('/api/feed/subscribe/progress/{}'.format(str(uuid.uuid4())),
+        response = c.get(f'/api/feed/subscribe/progress/{uuid.uuid4()}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
@@ -55,7 +55,7 @@ class ProgressTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
+        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -86,7 +86,7 @@ class ProgressTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
+        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
@@ -113,7 +113,7 @@ class ProgressTestCase(TestCase):
 
         c = Client()
 
-        response = c.get('/api/feed/subscribe/progress/{}'.format(str(feed_subscription_progress_entry.uuid)),
+        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 

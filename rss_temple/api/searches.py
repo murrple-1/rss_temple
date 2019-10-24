@@ -166,7 +166,7 @@ def _q(context, field_name, search_obj, object_search_fns):
                 return object_search_fn(context, search_obj)
             except ValueError:
                 raise QueryException(
-                    '\'{0}\' search malformed'.format(field_name), 400)
+                    f'\'{field_name}\' search malformed', 400)
     else:
         raise QueryException(
-            '\'{0}\' field not recognized'.format(field_name), 400)
+            f'\'{field_name}\' field not recognized', 400)

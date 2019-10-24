@@ -23,22 +23,22 @@ urlpatterns = [
     re_path(r'^feeds/query/?$', views.feeds_query),
     re_path(r'^feed/subscribe/?$', views.feed_subscribe),
 
-    re_path(r'^feedentry/({})/?$'.format(_uuid_regex), views.feed_entry),
+    re_path(rf'^feedentry/({_uuid_regex})/?$', views.feed_entry),
     re_path(r'^feedentries/query/?$', views.feed_entries_query),
-    re_path(r'^feedentry/({})/read/?$'.format(_uuid_regex),
+    re_path(rf'^feedentry/({_uuid_regex})/read/?$',
             views.feed_entry_read),
     re_path(r'^feedentries/read/?$', views.feed_entries_read),
-    re_path(r'^feedentry/({})/favorite/?$'.format(_uuid_regex),
+    re_path(rf'^feedentry/({_uuid_regex})/favorite/?$',
             views.feed_entry_favorite),
     re_path(r'^feedentries/favorite/?$', views.feed_entries_favorite),
 
-    re_path(r'^usercategory(?:/({}))?/?$'.format(_uuid_regex),
+    re_path(rf'^usercategory(?:/({_uuid_regex}))?/?$',
             views.user_category),
     re_path(r'^usercategories/query/?$', views.user_categories_query),
     re_path(r'^usercategories/apply/?$', views.user_categories_apply),
 
     re_path(r'^opml/?$', views.opml),
 
-    re_path(r'^feed/subscribe/progress/({})/?$'.format(_uuid_regex),
+    re_path(rf'^feed/subscribe/progress/({_uuid_regex})/?$',
             views.feed_subscription_progress),
 ]
