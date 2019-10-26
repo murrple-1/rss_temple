@@ -35,13 +35,6 @@ class UserCategoryTestCase(TestCase):
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-    def test_usercategory_get_malformed_uuid(self):
-        c = Client()
-
-        response = c.get('/api/usercategory',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
-
     def test_usercategory_get_not_found(self):
         c = Client()
 
@@ -122,16 +115,6 @@ class UserCategoryTestCase(TestCase):
         c = Client()
 
         data = {
-            'text': 'Does not matter :)',
-        }
-
-        response = c.put('/api/usercategory',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
-
-        data = {
             'text': 0,
         }
 
@@ -182,13 +165,6 @@ class UserCategoryTestCase(TestCase):
         response = c.delete(f'/api/usercategory/{user_category.uuid}',
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
-
-    def test_usercategory_delete_malformed_uuid(self):
-        c = Client()
-
-        response = c.delete('/api/usercategory',
-                            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
 
     def test_usercategory_delete_not_found(self):
         c = Client()

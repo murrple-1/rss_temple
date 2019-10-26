@@ -97,32 +97,32 @@ def _my_login_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'email' not in _json:
+    if 'email' not in json_:
         return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
-    if type(_json['email']) is not str:
+    if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
-    if not validate_email(_json['email']):
+    if not validate_email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-    if 'password' not in _json:
+    if 'password' not in json_:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
-    if type(_json['password']) is not str:
+    if type(json_['password']) is not str:
         return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
-    if models.MyLogin.objects.filter(user__email=_json['email']).exists():
+    if models.MyLogin.objects.filter(user__email=json_['email']).exists():
         return HttpResponse('login already exists', status=409)
 
     verification_token = None
@@ -130,15 +130,15 @@ def _my_login_post(request):
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email=_json['email'])
+            user = models.User.objects.get(email=json_['email'])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=_json['email'])
+            user = models.User.objects.create(email=json_['email'])
 
             verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
                 datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(_json['password']),
+            pw_hash=password_hasher().hash(json_['password']),
             user=user)
 
     if verification_token is not None:
@@ -152,47 +152,47 @@ def _google_login_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'email' not in _json:
+    if 'email' not in json_:
         return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
-    if type(_json['email']) is not str:
+    if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
-    if not validate_email(_json['email']):
+    if not validate_email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-    if 'password' not in _json:
+    if 'password' not in json_:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
-    if type(_json['password']) is not str:
+    if type(json_['password']) is not str:
         return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
-    if 'token' not in _json:
+    if 'token' not in json_:
         return HttpResponseBadRequest('\'token\' missing')  # pragma: no cover
 
-    if type(_json['token']) is not str:
+    if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')  # pragma: no cover
 
     idinfo = None
     try:
         idinfo = g_id_token.verify_oauth2_token(
-            _json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
+            json_['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
     if (
         models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        or models.MyLogin.objects.filter(user__email=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -201,15 +201,15 @@ def _google_login_post(request):  # pragma: no cover
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email=_json['email'])
+            user = models.User.objects.get(email=json_['email'])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=_json['email'])
+            user = models.User.objects.create(email=json_['email'])
 
             verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
                 datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(_json['password']),
+            pw_hash=password_hasher().hash(json_['password']),
             user=user)
 
         models.GoogleLogin.objects.create(
@@ -227,38 +227,38 @@ def _facebook_login_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'email' not in _json:
+    if 'email' not in json_:
         return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
-    if type(_json['email']) is not str:
+    if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
-    if not validate_email(_json['email']):
+    if not validate_email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-    if 'password' not in _json:
+    if 'password' not in json_:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
-    if type(_json['password']) is not str:
+    if type(json_['password']) is not str:
         return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
-    if 'token' not in _json:
+    if 'token' not in json_:
         return HttpResponseBadRequest('\'token\' missing')  # pragma: no cover
 
-    if type(_json['token']) is not str:
+    if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')  # pragma: no cover
 
-    graph = facebook.GraphAPI(_json['token'])
+    graph = facebook.GraphAPI(json_['token'])
 
     profile = None
     try:
@@ -268,7 +268,7 @@ def _facebook_login_post(request):  # pragma: no cover
 
     if (
         models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
-        or models.MyLogin.objects.filter(user__email=_json['email']).exists()
+        or models.MyLogin.objects.filter(user__email=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -277,15 +277,15 @@ def _facebook_login_post(request):  # pragma: no cover
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email=_json['email'])
+            user = models.User.objects.get(email=json_['email'])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=_json['email'])
+            user = models.User.objects.create(email=json_['email'])
 
             verification_token = models.VerificationToken.objects.create(user=user, expires_at=(
                 datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
 
         models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(_json['password']),
+            pw_hash=password_hasher().hash(json_['password']),
             user=user)
 
         models.FacebookLogin.objects.create(
@@ -306,36 +306,36 @@ def _my_login_session_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'email' not in _json:
+    if 'email' not in json_:
         return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
 
-    if type(_json['email']) is not str:
+    if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
 
-    if 'password' not in _json:
+    if 'password' not in json_:
         return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
 
-    if type(_json['password']) is not str:
+    if type(json_['password']) is not str:
         return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
 
     my_login = None
     try:
-        my_login = models.MyLogin.objects.get(user__email=_json['email'])
+        my_login = models.MyLogin.objects.get(user__email=json_['email'])
     except models.MyLogin.DoesNotExist:
         return HttpResponseForbidden()
 
     try:
-        password_hasher().verify(my_login.pw_hash, _json['password'])
+        password_hasher().verify(my_login.pw_hash, json_['password'])
     except argon2.exceptions.VerifyMismatchError:
         return HttpResponseForbidden()
 
@@ -352,26 +352,26 @@ def _google_login_session_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'token' not in _json:
+    if 'token' not in json_:
         return HttpResponseBadRequest('\'token\' missing')
 
-    if type(_json['token']) is not str:
+    if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
     idinfo = None
     try:
         idinfo = g_id_token.verify_oauth2_token(
-            _json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
+            json_['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
@@ -380,7 +380,7 @@ def _google_login_session_post(request):  # pragma: no cover
         google_login = models.GoogleLogin.objects.get(g_user_id=idinfo['sub'])
     except models.GoogleLogin.DoesNotExist:
         ret_obj = {
-            'token': _json['token'],
+            'token': json_['token'],
             'email': idinfo.get('email'),
         }
 
@@ -400,23 +400,23 @@ def _facebook_login_session_post(request):  # pragma: no cover
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'token' not in _json:
+    if 'token' not in json_:
         return HttpResponseBadRequest('\'token\' missing')
 
-    if type(_json['token']) is not str:
+    if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
-    graph = facebook.GraphAPI(_json['token'])
+    graph = facebook.GraphAPI(json_['token'])
 
     profile = None
     try:
@@ -430,7 +430,7 @@ def _facebook_login_session_post(request):  # pragma: no cover
             profile_id=profile['id'])
     except models.FacebookLogin.DoesNotExist:
         ret_obj = {
-            'token': _json['token'],
+            'token': json_['token'],
             'email': profile.get('email'),
         }
 

@@ -5,23 +5,23 @@ from django.http import HttpResponse, HttpResponseNotFound, HttpResponseNotAllow
 from api import models, query_utils
 
 
-def feed_subscription_progress(request, _uuid):
+def feed_subscription_progress(request, uuid_):
+    uuid_ = uuid.UUID(uuid_)
+
     permitted_methods = {'GET'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
-        return _feed_subscription_progress_get(request, _uuid)
+        return _feed_subscription_progress_get(request, uuid_)
 
 
-def _feed_subscription_progress_get(request, _uuid):
-    _uuid = uuid.UUID(_uuid)
-
+def _feed_subscription_progress_get(request, uuid_):
     feed_subscription_progress_entry = None
     try:
         feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.get(
-            uuid=_uuid, user=request.user)
+            uuid=uuid_, user=request.user)
     except models.FeedSubscriptionProgressEntry.DoesNotExist:
         return HttpResponseNotFound('progress not found')
 

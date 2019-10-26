@@ -116,56 +116,56 @@ def _feeds_query_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
     try:
-        count = query_utils.get_count(_json)
+        count = query_utils.get_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     skip = None
     try:
-        skip = query_utils.get_skip(_json)
+        skip = query_utils.get_skip(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     sort = None
     try:
-        sort = query_utils.get_sort(_json, _OBJECT_NAME)
+        sort = query_utils.get_sort(json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     search = None
     try:
-        search = query_utils.get_search(context, _json, _OBJECT_NAME)
+        search = query_utils.get_search(context, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     field_maps = None
     try:
-        fields = query_utils.get_fields__json(_json)
+        fields = query_utils.get_fields__json(json_)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_objects = None
     try:
-        return_objects = query_utils.get_return_objects(_json)
+        return_objects = query_utils.get_return_objects(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_total_count = None
     try:
-        return_total_count = query_utils.get_return_total_count(_json)
+        return_total_count = query_utils.get_return_total_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 

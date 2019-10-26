@@ -15,20 +15,29 @@ from api.context import Context
 _OBJECT_NAME = 'usercategory'
 
 
-def user_category(request, _uuid):
-    permitted_methods = {'GET', 'POST', 'PUT', 'DELETE'}
+def user_category(request, uuid_):
+    if uuid_ is not None:
+        uuid_ = uuid.UUID(uuid_)
 
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+        permitted_methods = {'GET', 'PUT', 'DELETE'}
 
-    if request.method == 'GET':
-        return _user_category_get(request, _uuid)
-    elif request.method == 'POST':
-        return _user_category_post(request)
-    elif request.method == 'PUT':
-        return _user_category_put(request, _uuid)
-    elif request.method == 'DELETE':
-        return _user_category_delete(request, _uuid)
+        if request.method not in permitted_methods:
+            return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+        if request.method == 'GET':
+            return _user_category_get(request, uuid_)
+        elif request.method == 'PUT':
+            return _user_category_put(request, uuid_)
+        elif request.method == 'DELETE':
+            return _user_category_delete(request, uuid_)
+    else:
+        permitted_methods = {'POST'}
+
+        if request.method not in permitted_methods:
+            return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+        if request.method == 'POST':
+            return _user_category_post(request)
 
 
 def user_categories_query(request):
@@ -51,16 +60,10 @@ def user_categories_apply(request):
         return _user_categories_apply_put(request)
 
 
-def _user_category_get(request, _uuid):
+def _user_category_get(request, uuid_):
     context = Context()
     context.parse_request(request)
     context.parse_query_dict(request.GET)
-
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
 
     field_maps = None
     try:
@@ -72,7 +75,7 @@ def _user_category_get(request, _uuid):
     user_category = None
     try:
         user_category = models.UserCategory.objects.get(
-            uuid=_uuid_, user=request.user)
+            uuid=uuid_, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
@@ -99,23 +102,23 @@ def _user_category_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'text' not in _json:
+    if 'text' not in json_:
         return HttpResponseBadRequest('\'text\' missing')
 
-    if type(_json['text']) is not str:
+    if type(json_['text']) is not str:
         return HttpResponseBadRequest('\'text\' must be string')
 
-    user_category = models.UserCategory(user=request.user, text=_json['text'])
+    user_category = models.UserCategory(user=request.user, text=json_['text'])
 
     try:
         user_category.save()
@@ -130,16 +133,10 @@ def _user_category_post(request):
     return HttpResponse(content, content_type)
 
 
-def _user_category_put(request, _uuid):
-    _uuid_ = None
+def _user_category_put(request, uuid_):
+    json_ = None
     try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
-
-    _json = None
-    try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
@@ -147,20 +144,20 @@ def _user_category_put(request, _uuid):
     user_category = None
     try:
         user_category = models.UserCategory.objects.get(
-            uuid=_uuid_, user=request.user)
+            uuid=uuid_, user=request.user)
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound('user category not found')
 
     has_changed = False
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
-    if 'text' in _json:
-        if type(_json['text']) is not str:
+    if 'text' in json_:
+        if type(json_['text']) is not str:
             return HttpResponseBadRequest('\'text\' must be string')
 
-        user_category.text = _json['text']
+        user_category.text = json_['text']
         has_changed = True
 
     if has_changed:
@@ -172,15 +169,9 @@ def _user_category_put(request, _uuid):
     return HttpResponse()
 
 
-def _user_category_delete(request, _uuid):
-    _uuid_ = None
-    try:
-        _uuid_ = uuid.UUID(_uuid)
-    except (ValueError, TypeError):
-        return HttpResponseBadRequest('uuid malformed')
-
+def _user_category_delete(request, uuid_):
     count, _ = models.UserCategory.objects.filter(
-        uuid=_uuid_, user=request.user).delete()
+        uuid=uuid_, user=request.user).delete()
 
     if count < 1:
         return HttpResponseNotFound('user category not found')
@@ -196,57 +187,57 @@ def _user_categories_query_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     count = None
     try:
-        count = query_utils.get_count(_json)
+        count = query_utils.get_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     skip = None
     try:
-        skip = query_utils.get_skip(_json)
+        skip = query_utils.get_skip(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     sort = None
     try:
-        sort = query_utils.get_sort(_json, _OBJECT_NAME)
+        sort = query_utils.get_sort(json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     search = None
     try:
         search = [Q(user=request.user)] + \
-            query_utils.get_search(context, _json, _OBJECT_NAME)
+            query_utils.get_search(context, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     field_maps = None
     try:
-        fields = query_utils.get_fields__json(_json)
+        fields = query_utils.get_fields__json(json_)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_objects = None
     try:
-        return_objects = query_utils.get_return_objects(_json)
+        return_objects = query_utils.get_return_objects(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
     return_total_count = None
     try:
-        return_total_count = query_utils.get_return_total_count(_json)
+        return_total_count = query_utils.get_return_total_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -272,14 +263,14 @@ def _user_categories_query_post(request):
 
 
 def _user_categories_apply_put(request):
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     all_feed_uuids = set()
@@ -287,14 +278,14 @@ def _user_categories_apply_put(request):
 
     mappings = {}
 
-    for feed_uuid, user_category_uuids in _json.items():
-        _feed_uuid = None
+    for feed_uuid, user_category_uuids in json_.items():
+        feed_uuid_ = None
         try:
-            _feed_uuid = uuid.UUID(feed_uuid)
+            feed_uuid_ = uuid.UUID(feed_uuid)
         except ValueError:
             return HttpResponseBadRequest('JSON body key malformed')
 
-        all_feed_uuids.add(_feed_uuid)
+        all_feed_uuids.add(feed_uuid_)
 
         if type(user_category_uuids) is not list:
             return HttpResponseBadRequest('JSON body element must be array')
@@ -307,7 +298,7 @@ def _user_categories_apply_put(request):
 
         all_user_category_uuids.update(user_category_uuids)
 
-        mappings[_feed_uuid] = user_category_uuids
+        mappings[feed_uuid_] = user_category_uuids
 
     feeds = dict((feed.uuid, feed)
                  for feed in models.Feed.objects.filter(uuid__in=all_feed_uuids))

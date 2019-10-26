@@ -74,14 +74,14 @@ def _user_put(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
-    _json = None
+    json_ = None
     try:
-        _json = ujson.loads(
+        json_ = ujson.loads(
             request.body, request.encoding or settings.DEFAULT_CHARSET)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(_json) is not dict:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     user = request.user
@@ -89,18 +89,18 @@ def _user_put(request):
     has_changed = False
 
     verification_token = None
-    if 'email' in _json:
-        if type(_json['email']) is not str:
+    if 'email' in json_:
+        if type(json_['email']) is not str:
             return HttpResponseBadRequest('\'email\' must be string')
 
-        if not validate_email(_json['email']):
+        if not validate_email(json_['email']):
             return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
-        if user.email != _json['email']:
-            if models.User.objects.filter(email=_json['email']).exists():
+        if user.email != json_['email']:
+            if models.User.objects.filter(email=json_['email']).exists():
                 return HttpResponse('email already in use', status=409)
 
-            user.email = _json['email']
+            user.email = json_['email']
 
             verification_token = models.VerificationToken(user=user, expires_at=(
                 datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL))
@@ -108,8 +108,8 @@ def _user_put(request):
             has_changed = True
 
     my_login = None
-    if 'my' in _json:
-        my_json = _json['my']
+    if 'my' in json_:
+        my_json = json_['my']
         if type(my_json) is not dict:
             return HttpResponseBadRequest('\'my\' must be object')
 
@@ -143,8 +143,8 @@ def _user_put(request):
             has_changed = True
 
     google_login_db_fn = None
-    if 'google' in _json:  # pragma: no cover
-        google_json = _json['google']
+    if 'google' in json_:  # pragma: no cover
+        google_json = json_['google']
         if google_json is None:
             def google_login_db_fn(): return _google_login_delete(user)
             has_changed = True
@@ -175,8 +175,8 @@ def _user_put(request):
             return HttpResponseBadRequest('\'google\' must be object or null')
 
     facebook_login_db_fn = None
-    if 'facebook' in _json:  # pragma: no cover
-        facebook_json = _json['facebook']
+    if 'facebook' in json_:  # pragma: no cover
+        facebook_json = json_['facebook']
         if facebook_json is None:
             def facebook_login_db_fn(): return _facebook_login_delete(user)
             has_changed = True
