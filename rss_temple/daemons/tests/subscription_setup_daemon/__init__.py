@@ -53,7 +53,7 @@ class DaemonTestCase(TestCase):
         self.assertEqual(feed_subscription_progress_entry.status,
                          models.FeedSubscriptionProgressEntry.STARTED)
 
-    @unittest.skipIf('SUBSCRIPTION_SETUP_DAEMON_TEST_DO_SUBSCRIPTION' not in os.environ, 'long test - skipped unless forced via SUBSCRIPTION_SETUP_DAEMON_TEST_DO_SUBSCRIPTION environment variable')
+    @unittest.skipIf('SUBSCRIPTION_SETUP_DAEMON_TEST_DO_SUBSCRIPTION' not in os.environ and 'CI' not in os.environ, 'long test - skipped unless forced via SUBSCRIPTION_SETUP_DAEMON_TEST_DO_SUBSCRIPTION environment variable')
     def test_do_subscription(self):
         feed1 = models.Feed.objects.create(
             feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing',
