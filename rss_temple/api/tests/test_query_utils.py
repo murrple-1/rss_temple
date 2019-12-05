@@ -21,11 +21,11 @@ class QueryUtilsTestCase(TestCase):
         utcnow = datetime.datetime.utcnow()
 
         self.assertEqual(context.format_datetime(utcnow),
-                          utcnow.strftime('%Y-%m-%d %H:%M:%S'))
+                         utcnow.strftime('%Y-%m-%d %H:%M:%S'))
         self.assertEqual(context.format_date(utcnow.date()),
-                          utcnow.date().strftime('%Y-%m-%d'))
+                         utcnow.date().strftime('%Y-%m-%d'))
         self.assertEqual(context.format_time(utcnow.time()),
-                          utcnow.time().strftime('%H:%M:%S'))
+                         utcnow.time().strftime('%H:%M:%S'))
 
         d = Decimal('0.5')
 
@@ -61,7 +61,7 @@ class QueryUtilsTestCase(TestCase):
             })
 
         self.assertEqual(query_utils.get_count({}),
-                          query_utils._DEFAULT_COUNT)
+                         query_utils._DEFAULT_COUNT)
 
         self.assertEqual(query_utils.get_count({
             'tcount': 5,
@@ -108,7 +108,7 @@ class QueryUtilsTestCase(TestCase):
             }))
 
         self.assertEqual(query_utils.get_return_objects({}),
-                          query_utils._DEFAULT_RETURN_OBJECTS)
+                         query_utils._DEFAULT_RETURN_OBJECTS)
 
         self.assertEqual(query_utils.get_return_objects(
             {
@@ -218,14 +218,14 @@ class QueryUtilsTestCase(TestCase):
             [], 'feed'), query_utils.fieldutils.get_default_field_maps('feed'))
 
         self.assertEqual(query_utils.get_field_maps(['uuid'], 'feed'), [
-                          query_utils.fieldutils.to_field_map('feed', 'uuid')])
+            query_utils.fieldutils.to_field_map('feed', 'uuid')])
 
         self.assertEqual(query_utils.get_field_maps(['uuid', 'title'], 'feed'),
-                          [query_utils.fieldutils.to_field_map('feed', 'uuid'), query_utils.fieldutils.to_field_map('feed', 'title')])
+                         [query_utils.fieldutils.to_field_map('feed', 'uuid'), query_utils.fieldutils.to_field_map('feed', 'title')])
 
         with self.settings(DEBUG=True):
             self.assertEqual(query_utils.get_field_maps(['_all'], 'feed'),
-                              query_utils.fieldutils.get_all_field_maps('feed'))
+                             query_utils.fieldutils.get_all_field_maps('feed'))
 
         self.assertEqual(query_utils.get_field_maps(
             ['badField'], 'feed'), query_utils.fieldutils.get_default_field_maps('feed'))

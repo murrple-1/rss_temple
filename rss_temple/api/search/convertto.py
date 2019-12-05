@@ -62,8 +62,10 @@ class DateRange(CustomConvertTo):
     def convertto(search_obj):
         parts = search_obj.split('|')
 
-        start_datetime = DateRange._to_datetime(f'{parts[0]} 00:00:00') if parts[0] else datetime.datetime.min
-        end_datetime = DateRange._to_datetime(f'{parts[1]} 23:59:59') if parts[1] else datetime.datetime.max
+        start_datetime = DateRange._to_datetime(
+            f'{parts[0]} 00:00:00') if parts[0] else datetime.datetime.min
+        end_datetime = DateRange._to_datetime(
+            f'{parts[1]} 23:59:59') if parts[1] else datetime.datetime.max
         return start_datetime, end_datetime
 
 

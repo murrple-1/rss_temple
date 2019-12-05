@@ -70,7 +70,8 @@ def get_return_objects(
     return_objects = _json[param_name]
 
     if type(return_objects) is not bool:
-        raise QueryException(f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
+        raise QueryException(
+            f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
 
     return return_objects
 
@@ -88,7 +89,8 @@ def get_return_total_count(
     return_total_count = _json[param_name]
 
     if type(return_total_count) is not bool:
-        raise QueryException(f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
+        raise QueryException(
+            f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
 
     return return_total_count
 
@@ -107,7 +109,8 @@ def get_sort(_json, object_name, param_name='sort',
     default_sort_enabled = True
     if disable_default_sort_param_name in _json:
         if type(_json[disable_default_sort_param_name]) is not bool:
-            raise QueryException(f'\'{disable_default_sort_param_name}\' must be boolean', 400)  # pragma: no cover
+            raise QueryException(
+                f'\'{disable_default_sort_param_name}\' must be boolean', 400)  # pragma: no cover
 
         default_sort_enabled = not _json[disable_default_sort_param_name]
 
@@ -125,7 +128,8 @@ def get_search(context, _json, object_name, param_name='search'):
     search = _json[param_name]
 
     if type(search) is not str:
-        raise QueryException(f'\'{param_name}\' must be string', 400)  # pragma: no cover
+        raise QueryException(
+            f'\'{param_name}\' must be string', 400)  # pragma: no cover
 
     filter_args = searchutils.to_filter_args(object_name, context, search)
     return filter_args
@@ -147,7 +151,8 @@ def get_fields__json(_json, param_name='fields'):
     fields = _json[param_name]
 
     if type(fields) is not list:
-        raise QueryException(f'\'{param_name}\' must be array', 400)  # pragma: no cover
+        raise QueryException(
+            f'\'{param_name}\' must be array', 400)  # pragma: no cover
 
     for field in fields:
         if type(field) is not str:
