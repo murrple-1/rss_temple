@@ -1,13 +1,26 @@
 import datetime
 
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseNotFound
 from django.db import transaction
 
 from api import models
 from api.password_hasher import password_hasher
 
-_PASSWORDRESETTOKEN_EXPIRY_INTERVAL = settings.PASSWORDRESETTOKEN_EXPIRY_INTERVAL
+
+_PASSWORDRESETTOKEN_EXPIRY_INTERVAL = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _PASSWORDRESETTOKEN_EXPIRY_INTERVAL
+
+    _PASSWORDRESETTOKEN_EXPIRY_INTERVAL = settings.PASSWORDRESETTOKEN_EXPIRY_INTERVAL
+
+
+_load_global_settings()
 
 
 def passwordresettoken_request(request):

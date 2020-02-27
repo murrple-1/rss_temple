@@ -3,6 +3,8 @@ import datetime
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound
 from django.db import transaction
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 
 import argon2
 
@@ -23,8 +25,20 @@ from api.password_hasher import password_hasher
 
 _OBJECT_NAME = 'user'
 
-_GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
-_USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
+_GOOGLE_CLIENT_ID = None
+_USER_VERIFICATION_EXPIRY_INTERVAL = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _GOOGLE_CLIENT_ID
+    global _USER_VERIFICATION_EXPIRY_INTERVAL
+
+    _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+    _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
+
+
+_load_global_settings()
 
 
 def user(request):

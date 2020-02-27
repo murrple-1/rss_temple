@@ -1,5 +1,3 @@
-import importlib
-
 from django.test import TestCase
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
@@ -8,19 +6,11 @@ from api.middleware import cors
 
 
 class CORSTestCase(TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        # reload without messing up the settings
-        importlib.reload(cors)
-
     def test_allow_star(self):
         with self.settings(CORS_ALLOW_ORIGINS='*',
                            CORS_ALLOW_METHODS='GET,POST,OPTIONS',
                            CORS_ALLOW_HEADERS='Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization',
                            CORS_EXPOSE_HEADERS='Date'):
-            importlib.reload(cors)
             middleware = cors.CORSMiddleware(
                 lambda request: HttpResponse('test content'))
 
@@ -42,7 +32,6 @@ class CORSTestCase(TestCase):
                            CORS_ALLOW_METHODS='GET,POST,OPTIONS',
                            CORS_ALLOW_HEADERS='Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization',
                            CORS_EXPOSE_HEADERS='Date'):
-            importlib.reload(cors)
             middleware = cors.CORSMiddleware(
                 lambda request: HttpResponse('test content'))
 
@@ -65,7 +54,6 @@ class CORSTestCase(TestCase):
                            CORS_ALLOW_METHODS='GET,POST,OPTIONS',
                            CORS_ALLOW_HEADERS='Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization',
                            CORS_EXPOSE_HEADERS='Date'):
-            importlib.reload(cors)
             middleware = cors.CORSMiddleware(
                 lambda request: HttpResponse('test content'))
 
@@ -88,7 +76,6 @@ class CORSTestCase(TestCase):
                            CORS_ALLOW_METHODS='GET,POST,OPTIONS',
                            CORS_ALLOW_HEADERS='Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization',
                            CORS_EXPOSE_HEADERS='Date'):
-            importlib.reload(cors)
             middleware = cors.CORSMiddleware(
                 lambda request: HttpResponse('test content'))
 

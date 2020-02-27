@@ -2,6 +2,8 @@ import datetime
 import uuid
 
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed
 from django.db import transaction
 
@@ -19,8 +21,24 @@ from google.auth.transport import requests as g_requests
 from api import models, query_utils
 from api.password_hasher import password_hasher
 
-_GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
-_USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
+
+_GOOGLE_CLIENT_ID = None
+_USER_VERIFICATION_EXPIRY_INTERVAL = None
+_SESSION_EXPIRY_INTERVAL = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _GOOGLE_CLIENT_ID
+    global _USER_VERIFICATION_EXPIRY_INTERVAL
+    global _SESSION_EXPIRY_INTERVAL
+
+    _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
+    _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
+    _SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
+
+
+_load_global_settings()
 
 
 def my_login(request):
@@ -297,9 +315,6 @@ def _facebook_login_post(request):  # pragma: no cover
         pass
 
     return HttpResponse()
-
-
-_SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
 
 
 def _my_login_session_post(request):

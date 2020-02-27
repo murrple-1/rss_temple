@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 
 import ujson
 
@@ -6,13 +8,34 @@ from api import fields as fieldutils, searches as searchutils, sorts as sortutil
 from api.exceptions import QueryException
 
 
+_DEFAULT_COUNT = None
+_MAX_COUNT = None
+_DEFAULT_SKIP = None
+_DEFAULT_RETURN_OBJECTS = None
+_DEFAULT_RETURN_TOTAL_COUNT = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _DEFAULT_COUNT
+    global _MAX_COUNT
+    global _DEFAULT_SKIP
+    global _DEFAULT_RETURN_OBJECTS
+    global _DEFAULT_RETURN_TOTAL_COUNT
+
+    _DEFAULT_COUNT = settings.DEFAULT_COUNT
+    _MAX_COUNT = settings.MAX_COUNT
+    _DEFAULT_SKIP = settings.DEFAULT_SKIP
+    _DEFAULT_RETURN_OBJECTS = settings.DEFAULT_RETURN_OBJECTS
+    _DEFAULT_RETURN_TOTAL_COUNT = settings.DEFAULT_RETURN_TOTAL_COUNT
+
+
+_load_global_settings()
+
+
 def serialize_content(obj):
     content = ujson.dumps(obj)
     return content, 'application/json'
-
-
-_DEFAULT_COUNT = settings.DEFAULT_COUNT
-_MAX_COUNT = settings.MAX_COUNT
 
 
 def get_count(
@@ -38,9 +61,6 @@ def get_count(
     return count
 
 
-_DEFAULT_SKIP = settings.DEFAULT_SKIP
-
-
 def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
     if param_name not in _json:
         return default
@@ -57,9 +77,6 @@ def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
     return skip
 
 
-_DEFAULT_RETURN_OBJECTS = settings.DEFAULT_RETURN_OBJECTS
-
-
 def get_return_objects(
         _json,
         default=_DEFAULT_RETURN_OBJECTS,
@@ -74,9 +91,6 @@ def get_return_objects(
             f'\'{param_name}\' must be boolean', 400)  # pragma: no cover
 
     return return_objects
-
-
-_DEFAULT_RETURN_TOTAL_COUNT = settings.DEFAULT_RETURN_TOTAL_COUNT
 
 
 def get_return_total_count(

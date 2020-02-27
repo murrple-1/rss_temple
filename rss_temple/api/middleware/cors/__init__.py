@@ -1,16 +1,34 @@
 from django.http import HttpResponse
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 
-_CORS_ALLOW_ORIGINS = getattr(settings, 'CORS_ALLOW_ORIGINS', '*')
-_CORS_ALLOW_METHODS = getattr(
-    settings,
-    'CORS_ALLOW_METHODS',
-    'GET,POST,OPTIONS')
-_CORS_ALLOW_HEADERS = getattr(
-    settings,
-    'CORS_ALLOW_HEADERS',
-    'Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization')
-_CORS_EXPOSE_HEADERS = getattr(settings, 'CORS_EXPOSE_HEADERS', '')
+_CORS_ALLOW_ORIGINS = None
+_CORS_ALLOW_METHODS = None
+_CORS_ALLOW_HEADERS = None
+_CORS_EXPOSE_HEADERS = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _CORS_ALLOW_ORIGINS
+    global _CORS_ALLOW_METHODS
+    global _CORS_ALLOW_HEADERS
+    global _CORS_EXPOSE_HEADERS
+
+    _CORS_ALLOW_ORIGINS = getattr(settings, 'CORS_ALLOW_ORIGINS', '*')
+    _CORS_ALLOW_METHODS = getattr(
+        settings,
+        'CORS_ALLOW_METHODS',
+        'GET,POST,OPTIONS')
+    _CORS_ALLOW_HEADERS = getattr(
+        settings,
+        'CORS_ALLOW_HEADERS',
+        'Pragma,Cache-Control,Content-Type,If-Modified-Since,Authorization')
+    _CORS_EXPOSE_HEADERS = getattr(settings, 'CORS_EXPOSE_HEADERS', '')
+
+
+_load_global_settings()
 
 
 class CORSMiddleware:

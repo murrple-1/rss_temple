@@ -1,4 +1,3 @@
-import importlib
 import datetime
 
 from django.test import TestCase
@@ -10,20 +9,12 @@ from api import models
 
 
 class AuthenticationTestCase(TestCase):
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        # reload without messing up the settings
-        importlib.reload(authentication)
-
     def test_succeed_authentication(self):
         with self.settings(
                 REALM='Test Realm',
                 AUTHENTICATION_DISABLE=[
                     (r'^/test/?$', ['POST'])
                 ]):
-            importlib.reload(authentication)
             middleware = authentication.AuthenticationMiddleware(
                 lambda request: HttpResponse())
 
@@ -50,7 +41,6 @@ class AuthenticationTestCase(TestCase):
                 AUTHENTICATION_DISABLE=[
                     (r'^/test/?$', ['POST'])
                 ]):
-            importlib.reload(authentication)
             middleware = authentication.AuthenticationMiddleware(
                 lambda request: HttpResponse())
 
@@ -71,7 +61,6 @@ class AuthenticationTestCase(TestCase):
                 AUTHENTICATION_DISABLE=[
                     (r'^/test/?$', ['POST'])
                 ]):
-            importlib.reload(authentication)
             middleware = authentication.AuthenticationMiddleware(
                 lambda request: HttpResponse())
 
@@ -88,7 +77,6 @@ class AuthenticationTestCase(TestCase):
         with self.settings(
                 REALM='Test Realm',
                 AUTHENTICATION_DISABLE=None):
-            importlib.reload(authentication)
             middleware = authentication.AuthenticationMiddleware(
                 lambda request: HttpResponse())
 
@@ -107,7 +95,6 @@ class AuthenticationTestCase(TestCase):
         with self.settings(
                 REALM=None,
                 AUTHENTICATION_DISABLE=None):
-            importlib.reload(authentication)
             middleware = authentication.AuthenticationMiddleware(
                 lambda request: HttpResponse())
 

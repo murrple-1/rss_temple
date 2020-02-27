@@ -2,11 +2,26 @@ import re
 
 from django.http import HttpResponse
 from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 
 from api import authenticate
 
-_REALM = settings.REALM
-_AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE
+
+_REALM = None
+_AUTHENTICATION_DISABLE = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _REALM
+    global _AUTHENTICATION_DISABLE
+
+    _REALM = settings.REALM
+    _AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE
+
+
+_load_global_settings()
 
 
 class AuthenticationMiddleware:
