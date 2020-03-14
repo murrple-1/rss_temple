@@ -104,8 +104,7 @@ def _user_category_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -136,8 +135,7 @@ def _user_category_post(request):
 def _user_category_put(request, uuid_):
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -189,8 +187,7 @@ def _user_categories_query_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -265,8 +262,7 @@ def _user_categories_query_post(request):
 def _user_categories_apply_put(request):
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 

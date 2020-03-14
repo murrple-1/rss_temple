@@ -73,8 +73,8 @@ class FeedTestCase(TestCase):
             db_updated_at=None)
 
         c = Client()
-        response = c.post('/api/feeds/query', ujson.dumps({'fields': fields.field_list(
-            'feed')}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        response = c.post('/api/feeds/query', ujson.dumps({'fields': list(fields.field_list(
+            'feed'))}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         _json = ujson.loads(response.content)

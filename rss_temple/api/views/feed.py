@@ -118,8 +118,7 @@ def _feeds_query_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 

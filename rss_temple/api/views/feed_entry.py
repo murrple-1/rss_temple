@@ -124,8 +124,7 @@ def _feed_entries_query_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -227,8 +226,7 @@ def _feed_entries_read_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -267,8 +265,7 @@ def _feed_entries_read_delete(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -321,8 +318,7 @@ def _feed_entries_favorite_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -361,8 +357,7 @@ def _feed_entries_favorite_delete(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 

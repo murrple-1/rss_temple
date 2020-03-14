@@ -117,8 +117,7 @@ def _my_login_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -172,8 +171,7 @@ def _google_login_post(request):  # pragma: no cover
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -247,8 +245,7 @@ def _facebook_login_post(request):  # pragma: no cover
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -323,8 +320,7 @@ def _my_login_session_post(request):
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -369,8 +365,7 @@ def _google_login_session_post(request):  # pragma: no cover
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
@@ -417,8 +412,7 @@ def _facebook_login_session_post(request):  # pragma: no cover
 
     json_ = None
     try:
-        json_ = ujson.loads(
-            request.body, request.encoding or settings.DEFAULT_CHARSET)
+        json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 

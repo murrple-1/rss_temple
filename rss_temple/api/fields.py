@@ -14,7 +14,7 @@ _field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'email': _FieldConfig(lambda context, db_obj: db_obj.email, False),
-        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: (str(key) for key in db_obj.subscribed_feeds_dict().keys()), False),
+        'subscribedFeedUuids': _FieldConfig(lambda context, db_obj: [str(key) for key in db_obj.subscribed_feeds_dict().keys()], False),
 
         'hasGoogleLogin': _FieldConfig(lambda context, db_obj: db_obj.google_login() is not None, False),
         'hasFacebookLogin': _FieldConfig(lambda context, db_obj: db_obj.facebook_login() is not None, False),
@@ -22,7 +22,7 @@ _field_configs = {
     'usercategory': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
         'text': _FieldConfig(lambda context, db_obj: db_obj.text, True),
-        'feedUuids': _FieldConfig(lambda context, db_obj: (str(feed.uuid) for feed in db_obj.feeds()), False),
+        'feedUuids': _FieldConfig(lambda context, db_obj: [str(feed.uuid) for feed in db_obj.feeds()], False),
     },
     'feed': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
@@ -35,7 +35,7 @@ _field_configs = {
         'subscribed': _FieldConfig(lambda context, db_obj: db_obj.is_subscribed, False),
         'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title, False),
         'calculatedTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title if db_obj.custom_title is not None else db_obj.title, False),
-        'userCategoryUuids': _FieldConfig(lambda context, db_obj: (str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)), False),
+        'userCategoryUuids': _FieldConfig(lambda context, db_obj: [str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)], False),
     },
     'feedentry': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
