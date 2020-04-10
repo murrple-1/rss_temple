@@ -165,7 +165,7 @@ def _my_login_post(request):
     return HttpResponse()
 
 
-def _google_login_post(request):  # pragma: no cover
+def _google_login_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -239,7 +239,7 @@ def _google_login_post(request):  # pragma: no cover
     return HttpResponse()
 
 
-def _facebook_login_post(request):  # pragma: no cover
+def _facebook_login_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -359,7 +359,7 @@ def _my_login_session_post(request):
     return HttpResponse(content, content_type)
 
 
-def _google_login_session_post(request):  # pragma: no cover
+def _google_login_session_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -406,7 +406,7 @@ def _google_login_session_post(request):  # pragma: no cover
     return HttpResponse(content, content_type)
 
 
-def _facebook_login_session_post(request):  # pragma: no cover
+def _facebook_login_session_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 

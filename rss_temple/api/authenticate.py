@@ -35,9 +35,6 @@ def authenticate_http_request(request):
     return True
 
 
-
-
-
 def _user_from_http_request__session_token(request):
     if 'HTTP_X_SESSION_TOKEN' in request.META:
         session_token = request.META['HTTP_X_SESSION_TOKEN']
