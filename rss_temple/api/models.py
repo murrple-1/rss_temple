@@ -290,7 +290,7 @@ class FeedEntry(models.Model):
     db_updated_at = models.DateTimeField(null=True)
 
     def __eq__(self, other):
-        if isinstance(other, FeedEntry):
+        if type(other) is FeedEntry:
             return (
                 self.id == other.id
                 and self.created_at == other.created_at

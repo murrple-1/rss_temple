@@ -125,19 +125,19 @@ def _my_login_post(request):
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in json_:
-        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')
 
     if type(json_['email']) is not str:
-        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')
 
     if not validate_email(json_['email']):
-        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:
-        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')
 
     if type(json_['password']) is not str:
-        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')
 
     if models.MyLogin.objects.filter(user__email=json_['email']).exists():
         return HttpResponse('login already exists', status=409)
@@ -179,25 +179,25 @@ def _google_login_post(request):
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in json_:
-        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')
 
     if type(json_['email']) is not str:
-        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')
 
     if not validate_email(json_['email']):
-        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:
-        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')
 
     if type(json_['password']) is not str:
-        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')
 
     if 'token' not in json_:
-        return HttpResponseBadRequest('\'token\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'token\' missing')
 
     if type(json_['token']) is not str:
-        return HttpResponseBadRequest('\'token\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'token\' must be string')
 
     idinfo = None
     try:
@@ -253,25 +253,25 @@ def _facebook_login_post(request):
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in json_:
-        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')
 
     if type(json_['email']) is not str:
-        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')
 
     if not validate_email(json_['email']):
-        return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:
-        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')
 
     if type(json_['password']) is not str:
-        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')
 
     if 'token' not in json_:
-        return HttpResponseBadRequest('\'token\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'token\' missing')
 
     if type(json_['token']) is not str:
-        return HttpResponseBadRequest('\'token\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'token\' must be string')
 
     graph = facebook.GraphAPI(json_['token'])
 
@@ -328,16 +328,16 @@ def _my_login_session_post(request):
         return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
 
     if 'email' not in json_:
-        return HttpResponseBadRequest('\'email\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' missing')
 
     if type(json_['email']) is not str:
-        return HttpResponseBadRequest('\'email\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'email\' must be string')
 
     if 'password' not in json_:
-        return HttpResponseBadRequest('\'password\' missing')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' missing')
 
     if type(json_['password']) is not str:
-        return HttpResponseBadRequest('\'password\' must be string')  # pragma: no cover
+        return HttpResponseBadRequest('\'password\' must be string')
 
     my_login = None
     try:

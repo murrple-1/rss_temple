@@ -26,6 +26,54 @@ class LoginTestCase(TestCase):
         }), 'application/json')
         self.assertEqual(response.status_code, 200)
 
+    def test_my_login_post_email_missing(self):
+        c = Client()
+        response = c.post('/api/login/my', ujson.dumps({
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_my_login_post_email_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/my', ujson.dumps({
+            'email': True,
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'must be', response.content)
+
+    def test_my_login_post_email_malformed(self):
+        c = Client()
+        response = c.post('/api/login/my', ujson.dumps({
+            'email': 'bademail',
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'malformed', response.content)
+
+    def test_my_login_post_password_missing(self):
+        c = Client()
+        response = c.post('/api/login/my', ujson.dumps({
+            'email': 'test@test.com',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_my_login_post_password_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/my', ujson.dumps({
+            'email': 'test@test.com',
+            'password': True,
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'must be', response.content)
+
     def test_my_login_post_already_exists(self):
         user = models.User.objects.create(email='test@test.com')
 
@@ -75,6 +123,102 @@ class LoginTestCase(TestCase):
         }), 'application/json')
 
         self.assertEqual(response.status_code, 403)
+
+    def test_google_login_post_email_missing(self):
+        c = Client()
+        response = c.post('/api/login/google', ujson.dumps({
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_google_login_post_email_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/google', ujson.dumps({
+            'email': True,
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'must be', response.content)
+
+    def test_google_login_post_email_malformed(self):
+        c = Client()
+        response = c.post('/api/login/google', ujson.dumps({
+            'email': 'bademail',
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'malformed', response.content)
+
+    def test_google_login_post_password_missing(self):
+        c = Client()
+        response = c.post('/api/login/google', ujson.dumps({
+            'email': 'test@test.com',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_google_login_post_password_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/google', ujson.dumps({
+            'email': 'test@test.com',
+            'password': True,
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'must be', response.content)
+
+    def test_facebook_login_post_email_missing(self):
+        c = Client()
+        response = c.post('/api/login/facebook', ujson.dumps({
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_facebook_login_post_email_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/facebook', ujson.dumps({
+            'email': True,
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'must be', response.content)
+
+    def test_facebook_login_post_email_malformed(self):
+        c = Client()
+        response = c.post('/api/login/facebook', ujson.dumps({
+            'email': 'bademail',
+            'password': 'mypassword',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'email', response.content)
+        self.assertIn(b'malformed', response.content)
+
+    def test_facebook_login_post_password_missing(self):
+        c = Client()
+        response = c.post('/api/login/facebook', ujson.dumps({
+            'email': 'test@test.com',
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_facebook_login_post_password_typeerror(self):
+        c = Client()
+        response = c.post('/api/login/facebook', ujson.dumps({
+            'email': 'test@test.com',
+            'password': True,
+        }), 'application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'password', response.content)
+        self.assertIn(b'must be', response.content)
 
     def test_session_delete(self):
         user = models.User.objects.create(email='test@test.com')
