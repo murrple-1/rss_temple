@@ -9,6 +9,7 @@ from api.exceptions import QueryException
 from api.search.parser import parser
 from api.search.convertto import Bool, UuidList, Date, DateRange, DateDeltaRange
 
+
 _logger = logging.getLogger('rss_temple')
 
 

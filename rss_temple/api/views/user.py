@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotFound
 from django.db import transaction
@@ -12,29 +13,26 @@ import ujson
 
 from validate_email import validate_email
 
-import facebook
-
-from google.oauth2 import id_token as g_id_token
-from google.auth.transport import requests as g_requests
-
 from api.exceptions import QueryException
 from api import query_utils, models
 from api.context import Context
 from api.password_hasher import password_hasher
+from api.third_party_login import google, facebook
+
+
+_logger = logging.getLogger('rss_temple')
 
 
 _OBJECT_NAME = 'user'
 
-_GOOGLE_CLIENT_ID = None
+
 _USER_VERIFICATION_EXPIRY_INTERVAL = None
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
-    global _GOOGLE_CLIENT_ID
     global _USER_VERIFICATION_EXPIRY_INTERVAL
 
-    _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
 
 
@@ -174,14 +172,10 @@ def _user_put(request):
                 if type(google_json['token']) is not str:
                     return HttpResponseBadRequest('\'token\' must be string')
 
-                idinfo = None
                 try:
-                    idinfo = g_id_token.verify_oauth2_token(
-                        google_json['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
+                    google_login.g_user_id = google.get_id(google_json['token'])
                 except ValueError:
                     return HttpResponseBadRequest('bad Google token')
-
-                google_login.g_user_id = idinfo['sub']
 
                 has_changed = True
         else:
@@ -206,15 +200,10 @@ def _user_put(request):
                 if type(facebook_json['token']) is not str:
                     return HttpResponseBadRequest('\'token\' must be string')
 
-                graph = facebook.GraphAPI(facebook_json['token'])
-
-                profile = None
                 try:
-                    profile = graph.get_object('me', fields='id')
-                except facebook.GraphAPIError:
+                    facebook_login.profile_id = facebook.get_id(facebook_json['token'])
+                except ValueError:
                     return HttpResponseBadRequest('bad Facebook token')
-
-                facebook_login.profile_id = profile['id']
 
                 has_changed = True
         else:

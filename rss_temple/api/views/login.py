@@ -1,5 +1,6 @@
 import datetime
 import uuid
+import logging
 
 from django.conf import settings
 from django.dispatch import receiver
@@ -13,27 +14,23 @@ import ujson
 
 from validate_email import validate_email
 
-import facebook
-
-from google.oauth2 import id_token as g_id_token
-from google.auth.transport import requests as g_requests
-
 from api import models, query_utils
 from api.password_hasher import password_hasher
+from api.third_party_login import google, facebook
 
 
-_GOOGLE_CLIENT_ID = None
+_logger = logging.getLogger('rss_temple')
+
+
 _USER_VERIFICATION_EXPIRY_INTERVAL = None
 _SESSION_EXPIRY_INTERVAL = None
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
-    global _GOOGLE_CLIENT_ID
     global _USER_VERIFICATION_EXPIRY_INTERVAL
     global _SESSION_EXPIRY_INTERVAL
 
-    _GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
     _SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
 
@@ -199,15 +196,14 @@ def _google_login_post(request):
     if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
-    idinfo = None
+    g_user_id = None
     try:
-        idinfo = g_id_token.verify_oauth2_token(
-            json_['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
+        g_user_id = google.get_id(json_['token'])
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=idinfo['sub']).exists()
+        models.GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
         or models.MyLogin.objects.filter(user__email=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
@@ -229,7 +225,7 @@ def _google_login_post(request):
             user=user)
 
         models.GoogleLogin.objects.create(
-            g_user_id=idinfo['sub'],
+            g_user_id=g_user_id,
             user=user)
 
     if verification_token is not None:
@@ -273,16 +269,14 @@ def _facebook_login_post(request):
     if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
-    graph = facebook.GraphAPI(json_['token'])
-
-    profile = None
+    fb_id = None
     try:
-        profile = graph.get_object('me', fields='id')
-    except facebook.GraphAPIError:
+        fb_id = facebook.get_id(json_['token'])
+    except ValueError:
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=profile['id']).exists()
+        models.FacebookLogin.objects.filter(profile_id=fb_id).exists()
         or models.MyLogin.objects.filter(user__email=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
@@ -304,7 +298,7 @@ def _facebook_login_post(request):
             user=user)
 
         models.FacebookLogin.objects.create(
-            profile_id=profile['id'],
+            profile_id=fb_id,
             user=user)
 
     if verification_token is not None:
@@ -378,20 +372,20 @@ def _google_login_session_post(request):
     if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
-    idinfo = None
+    g_user_id = None
+    g_email = None
     try:
-        idinfo = g_id_token.verify_oauth2_token(
-            json_['token'], g_requests.Request(), _GOOGLE_CLIENT_ID)
+        g_user_id, g_email = google.get_id_and_email(json_['token'])
     except ValueError:
         return HttpResponseBadRequest('bad Google token')
 
     google_login = None
     try:
-        google_login = models.GoogleLogin.objects.get(g_user_id=idinfo['sub'])
+        google_login = models.GoogleLogin.objects.get(g_user_id=g_user_id)
     except models.GoogleLogin.DoesNotExist:
         ret_obj = {
             'token': json_['token'],
-            'email': idinfo.get('email'),
+            'email': g_email,
         }
 
         content, content_type = query_utils.serialize_content(ret_obj)
@@ -425,22 +419,21 @@ def _facebook_login_session_post(request):
     if type(json_['token']) is not str:
         return HttpResponseBadRequest('\'token\' must be string')
 
-    graph = facebook.GraphAPI(json_['token'])
-
-    profile = None
+    fb_id = None
+    fb_email = None
     try:
-        profile = graph.get_object('me', fields='id,email')
-    except facebook.GraphAPIError:
+        fb_id, fb_email = facebook.get_id_and_email(json_['token'])
+    except ValueError:
         return HttpResponseBadRequest('bad Facebook token')
 
     facebook_login = None
     try:
         facebook_login = models.FacebookLogin.objects.get(
-            profile_id=profile['id'])
+            profile_id=fb_id)
     except models.FacebookLogin.DoesNotExist:
         ret_obj = {
             'token': json_['token'],
-            'email': profile.get('email'),
+            'email': fb_email,
         }
 
         content, content_type = query_utils.serialize_content(ret_obj)
