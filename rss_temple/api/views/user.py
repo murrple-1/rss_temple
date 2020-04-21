@@ -154,7 +154,7 @@ def _user_put(request):
             has_changed = True
 
     google_login_db_fn = None
-    if 'google' in json_:  # pragma: no cover
+    if 'google' in json_:
         google_json = json_['google']
         if google_json is None:
             def google_login_db_fn(): return _google_login_delete(user)
@@ -182,7 +182,7 @@ def _user_put(request):
             return HttpResponseBadRequest('\'google\' must be object or null')
 
     facebook_login_db_fn = None
-    if 'facebook' in json_:  # pragma: no cover
+    if 'facebook' in json_:
         facebook_json = json_['facebook']
         if facebook_json is None:
             def facebook_login_db_fn(): return _facebook_login_delete(user)
