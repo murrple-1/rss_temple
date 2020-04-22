@@ -199,7 +199,7 @@ def _google_login_post(request):
     g_user_id = None
     try:
         g_user_id = google.get_id(json_['token'])
-    except ValueError:
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('bad Google token')
 
     if (
@@ -272,7 +272,7 @@ def _facebook_login_post(request):
     fb_id = None
     try:
         fb_id = facebook.get_id(json_['token'])
-    except ValueError:
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('bad Facebook token')
 
     if (
@@ -376,7 +376,7 @@ def _google_login_session_post(request):
     g_email = None
     try:
         g_user_id, g_email = google.get_id_and_email(json_['token'])
-    except ValueError:
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('bad Google token')
 
     google_login = None
@@ -423,7 +423,7 @@ def _facebook_login_session_post(request):
     fb_email = None
     try:
         fb_id, fb_email = facebook.get_id_and_email(json_['token'])
-    except ValueError:
+    except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('bad Facebook token')
 
     facebook_login = None

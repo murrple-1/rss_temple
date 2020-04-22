@@ -2,13 +2,10 @@ import logging
 
 from django.test import TestCase, Client
 
-import argon2
-
 import ujson
 
 from api import models
-
-_password_hasher = argon2.PasswordHasher()
+from api.password_hasher import password_hasher
 
 
 class LoginTestCase(TestCase):
@@ -78,7 +75,7 @@ class LoginTestCase(TestCase):
         user = models.User.objects.create(email='test@test.com')
 
         models.MyLogin.objects.create(
-            user=user, pw_hash=_password_hasher.hash('mypassword'))
+            user=user, pw_hash=password_hasher().hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my', ujson.dumps({
@@ -86,6 +83,42 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
         }), 'application/json')
         self.assertEqual(response.status_code, 409)
+
+    def test_google_login_post(self):
+        c = Client()
+
+        with self.settings(GOOGLE_TEST_ID='googleid'):
+            response = c.post('/api/login/google', ujson.dumps({
+                'email': 'test@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 200)
+
+    def test_google_login_post_duplicate_login(self):
+        user1 = models.User.objects.create(email='test1@test.com')
+        models.GoogleLogin.objects.create(g_user_id='googleid1', user=user1)
+
+        user2 = models.User.objects.create(email='test2@test.com')
+        models.MyLogin.objects.create(pw_hash=password_hasher().hash('password1'), user=user2)
+
+        c = Client()
+
+        with self.settings(GOOGLE_TEST_ID='googleid1'):
+            response = c.post('/api/login/google', ujson.dumps({
+                'email': 'test1@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 409)
+
+        with self.settings(GOOGLE_TEST_ID='googleid'):
+            response = c.post('/api/login/google', ujson.dumps({
+                'email': 'test2@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 409)
 
     def test_google_login_post_email_missing(self):
         c = Client()
@@ -160,6 +193,42 @@ class LoginTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
+
+    def test_facebook_login_post(self):
+        c = Client()
+
+        with self.settings(FACEBOOK_TEST_ID='facebookid'):
+            response = c.post('/api/login/facebook', ujson.dumps({
+                'email': 'test@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 200)
+
+    def test_facebook_login_post_duplicate_login(self):
+        user1 = models.User.objects.create(email='test1@test.com')
+        models.FacebookLogin.objects.create(profile_id='facebookid1', user=user1)
+
+        user2 = models.User.objects.create(email='test2@test.com')
+        models.MyLogin.objects.create(pw_hash=password_hasher().hash('password1'), user=user2)
+
+        c = Client()
+
+        with self.settings(FACEBOOK_TEST_ID='facebookid1'):
+            response = c.post('/api/login/facebook', ujson.dumps({
+                'email': 'test1@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 409)
+
+        with self.settings(FACEBOOK_TEST_ID='facebookid'):
+            response = c.post('/api/login/facebook', ujson.dumps({
+                'email': 'test2@test.com',
+                'password': 'mypassword',
+                'token': 'goodtoken',
+            }), 'application/json')
+            self.assertEqual(response.status_code, 409)
 
     def test_facebook_login_post_email_missing(self):
         c = Client()
@@ -239,7 +308,7 @@ class LoginTestCase(TestCase):
         user = models.User.objects.create(email='test@test.com')
 
         models.MyLogin.objects.create(
-            user=user, pw_hash=_password_hasher.hash('mypassword'))
+            user=user, pw_hash=password_hasher().hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({
@@ -304,7 +373,7 @@ class LoginTestCase(TestCase):
         user = models.User.objects.create(email='test@test.com')
 
         models.MyLogin.objects.create(
-            user=user, pw_hash=_password_hasher.hash('mypassword'))
+            user=user, pw_hash=password_hasher().hash('mypassword'))
 
         c = Client()
         response = c.post('/api/login/my/session', ujson.dumps({
@@ -313,6 +382,37 @@ class LoginTestCase(TestCase):
         }), 'application/json')
 
         self.assertEqual(response.status_code, 403)
+
+    def test_google_login_session_post(self):
+        user = models.User.objects.create(email='test@test.com')
+        models.GoogleLogin.objects.create(user=user, g_user_id='googleid')
+
+        c = Client()
+
+        with self.settings(GOOGLE_TEST_ID='googleid'):
+            response = c.post('/api/login/google/session', ujson.dumps({
+                'token': 'goodtoken',
+            }), 'application/json')
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_google_login_session_post_create(self):
+        c = Client()
+
+        with self.settings(GOOGLE_TEST_ID='googleid'):
+            response = c.post('/api/login/google/session', ujson.dumps({
+                'token': 'goodtoken',
+            }), 'application/json')
+
+            self.assertEqual(response.status_code, 422)
+
+            json_ = ujson.loads(response.content)
+
+            self.assertIsInstance(json_, dict)
+            self.assertIn('token', json_)
+            self.assertIn('email', json_)
+            self.assertIs(type(json_['token']), str)
+            self.assertTrue(json_['email'] is None or type(json_['email']) is str)
 
     def test_google_login_session_post_token_missing(self):
         c = Client()
@@ -331,6 +431,37 @@ class LoginTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
+
+    def test_facebook_login_session_post(self):
+        user = models.User.objects.create(email='test@test.com')
+        models.FacebookLogin.objects.create(user=user, profile_id='facebookid')
+
+        c = Client()
+
+        with self.settings(FACEBOOK_TEST_ID='facebookid'):
+            response = c.post('/api/login/facebook/session', ujson.dumps({
+                'token': 'goodtoken',
+            }), 'application/json')
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_facebook_login_session_post_create(self):
+        c = Client()
+
+        with self.settings(FACEBOOK_TEST_ID='facebookid'):
+            response = c.post('/api/login/facebook/session', ujson.dumps({
+                'token': 'goodtoken',
+            }), 'application/json')
+
+            self.assertEqual(response.status_code, 422)
+
+            json_ = ujson.loads(response.content)
+
+            self.assertIsInstance(json_, dict)
+            self.assertIn('token', json_)
+            self.assertIn('email', json_)
+            self.assertIs(type(json_['token']), str)
+            self.assertTrue(json_['email'] is None or type(json_['email']) is str)
 
     def test_facebook_login_session_post_token_missing(self):
         c = Client()
