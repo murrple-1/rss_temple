@@ -174,7 +174,7 @@ def _user_put(request):
 
                 try:
                     google_login.g_user_id = google.get_id(google_json['token'])
-                except ValueError:
+                except ValueError:  # pragma: no cover
                     return HttpResponseBadRequest('bad Google token')
 
                 has_changed = True
@@ -202,7 +202,7 @@ def _user_put(request):
 
                 try:
                     facebook_login.profile_id = facebook.get_id(facebook_json['token'])
-                except ValueError:
+                except ValueError:  # pragma: no cover
                     return HttpResponseBadRequest('bad Facebook token')
 
                 has_changed = True
@@ -216,10 +216,10 @@ def _user_put(request):
             if my_login is not None:
                 my_login.save()
 
-            if google_login_db_fn is not None:  # pragma: no cover
+            if google_login_db_fn is not None:
                 google_login_db_fn()
 
-            if facebook_login_db_fn is not None:  # pragma: no cover
+            if facebook_login_db_fn is not None:
                 facebook_login_db_fn()
 
             if verification_token is not None:
@@ -233,19 +233,19 @@ def _user_put(request):
     return HttpResponse()
 
 
-def _google_login_save(google_login):  # pragma: no cover
+def _google_login_save(google_login):
     google_login.save()
 
 
-def _google_login_delete(user):  # pragma: no cover
+def _google_login_delete(user):
     models.GoogleLogin.objects.filter(user=user).delete()
 
 
-def _facebook_login_save(facebook_login):  # pragma: no cover
+def _facebook_login_save(facebook_login):
     facebook_login.save()
 
 
-def _facebook_login_delete(user):  # pragma: no cover
+def _facebook_login_delete(user):
     models.FacebookLogin.objects.filter(user=user).delete()
 
 
