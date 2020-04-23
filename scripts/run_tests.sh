@@ -1,7 +1,14 @@
 #!/usr/bin/env sh
 
+INITIAL_DIR=$(dirname $(readlink -f "$0"))
+
+if [ -f "$INITIAL_DIR/testenv.sh" ]; then
+	. "$INITIAL_DIR/testenv.sh"
+fi
+
+# environment variable
 if [ -z "$GOOGLE_CLIENT_ID" ]; then
-	GOOGLE_CLIENT_ID=''
+	GOOGLE_CLIENT_ID=
 fi
 
 export GOOGLE_CLIENT_ID
@@ -12,7 +19,6 @@ fi
 
 export TEST_RUNNER_TYPE
 
-INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
 cd "$INITIAL_DIR/../rss_temple/" || exit
 
