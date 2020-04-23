@@ -4,5 +4,6 @@ include =
     daemons/*
 omit =
     api/tests/*
+    api/migrations/*
     daemons/tests/*
     daemons/*/__main__.py
