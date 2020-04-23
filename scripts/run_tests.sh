@@ -2,11 +2,11 @@
 
 INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
-if [ -f "$INITIAL_DIR/testenv.sh" ]; then
-	. "$INITIAL_DIR/testenv.sh"
+if [ -f "$INITIAL_DIR/.env.test" ]; then
+	. "$INITIAL_DIR/.env.test"
 fi
 
-# environment variable
+
 if [ -z "$GOOGLE_CLIENT_ID" ]; then
 	GOOGLE_CLIENT_ID=
 fi

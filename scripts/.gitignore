@@ -1,1 +1,2 @@
-testenv.sh
+.env.dev
+.env.test
