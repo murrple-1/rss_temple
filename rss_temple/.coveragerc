@@ -2,8 +2,16 @@
 include =
     api/*
     daemons/*
+plugins =
+	coverage_conditional_plugin
 omit =
     api/tests/*
     api/migrations/*
     daemons/tests/*
     daemons/*/__main__.py
+
+[coverage_conditional_plugin]
+rules =
+	"'CI' in os_environ": ci cover
+	"'TEST_REMOTE' not in os_environ": remote cover
+	"'CI' not in os_environ": local cover

@@ -52,7 +52,7 @@ def get_first_entry():
         return feed_subscription_progress_entry
 
 
-def do_subscription(feed_subscription_progress_entry):
+def do_subscription(feed_subscription_progress_entry):  # pragma: local cover
     feeds = {}
     subscriptions = set()
     custom_titles = set()
@@ -134,7 +134,7 @@ def do_subscription(feed_subscription_progress_entry):
     feed_subscription_progress_entry.save()
 
 
-def _generate_feed(url):
+def _generate_feed(url):  # pragma: local cover
     response = rss_requests.get(url)
     response.raise_for_status()
 
