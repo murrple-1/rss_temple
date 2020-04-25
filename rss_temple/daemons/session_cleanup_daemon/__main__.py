@@ -20,7 +20,7 @@ import argparse
 
 import filelock
 
-from . import cleanup, logger
+from .impl import cleanup, logger
 
 
 parser = argparse.ArgumentParser()

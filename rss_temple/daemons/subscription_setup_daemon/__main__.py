@@ -18,7 +18,7 @@ django.setup()
 import time
 import argparse
 
-from . import get_first_entry, do_subscription, logger
+from .impl import get_first_entry, do_subscription, logger
 
 
 parser = argparse.ArgumentParser()

@@ -10,7 +10,7 @@ from django.test import TestCase
 from api import models
 from api.tests.http_server import http_server_target
 
-from daemons.subscription_setup_daemon import get_first_entry, do_subscription
+from daemons.subscription_setup_daemon.impl import get_first_entry, do_subscription
 
 
 class DaemonTestCase(TestCase):

@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from api import models
 
-from daemons.session_cleanup_daemon import cleanup
+from daemons.session_cleanup_daemon.impl import cleanup
 
 
 class DaemonTestCase(TestCase):

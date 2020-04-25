@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from api import models
 
-from daemons.feed_scrapper_daemon import scrape_feed
+from daemons.feed_scrapper_daemon.impl import scrape_feed
 
 
 class DaemonTestCase(TestCase):

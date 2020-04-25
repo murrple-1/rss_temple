@@ -26,7 +26,7 @@ import filelock
 
 import requests
 
-from . import logger, scrape_feed
+from .impl import logger, scrape_feed
 from api import models, rss_requests
 
 
