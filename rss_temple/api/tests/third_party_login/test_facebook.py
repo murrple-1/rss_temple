@@ -14,7 +14,7 @@ from api.third_party_login import facebook
 # On the user, click "Edit", then "Get an access token for this test user"
 # Copy the Access Token after it loads
 # Note that the access token expires pretty quickly, so you'll have to regenerate pretty frequently
-@unittest.skipIf(not {'TEST_REMOTE', 'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os.environ)), '`TEST_REMOTE`, and `TEST_FACEBOOK_TOKEN` env var(s) must be set: remote test')
+@unittest.skipIf(not {'TEST_REMOTE', 'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os.environ.keys())), '`TEST_REMOTE`, and `TEST_FACEBOOK_TOKEN` env var(s) must be set: remote test')
 class FacebookTestCase(TestCase):
     def test_get_id(self):
         profile_id = facebook.get_id(os.environ['TEST_FACEBOOK_TOKEN'])

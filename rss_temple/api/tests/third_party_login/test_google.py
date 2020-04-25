@@ -14,7 +14,7 @@ from api.third_party_login import google
 # In the Request, get the Client ID from the query param `id_token`
 # In the Response, get the Access Token from the JSON field `access_token`
 # Note that the access token expires pretty quickly, so you'll have to regenerate pretty frequently
-@unittest.skipIf(not {'TEST_REMOTE', 'TEST_GOOGLE_TOKEN', 'GOOGLE_CLIENT_ID'}.issubset(frozenset(os.environ)), '`TEST_REMOTE`, `TEST_GOOGLE_TOKEN`, and `GOOGLE_CLIENT_ID` env var(s) must be set: remote test')
+@unittest.skipIf(not {'TEST_REMOTE', 'TEST_GOOGLE_TOKEN', 'GOOGLE_CLIENT_ID'}.issubset(frozenset(os.environ.keys())), '`TEST_REMOTE`, `TEST_GOOGLE_TOKEN`, and `GOOGLE_CLIENT_ID` env var(s) must be set: remote test')
 class GoogleTestCase(TestCase):
     def test_get_id(self):
         g_user_id = google.get_id(os.environ['TEST_GOOGLE_TOKEN'])
