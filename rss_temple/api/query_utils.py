@@ -39,14 +39,14 @@ def serialize_content(obj):
 
 
 def get_count(
-        _json,
+        json_,
         default=_DEFAULT_COUNT,
         max_=_MAX_COUNT,
         param_name='count'):
-    if param_name not in _json:
+    if param_name not in json_:
         return default
 
-    count = _json[param_name]
+    count = json_[param_name]
 
     if type(count) is not int:
         raise QueryException(f'\'{param_name}\' must be int', 400)
@@ -61,11 +61,11 @@ def get_count(
     return count
 
 
-def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
-    if param_name not in _json:
+def get_skip(json_, default=_DEFAULT_SKIP, param_name='skip'):
+    if param_name not in json_:
         return default
 
-    skip = _json[param_name]
+    skip = json_[param_name]
 
     if type(skip) is not int:
         raise QueryException(f'\'{param_name}\' must be int', 400)
@@ -78,13 +78,13 @@ def get_skip(_json, default=_DEFAULT_SKIP, param_name='skip'):
 
 
 def get_return_objects(
-        _json,
+        json_,
         default=_DEFAULT_RETURN_OBJECTS,
         param_name='objects'):
-    if param_name not in _json:
+    if param_name not in json_:
         return default
 
-    return_objects = _json[param_name]
+    return_objects = json_[param_name]
 
     if type(return_objects) is not bool:
         raise QueryException(
@@ -94,13 +94,13 @@ def get_return_objects(
 
 
 def get_return_total_count(
-        _json,
+        json_,
         default=_DEFAULT_RETURN_TOTAL_COUNT,
         param_name='totalCount'):
-    if param_name not in _json:
+    if param_name not in json_:
         return default
 
-    return_total_count = _json[param_name]
+    return_total_count = json_[param_name]
 
     if type(return_total_count) is not bool:
         raise QueryException(
@@ -109,11 +109,11 @@ def get_return_total_count(
     return return_total_count
 
 
-def get_sort(_json, object_name, param_name='sort',
+def get_sort(json_, object_name, param_name='sort',
              disable_default_sort_param_name='disableDefaultSort'):
     sort = None
-    if param_name in _json:
-        sort = _json[param_name]
+    if param_name in json_:
+        sort = json_[param_name]
 
         if sort is not None:
             if type(sort) is not str:
@@ -121,12 +121,12 @@ def get_sort(_json, object_name, param_name='sort',
                     '\'{0}\' must be null or string', 400)  # pragma: no cover
 
     default_sort_enabled = True
-    if disable_default_sort_param_name in _json:
-        if type(_json[disable_default_sort_param_name]) is not bool:
+    if disable_default_sort_param_name in json_:
+        if type(json_[disable_default_sort_param_name]) is not bool:
             raise QueryException(
                 f'\'{disable_default_sort_param_name}\' must be boolean', 400)  # pragma: no cover
 
-        default_sort_enabled = not _json[disable_default_sort_param_name]
+        default_sort_enabled = not json_[disable_default_sort_param_name]
 
     sort_list = sortutils.to_sort_list(object_name, sort, default_sort_enabled)
     db_sort_list = sortutils.sort_list_to_db_sort_list(object_name, sort_list)
@@ -135,11 +135,11 @@ def get_sort(_json, object_name, param_name='sort',
     return sort
 
 
-def get_search(context, _json, object_name, param_name='search'):
-    if param_name not in _json:
+def get_search(context, json_, object_name, param_name='search'):
+    if param_name not in json_:
         return []
 
-    search = _json[param_name]
+    search = json_[param_name]
 
     if type(search) is not str:
         raise QueryException(
@@ -158,11 +158,11 @@ def get_fields__query_dict(query_dict, param_name='fields'):
     return fields.split(',')
 
 
-def get_fields__json(_json, param_name='fields'):
-    if param_name not in _json:
+def get_fields__json(json_, param_name='fields'):
+    if param_name not in json_:
         return []
 
-    fields = _json[param_name]
+    fields = json_[param_name]
 
     if type(fields) is not list:
         raise QueryException(

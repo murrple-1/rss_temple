@@ -44,9 +44,9 @@ class UserTestCase(TestCase):
             'user'))}, HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        _json = ujson.loads(response.content)
+        json_ = ujson.loads(response.content)
 
-        self.assertIn('subscribedFeedUuids', _json)
+        self.assertIn('subscribedFeedUuids', json_)
 
     def test_user_put_email(self):
         body = {

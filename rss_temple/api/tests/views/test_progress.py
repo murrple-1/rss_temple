@@ -59,11 +59,11 @@ class ProgressTestCase(TestCase):
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        _json = response.json()
+        json_ = response.json()
 
-        self.assertIs(type(_json), dict)
-        self.assertIn('state', _json)
-        self.assertEqual(_json['state'], 'notstarted')
+        self.assertIs(type(json_), dict)
+        self.assertIn('state', json_)
+        self.assertEqual(json_['state'], 'notstarted')
 
     def test_feed_subscription_progress_get_started(self):
         feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors = ProgressTestCase.generate_entry()
@@ -90,16 +90,16 @@ class ProgressTestCase(TestCase):
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        _json = response.json()
+        json_ = response.json()
 
-        self.assertIs(type(_json), dict)
-        self.assertIn('state', _json)
-        self.assertEqual(_json['state'], 'started')
-        self.assertIn('totalCount', _json)
-        self.assertEqual(_json['totalCount'], len(
+        self.assertIs(type(json_), dict)
+        self.assertIn('state', json_)
+        self.assertEqual(json_['state'], 'started')
+        self.assertIn('totalCount', json_)
+        self.assertEqual(json_['totalCount'], len(
             feed_subscription_progress_entry_descriptors))
-        self.assertIn('finishedCount', _json)
-        self.assertEqual(_json['finishedCount'], finished_count)
+        self.assertIn('finishedCount', json_)
+        self.assertEqual(json_['finishedCount'], finished_count)
 
     def test_feed_subscription_progress_get_finished(self):
         feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors = ProgressTestCase.generate_entry()
@@ -117,8 +117,8 @@ class ProgressTestCase(TestCase):
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        _json = response.json()
+        json_ = response.json()
 
-        self.assertIs(type(_json), dict)
-        self.assertIn('state', _json)
-        self.assertEqual(_json['state'], 'finished')
+        self.assertIs(type(json_), dict)
+        self.assertIn('state', json_)
+        self.assertEqual(json_['state'], 'finished')

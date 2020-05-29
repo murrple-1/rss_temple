@@ -77,12 +77,12 @@ class FeedTestCase(TestCase):
             'feed'))}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        _json = ujson.loads(response.content)
+        json_ = ujson.loads(response.content)
 
-        self.assertIs(type(_json), dict)
-        self.assertIn('objects', _json)
-        self.assertIs(type(_json['objects']), list)
-        self.assertGreaterEqual(len(_json['objects']), 1)
+        self.assertIs(type(json_), dict)
+        self.assertIn('objects', json_)
+        self.assertIs(type(json_['objects']), list)
+        self.assertGreaterEqual(len(json_['objects']), 1)
 
     def test_feed_subscribe_post(self):
         c = Client()
