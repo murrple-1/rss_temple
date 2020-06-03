@@ -1,8 +1,25 @@
-version: 2
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6.1
+      - image: cimg/base:2020.01
+    working_directory: ~/rss_temple/
+    steps:
+      - checkout
+      - run:
+          name: tarball
+          command: tar -czf ../build.tar.gz *
+          working_directory: ~/rss_temple/rss_temple/
+      - store_artifacts:
+          path: ~/rss_temple/build.tar.gz
+  test:
+    docker:
+      - image: circleci/python:3.6.10
         environment:
           PIPENV_VERBOSITY: -1
     working_directory: ~/rss_temple/
