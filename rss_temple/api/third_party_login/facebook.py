@@ -19,7 +19,7 @@ _load_global_settings()
 
 
 def get_id(token):
-    if _FACEBOOK_TEST_ID is None:  # pragma: ci cover; pragma: remote cover
+    if _FACEBOOK_TEST_ID is None:  # pragma: testing-facebook
         graph = facebook.GraphAPI(token)
 
         profile = None
@@ -34,7 +34,7 @@ def get_id(token):
 
 
 def get_id_and_email(token):
-    if _FACEBOOK_TEST_ID is None:  # pragma: ci cover; pragma: remote cover
+    if _FACEBOOK_TEST_ID is None:  # pragma: testing-facebook
         graph = facebook.GraphAPI(token)
 
         profile = None
