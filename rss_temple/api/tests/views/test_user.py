@@ -9,7 +9,6 @@ import ujson
 from api import models, fields
 from api.password_hasher import password_hasher
 
-# TODO fill out the `asserts` more in the `PUT` testcases
 class UserTestCase(TestCase):
     USER_EMAIL = 'test@test.com'
     NON_UNIQUE_EMAIL = 'nonunique@test.com'
@@ -58,6 +57,9 @@ class UserTestCase(TestCase):
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 0)
+        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.UNIQUE_EMAIL).count(), 1)
+
     def test_user_put_email_sameasbefore(self):
         body = {
             'email': UserTestCase.USER_EMAIL,
@@ -67,6 +69,8 @@ class UserTestCase(TestCase):
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 1)
 
     def test_user_put_email_typeerror(self):
         body = {
@@ -138,10 +142,16 @@ class UserTestCase(TestCase):
             },
         }
 
+        old_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+        new_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+
+        self.assertNotEqual(old_pw_hash, new_pw_hash)
 
     def test_user_put_my_password_typeerror(self):
         body = {
