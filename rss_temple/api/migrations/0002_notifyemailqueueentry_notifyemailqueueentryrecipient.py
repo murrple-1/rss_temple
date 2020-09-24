@@ -15,7 +15,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='NotifyEmailQueueEntry',
             fields=[
-                ('uuid', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
+                ('uuid', models.UUIDField(default=uuid.uuid4,
+                                          primary_key=True, serialize=False)),
                 ('subject', models.CharField(max_length=256)),
                 ('plain_text', models.TextField(null=True)),
                 ('html_text', models.TextField(null=True)),
@@ -24,10 +25,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='NotifyEmailQueueEntryRecipient',
             fields=[
-                ('uuid', models.UUIDField(default=uuid.uuid4, primary_key=True, serialize=False)),
-                ('type', models.IntegerField(choices=[(0, 'To'), (1, 'CC'), (2, 'BCC')])),
+                ('uuid', models.UUIDField(default=uuid.uuid4,
+                                          primary_key=True, serialize=False)),
+                ('type', models.IntegerField(
+                    choices=[(0, 'To'), (1, 'CC'), (2, 'BCC')])),
                 ('email', models.CharField(max_length=256)),
-                ('entry', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.notifyemailqueueentry')),
+                ('entry', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE, to='api.notifyemailqueueentry')),
             ],
         ),
     ]

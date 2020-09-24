@@ -24,7 +24,8 @@ _load_global_settings()
 
 def get_id(token):
     if _GOOGLE_TEST_ID is None:  # pragma: ci cover; pragma: remote cover
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), _GOOGLE_CLIENT_ID)
+        idinfo = id_token.verify_oauth2_token(
+            token, requests.Request(), _GOOGLE_CLIENT_ID)
         return idinfo['sub']
     else:
         return _GOOGLE_TEST_ID
@@ -32,7 +33,8 @@ def get_id(token):
 
 def get_id_and_email(token):
     if _GOOGLE_TEST_ID is None:  # pragma: ci cover; pragma: remote cover
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), _GOOGLE_CLIENT_ID)
+        idinfo = id_token.verify_oauth2_token(
+            token, requests.Request(), _GOOGLE_CLIENT_ID)
         return idinfo['sub'], idinfo.get('email', None)
     else:
         return _GOOGLE_TEST_ID, None

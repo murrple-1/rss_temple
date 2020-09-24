@@ -113,8 +113,10 @@ def _prepare_verify_notification(token_str, email):
     subject = 'Verify Email'
     plain_text = f'Token: {token_str}'
     html_text = f'<b>Token:</b>{token_str}'
-    email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
-    models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
+    email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+        subject=subject, plain_text=plain_text, html_text=html_text)
+    models.NotifyEmailQueueEntryRecipient.objects.create(
+        type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
 
 
 def _my_login_post(request):
@@ -164,7 +166,8 @@ def _my_login_post(request):
             user=user)
 
         if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_['email'])
+            _prepare_verify_notification(
+                verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 
@@ -236,7 +239,8 @@ def _google_login_post(request):
             user=user)
 
         if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_['email'])
+            _prepare_verify_notification(
+                verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 
@@ -308,7 +312,8 @@ def _facebook_login_post(request):
             user=user)
 
         if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_['email'])
+            _prepare_verify_notification(
+                verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 

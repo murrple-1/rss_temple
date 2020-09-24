@@ -9,6 +9,7 @@ import ujson
 from api import models, fields
 from api.password_hasher import password_hasher
 
+
 class UserTestCase(TestCase):
     USER_EMAIL = 'test@test.com'
     NON_UNIQUE_EMAIL = 'nonunique@test.com'
@@ -57,8 +58,10 @@ class UserTestCase(TestCase):
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 0)
-        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.UNIQUE_EMAIL).count(), 1)
+        self.assertEqual(models.User.objects.filter(
+            uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 0)
+        self.assertEqual(models.User.objects.filter(
+            uuid=UserTestCase.user.uuid, email=UserTestCase.UNIQUE_EMAIL).count(), 1)
 
     def test_user_put_email_sameasbefore(self):
         body = {
@@ -70,7 +73,8 @@ class UserTestCase(TestCase):
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.User.objects.filter(uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 1)
+        self.assertEqual(models.User.objects.filter(
+            uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 1)
 
     def test_user_put_email_typeerror(self):
         body = {
@@ -142,14 +146,16 @@ class UserTestCase(TestCase):
             },
         }
 
-        old_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+        old_pw_hash = models.MyLogin.objects.get(
+            user=UserTestCase.user).pw_hash
 
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        new_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+        new_pw_hash = models.MyLogin.objects.get(
+            user=UserTestCase.user).pw_hash
 
         self.assertNotEqual(old_pw_hash, new_pw_hash)
 
@@ -259,7 +265,8 @@ class UserTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_user_put_google_create(self):
-        self.assertEqual(models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
+        self.assertEqual(models.GoogleLogin.objects.filter(
+            user=UserTestCase.user).count(), 0)
 
         body = {
             'google': {
@@ -273,11 +280,14 @@ class UserTestCase(TestCase):
                              content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
             self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
+        self.assertEqual(models.GoogleLogin.objects.filter(
+            user=UserTestCase.user).count(), 1)
 
     def test_user_put_google_delete(self):
-        models.GoogleLogin.objects.create(user=UserTestCase.user, g_user_id='googleid')
-        self.assertEqual(models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
+        models.GoogleLogin.objects.create(
+            user=UserTestCase.user, g_user_id='googleid')
+        self.assertEqual(models.GoogleLogin.objects.filter(
+            user=UserTestCase.user).count(), 1)
 
         body = {
             'google': None,
@@ -288,7 +298,8 @@ class UserTestCase(TestCase):
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
+        self.assertEqual(models.GoogleLogin.objects.filter(
+            user=UserTestCase.user).count(), 0)
 
     def test_user_put_google_token_typeerror(self):
         body = {
@@ -323,7 +334,8 @@ class UserTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_user_put_facebook_create(self):
-        self.assertEqual(models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0)
+        self.assertEqual(models.FacebookLogin.objects.filter(
+            user=UserTestCase.user).count(), 0)
 
         body = {
             'facebook': {
@@ -337,11 +349,14 @@ class UserTestCase(TestCase):
                              content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
             self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1)
+        self.assertEqual(models.FacebookLogin.objects.filter(
+            user=UserTestCase.user).count(), 1)
 
     def test_user_put_facebook_delete(self):
-        models.FacebookLogin.objects.create(user=UserTestCase.user, profile_id='facebookid')
-        self.assertEqual(models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1)
+        models.FacebookLogin.objects.create(
+            user=UserTestCase.user, profile_id='facebookid')
+        self.assertEqual(models.FacebookLogin.objects.filter(
+            user=UserTestCase.user).count(), 1)
 
         body = {
             'facebook': None,
@@ -352,7 +367,8 @@ class UserTestCase(TestCase):
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0)
+        self.assertEqual(models.FacebookLogin.objects.filter(
+            user=UserTestCase.user).count(), 0)
 
     def test_user_put_facebook_token_typeerror(self):
         body = {

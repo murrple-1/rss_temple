@@ -100,7 +100,8 @@ class LoginTestCase(TestCase):
         models.GoogleLogin.objects.create(g_user_id='googleid1', user=user1)
 
         user2 = models.User.objects.create(email='test2@test.com')
-        models.MyLogin.objects.create(pw_hash=password_hasher().hash('password1'), user=user2)
+        models.MyLogin.objects.create(
+            pw_hash=password_hasher().hash('password1'), user=user2)
 
         c = Client()
 
@@ -207,10 +208,12 @@ class LoginTestCase(TestCase):
 
     def test_facebook_login_post_duplicate_login(self):
         user1 = models.User.objects.create(email='test1@test.com')
-        models.FacebookLogin.objects.create(profile_id='facebookid1', user=user1)
+        models.FacebookLogin.objects.create(
+            profile_id='facebookid1', user=user1)
 
         user2 = models.User.objects.create(email='test2@test.com')
-        models.MyLogin.objects.create(pw_hash=password_hasher().hash('password1'), user=user2)
+        models.MyLogin.objects.create(
+            pw_hash=password_hasher().hash('password1'), user=user2)
 
         c = Client()
 
@@ -412,11 +415,13 @@ class LoginTestCase(TestCase):
             self.assertIn('token', json_)
             self.assertIn('email', json_)
             self.assertIs(type(json_['token']), str)
-            self.assertTrue(json_['email'] is None or type(json_['email']) is str)
+            self.assertTrue(json_['email'] is None or type(
+                json_['email']) is str)
 
     def test_google_login_session_post_token_missing(self):
         c = Client()
-        response = c.post('/api/login/google/session', ujson.dumps({}), 'application/json')
+        response = c.post('/api/login/google/session',
+                          ujson.dumps({}), 'application/json')
 
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
@@ -461,11 +466,13 @@ class LoginTestCase(TestCase):
             self.assertIn('token', json_)
             self.assertIn('email', json_)
             self.assertIs(type(json_['token']), str)
-            self.assertTrue(json_['email'] is None or type(json_['email']) is str)
+            self.assertTrue(json_['email'] is None or type(
+                json_['email']) is str)
 
     def test_facebook_login_session_post_token_missing(self):
         c = Client()
-        response = c.post('/api/login/facebook/session', ujson.dumps({}), 'application/json')
+        response = c.post('/api/login/facebook/session',
+                          ujson.dumps({}), 'application/json')
 
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)

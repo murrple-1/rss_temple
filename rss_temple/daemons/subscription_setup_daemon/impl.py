@@ -13,6 +13,7 @@ from api.exceptions import QueryException
 
 _logger = None
 
+
 def logger():  # pragma: no cover
     global _logger
 

@@ -56,7 +56,7 @@ def _passwordresettoken_request_post(request):
         return HttpResponse()
 
     password_reset_token = models.PasswordResetToken(user=user, expires_at=(
-            datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
+        datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
 
     token_str = password_reset_token.token_str()
 
@@ -64,8 +64,10 @@ def _passwordresettoken_request_post(request):
     subject = 'Reset Password'
     plain_text = f'Token: {token_str}'
     html_text = f'<b>Token:</b>{token_str}'
-    email_queue_entry = models.NotifyEmailQueueEntry(subject=subject, plain_text=plain_text, html_text=html_text)
-    email_queue_entry_receipient = models.NotifyEmailQueueEntryRecipient(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
+    email_queue_entry = models.NotifyEmailQueueEntry(
+        subject=subject, plain_text=plain_text, html_text=html_text)
+    email_queue_entry_receipient = models.NotifyEmailQueueEntryRecipient(
+        type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
 
     with transaction.atomic():
         models.PasswordResetToken.objects.filter(user=user).delete()

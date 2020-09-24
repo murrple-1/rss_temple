@@ -173,7 +173,8 @@ def _user_put(request):
                     return HttpResponseBadRequest('\'token\' must be string')
 
                 try:
-                    google_login.g_user_id = google.get_id(google_json['token'])
+                    google_login.g_user_id = google.get_id(
+                        google_json['token'])
                 except ValueError:  # pragma: no cover
                     return HttpResponseBadRequest('bad Google token')
 
@@ -201,7 +202,8 @@ def _user_put(request):
                     return HttpResponseBadRequest('\'token\' must be string')
 
                 try:
-                    facebook_login.profile_id = facebook.get_id(facebook_json['token'])
+                    facebook_login.profile_id = facebook.get_id(
+                        facebook_json['token'])
                 except ValueError:  # pragma: no cover
                     return HttpResponseBadRequest('bad Facebook token')
 
@@ -232,8 +234,10 @@ def _user_put(request):
                 subject = 'Verify Email'
                 plain_text = f'Token: {token_str}'
                 html_text = f'<b>Token:</b>{token_str}'
-                email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
-                models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=json_['email'], entry=email_queue_entry)
+                email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+                    subject=subject, plain_text=plain_text, html_text=html_text)
+                models.NotifyEmailQueueEntryRecipient.objects.create(
+                    type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=json_['email'], entry=email_queue_entry)
 
     return HttpResponse()
 
