@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+export SMTP_HOST='localhost'
+export SMTP_PORT='25'
+export SMTP_USER='<SMTP_USER>'
+export SMTP_PASS='<SMTP_PASS>'
+export SMTP_TIMEOUT='10'
+# export SMTP_IS_TLS='true'
+export SMTP_SENDER='Test User <user@domain.com>'
+# export SLEEP_SECONDS='15'
+# export COUNT_WARNING_THRESHOLD='10'
+
+cd /path/to/rss_temple/git/repo/rss_temple/ || exit # directory should contain Pipfile
+pipenv run python -m daemons.notify_daemon
