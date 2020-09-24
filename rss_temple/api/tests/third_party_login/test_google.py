@@ -2,7 +2,6 @@ import unittest
 import os
 
 from django.test import TestCase
-from django.http import HttpRequest
 
 from api.third_party_login import google
 
