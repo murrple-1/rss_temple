@@ -108,6 +108,15 @@ def session(request):
         return _session_delete(request)
 
 
+def _prepare_verify_notification(token_str, email):
+    # TODO render the email texts
+    subject = 'Verify Email'
+    plain_text = f'Token: {token_str}'
+    html_text = f'<b>Token:</b>{token_str}'
+    email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
+    models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
+
+
 def _my_login_post(request):
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
@@ -139,10 +148,9 @@ def _my_login_post(request):
     if models.MyLogin.objects.filter(user__email=json_['email']).exists():
         return HttpResponse('login already exists', status=409)
 
-    verification_token = None
-
     with transaction.atomic():
         user = None
+        verification_token = None
         try:
             user = models.User.objects.get(email=json_['email'])
         except models.User.DoesNotExist:
@@ -155,9 +163,8 @@ def _my_login_post(request):
             pw_hash=password_hasher().hash(json_['password']),
             user=user)
 
-    if verification_token is not None:
-        # TODO new email verification
-        pass
+        if verification_token is not None:
+            _prepare_verify_notification(verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 
@@ -228,9 +235,8 @@ def _google_login_post(request):
             g_user_id=g_user_id,
             user=user)
 
-    if verification_token is not None:
-        # TODO new email verification
-        pass
+        if verification_token is not None:
+            _prepare_verify_notification(verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 
@@ -301,9 +307,8 @@ def _facebook_login_post(request):
             profile_id=fb_id,
             user=user)
 
-    if verification_token is not None:
-        # TODO new email verification
-        pass
+        if verification_token is not None:
+            _prepare_verify_notification(verification_token.token_str(), json_['email'])
 
     return HttpResponse()
 

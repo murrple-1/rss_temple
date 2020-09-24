@@ -226,9 +226,14 @@ def _user_put(request):
                 models.VerificationToken.objects.filter(user=user).delete()
                 verification_token.save()
 
-    if verification_token is not None:
-        # TODO new email verification
-        pass
+                token_str = verification_token.token_str()
+
+                # TODO render the email texts
+                subject = 'Verify Email'
+                plain_text = f'Token: {token_str}'
+                html_text = f'<b>Token:</b>{token_str}'
+                email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
+                models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=json_['email'], entry=email_queue_entry)
 
     return HttpResponse()
 

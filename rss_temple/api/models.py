@@ -394,3 +394,27 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
     custom_feed_title = models.TextField(null=True)
     user_category_text = models.TextField(null=True)
     is_finished = models.BooleanField(default=False)
+
+
+class NotifyEmailQueueEntry(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    subject = models.CharField(max_length=256)
+    plain_text = models.TextField(null=True)
+    html_text = models.TextField(null=True)
+
+
+class NotifyEmailQueueEntryRecipient(models.Model):
+    TYPE_TO = 0
+    TYPE_CC = 1
+    TYPE_BCC = 2
+
+    TYPE_CHOICES = (
+        (TYPE_TO, 'To'),
+        (TYPE_CC, 'CC'),
+        (TYPE_BCC, 'BCC'),
+    )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    type = models.IntegerField(choices=TYPE_CHOICES)
+    email = models.CharField(max_length=256)
+    entry = models.ForeignKey(NotifyEmailQueueEntry, on_delete=models.CASCADE)

@@ -55,12 +55,24 @@ def _passwordresettoken_request_post(request):
     except models.User.DoesNotExist:
         return HttpResponse()
 
-    with transaction.atomic():
-        models.PasswordResetToken.objects.filter(user=user).delete()
-        models.PasswordResetToken.objects.create(user=user, expires_at=(
+    password_reset_token = models.PasswordResetToken(user=user, expires_at=(
             datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
 
-    # TODO send out emails
+    token_str = password_reset_token.token_str()
+
+    # TODO render the email texts
+    subject = 'Reset Password'
+    plain_text = f'Token: {token_str}'
+    html_text = f'<b>Token:</b>{token_str}'
+    email_queue_entry = models.NotifyEmailQueueEntry(subject=subject, plain_text=plain_text, html_text=html_text)
+    email_queue_entry_receipient = models.NotifyEmailQueueEntryRecipient(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
+
+    with transaction.atomic():
+        models.PasswordResetToken.objects.filter(user=user).delete()
+        password_reset_token.save()
+
+        email_queue_entry.save()
+        email_queue_entry_receipient.save()
 
     return HttpResponse()
 
