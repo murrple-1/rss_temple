@@ -66,6 +66,15 @@ USE_L10N = False
 
 USE_TZ = False
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            'api/render',
+        ],
+    },
+]
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

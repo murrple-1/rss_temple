@@ -8,6 +8,7 @@ from django.db import transaction
 
 from api import models
 from api.password_hasher import password_hasher
+from api.render import passwordreset as passwordresetrender
 
 
 _PASSWORDRESETTOKEN_EXPIRY_INTERVAL = None
@@ -58,23 +59,18 @@ def _passwordresettoken_request_post(request):
     password_reset_token = models.PasswordResetToken(user=user, expires_at=(
         datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
 
-    token_str = password_reset_token.token_str()
-
-    # TODO render the email texts
-    subject = 'Reset Password'
-    plain_text = f'Token: {token_str}'
-    html_text = f'<b>Token:</b>{token_str}'
-    email_queue_entry = models.NotifyEmailQueueEntry(
-        subject=subject, plain_text=plain_text, html_text=html_text)
-    email_queue_entry_receipient = models.NotifyEmailQueueEntryRecipient(
-        type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
-
     with transaction.atomic():
         models.PasswordResetToken.objects.filter(user=user).delete()
         password_reset_token.save()
 
-        email_queue_entry.save()
-        email_queue_entry_receipient.save()
+        token_str = password_reset_token.token_str()
+
+        subject = passwordresetrender.subject()
+        plain_text = passwordresetrender.plain_text(token_str)
+        html_text = passwordresetrender.html_text(token_str)
+
+        email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
+        models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
 
     return HttpResponse()
 

@@ -17,6 +17,7 @@ from validate_email import validate_email
 from api import models, query_utils
 from api.password_hasher import password_hasher
 from api.third_party_login import google, facebook
+from api.render import verify as verifyrender
 
 
 _logger = logging.getLogger('rss_temple')
@@ -109,10 +110,10 @@ def session(request):
 
 
 def _prepare_verify_notification(token_str, email):
-    # TODO render the email texts
-    subject = 'Verify Email'
-    plain_text = f'Token: {token_str}'
-    html_text = f'<b>Token:</b>{token_str}'
+    subject = verifyrender.subject()
+    plain_text = verifyrender.plain_text(token_str)
+    html_text = verifyrender.html_text(token_str)
+
     email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
         subject=subject, plain_text=plain_text, html_text=html_text)
     models.NotifyEmailQueueEntryRecipient.objects.create(
