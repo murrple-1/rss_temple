@@ -1,3 +1,4 @@
+version: 2.1
 workflows:
   version: 2
   build_and_test:
@@ -46,7 +47,7 @@ jobs:
             - "/usr/local/lib/python3.6/site-packages"
       - run:
           name: tests
-          command: pipenv run coverage run manage.py test api.tests daemons.tests
+          command: pipenv run coverage run manage.py test -v 2 api.tests daemons.tests 2>&1
           working_directory: ~/rss_temple/rss_temple/
           environment:
             TEST_RUNNER_TYPE: xml
