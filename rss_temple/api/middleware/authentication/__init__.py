@@ -8,32 +8,39 @@ from django.core.signals import setting_changed
 from api import authenticate
 
 
+class _DisableEntry:
+    def __init__(self, path_info_regex_str, method_list):
+        self.path_info_regex = re.compile(path_info_regex_str)
+        self.method_list = method_list
+
+    def matches(self, request):
+        return bool(self.path_info_regex.search(request.path_info) and (
+            len(self.method_list) < 1 or request.method in self.method_list))
+
+
 _REALM = None
-_AUTHENTICATION_DISABLE = None
+
+_disable_entries = None
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
     global _REALM
-    global _AUTHENTICATION_DISABLE
+    global _disable_entries
 
     _REALM = settings.REALM
-    _AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE
+
+    AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE
+    if AUTHENTICATION_DISABLE is not None:
+        _disable_entries = [_DisableEntry(*disable_tuple) for disable_tuple in AUTHENTICATION_DISABLE]
+    else:
+        _disable_entries = []
 
 
 _load_global_settings()
 
 
 class AuthenticationMiddleware:
-    class DisableEntry:
-        def __init__(self, path_info_regex_str, method_list):
-            self.path_info_regex = re.compile(path_info_regex_str)
-            self.method_list = method_list
-
-        def matches(self, request):
-            return bool(self.path_info_regex.search(request.path_info) and (
-                len(self.method_list) < 1 or request.method in self.method_list))
-
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -52,18 +59,7 @@ class AuthenticationMiddleware:
             return response
 
     def _should_authenticate(self, request):
-        disable_entries = getattr(self, '_disable_entries', None)
-        if disable_entries is None:
-            disable_entries = []
-            if _AUTHENTICATION_DISABLE is not None:
-                for disable_tuple in _AUTHENTICATION_DISABLE:
-                    disable_entries.append(
-                        AuthenticationMiddleware.DisableEntry(
-                            *disable_tuple))
-
-            self._disable_entries = disable_entries
-
-        for disable_entry in disable_entries:
+        for disable_entry in _disable_entries:
             if disable_entry.matches(request):
                 return False
 
