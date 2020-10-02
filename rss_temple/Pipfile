@@ -21,6 +21,7 @@ xmlschema = "*"
 url-normalize = "*"
 validate-email = "*"
 enum34 = {version = "*",python_version = "<'3.4'"}
+django-ipware = "*"
 
 [dev-packages]
 coverage = "*"

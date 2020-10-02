@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'api.middleware.throttle.ThrottleMiddleware',
     'api.middleware.bodyhandler.BodyHandlerMiddleware',
     'api.middleware.profiling.ProfileMiddleware',
     'api.middleware.cors.CORSMiddleware',
@@ -99,6 +100,18 @@ LOGGING = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-cache',
+    },
+    'throttle': {
+        # TODO this should be memcache or Redis
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    },
+}
+
+
 _test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'standard').lower()
 if _test_runner_type == 'standard':
     pass
@@ -112,6 +125,22 @@ elif _test_runner_type == 'timed':
         os.environ.get('TEST_SLOW_TEST_THRESHOLD', '0.5'))
 else:
     raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
+
+THROTTLE_ENABLE = [
+    ('authentications', [
+        (r'^/api/login/my/?$', ['POST']),
+        (r'^/api/login/google/?$', ['POST']),
+        (r'^/api/login/facebook/?$', ['POST']),
+        (r'^/api/login/my/session/?$', ['POST']),
+        (r'^/api/login/google/session/?$', ['POST']),
+        (r'^/api/login/facebook/session/?$', ['POST']),
+        (r'^/api/session/?$', ['DELETE']),
+        (r'^/api/passwordresettoken/request/?$', ['POST']),
+        (r'^/api/passwordresettoken/reset/?$', ['POST']),
+        (r'^/api/passwordresettoken/reset/?$', ['POST']),
+        (r'^/api/user/verify/?$', ['POST']),
+    ], 30, 60),
+]
 
 CORS_ALLOW_ORIGINS = '*'
 CORS_ALLOW_METHODS = 'GET,POST,PUT,DELETE,OPTIONS,HEAD'
