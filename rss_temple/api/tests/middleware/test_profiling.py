@@ -16,13 +16,13 @@ class ProfilingTestCase(TestCase):
             request = HttpRequest()
 
             response = middleware(request)
-            assert response  # PyFlakes
+            self.assertIsNotNone(response)
 
             request = HttpRequest()
             request.GET['_profile'] = 'true'
 
             response = middleware(request)
-            assert response  # PyFlakes
+            self.assertIsNotNone(response)
 
         with self.settings(PROFILING_OUTPUT_FILE=None, DEBUG=False):
             middleware = profiling.ProfileMiddleware(
@@ -31,6 +31,6 @@ class ProfilingTestCase(TestCase):
             request = HttpRequest()
 
             response = middleware(request)
-            assert response  # PyFlakes
+            self.assertIsNotNone(response)
 
         shutil.rmtree('api/tests/test_files/profiling/')
