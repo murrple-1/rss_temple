@@ -32,7 +32,8 @@ def _load_global_settings(*args, **kwargs):
 
     AUTHENTICATION_DISABLE = settings.AUTHENTICATION_DISABLE
     if AUTHENTICATION_DISABLE is not None:
-        _disable_entries = [_DisableEntry(*disable_tuple) for disable_tuple in AUTHENTICATION_DISABLE]
+        _disable_entries = [_DisableEntry(*disable_tuple)
+                            for disable_tuple in AUTHENTICATION_DISABLE]
     else:
         _disable_entries = []
 

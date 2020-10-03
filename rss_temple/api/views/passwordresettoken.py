@@ -69,8 +69,10 @@ def _passwordresettoken_request_post(request):
         plain_text = passwordresetrender.plain_text(token_str)
         html_text = passwordresetrender.html_text(token_str)
 
-        email_queue_entry = models.NotifyEmailQueueEntry.objects.create(subject=subject, plain_text=plain_text, html_text=html_text)
-        models.NotifyEmailQueueEntryRecipient.objects.create(type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
+        email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+            subject=subject, plain_text=plain_text, html_text=html_text)
+        models.NotifyEmailQueueEntryRecipient.objects.create(
+            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
 
     return HttpResponse()
 

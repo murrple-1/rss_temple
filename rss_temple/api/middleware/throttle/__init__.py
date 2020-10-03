@@ -13,7 +13,8 @@ from ipware import get_client_ip
 class _EnableEntry:
     def __init__(self, id_, request_matchers, max_requests, interval):
         self.id = id_
-        self.request_matchers = [(re.compile(request_matcher[0]), request_matcher[1]) for request_matcher in request_matchers]
+        self.request_matchers = [(re.compile(
+            request_matcher[0]), request_matcher[1]) for request_matcher in request_matchers]
         self.max_requests = max_requests
         if type(interval) in (int, float):
             self.interval_seconds = interval
@@ -38,7 +39,8 @@ def _load_global_settings(*args, **kwargs):
 
     THROTTLE_ENABLE = settings.THROTTLE_ENABLE
     if THROTTLE_ENABLE is not None:
-        _enable_entries = [_EnableEntry(*enable_tuple) for enable_tuple in THROTTLE_ENABLE]
+        _enable_entries = [_EnableEntry(*enable_tuple)
+                           for enable_tuple in THROTTLE_ENABLE]
     else:
         _enable_entries = []
 
@@ -55,14 +57,16 @@ class ThrottleMiddleware:
         if client_ip is None:
             return HttpResponseBadRequest('client IP missing')
 
-        entry_id, max_requests, interval_seconds = self._throttle_params(request)
+        entry_id, max_requests, interval_seconds = self._throttle_params(
+            request)
         if entry_id is not None:
             cache = caches['throttle']
             cache_key = f'request_count:{entry_id}:{client_ip}'
 
             request_count = None
             if not _is_dummy_cache(cache):
-                request_count = cache.get_or_set(cache_key, 0, interval_seconds)
+                request_count = cache.get_or_set(
+                    cache_key, 0, interval_seconds)
                 cache.incr(cache_key)
                 request_count += 1
             else:

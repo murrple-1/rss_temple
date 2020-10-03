@@ -21,7 +21,7 @@ class ThrottleTestCase(TestCase):
 
         request = MockHttpRequest()
 
-        with self.settings(THROTTLE_ENABLE=[('test',[], 30, 60)]):
+        with self.settings(THROTTLE_ENABLE=[('test', [], 30, 60)]):
             response = middleware(request)
             self.assertIsNotNone(response)
 
@@ -44,7 +44,8 @@ class ThrottleTestCase(TestCase):
             self.assertIsNotNone(response)
 
     def test_interval_types(self):
-        middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
+        middleware = throttle.ThrottleMiddleware(
+            lambda request: HttpResponse())
 
         class MockHttpRequest:
             def __init__(self):
@@ -56,11 +57,11 @@ class ThrottleTestCase(TestCase):
 
         request = MockHttpRequest()
 
-        with self.settings(THROTTLE_ENABLE=[('test',[], 30, 60)]):
+        with self.settings(THROTTLE_ENABLE=[('test', [], 30, 60)]):
             response = middleware(request)
             self.assertIsNotNone(response)
 
-        with self.settings(THROTTLE_ENABLE=[('test',[], 30, datetime.timedelta(seconds=60))]):
+        with self.settings(THROTTLE_ENABLE=[('test', [], 30, datetime.timedelta(seconds=60))]):
             response = middleware(request)
             self.assertIsNotNone(response)
 
@@ -76,7 +77,7 @@ class ThrottleTestCase(TestCase):
 
         request = MockHttpRequest()
 
-        with self.settings(THROTTLE_ENABLE=[('test',[], 30, 60)]):
+        with self.settings(THROTTLE_ENABLE=[('test', [], 30, 60)]):
             response = middleware(request)
             self.assertEqual(response.status_code, 400)
 
@@ -94,7 +95,7 @@ class ThrottleTestCase(TestCase):
 
         request = MockHttpRequest()
 
-        with self.settings(THROTTLE_ENABLE=[('test',[(r'^/$', 'GET')], 1, 60)], CACHES={
+        with self.settings(THROTTLE_ENABLE=[('test', [(r'^/$', 'GET')], 1, 60)], CACHES={
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
                 'LOCATION': 'default-cache',
