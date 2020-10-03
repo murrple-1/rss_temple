@@ -13,7 +13,6 @@ django.setup()
 
 # Regular scheduled programming
 
-import tempfile
 import os
 import time
 

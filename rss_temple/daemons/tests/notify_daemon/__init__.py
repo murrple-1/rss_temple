@@ -1,4 +1,3 @@
-import datetime
 import logging
 import smtplib
 import re
