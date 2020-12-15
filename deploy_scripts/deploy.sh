@@ -13,9 +13,11 @@ if [ -z "$CIRCLE_TOKEN" ]; then
 fi
 
 if [ "$BUILD_NUMBER" = "latest" ]; then
-    ARTIFACTS_RESPONSE=$(curl -H "Circle-Token: $CIRCLE_TOKEN" https://circleci.com/api/v1.1/project/github/murrple-1/rss_temple/latest/artifacts)
+    ARTIFACTS_RESPONSE=$(curl -s -H "Circle-Token: $CIRCLE_TOKEN" https://circleci.com/api/v1.1/project/github/murrple-1/rss_temple/latest/artifacts)
 else
-    ARTIFACTS_RESPONSE=$(curl -H "Circle-Token: $CIRCLE_TOKEN" "https://circleci.com/api/v1.1/project/github/murrple-1/rss_temple/$BUILD_NUMBER/artifacts")
+    ARTIFACTS_RESPONSE=$(curl -s -H "Circle-Token: $CIRCLE_TOKEN" "https://circleci.com/api/v1.1/project/github/murrple-1/rss_temple/$BUILD_NUMBER/artifacts")
 fi
 
-echo $ARTIFACTS_RESPONSE | grep -o 'https://[^"]*' | wget --verbose --header "Circle-Token: $CIRCLE_TOKEN" --input-file -
+echo $ARTIFACTS_RESPONSE | grep -P -o 'https://.*?build\.tar\.gz' | wget -q -O "build.tar.gz" --header "Circle-Token: $CIRCLE_TOKEN" --input-file -
+
+# tar -xzf build.tar.gz -C /var/www/rss_temple
