@@ -13,6 +13,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: remove unneeded files
+          command: |
+            rm -r api/tests/
+          working_directory: ~/rss_temple/rss_temple/
+      - run:
           name: tarball
           command: tar -czf ../build.tar.gz *
           working_directory: ~/rss_temple/rss_temple/

@@ -1,9 +1,12 @@
 import uuid
 import hashlib
+import io
 
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Now
+
+import ujson
 
 
 class User(models.Model):
@@ -274,6 +277,7 @@ class FeedEntry(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['id']),
+            models.Index(fields=['hash']),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -286,7 +290,7 @@ class FeedEntry(models.Model):
     url = models.TextField(null=True)
     content = models.TextField(null=True)
     author_name = models.TextField(null=True)
-    hash = models.BinaryField(max_length=64, db_index=True)
+    hash = models.BinaryField(max_length=64)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 
@@ -296,30 +300,28 @@ class FeedEntry(models.Model):
 
         super().save(*args, **kwargs)
 
+    def _entry_hash_str(self):
+        obj = {
+            'id': self.id,
+            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
+            # published_at not included, since it can be set by the DB
+            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None,
+            'title': self.title,
+            'url': self.url,
+            'content': self.content,
+            'author_name': self.author_name,
+        }
+
+        f = io.StringIO()
+        ujson.dump(obj, f)
+        s = f.getvalue()
+        f.close()
+
+        return s
+
     def entry_hash(self):
         m = hashlib.sha256()
-
-        if self.id is not None:
-            m.update(self.id.encode('utf-8'))
-
-        if self.created_at is not None:
-            m.update(self.created_at.isoformat().encode('utf-8'))
-
-        if self.updated_at is not None:
-            m.update(self.updated_at.isoformat().encode('utf-8'))
-
-        if self.title is not None:
-            m.update(self.title.encode('utf-8'))
-
-        if self.url is not None:
-            m.update(self.url.encode('utf-8'))
-
-        if self.content is not None:
-            m.update(self.content.encode('utf-8'))
-
-        if self.author_name is not None:
-            m.update(self.author_name.encode('utf-8'))
-
+        m.update(self._entry_hash_str().encode('utf-8'))
         return m.digest()
 
     def from_subscription(self, user):
