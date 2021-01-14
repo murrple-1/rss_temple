@@ -285,7 +285,7 @@ class FeedEntry(models.Model):
     url = models.TextField(null=True)
     content = models.TextField(null=True)
     author_name = models.TextField(null=True)
-    hash = models.IntegerField()
+    hash = models.BigIntegerField()
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 

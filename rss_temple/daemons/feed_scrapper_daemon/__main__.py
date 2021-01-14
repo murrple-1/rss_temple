@@ -48,16 +48,24 @@ else:
     try:
         with lock.acquire(timeout=1):
             while True:
+                count = 0
                 with transaction.atomic():
                     for feed in models.Feed.objects.select_for_update(skip_locked=True).order_by(F('db_updated_at').desc(nulls_first=True))[:args.count]:
+                        count += 1
+
                         response = None
                         try:
                             response = rss_requests.get(feed.feed_url)
                             response.raise_for_status()
                         except requests.exceptions.RequestException:
+                            logger().warning('failed to scrap feed \'%s\'', feed.feed_url)
                             continue
 
                         scrape_feed(feed, response.text)
+
+                        logger().debug('scrapped \'%s\'', feed.feed_url)
+
+                logger().info('scrapped %d feeds this round', count)
 
                 time.sleep(30)
     except filelock.Timeout:
