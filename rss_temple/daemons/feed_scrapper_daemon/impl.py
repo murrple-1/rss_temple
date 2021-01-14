@@ -13,6 +13,7 @@ def logger():  # pragma: no cover
 
     if _logger is None:
         _logger = logging.getLogger('feed_scapper_daemon')
+        _logger.setLevel(logging.DEBUG)
 
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(logging.DEBUG)
