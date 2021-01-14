@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 
 from django.db import models
 from django.utils import timezone
@@ -285,27 +286,41 @@ class FeedEntry(models.Model):
     url = models.TextField(null=True)
     content = models.TextField(null=True)
     author_name = models.TextField(null=True)
-    hash = models.BigIntegerField()
+    hash = models.BinaryField(max_length=64, db_index=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 
-    def __eq__(self, other):
-        if type(other) is FeedEntry:
-            return (
-                self.id == other.id
-                and self.created_at == other.created_at
-                and self.published_at == other.published_at
-                and self.updated_at == other.updated_at
-                and self.title == other.title
-                and self.url == other.url
-                and self.content == other.content
-                and self.author_name == other.author_name
-            )
-        else:
-            return False
+    def save(self, *args, **kwargs):
+        if self.hash is None:
+            self.hash = self.entry_hash()
 
-    def __hash__(self):
-        return hash((self.id, self.created_at, self.published_at, self.updated_at, self.title, self.url, self.content, self.author_name))
+        super().save(*args, **kwargs)
+
+    def entry_hash(self):
+        m = hashlib.sha256()
+
+        if self.id is not None:
+            m.update(self.id.encode('utf-8'))
+
+        if self.created_at is not None:
+            m.update(self.created_at.isoformat().encode('utf-8'))
+
+        if self.updated_at is not None:
+            m.update(self.updated_at.isoformat().encode('utf-8'))
+
+        if self.title is not None:
+            m.update(self.title.encode('utf-8'))
+
+        if self.url is not None:
+            m.update(self.url.encode('utf-8'))
+
+        if self.content is not None:
+            m.update(self.content.encode('utf-8'))
+
+        if self.author_name is not None:
+            m.update(self.author_name.encode('utf-8'))
+
+        return m.digest()
 
     def from_subscription(self, user):
         from_subscription = getattr(self, '_from_subscription', None)

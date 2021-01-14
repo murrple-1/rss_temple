@@ -151,7 +151,6 @@ class AllFieldsTestCase(TestCase):
             url='http://example.com/entry1.html',
             content='<b>Some HTML Content</b>',
             author_name='John Doe')
-        cls.feed_entry.hash = hash(cls.feed_entry)
         cls.feed_entry.save()
 
         models.SubscribedFeedUserMapping.objects.create(

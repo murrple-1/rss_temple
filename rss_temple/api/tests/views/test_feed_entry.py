@@ -47,7 +47,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         c = Client()
@@ -74,7 +73,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         c = Client()
@@ -94,7 +92,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         c = Client()
@@ -124,7 +121,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.ReadFeedEntryUserMapping.objects.create(
@@ -151,7 +147,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.ReadFeedEntryUserMapping.objects.create(
@@ -177,7 +172,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 1',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry1.hash = hash(feed_entry1)
         feed_entry1.save()
 
         feed_entry2 = models.FeedEntry(
@@ -190,7 +184,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 2',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry2.hash = hash(feed_entry2)
         feed_entry2.save()
 
         c = Client()
@@ -250,7 +243,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.ReadFeedEntryUserMapping.objects.create(
@@ -277,7 +269,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 1',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry1.hash = hash(feed_entry1)
         feed_entry1.save()
 
         feed_entry2 = models.FeedEntry(
@@ -290,7 +281,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 2',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry2.hash = hash(feed_entry2)
         feed_entry2.save()
 
         models.ReadFeedEntryUserMapping.objects.create(
@@ -345,7 +335,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         c = Client()
@@ -375,7 +364,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.FavoriteFeedEntryUserMapping.objects.create(
@@ -398,7 +386,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.FavoriteFeedEntryUserMapping.objects.create(
@@ -424,7 +411,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 1',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry1.hash = hash(feed_entry1)
         feed_entry1.save()
 
         feed_entry2 = models.FeedEntry(
@@ -437,7 +423,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 2',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry2.hash = hash(feed_entry2)
         feed_entry2.save()
 
         c = Client()
@@ -497,7 +482,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry.hash = hash(feed_entry)
         feed_entry.save()
 
         models.FavoriteFeedEntryUserMapping.objects.create(
@@ -524,7 +508,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 1',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry1.hash = hash(feed_entry1)
         feed_entry1.save()
 
         feed_entry2 = models.FeedEntry(
@@ -537,7 +520,6 @@ class FeedEntryTestCase(TestCase):
             content='Some Entry content 2',
             author_name='John Doe',
             db_updated_at=None)
-        feed_entry2.hash = hash(feed_entry2)
         feed_entry2.save()
 
         models.FavoriteFeedEntryUserMapping.objects.create(
