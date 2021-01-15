@@ -28,7 +28,7 @@ def text_2_d(text):
     logger().info('feed info: %s', pprint.pformat(d))
 
     if 'bozo' in d and d.bozo == 1:
-        raise QueryException('feed malformed', 401)
+        raise QueryException('feed malformed', 422)
 
     return d
 
