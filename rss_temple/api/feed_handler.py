@@ -61,14 +61,21 @@ def d_entry_2_feed_entry(d_entry):
     if 'created_parsed' in d_entry:
         time_tuple = d_entry.created_parsed
 
-        feed_entry.created_at = _time_tuple_to_datetime(time_tuple)
+        if time_tuple is not None:
+            feed_entry.created_at = _time_tuple_to_datetime(time_tuple)
+        else:
+            feed_entry.created_at = None
     else:
         feed_entry.created_at = None
 
     if 'published_parsed' in d_entry:
         time_tuple = d_entry.published_parsed
 
-        feed_entry.published_at = _time_tuple_to_datetime(time_tuple)
+        if time_tuple is not None:
+            feed_entry.published_at = _time_tuple_to_datetime(time_tuple)
+        else:
+            # field auto-filled by DB
+            pass
     else:
         # field auto-filled by DB
         pass
@@ -76,7 +83,10 @@ def d_entry_2_feed_entry(d_entry):
     if 'updated_parsed' in d_entry:
         time_tuple = d_entry.updated_parsed
 
-        feed_entry.updated_at = _time_tuple_to_datetime(time_tuple)
+        if time_tuple is not None:
+            feed_entry.updated_at = _time_tuple_to_datetime(time_tuple)
+        else:
+            feed_entry.updated_at = None
     else:
         feed_entry.updated_at = None
 
