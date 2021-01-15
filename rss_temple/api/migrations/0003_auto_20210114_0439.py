@@ -10,9 +10,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RemoveField(
             model_name='feedentry',
             name='hash',
-            field=models.BigIntegerField(),
+        ),
+        migrations.AddField(
+            model_name='feedentry',
+            name='hash',
+            field=models.BinaryField(max_length=64),
+        ),
+        migrations.AddIndex(
+            model_name='feedentry',
+            index=models.Index(fields=['hash'], name='api_feedent_hash_5fbffa_idx'),
         ),
     ]
