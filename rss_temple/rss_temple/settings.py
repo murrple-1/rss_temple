@@ -106,7 +106,7 @@ CACHES = {
         'LOCATION': 'default-cache',
     },
     'throttle': {
-        # TODO this should be memcache or Redis
+        # this should be memcache or Redis in production
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     },
 }
