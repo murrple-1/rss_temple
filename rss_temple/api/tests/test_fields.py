@@ -115,6 +115,8 @@ class AllFieldsTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
         cls.TRIALS = {
@@ -161,6 +163,12 @@ class AllFieldsTestCase(TestCase):
 
         models.FeedUserCategoryMapping.objects.create(
             feed=cls.feed_with_category, user_category=cls.user_category)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_logger_level)
 
     def test_run(self):
         self.assertEqual(len(AllFieldsTestCase.TRIALS),

@@ -15,6 +15,9 @@ class FeedEntryTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
@@ -35,6 +38,13 @@ class FeedEntryTestCase(TestCase):
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_feedentry_get(self):
         feed_entry = models.FeedEntry(

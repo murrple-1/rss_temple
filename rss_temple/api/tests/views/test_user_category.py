@@ -14,6 +14,9 @@ class UserCategoryTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
@@ -24,6 +27,13 @@ class UserCategoryTestCase(TestCase):
 
         cls.session_token = cls.session.uuid
         cls.session_token_str = str(cls.session.uuid)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_usercategory_get(self):
         user_category = models.UserCategory.objects.create(

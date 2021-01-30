@@ -13,6 +13,9 @@ class ProgressTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
@@ -25,6 +28,13 @@ class ProgressTestCase(TestCase):
 
         cls.session_token = session.uuid
         cls.session_token_str = str(session.uuid)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     @staticmethod
     def generate_entry(desc_count=10):

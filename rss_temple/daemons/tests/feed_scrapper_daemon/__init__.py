@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from api import models
 
-from daemons.feed_scrapper_daemon.impl import scrape_feed
+from daemons.feed_scrapper_daemon.impl import scrape_feed, logger
 
 
 class DaemonTestCase(TestCase):
@@ -12,11 +12,21 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.getLogger('feed_scrapper_daemon').setLevel(logging.CRITICAL)
+        cls.old_daemon_logger_level = logger().getEffectiveLevel()
+        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+
+        logger().setLevel(logging.CRITICAL)
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
         cls.feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logger().setLevel(cls.old_daemon_logger_level)
+        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
 
     def test_scrape_feed(self):
         text = None

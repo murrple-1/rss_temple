@@ -10,7 +10,7 @@ from django.test import TestCase
 from api import models
 from api.tests.http_server import http_server_target
 
-from daemons.subscription_setup_daemon.impl import get_first_entry, do_subscription
+from daemons.subscription_setup_daemon.impl import get_first_entry, do_subscription, logger
 
 
 class DaemonTestCase(TestCase):
@@ -18,8 +18,9 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.getLogger('subscription_setup_daemon').setLevel(
-            logging.CRITICAL)
+        cls.old_logger_level = logger().getEffectiveLevel()
+
+        logger().setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(email='test@test.com')
 
@@ -31,6 +32,8 @@ class DaemonTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
+
+        logger().setLevel(cls.old_logger_level)
 
         cls.http_process.terminate()
 

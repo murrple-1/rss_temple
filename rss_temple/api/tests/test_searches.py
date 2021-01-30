@@ -13,7 +13,15 @@ class SearchesTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_logger_level)
 
     def test_standard(self):
         searches.to_filter_args('feed', Context(
@@ -134,10 +142,18 @@ class AllSearchesTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(
             email='test_searches@test.com')
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_logger_level)
 
     def test_run(self):
         self.assertEqual(len(AllSearchesTestCase.TRIALS),

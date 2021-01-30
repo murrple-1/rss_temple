@@ -21,6 +21,8 @@ class UserTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
@@ -37,6 +39,12 @@ class UserTestCase(TestCase):
             email=UserTestCase.NON_UNIQUE_EMAIL)
         models.MyLogin.objects.create(
             user=user2, pw_hash=password_hasher().hash('password2'))
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_user_get(self):
         c = Client()

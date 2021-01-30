@@ -1,5 +1,4 @@
 import logging
-import time
 
 from django.test import TestCase
 
@@ -20,9 +19,15 @@ class FeedHandlerTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
-        time.sleep(2.0)
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_logger_level)
 
     def test_well_formed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:

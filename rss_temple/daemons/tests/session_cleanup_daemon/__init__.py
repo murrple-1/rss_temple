@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from api import models
 
-from daemons.session_cleanup_daemon.impl import cleanup
+from daemons.session_cleanup_daemon.impl import cleanup, logger
 
 
 class DaemonTestCase(TestCase):
@@ -13,9 +13,17 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        logging.getLogger('session_cleanup_daemon').setLevel(logging.CRITICAL)
+        cls.old_logger_level = logger().getEffectiveLevel()
+
+        logger().setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(email='test@test.com')
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logger().setLevel(cls.old_logger_level)
 
     def test_none(self):
         user = DaemonTestCase.user

@@ -17,12 +17,20 @@ class UserTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
         cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
 
         models.MyLogin.objects.create(
             user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_passwordresettoken_request_post(self):
         c = Client()
