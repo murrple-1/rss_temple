@@ -82,7 +82,7 @@ def do_subscription(feed_subscription_progress_entry):  # pragma: testing-subscr
                     feed = _generate_feed(feed_url)
                 except (requests.exceptions.RequestException, QueryException):
                     logger().exception('could not load feed for \'%s\'', feed_url)
-                    pass
+                    continue
 
             feeds[feed_url] = feed
 
