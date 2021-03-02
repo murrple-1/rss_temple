@@ -201,7 +201,7 @@ class UserCategory(models.Model):
         feeds = getattr(self, '_feeds', None)
         if feeds is None:
             feeds = Feed.objects.filter(
-                uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self))
+                uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self).values_list('feed_id', flat=True))
             self._feeds = feeds
 
         return feeds
