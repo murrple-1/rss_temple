@@ -63,7 +63,7 @@ def d_entry_2_feed_entry(d_entry):
 
         if time_tuple is not None:
             feed_entry.created_at = _time_tuple_to_datetime(time_tuple)
-        else:
+        else:  # pragma: no cover
             feed_entry.created_at = None
     else:
         feed_entry.created_at = None
@@ -73,7 +73,7 @@ def d_entry_2_feed_entry(d_entry):
 
         if time_tuple is not None:
             feed_entry.published_at = _time_tuple_to_datetime(time_tuple)
-        else:
+        else:  # pragma: no cover
             # field auto-filled by DB
             pass
     else:
@@ -85,7 +85,7 @@ def d_entry_2_feed_entry(d_entry):
 
         if time_tuple is not None:
             feed_entry.updated_at = _time_tuple_to_datetime(time_tuple)
-        else:
+        else:  # pragma: no cover
             feed_entry.updated_at = None
     else:
         feed_entry.updated_at = None

@@ -1,6 +1,5 @@
 import uuid
 import hashlib
-import io
 
 from django.db import models
 from django.utils import timezone
@@ -295,7 +294,7 @@ class FeedEntry(models.Model):
     db_updated_at = models.DateTimeField(null=True)
 
     def save(self, *args, **kwargs):
-        if self.hash is None:
+        if self.hash is None or len(self.hash) < 1:
             self.hash = self.entry_hash()
 
         super().save(*args, **kwargs)
@@ -312,12 +311,7 @@ class FeedEntry(models.Model):
             'author_name': self.author_name,
         }
 
-        f = io.StringIO()
-        ujson.dump(obj, f)
-        s = f.getvalue()
-        f.close()
-
-        return s
+        return ujson.dumps(obj)
 
     def entry_hash(self):
         m = hashlib.sha256()
