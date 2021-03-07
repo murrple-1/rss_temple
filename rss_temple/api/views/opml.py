@@ -82,7 +82,7 @@ def _opml_post(request):
             outline_dict[outer_outline_name].add(
                 (outline_name, outline_xml_url))
 
-    existing_subscriptions = frozenset(models.SubscribedFeedUserMapping.objects.filter(
+    existing_subscriptions = set(models.SubscribedFeedUserMapping.objects.filter(
         user=request.user).values_list('feed__feed_url', flat=True))
 
     existing_categories = dict((user_category.text, user_category)
@@ -131,9 +131,14 @@ def _opml_post(request):
             user_category = models.UserCategory(
                 user=request.user, text=outer_outline_name)
             user_categories.append(user_category)
+            existing_categories[user_category.text] = user_category
 
         existing_category_mapping_set = existing_category_mappings.get(
             outer_outline_name)
+
+        if existing_category_mapping_set is None:
+            existing_category_mapping_set = set()
+            existing_category_mappings[outer_outline_name] = existing_category_mapping_set
 
         for outline_name, outline_xml_url in outline_set:
             feed = feeds_dict[outline_xml_url]
@@ -145,12 +150,15 @@ def _opml_post(request):
                         feed=feed, user=request.user, custom_feed_title=custom_title)
                     subscribed_feed_user_mappings.append(
                         subscribed_feed_user_mapping)
+                    existing_subscriptions.add(outline_xml_url)
 
-                if existing_category_mapping_set is None or outline_xml_url not in existing_category_mapping_set:
+                if outline_xml_url not in existing_category_mapping_set:
                     feed_user_category_mapping = models.FeedUserCategoryMapping(
-                        feed=feeds_dict[outline_xml_url], user_category=user_category)
+                        feed=feed, user_category=user_category)
                     feed_user_category_mappings.append(
                         feed_user_category_mapping)
+                    existing_category_mapping_set.add(outline_xml_url)
+
 
     with transaction.atomic():
         for user_category in user_categories:
