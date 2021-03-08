@@ -110,6 +110,21 @@ class OPMLTestCase(TestCase):
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
         self.assertEqual(response.status_code, 202)
 
+    def test_opml_post_duplicatesinopml(self):
+        OPMLTestCase._reset_db('api/tests/fixtures/opml_duplicates-pre.json')
+
+        session_token_str = OPMLTestCase._login()
+
+        c = Client()
+
+        text = None
+        with open('api/tests/test_files/opml/opml-duplicates.xml', 'r') as f:
+            text = f.read()
+
+        response = c.post('/api/opml', text,
+                          content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
+        self.assertEqual(response.status_code, 202)
+
     def test_opml_post_done_before(self):
         OPMLTestCase._reset_db('api/tests/fixtures/opml_no_404-post.json')
 

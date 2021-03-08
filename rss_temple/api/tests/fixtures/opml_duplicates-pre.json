@@ -1,0 +1,220 @@
+[
+  {
+    "model": "api.user",
+    "pk": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+    "fields": {
+      "email": "test@test.com"
+    }
+  },
+  {
+    "model": "api.mylogin",
+    "pk": "8b6dfb62-9ae1-40ac-a15b-c1639f1b7262",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "pw_hash": "$argon2i$v=19$m=512,t=2,p=2$5Wvxro9dRBwFHnVSnt4DEw$oaoYZyboOOiVLxBrGIdN2g"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "6b759776-14b0-43e5-8af3-bf5c8fc35253",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Comics"
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "14b58992-e233-4c2d-88c9-097f576127c1",
+    "fields": {
+      "feed_url": "http://tapastic.com/rss/series/8999",
+      "title": "My Pet Succubus",
+      "home_url": "https://tapas.io/series/8999",
+      "published_at": "2018-12-19T03:01:46.930",
+      "updated_at": "2018-12-14T08:24:57",
+      "db_created_at": "2018-12-19T03:01:46.930",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "1a007999-d369-4442-bf34-1932a21ad3b6",
+    "fields": {
+      "feed_url": "http://www.angrymetalguy.com/feed/",
+      "title": "Angry Metal Guy",
+      "home_url": "https://www.angrymetalguy.com",
+      "published_at": "2018-12-19T03:02:11.757",
+      "updated_at": "2018-12-18T23:02:54",
+      "db_created_at": "2018-12-19T03:02:11.757",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "2d45a6e3-4aad-4e68-8e0f-876a08682c82",
+    "fields": {
+      "feed_url": "http://feeds.feedburner.com/Explosm",
+      "title": "Explosm.net",
+      "home_url": "http://explosm.net",
+      "published_at": "2018-12-19T03:01:41.707",
+      "updated_at": null,
+      "db_created_at": "2018-12-19T03:01:41.707",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "394e600e-40d3-47e7-9c6a-9048bb6e889f",
+    "fields": {
+      "feed_url": "http://www.pantheracomic.com/?feed=rss2",
+      "title": "Panthera – Manga Webcomic/Graphic Novel",
+      "home_url": "http://www.pantheracomic.com",
+      "published_at": "2018-12-19T03:01:49.635",
+      "updated_at": "2017-02-13T19:17:22",
+      "db_created_at": "2018-12-19T03:01:49.635",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "48e3c080-c565-49d0-8c65-c2131328aad4",
+    "fields": {
+      "feed_url": "http://xkcd.com/rss.xml",
+      "title": "xkcd.com",
+      "home_url": "https://xkcd.com/",
+      "published_at": "2018-12-19T03:01:51.714",
+      "updated_at": null,
+      "db_created_at": "2018-12-19T03:01:51.714",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "51af3350-f7e3-4f7c-b811-83618a2becbf",
+    "fields": {
+      "feed_url": "http://syndication.thedailywtf.com/TheDailyWtf",
+      "title": "The Daily WTF",
+      "home_url": "http://thedailywtf.com/",
+      "published_at": "2018-12-19T03:01:31.200",
+      "updated_at": "2018-12-19T02:59:49",
+      "db_created_at": "2018-12-19T03:01:31.200",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "63428453-8af4-4b3f-a06e-2c4e1d344590",
+    "fields": {
+      "feed_url": "http://www.japanator.com/?mode=atom",
+      "title": "Japanator",
+      "home_url": "https://www.japanator.com/?mode=atom",
+      "published_at": "2018-12-19T03:01:33.756",
+      "updated_at": "2018-11-14T16:00:00",
+      "db_created_at": "2018-12-19T03:01:33.756",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "707547b3-e8f6-450d-9470-83f8fb1d5f06",
+    "fields": {
+      "feed_url": "http://deadrhetoric.com/feed/",
+      "title": "Dead Rhetoric",
+      "home_url": "http://deadrhetoric.com",
+      "published_at": "2018-12-19T03:02:07.932",
+      "updated_at": "2018-12-19T00:03:56",
+      "db_created_at": "2018-12-19T03:02:07.932",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "74e85c6e-a4cf-45f5-995d-2776ef5f627a",
+    "fields": {
+      "feed_url": "http://www.animenewsnetwork.com/all/rss.xml",
+      "title": "Anime News Network - Article",
+      "home_url": "https://www.animenewsnetwork.com/",
+      "published_at": "2018-12-19T03:01:36.882",
+      "updated_at": "2018-12-19T02:14:55",
+      "db_created_at": "2018-12-19T03:01:36.882",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "7eccbad9-3e61-4f84-80f4-765b15ad6af0",
+    "fields": {
+      "feed_url": "http://www.terrorizer.com/feed/",
+      "title": "Terrorizer",
+      "home_url": "http://www.terrorizer.com",
+      "published_at": "2018-12-19T03:02:10.568",
+      "updated_at": "2018-06-14T14:44:44",
+      "db_created_at": "2018-12-19T03:02:10.568",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "c496ef85-8da4-47aa-beda-22820cb527ae",
+    "fields": {
+      "feed_url": "http://feeds.feedburner.com/codinghorror",
+      "title": "Coding Horror",
+      "home_url": "https://blog.codinghorror.com/",
+      "published_at": "2018-12-19T03:01:29.238",
+      "updated_at": "2018-12-19T00:25:16",
+      "db_created_at": "2018-12-19T03:01:29.238",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "c9b3faca-e9cb-41fd-b3d3-269932b9ff5b",
+    "fields": {
+      "feed_url": "http://metalintheory.com/feed/",
+      "title": "Metal In Theory",
+      "home_url": "http://metalintheory.com",
+      "published_at": "2018-12-19T03:02:04.917",
+      "updated_at": "2018-06-17T01:34:53",
+      "db_created_at": "2018-12-19T03:02:04.917",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "ec1c217d-1754-4885-9d94-6c3f22ddee99",
+    "fields": {
+      "feed_url": "http://feeds.arstechnica.com/arstechnica/index",
+      "title": "Ars Technica",
+      "home_url": "https://arstechnica.com",
+      "published_at": "2018-12-19T03:01:27.088",
+      "updated_at": "2018-12-18T23:36:02",
+      "db_created_at": "2018-12-19T03:01:27.088",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "f7b7140b-f36e-477d-82b3-d8bfa0f1f5ab",
+    "fields": {
+      "feed_url": "http://www.misfile.com/misfileRSS.php",
+      "title": "News from Misfile",
+      "home_url": "http://www.misfile.com",
+      "published_at": "2018-12-18T00:00:00",
+      "updated_at": null,
+      "db_created_at": "2018-12-19T03:01:53.870",
+      "db_updated_at": null
+    }
+  },
+  {
+    "model": "api.feed",
+    "pk": "fb317282-998a-422e-889e-5753a2c125ed",
+    "fields": {
+      "feed_url": "http://www.theblackplanet.org/feed/",
+      "title": "The Black Planet",
+      "home_url": "http://www.theblackplanet.org",
+      "published_at": "2018-12-19T03:01:59.137",
+      "updated_at": "2018-12-17T15:51:25",
+      "db_created_at": "2018-12-19T03:01:59.137",
+      "db_updated_at": null
+    }
+  }
+]
