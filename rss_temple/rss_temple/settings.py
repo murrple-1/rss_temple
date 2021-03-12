@@ -181,3 +181,4 @@ GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
 
 USER_VERIFICATION_EXPIRY_INTERVAL = datetime.timedelta(days=30)
 PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)
+VERIFY_URL_FORMAT = 'http://localhost:4200/verify?token={verify_token}'

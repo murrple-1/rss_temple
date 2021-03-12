@@ -1,9 +1,26 @@
+from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
+
 from api import render
+
+
+_VERIFY_URL_FORMAT = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _VERIFY_URL_FORMAT
+
+    _VERIFY_URL_FORMAT = settings.VERIFY_URL_FORMAT
+
+
+_load_global_settings()
 
 
 def plain_text(verify_token):
     context = {
-        'verify_token': verify_token,
+        'verify_url': _VERIFY_URL_FORMAT.format(verify_token=verify_token),
     }
 
     return render.to_text(
@@ -13,7 +30,7 @@ def plain_text(verify_token):
 
 def html_text(verify_token):
     context = {
-        'verify_token': verify_token,
+        'verify_url': _VERIFY_URL_FORMAT.format(verify_token=verify_token),
     }
 
     return render.to_html(
