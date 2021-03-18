@@ -7,7 +7,7 @@ from pyparsing import ParseException
 from api import models
 from api.exceptions import QueryException
 from api.search.parser import parser
-from api.search.convertto import Bool, UuidList, Date, DateRange, DateDeltaRange
+from api.search.convertto import Bool, UuidList, DateTime, DateTimeRange, DateTimeDeltaRange
 
 
 _logger = logging.getLogger('rss_temple')
@@ -60,12 +60,12 @@ _search_fns = {
         'title_exact': lambda context, search_obj: Q(title__iexact=search_obj),
         'feedUrl': lambda context, search_obj: Q(feed_url__iexact=search_obj),
         'homeUrl': lambda context, search_obj: Q(home_url__iexact=search_obj),
-        'publishedAt': lambda context, search_obj: Q(published_at__range=DateRange.convertto(search_obj)),
-        'publishedAt_exact': lambda context, search_obj: Q(published_at__date=Date.convertto(search_obj)),
-        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=DateDeltaRange.convertto(search_obj)),
-        'updatedAt': lambda context, search_obj: Q(updated_at__range=DateRange.convertto(search_obj)),
-        'updatedAt_exact': lambda context, search_obj: Q(updated_at__date=Date.convertto(search_obj)),
-        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateDeltaRange.convertto(search_obj)),
+        'publishedAt': lambda context, search_obj: Q(published_at__range=DateTimeRange.convertto(search_obj)),
+        'publishedAt_exact': lambda context, search_obj: Q(published_at=DateTime.convertto(search_obj)),
+        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=DateTimeDeltaRange.convertto(search_obj)),
+        'updatedAt': lambda context, search_obj: Q(updated_at__range=DateTimeRange.convertto(search_obj)),
+        'updatedAt_exact': lambda context, search_obj: Q(updated_at=DateTime.convertto(search_obj)),
+        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateTimeDeltaRange.convertto(search_obj)),
 
         'subscribed': lambda context, search_obj: Q(is_subscribed=Bool.convertto(search_obj)),
         'customTitle': lambda context, search_obj: Q(custom_title__icontains=search_obj),
@@ -78,15 +78,15 @@ _search_fns = {
         'uuid': lambda context, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
         'feedUuid': lambda context, search_obj: Q(feed_id__in=UuidList.convertto(search_obj)),
         'feedUrl': lambda context, search_obj: Q(feed__feed_url=search_obj),
-        'createdAt': lambda context, search_obj: Q(created_at__range=DateRange.convertto(search_obj)),
-        'createdAt_exact': lambda context, search_obj: Q(created_at__date=Date.convertto(search_obj)),
-        'createdAt_delta': lambda context, search_obj: Q(created_at__range=DateDeltaRange.convertto(search_obj)),
-        'publishedAt': lambda context, search_obj: Q(published_at__range=DateRange.convertto(search_obj)),
-        'publishedAt_exact': lambda context, search_obj: Q(published_at__date=Date.convertto(search_obj)),
-        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=DateDeltaRange.convertto(search_obj)),
-        'updatedAt': lambda context, search_obj: Q(updated_at__range=DateRange.convertto(search_obj)),
-        'updatedAt_exact': lambda context, search_obj: Q(updated_at__date=Date.convertto(search_obj)),
-        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateDeltaRange.convertto(search_obj)),
+        'createdAt': lambda context, search_obj: Q(created_at__range=DateTimeRange.convertto(search_obj)),
+        'createdAt_exact': lambda context, search_obj: Q(created_at=DateTime.convertto(search_obj)),
+        'createdAt_delta': lambda context, search_obj: Q(created_at__range=DateTimeDeltaRange.convertto(search_obj)),
+        'publishedAt': lambda context, search_obj: Q(published_at__range=DateTimeRange.convertto(search_obj)),
+        'publishedAt_exact': lambda context, search_obj: Q(published_at=DateTime.convertto(search_obj)),
+        'publishedAt_delta': lambda context, search_obj: Q(published_at__range=DateTimeDeltaRange.convertto(search_obj)),
+        'updatedAt': lambda context, search_obj: Q(updated_at__range=DateTimeRange.convertto(search_obj)),
+        'updatedAt_exact': lambda context, search_obj: Q(updated_at=DateTime.convertto(search_obj)),
+        'updatedAt_delta': lambda context, search_obj: Q(updated_at__range=DateTimeDeltaRange.convertto(search_obj)),
         'url': lambda context, search_obj: Q(url__iexact=search_obj),
         'authorName': lambda context, search_obj: Q(author_name__icontains=search_obj),
         'authorName_exact': lambda context, search_obj: Q(author_name__iexact=search_obj),

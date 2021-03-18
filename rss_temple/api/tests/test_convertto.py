@@ -12,9 +12,9 @@ from api.search.convertto import (
     FloatRange,
     Uuid,
     UuidList,
-    Date,
-    DateRange,
-    DateDeltaRange,
+    DateTime,
+    DateTimeRange,
+    DateTimeDeltaRange,
 )
 
 
@@ -105,122 +105,116 @@ class ConvertToTestCase(TestCase):
         with self.assertRaises(ValueError):
             UuidList.convertto('test')
 
-    def test_date(self):
-        self.assertEqual(Date.convertto('2000-01-01'),
-                         datetime.date(2000, 1, 1))
+    def test_datetime(self):
+        self.assertEqual(DateTime.convertto('2000-01-01 00:00:00'),
+                         datetime.datetime(2000, 1, 1, 0, 0, 0))
 
         with self.assertRaises(ValueError):
-            Date.convertto('bad text')
+            DateTime.convertto('bad text')
 
-    def test_date_range(self):
-        range_ = DateRange.convertto('2000-01-01|2000-01-02')
+    def test_datetime_range(self):
+        range_ = DateTimeRange.convertto('2000-01-01 00:00:00|2000-01-02 23:59:59')
 
         self.assertEqual(range_[0], datetime.datetime(2000, 1, 1, 0, 0, 0))
         self.assertEqual(range_[1], datetime.datetime(2000, 1, 2, 23, 59, 59))
 
-        range_ = DateRange.convertto('2000-01-01|')
+        range_ = DateTimeRange.convertto('2000-01-01 00:00:00|')
 
         self.assertEqual(range_[0], datetime.datetime(2000, 1, 1, 0, 0, 0))
         self.assertEqual(range_[1], datetime.datetime.max)
 
-        range_ = DateRange.convertto('|2000-01-02')
+        range_ = DateTimeRange.convertto('|2000-01-02 23:59:59')
 
         self.assertEqual(range_[0], datetime.datetime.min)
         self.assertEqual(range_[1], datetime.datetime(2000, 1, 2, 23, 59, 59))
 
-        range_ = DateRange.convertto('|')
+        range_ = DateTimeRange.convertto('|')
 
         self.assertEqual(range_[0], datetime.datetime.min)
         self.assertEqual(range_[1], datetime.datetime.max)
 
         with self.assertRaises(ValueError):
-            DateRange.convertto('text|text')
+            DateTimeRange.convertto('text|text')
 
         with self.assertRaises(IndexError):
-            DateRange.convertto('2000-01-01')
+            DateTimeRange.convertto('2000-01-01 00:00:00')
 
-    def test_date_delta_range_yesterday(self):
-        now = datetime.datetime(2000, 1, 2, 0, 0, 0, 0)
-
-        yesterday_start = datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
-        yesterday_end = datetime.datetime(2000, 1, 1, 23, 59, 59, 999999)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'yesterday', now=now), (yesterday_start, yesterday_end))
-
-    def test_date_delta_range_last_week(self):
-        now = datetime.datetime(2000, 1, 15, 0, 0, 0, 0)
-        last_week_start = datetime.datetime(2000, 1, 3, 0, 0, 0, 0)
-        last_week_end = datetime.datetime(2000, 1, 9, 23, 59, 59, 999999)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'last_week', now=now), (last_week_start, last_week_end))
-
-    def test_date_delta_range_last_month(self):
-        now = datetime.datetime(2000, 2, 1, 0, 0, 0, 0)
-        last_month_start = datetime.datetime(2000, 1, 1)
-        last_month_end = datetime.datetime(2000, 1, 31, 23, 59, 59, 999999)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'last_month', now=now), (last_month_start, last_month_end))
-
-    def test_date_delta_range_last_year(self):
-        now = datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
-        last_year_start = datetime.datetime(1999, 1, 1, 0, 0, 0, 0)
-        last_year_end = datetime.datetime(1999, 12, 31, 23, 59, 59, 999999)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'last_year', now=now), (last_year_start, last_year_end))
-
-    def test_date_delta_range_year_to_date(self):
-        now = datetime.datetime(2000, 6, 15, 7, 0, 0, 0)
-        year_to_date_start = datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
-        year_to_date_end = now
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'year_to_date', now=now), (year_to_date_start, year_to_date_end))
-
-    def test_date_delta_range_older_than(self):
+    def test_datetime_delta_range_older_than(self):
         now = datetime.datetime(2000, 11, 11, 0, 0, 0, 0)
-
-        older_than_10d_end = datetime.datetime(2000, 11, 1, 0, 0, 0, 0)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'older_than:10d', now=now), (datetime.datetime.min, older_than_10d_end))
-
-        older_than_10m_end = datetime.datetime(2000, 1, 11, 0, 0, 0, 0)
-
-        self.assertEqual(DateDeltaRange.convertto(
-            'older_than:10m', now=now), (datetime.datetime.min, older_than_10m_end))
 
         older_than_10y_end = datetime.datetime(1990, 11, 11, 0, 0, 0, 0)
 
-        self.assertEqual(DateDeltaRange.convertto(
+        self.assertEqual(DateTimeDeltaRange.convertto(
             'older_than:10y', now=now), (datetime.datetime.min, older_than_10y_end))
 
-    def test_date_delta_range_earlier_than(self):
-        now = datetime.datetime(2000, 11, 11, 11, 0, 0, 0)
+        older_than_10M_end = datetime.datetime(2000, 1, 11, 0, 0, 0, 0)
 
-        earlier_than_10h_start = datetime.datetime(2000, 11, 11, 1, 0, 0, 0)
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:10M', now=now), (datetime.datetime.min, older_than_10M_end))
 
-        self.assertEqual(DateDeltaRange.convertto(
-            'earlier_than:10h', now=now), (earlier_than_10h_start, datetime.datetime.max))
+        older_than_1w_end = datetime.datetime(2000, 11, 4, 0, 0, 0, 0)
 
-        earlier_than_10d_start = datetime.datetime(2000, 11, 1, 11, 0, 0, 0)
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:1w', now=now), (datetime.datetime.min, older_than_1w_end))
 
-        self.assertEqual(DateDeltaRange.convertto(
-            'earlier_than:10d', now=now), (earlier_than_10d_start, datetime.datetime.max))
+        older_than_10d_end = datetime.datetime(2000, 11, 1, 0, 0, 0, 0)
 
-        earlier_than_10m_start = datetime.datetime(2000, 1, 11, 11, 0, 0, 0)
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:10d', now=now), (datetime.datetime.min, older_than_10d_end))
 
-        self.assertEqual(DateDeltaRange.convertto(
-            'earlier_than:10m', now=now), (earlier_than_10m_start, datetime.datetime.max))
+        older_than_10h_end = datetime.datetime(2000, 11, 10, 14, 0, 0, 0)
 
-        earlier_than_10y_start = datetime.datetime(1990, 11, 11, 11, 0, 0, 0)
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:10h', now=now), (datetime.datetime.min, older_than_10h_end))
 
-        self.assertEqual(DateDeltaRange.convertto(
-            'earlier_than:10y', now=now), (earlier_than_10y_start, datetime.datetime.max))
+        older_than_10m_end = datetime.datetime(2000, 11, 10, 23, 50, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:10m', now=now), (datetime.datetime.min, older_than_10m_end))
+
+        older_than_10s_end = datetime.datetime(2000, 11, 10, 23, 59, 50, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'older_than:10s', now=now), (datetime.datetime.min, older_than_10s_end))
+
+    def test_datetime_delta_range_earlier_than(self):
+        now = datetime.datetime(2000, 11, 11, 0, 0, 0, 0)
+
+        earlier_than_10y_end = datetime.datetime(1990, 11, 11, 0, 0, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10y', now=now), (earlier_than_10y_end, datetime.datetime.max))
+
+        earlier_than_10M_end = datetime.datetime(2000, 1, 11, 0, 0, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10M', now=now), (earlier_than_10M_end, datetime.datetime.max))
+
+        earlier_than_1w_end = datetime.datetime(2000, 11, 4, 0, 0, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:1w', now=now), (earlier_than_1w_end, datetime.datetime.max))
+
+        earlier_than_10d_end = datetime.datetime(2000, 11, 1, 0, 0, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10d', now=now), (earlier_than_10d_end, datetime.datetime.max))
+
+        earlier_than_10h_end = datetime.datetime(2000, 11, 10, 14, 0, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10h', now=now), (earlier_than_10h_end, datetime.datetime.max))
+
+        earlier_than_10m_end = datetime.datetime(2000, 11, 10, 23, 50, 0, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10m', now=now), (earlier_than_10m_end, datetime.datetime.max))
+
+        earlier_than_10s_end = datetime.datetime(2000, 11, 10, 23, 59, 50, 0)
+
+        self.assertEqual(DateTimeDeltaRange.convertto(
+            'earlier_than:10s', now=now), (earlier_than_10s_end, datetime.datetime.max))
 
     def test_date_delta_range_error(self):
         with self.assertRaises(ValueError):
-            DateDeltaRange.convertto('test')
+            DateTimeDeltaRange.convertto('test')
