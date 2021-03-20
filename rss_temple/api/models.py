@@ -251,6 +251,41 @@ class Feed(models.Model):
 
         return self._user_categories
 
+    def feed_entries(self):
+        feed_entries = getattr(self, '_feed_entries', None)
+        if feed_entries is None:
+            feed_entries = FeedEntry.objects.filter(feed=self)
+            self._feed_entries = feed_entries
+
+        return feed_entries
+
+    @staticmethod
+    def _generate_counts(feed, user):
+        total_feed_entry_count = feed.feed_entries().count()
+        read_count = ReadFeedEntryUserMapping.objects.filter(feed_entry__feed=feed, user=user).count()
+        unread_count = total_feed_entry_count - read_count
+
+        counts = {
+            'unread_count': unread_count,
+            'read_count': read_count,
+        }
+
+        return counts
+
+    def _counts(self, user):
+        counts = getattr(self, '_counts_', None)
+        if counts is None:
+            counts = Feed._generate_counts(self, user)
+            self._counts_ = counts
+
+        return counts
+
+    def unread_count(self, user):
+        return self._counts(user)['unread_count']
+
+    def read_count(self, user):
+        return self._counts(user)['read_count']
+
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:

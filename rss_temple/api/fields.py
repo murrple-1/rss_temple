@@ -36,6 +36,8 @@ _field_configs = {
         'customTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title, False),
         'calculatedTitle': _FieldConfig(lambda context, db_obj: db_obj.custom_title if db_obj.custom_title is not None else db_obj.title, False),
         'userCategoryUuids': _FieldConfig(lambda context, db_obj: [str(user_category.uuid) for user_category in db_obj.user_categories(context.request.user)], False),
+        'readCount': _FieldConfig(lambda context, db_obj: db_obj.read_count(context.request.user), False),
+        'unreadCount': _FieldConfig(lambda context, db_obj: db_obj.unread_count(context.request.user), False),
     },
     'feedentry': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),

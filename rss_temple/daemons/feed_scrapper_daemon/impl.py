@@ -1,6 +1,7 @@
 import logging
 import sys
-import datetime
+
+from django.db.models.functions import Now
 
 from api import feed_handler, models
 
@@ -52,5 +53,5 @@ def scrape_feed(feed, response_text):
 
     models.FeedEntry.objects.bulk_create(feed_entries)
 
-    feed.db_updated_at = datetime.datetime.utcnow()
+    feed.db_updated_at = Now()
     feed.save()
