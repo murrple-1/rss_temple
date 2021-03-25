@@ -14,7 +14,6 @@ python-dateutil = "*"
 filelock = "*"
 google-auth = "*"
 facebook-sdk = "*"
-html-sanitizer = "*"
 defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
@@ -23,6 +22,8 @@ validate-email = "*"
 enum34 = {version = "*",python_version = "<'3.4'"}
 django-ipware = "*"
 quick-email = "*"
+bleach = "*"
+html5lib = "*"
 
 [dev-packages]
 coverage = "*"
