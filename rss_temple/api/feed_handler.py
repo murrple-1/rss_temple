@@ -1,13 +1,10 @@
 import datetime
 import pprint
 import logging
-import html
 
 import feedparser
 
-import html_sanitizer
-
-from api import models
+from api import models, content_sanitize
 from api.exceptions import QueryException
 
 
@@ -22,25 +19,8 @@ def logger():  # pragma: no cover
     return _logger
 
 
-_sanitizer = None
-
-
-def sanitizer():
-    global _sanitizer
-    if _sanitizer is None:
-        my_settings = dict(html_sanitizer.sanitizer.DEFAULT_SETTINGS)
-
-        my_settings['tags'].add('img')
-        my_settings['empty'].add('img')
-        my_settings['attributes'].update({'img': ('src', )})
-
-        _sanitizer = html_sanitizer.Sanitizer(settings=my_settings)
-
-    return _sanitizer
-
-
 def text_2_d(text):
-    d = feedparser.parse(text)
+    d = feedparser.parse(text, sanitize_html=False)
 
     logger().info('feed info: %s', pprint.pformat(d))
 
@@ -117,15 +97,15 @@ def d_entry_2_feed_entry(d_entry):
         if 'content' in d_entry:
             d_entry_content = next((dec for dec in d_entry.content if dec.type in {'text/html', 'application/xhtml+xml'}), None)
             if d_entry_content is not None:
-                content = sanitizer().sanitize(d_entry_content.value)
+                content = content_sanitize.sanitize_html(d_entry_content.value)
             else:
                 d_entry_content = next((dec for dec in d_entry.content if dec.type == 'text/plain'), None)
                 if d_entry_content is not None:
-                    content = html.escape(d_entry_content.value)
+                    content = content_sanitize.sanitize_plain(d_entry_content.value)
 
     if content is None:
         if 'summary' in d_entry:
-            content = sanitizer().sanitize(d_entry.summary)
+            content = content_sanitize.sanitize(d_entry.summary)
 
     feed_entry.content = content
 
