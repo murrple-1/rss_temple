@@ -98,7 +98,7 @@ def sanitize(text):
         return sanitize_plain(text)
 
 
-_html_serializer = html5lib.serializer.HTMLSerializer()
+_html_serializer = html5lib.serializer.HTMLSerializer(resolve_entities=False)
 
 
 def sanitize_html(text):
