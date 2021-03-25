@@ -45,6 +45,31 @@ class HTTPSOnlyImgFilter(HTML5LibFilter):
             yield token
 
 
+class EmptyAnchorFilter(HTML5LibFilter):
+    def __iter__(self):
+        tag_depth = 0
+        seen_tokens = []
+        for token in super().__iter__():
+            if token['type'] == 'StartTag' and token['name'] == 'a':
+                tag_depth += 1
+                seen_tokens.append(token)
+            elif token['type'] == 'EndTag' and token['name'] == 'a':
+                tag_depth -= 1
+                seen_tokens.append(token)
+
+                if tag_depth <= 0:
+                    if any(True if (t['type'] == 'Characters' and len(t['data']) > 0) else False for t in seen_tokens):
+                        for t in seen_tokens:
+                            yield t
+
+                    seen_tokens = []
+            else:
+                if tag_depth > 0:
+                    seen_tokens.append(token)
+                else:
+                    yield token
+
+
 _my_bleach_filter_kwargs_ = None
 
 
@@ -78,6 +103,7 @@ def _html_sanitizer_stream(source):
     filtered = ScriptRemovalFiler(source=source)
     filtered = StyleRemovalFiler(source=filtered)
     filtered = HTTPSOnlyImgFilter(source=filtered)
+    filtered = EmptyAnchorFilter(source=filtered)
     filtered = bleach.sanitizer.BleachSanitizerFilter(
         source=filtered, **_my_bleach_filter_kwargs_)
 

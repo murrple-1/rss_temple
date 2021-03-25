@@ -45,6 +45,15 @@ class ContentNormalizeTestCase(TestCase):
         self.assertEqual(content_sanitize.sanitize_html(
             '<img src="smb://192.168.0.1/something.png">'), '')
 
+        self.assertEqual(content_sanitize.sanitize_html(
+            '<a href="https://test.com/entry"></a>'), '')
+        self.assertEqual(content_sanitize.sanitize_html(
+            '<a href="https://test.com/entry">Link</a>'), '<a href="https://test.com/entry">Link</a>')
+        self.assertEqual(content_sanitize.sanitize_html(
+            '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>'), '')
+        self.assertEqual(content_sanitize.sanitize_html(
+            '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>'), '<a href="https://test.com/entry">Link</a>')
+
     def test_sanitize_text(self):
         self.assertEqual(content_sanitize.sanitize_plain(
             'Some Text'), 'Some Text')
@@ -83,6 +92,15 @@ class ContentNormalizeTestCase(TestCase):
             '<img src="http://test.com/something.png">'), '')
         self.assertEqual(content_sanitize.sanitize(
             '<img src="smb://192.168.0.1/something.png">'), '')
+
+        self.assertEqual(content_sanitize.sanitize(
+            '<a href="https://test.com/entry"></a>'), '')
+        self.assertEqual(content_sanitize.sanitize(
+            '<a href="https://test.com/entry">Link</a>'), '<a href="https://test.com/entry">Link</a>')
+        self.assertEqual(content_sanitize.sanitize(
+            '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>'), '')
+        self.assertEqual(content_sanitize.sanitize(
+            '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>'), '<a href="https://test.com/entry">Link</a>')
 
         self.assertEqual(content_sanitize.sanitize('Some Text'), 'Some Text')
         self.assertEqual(content_sanitize.sanitize(
