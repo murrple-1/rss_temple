@@ -4,12 +4,11 @@ import logging
 
 import feedparser
 
-from html_sanitizer import Sanitizer
+import html_sanitizer
 
 from api import models
 from api.exceptions import QueryException
 
-_sanitizer = Sanitizer()
 
 _logger = None
 
@@ -20,6 +19,23 @@ def logger():  # pragma: no cover
         _logger = logging.getLogger('rss_temple')
 
     return _logger
+
+
+_sanitizer = None
+
+
+def sanitizer():
+    global _sanitizer
+    if _sanitizer is None:
+        my_settings = dict(html_sanitizer.sanitizer.DEFAULT_SETTINGS)
+
+        my_settings['tags'].add('img')
+        my_settings['empty'].add('img')
+        my_settings['attributes'].update({'img': ('src', )})
+
+        _sanitizer = html_sanitizer.Sanitizer(settings=my_settings)
+
+    return _sanitizer
 
 
 def text_2_d(text):
@@ -99,7 +115,7 @@ def d_entry_2_feed_entry(d_entry):
         content = d_entry.summary
 
     if type(content) is str:
-        content = _sanitizer.sanitize(content)
+        content = sanitizer().sanitize(content)
 
     feed_entry.content = content
 
