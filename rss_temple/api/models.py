@@ -262,7 +262,8 @@ class Feed(models.Model):
     @staticmethod
     def _generate_counts(feed, user):
         total_feed_entry_count = feed.feed_entries().count()
-        read_count = ReadFeedEntryUserMapping.objects.filter(feed_entry__feed=feed, user=user).count()
+        read_count = ReadFeedEntryUserMapping.objects.filter(
+            feed_entry__feed=feed, user=user).count()
         unread_count = total_feed_entry_count - read_count
 
         counts = {

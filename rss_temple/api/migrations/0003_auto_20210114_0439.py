@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='feedentry',
-            index=models.Index(fields=['hash'], name='api_feedent_hash_5fbffa_idx'),
+            index=models.Index(
+                fields=['hash'], name='api_feedent_hash_5fbffa_idx'),
         ),
     ]

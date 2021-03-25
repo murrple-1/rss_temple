@@ -113,7 +113,8 @@ class ConvertToTestCase(TestCase):
             DateTime.convertto('bad text')
 
     def test_datetime_range(self):
-        range_ = DateTimeRange.convertto('2000-01-01 00:00:00|2000-01-02 23:59:59')
+        range_ = DateTimeRange.convertto(
+            '2000-01-01 00:00:00|2000-01-02 23:59:59')
 
         self.assertEqual(range_[0], datetime.datetime(2000, 1, 1, 0, 0, 0))
         self.assertEqual(range_[1], datetime.datetime(2000, 1, 2, 23, 59, 59))

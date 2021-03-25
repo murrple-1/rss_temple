@@ -13,7 +13,8 @@ class SearchesTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_logger_level = logging.getLogger(
+            'rss_temple').getEffectiveLevel()
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
@@ -142,7 +143,8 @@ class AllSearchesTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_logger_level = logging.getLogger(
+            'rss_temple').getEffectiveLevel()
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 

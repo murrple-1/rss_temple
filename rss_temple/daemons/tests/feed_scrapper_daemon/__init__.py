@@ -13,7 +13,8 @@ class DaemonTestCase(TestCase):
         super().setUpClass()
 
         cls.old_daemon_logger_level = logger().getEffectiveLevel()
-        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
+        cls.old_app_logger_level = logging.getLogger(
+            'rss_temple').getEffectiveLevel()
 
         logger().setLevel(logging.CRITICAL)
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)

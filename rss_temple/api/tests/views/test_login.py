@@ -13,7 +13,8 @@ class LoginTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger(
+            'django').getEffectiveLevel()
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 

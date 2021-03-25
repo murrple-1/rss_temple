@@ -78,7 +78,8 @@ def _html_sanitizer_stream(source):
     filtered = ScriptRemovalFiler(source=source)
     filtered = StyleRemovalFiler(source=filtered)
     filtered = HTTPSOnlyImgFilter(source=filtered)
-    filtered = bleach.sanitizer.BleachSanitizerFilter(source=filtered, **_my_bleach_filter_kwargs_)
+    filtered = bleach.sanitizer.BleachSanitizerFilter(
+        source=filtered, **_my_bleach_filter_kwargs_)
 
     return filtered
 

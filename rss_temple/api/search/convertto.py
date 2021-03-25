@@ -62,8 +62,10 @@ class DateTimeRange(CustomConvertTo):
     def convertto(search_obj):
         parts = search_obj.split('|')
 
-        start_datetime = DateTimeRange._to_datetime(parts[0]) if parts[0] else datetime.datetime.min
-        end_datetime = DateTimeRange._to_datetime(parts[1]) if parts[1] else datetime.datetime.max
+        start_datetime = DateTimeRange._to_datetime(
+            parts[0]) if parts[0] else datetime.datetime.min
+        end_datetime = DateTimeRange._to_datetime(
+            parts[1]) if parts[1] else datetime.datetime.max
         return start_datetime, end_datetime
 
 
@@ -79,7 +81,8 @@ class UuidList(CustomConvertTo):
         return [uuid.UUID(uuid_str) for uuid_str in search_obj.split(',')]
 
 
-_DATE_DELTA_RANGE_OLDER_THAN_REGEX = re.compile(r'^older_than:(\d+)([yMwdhms])$')
+_DATE_DELTA_RANGE_OLDER_THAN_REGEX = re.compile(
+    r'^older_than:(\d+)([yMwdhms])$')
 _DATE_DELTA_RANGE_EARLIER_THAN_REGEX = re.compile(
     r'^earlier_than:(\d+)([yMwdhms])$')
 

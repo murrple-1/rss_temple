@@ -159,7 +159,6 @@ def _opml_post(request):
                         feed_user_category_mapping)
                     existing_category_mapping_set.add(outline_xml_url)
 
-
     with transaction.atomic():
         for user_category in user_categories:
             user_category.save()

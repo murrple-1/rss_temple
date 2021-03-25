@@ -13,8 +13,10 @@ class ProgressTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_app_logger_level = logging.getLogger('rss_temple').getEffectiveLevel()
-        cls.old_django_logger_level = logging.getLogger('django').getEffectiveLevel()
+        cls.old_app_logger_level = logging.getLogger(
+            'rss_temple').getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger(
+            'django').getEffectiveLevel()
 
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)

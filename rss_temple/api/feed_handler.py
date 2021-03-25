@@ -95,13 +95,16 @@ def d_entry_2_feed_entry(d_entry):
 
     if content is None:
         if 'content' in d_entry:
-            d_entry_content = next((dec for dec in d_entry.content if dec.type in {'text/html', 'application/xhtml+xml'}), None)
+            d_entry_content = next((dec for dec in d_entry.content if dec.type in {
+                                   'text/html', 'application/xhtml+xml'}), None)
             if d_entry_content is not None:
                 content = content_sanitize.sanitize_html(d_entry_content.value)
             else:
-                d_entry_content = next((dec for dec in d_entry.content if dec.type == 'text/plain'), None)
+                d_entry_content = next(
+                    (dec for dec in d_entry.content if dec.type == 'text/plain'), None)
                 if d_entry_content is not None:
-                    content = content_sanitize.sanitize_plain(d_entry_content.value)
+                    content = content_sanitize.sanitize_plain(
+                        d_entry_content.value)
 
     if content is None:
         if 'summary' in d_entry:
