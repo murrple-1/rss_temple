@@ -1,8 +1,10 @@
 import uuid
+import re
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 from django.db import transaction
+from django.core.cache import caches
 
 import ujson
 
@@ -34,6 +36,26 @@ def feed_entries_query(request):
 
     if request.method == 'POST':
         return _feed_entries_query_post(request)
+
+
+def feed_entries_query_stable_create(request):
+    permitted_methods = {'POST'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _feed_entries_query_stable_create_post(request)
+
+
+def feed_entries_query_stable(request):
+    permitted_methods = {'POST'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'POST':
+        return _feed_entries_query_stable_post(request)
 
 
 def feed_entry_read(request, uuid_):
@@ -190,6 +212,133 @@ def _feed_entries_query_post(request):
 
     if return_total_count:
         ret_obj['totalCount'] = feed_entries.count()
+
+    content, content_type = query_utils.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
+
+
+def _feed_entries_query_stable_create_post(request):
+    cache = caches['stable_query']
+
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(request.GET)
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    json_ = None
+    try:
+        json_ = ujson.loads(request.body)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if type(json_) is not dict:
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    sort = None
+    try:
+        sort = query_utils.get_sort(json_, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    search = None
+    try:
+        search = query_utils.get_search(context, json_, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    token = f'feedentry-{uuid.uuid4().int}'
+
+    cache.set(token, list(models.FeedEntry.objects.filter(*search).order_by(*sort).values_list('uuid', flat=True)))
+
+    content, content_type = query_utils.serialize_content(token)
+    return HttpResponse(content, content_type)
+
+
+def _feed_entries_query_stable_post(request):
+    cache = caches['stable_query']
+
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(request.GET)
+
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    json_ = None
+    try:
+        json_ = ujson.loads(request.body)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if type(json_) is not dict:
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    token = None
+    try:
+        token = json_['token']
+    except KeyError:
+        return HttpResponseBadRequest('\'token\' missing')
+
+    if type(token) is not str:
+        return HttpResponseBadRequest('\'token\' must be string')
+
+    if re.search(r'^feedentry-\d+$', token) is None:
+        return HttpResponseBadRequest('\'token\' malformed')
+
+    count = None
+    try:
+        count = query_utils.get_count(json_)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    skip = None
+    try:
+        skip = query_utils.get_skip(json_)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    field_maps = None
+    try:
+        fields = query_utils.get_fields__json(json_)
+        field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_objects = None
+    try:
+        return_objects = query_utils.get_return_objects(json_)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    return_total_count = None
+    try:
+        return_total_count = query_utils.get_return_total_count(json_)
+    except QueryException as e:  # pragma: no cover
+        return HttpResponse(e.message, status=e.httpcode)
+
+    uuids = cache.get(token, [])
+
+    ret_obj = {}
+
+    if return_objects:
+        current_uuids = uuids[skip:skip + count]
+
+        feed_entries = dict((feed_entry.uuid, feed_entry) for feed_entry in models.FeedEntry.objects.filter(uuid__in=current_uuids))
+
+        objs = []
+        if len(current_uuids) == len(feed_entries):
+            for uuid_ in current_uuids:
+                feed_entry = feed_entries[uuid_]
+                obj = query_utils.generate_return_object(
+                    field_maps, feed_entry, context)
+                objs.append(obj)
+
+        ret_obj['objects'] = objs
+
+    if return_total_count:
+        ret_obj['totalCount'] = len(uuids)
 
     content, content_type = query_utils.serialize_content(ret_obj)
     return HttpResponse(content, content_type)

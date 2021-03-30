@@ -25,6 +25,8 @@ urlpatterns = [
 
     re_path(rf'^feedentry/({_uuid_regex})/?$', views.feed_entry),
     re_path(r'^feedentries/query/?$', views.feed_entries_query),
+    re_path(r'^feedentries/query/stable/create/?$', views.feed_entries_query_stable_create),
+    re_path(r'^feedentries/query/stable/?$', views.feed_entries_query_stable),
     re_path(rf'^feedentry/({_uuid_regex})/read/?$',
             views.feed_entry_read),
     re_path(r'^feedentries/read/?$', views.feed_entries_read),
