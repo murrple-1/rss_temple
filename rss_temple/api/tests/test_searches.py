@@ -131,6 +131,9 @@ class AllSearchesTestCase(TestCase):
                 'subscribed': ['true', 'false'],
                 'isRead': ['true', 'false'],
                 'isFavorite': ['true', 'false'],
+                'readAt': ['2018-11-23 00:00:00|2018-11-26 00:00:00'],
+                'readAt_exact': ['2018-11-26 00:00:00'],
+                'readAt_delta': ['older_than:10h'],
             },
         },
     }

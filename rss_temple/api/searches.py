@@ -94,6 +94,9 @@ _search_fns = {
         'subscribed': _feedentry_subscribed,
         'isRead': _feedentry_is_read,
         'isFavorite': _feedentry_is_favorite,
+        'readAt': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at__range=DateTimeRange.convertto(search_obj))),
+        'readAt_exact': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at=DateTime.convertto(search_obj))),
+        'readAt_delta': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at__range=DateTimeDeltaRange.convertto(search_obj))),
     },
 }
 

@@ -112,6 +112,9 @@ class FeedEntryTestCase(TestCase):
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
+        json_ = ujson.loads(response.content)
+        self.assertIsInstance(json_, str)
+
         self.assertTrue(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
@@ -207,6 +210,9 @@ class FeedEntryTestCase(TestCase):
                           'application/json',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
+
+        json_ = ujson.loads(response.content)
+        self.assertIsInstance(json_, list)
 
         self.assertEqual(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).count(), 2)

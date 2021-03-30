@@ -20,7 +20,7 @@ class _ObjectConfig:
 _object_configs = [
     _ObjectConfig('user', 5, 1, 'uuid'),
     _ObjectConfig('feed', 12, 1, 'uuid'),
-    _ObjectConfig('feedentry', 13, 1, 'uuid'),
+    _ObjectConfig('feedentry', 14, 1, 'uuid'),
     _ObjectConfig('usercategory', 3, 2, 'uuid'),
 ]
 
@@ -149,12 +149,11 @@ class AllFieldsTestCase(TestCase):
             updated_at=None,
             db_updated_at=None)
 
-        cls.feed_entry = models.FeedEntry(
+        cls.feed_entry = models.FeedEntry.objects.create(
             feed=cls.feed_with_category,
             url='http://example.com/entry1.html',
             content='<b>Some HTML Content</b>',
             author_name='John Doe')
-        cls.feed_entry.save()
 
         models.SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_with_category, user=cls.user, custom_feed_title='Custom Title 1')
@@ -186,3 +185,41 @@ class AllFieldsTestCase(TestCase):
                     context.request = AllFieldsTestCase.MockRequest()
 
                     field_config.accessor(context, db_obj)
+
+
+class FieldFnsTestCase(TestCase):
+    def test_feedentry_isRead(self):
+        context = Context()
+
+        user = models.User.objects.create(
+            email='test_fields@test.com')
+
+        class MockRequest:
+            def __init__(self):
+                self.user = user
+
+        context.request = MockRequest()
+
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        feed_entry1 = models.FeedEntry.objects.create(
+            feed=feed,
+            url='http://example.com/entry1.html',
+            content='<b>Some HTML Content</b>',
+            author_name='John Doe')
+        feed_entry2 = models.FeedEntry.objects.create(
+            feed=feed,
+            url='http://example.com/entry2.html',
+            content='<b>Some HTML Content</b>',
+            author_name='John Doe')
+
+        models.ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
+
+        self.assertIsNone(fields._feedentry_readAt(context, feed_entry1))
+        self.assertIsNotNone(fields._feedentry_readAt(context, feed_entry2))

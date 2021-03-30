@@ -56,39 +56,37 @@ class User(models.Model):
 
         return subscribed_feeds_dict
 
-    def read_feed_entries(self):
-        read_feed_entries = getattr(self, '_read_feed_entries', None)
-        if read_feed_entries is None:
-            read_feed_entries = FeedEntry.objects.filter(
-                uuid__in=ReadFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
-            self._read_feed_entries = read_feed_entries
+    def read_feed_entry_mappings(self):
+        read_feed_entry_mappings = getattr(self, '_read_feed_entry_mappings', None)
+        if read_feed_entry_mappings is None:
+            read_feed_entry_mappings = ReadFeedEntryUserMapping.objects.filter(user=self)
+            self._read_feed_entry_mappings = read_feed_entry_mappings
 
-        return read_feed_entries
+        return read_feed_entry_mappings
 
     def read_feed_entry_uuids(self):
         read_feed_entry_uuids = getattr(self, '_read_feed_entry_uuids', None)
         if read_feed_entry_uuids is None:
             read_feed_entry_uuids = frozenset(
-                _uuid for _uuid in self.read_feed_entries().values_list('uuid', flat=True))
+                _uuid for _uuid in self.read_feed_entry_mappings().values_list('feed_entry_id', flat=True))
             self._read_feed_entry_uuids = read_feed_entry_uuids
 
         return read_feed_entry_uuids
 
-    def favorite_feed_entries(self):
-        favorite_feed_entries = getattr(self, '_favorite_feed_entries', None)
-        if favorite_feed_entries is None:
-            favorite_feed_entries = FeedEntry.objects.filter(
-                uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=self).values('feed_entry_id'))
-            self._favorite_feed_entries = favorite_feed_entries
+    def favorite_feed_entry_mappings(self):
+        favorite_feed_entry_mappings = getattr(self, '_favorite_feed_entry_mappings', None)
+        if favorite_feed_entry_mappings is None:
+            favorite_feed_entry_mappings = FavoriteFeedEntryUserMapping.objects.filter(user=self)
+            self._favorite_feed_entry_mappings = favorite_feed_entry_mappings
 
-        return favorite_feed_entries
+        return favorite_feed_entry_mappings
 
     def favorite_feed_entry_uuids(self):
         favorite_feed_entry_uuids = getattr(
             self, '_favorite_feed_entry_uuids', None)
         if favorite_feed_entry_uuids is None:
             favorite_feed_entry_uuids = frozenset(
-                _uuid for _uuid in self.favorite_feed_entries().values_list('uuid', flat=True))
+                _uuid for _uuid in self.favorite_feed_entry_mappings().values_list('feed_entry_id', flat=True))
             self._favorite_feed_entry_uuids = favorite_feed_entry_uuids
 
         return favorite_feed_entry_uuids
@@ -378,6 +376,12 @@ class FeedEntry(models.Model):
             self._is_favorite = is_favorite
 
         return is_favorite
+
+    def read_mapping(self, user):
+        if not hasattr(self, '_read_mapping'):
+            self._read_mapping = next((rfe for rfe in user.read_feed_entry_mappings() if rfe.feed_entry_id == self.uuid), None)
+
+        return self._read_mapping
 
 
 class Tag(models.Model):

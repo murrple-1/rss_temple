@@ -2,6 +2,7 @@ import uuid
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
+from django.db import transaction
 
 import ujson
 
@@ -195,21 +196,30 @@ def _feed_entries_query_post(request):
 
 
 def _feed_entry_read_post(request, uuid_):
-    feed_entry = None
-    try:
-        feed_entry = models.FeedEntry.objects.get(uuid=uuid_)
-    except models.FeedEntry.DoesNotExist:
-        return HttpResponseNotFound('feed entry not found')
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(request.GET)
 
-    read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(
-        feed_entry=feed_entry, user=request.user)
+    read_feed_entry_user_mapping = None
 
-    try:
-        read_feed_entry_user_mapping.save()
-    except IntegrityError:
-        pass
+    with transaction.atomic():
+        feed_entry = None
+        try:
+            feed_entry = models.FeedEntry.objects.get(uuid=uuid_)
+        except models.FeedEntry.DoesNotExist:
+            return HttpResponseNotFound('feed entry not found')
 
-    return HttpResponse()
+        try:
+            read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.get(
+                feed_entry=feed_entry, user=request.user)
+        except models.ReadFeedEntryUserMapping.DoesNotExist:
+            read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.create(
+                feed_entry=feed_entry, user=request.user)
+
+    ret_obj = context.format_datetime(read_feed_entry_user_mapping.read_at)
+
+    content, content_type = query_utils.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
 
 
 def _feed_entry_read_delete(request, uuid_):
@@ -220,6 +230,10 @@ def _feed_entry_read_delete(request, uuid_):
 
 
 def _feed_entries_read_post(request):
+    context = Context()
+    context.parse_request(request)
+    context.parse_query_dict(request.GET)
+
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -241,21 +255,32 @@ def _feed_entries_read_post(request):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest('uuid malformed')
 
-    feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
+    read_feed_entry_user_mappings = []
+    with transaction.atomic():
+        feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
 
-    if len(feed_entries) != len(_ids):
-        return HttpResponseNotFound('feed entry not found')
+        if len(feed_entries) != len(_ids):
+            return HttpResponseNotFound('feed entry not found')
 
-    for feed_entry in feed_entries:
-        read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping(
-            feed_entry=feed_entry, user=request.user)
+        old_read_feed_entry_user_mappings = models.ReadFeedEntryUserMapping.objects.filter(user=request.user, feed_entry_id__in=_ids)
 
-        try:
-            read_feed_entry_user_mapping.save()
-        except IntegrityError:
-            pass
+        for feed_entry in feed_entries:
+            read_feed_entry_user_mapping = next((rfem for rfem in old_read_feed_entry_user_mappings if rfem.feed_entry_id == feed_entry.uuid), None)
+            if read_feed_entry_user_mapping is None:
+                read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.create(
+                    feed_entry=feed_entry, user=request.user)
 
-    return HttpResponse()
+            read_feed_entry_user_mappings.append(read_feed_entry_user_mapping)
+
+    ret_obj = []
+    for read_feed_entry_user_mapping in read_feed_entry_user_mappings:
+        ret_obj.append({
+            'uuid': str(read_feed_entry_user_mapping.uuid),
+            'readAt': context.format_datetime(read_feed_entry_user_mapping.read_at),
+        })
+
+    content, content_type = query_utils.serialize_content(ret_obj)
+    return HttpResponse(content, content_type)
 
 
 def _feed_entries_read_delete(request):

@@ -10,6 +10,14 @@ class _FieldConfig:
         self.default = default
 
 
+def _feedentry_readAt(context, db_obj):
+    read_mapping = db_obj.read_mapping(context.request.user)
+    if read_mapping is not None:
+        return context.format_datetime(read_mapping.read_at)
+    else:
+        return None
+
+
 _field_configs = {
     'user': {
         'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
@@ -54,6 +62,7 @@ _field_configs = {
         'fromSubscription': _FieldConfig(lambda context, db_obj: db_obj.from_subscription(context.request.user), False),
         'isRead': _FieldConfig(lambda context, db_obj: db_obj.is_read(context.request.user), False),
         'isFavorite': _FieldConfig(lambda context, db_obj: db_obj.is_favorite(context.request.user), False),
+        'readAt': _FieldConfig(_feedentry_readAt, False),
     },
 }
 
