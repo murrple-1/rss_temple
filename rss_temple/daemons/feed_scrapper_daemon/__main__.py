@@ -58,7 +58,7 @@ else:
                             response = rss_requests.get(feed.feed_url)
                             response.raise_for_status()
                         except requests.exceptions.RequestException:
-                            logger().warning('failed to scrap feed \'%s\'', feed.feed_url)
+                            logger().exception('failed to scrap feed \'%s\'', feed.feed_url)
                             continue
 
                         scrape_feed(feed, response.text)
