@@ -147,7 +147,12 @@ def _generate_feed(url):  # pragma: testing-subscription-setup-daemon-do-subscri
     feed_entries = []
 
     for d_entry in d.get('entries', []):
-        feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+        feed_entry = None
+        try:
+            feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+        except ValueError:
+            continue
+
         feed_entry.feed = feed
         feed_entries.append(feed_entry)
 

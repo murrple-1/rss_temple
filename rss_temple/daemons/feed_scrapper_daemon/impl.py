@@ -40,18 +40,30 @@ def logger():  # pragma: no cover
 def scrape_feed(feed, response_text):
     d = feed_handler.text_2_d(response_text)
 
-    feed_entries = []
+    new_feed_entries = []
 
     for d_entry in d.get('entries', []):
-        feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
-        feed_entry.feed = feed
-
-        if models.FeedEntry.objects.filter(feed=feed, hash=feed_entry.hash).exists():
+        feed_entry = None
+        try:
+            feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+        except ValueError:
             continue
 
-        feed_entries.append(feed_entry)
+        try:
+            old_feed_entry = models.FeedEntry.objects.get(feed=feed, hash=feed_entry.hash)
 
-    models.FeedEntry.objects.bulk_create(feed_entries)
+            old_feed_entry.id = feed_entry.id
+            old_feed_entry.content = feed_entry.content
+            old_feed_entry.author_name = feed_entry.author_name
+            old_feed_entry.created_at = feed_entry.created_at
+            old_feed_entry.updated_at = feed_entry.updated_at
+
+            old_feed_entry.save(update_fields=['id', 'content', 'author_name', 'created_at', 'updated_at'])
+        except models.FeedEntry.DoesNotExist:
+            feed_entry.feed = feed
+            new_feed_entries.append(feed_entry)
+
+    models.FeedEntry.objects.bulk_create(new_feed_entries)
 
     feed.db_updated_at = Now()
     feed.save()

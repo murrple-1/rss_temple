@@ -311,6 +311,7 @@ class FeedEntry(models.Model):
         indexes = [
             models.Index(fields=['id']),
             models.Index(fields=['hash']),
+            models.Index(fields=['url']),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -319,9 +320,9 @@ class FeedEntry(models.Model):
     created_at = models.DateTimeField(null=True)
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
-    title = models.TextField(null=True)
-    url = models.TextField(null=True)
-    content = models.TextField(null=True)
+    title = models.TextField()
+    url = models.TextField()
+    content = models.TextField()
     author_name = models.TextField(null=True)
     hash = models.BinaryField(max_length=64)
     db_created_at = models.DateTimeField(default=timezone.now)
@@ -335,14 +336,8 @@ class FeedEntry(models.Model):
 
     def _entry_hash_str(self):
         obj = {
-            'id': self.id,
-            'created_at': self.created_at.isoformat() if self.created_at is not None else None,
-            # published_at not included, since it can be set by the DB
-            'updated_at': self.updated_at.isoformat() if self.updated_at is not None else None,
             'title': self.title,
             'url': self.url,
-            'content': self.content,
-            'author_name': self.author_name,
         }
 
         return ujson.dumps(obj)

@@ -87,9 +87,17 @@ def d_entry_2_feed_entry(d_entry):
     else:
         feed_entry.updated_at = None
 
-    feed_entry.title = d_entry.get('title')
+    title = d_entry.get('title')
+    if title is None:
+        raise ValueError('title not set')
 
-    feed_entry.url = d_entry.get('link')
+    feed_entry.title = title
+
+    url = d_entry.get('link')
+    if url is None:
+        raise ValueError('url not set')
+
+    feed_entry.url = url
 
     content = None
 
@@ -109,6 +117,9 @@ def d_entry_2_feed_entry(d_entry):
     if content is None:
         if 'summary' in d_entry:
             content = content_sanitize.sanitize(d_entry.summary)
+
+    if content is None:
+        raise ValueError('content not set')
 
     feed_entry.content = content
 
