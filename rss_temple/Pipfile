@@ -32,3 +32,6 @@ Faker = "*"
 unittest-xml-reporting = "*"
 coverage-conditional-plugin = "*"
 packaging = "*"
+
+[requires]
+python_version = "3.6"
