@@ -13,7 +13,7 @@ def logger():  # pragma: no cover
     global _logger
 
     if _logger is None:
-        _logger = logging.getLogger('feed_scapper_daemon')
+        _logger = logging.getLogger('feed_scrapper_daemon')
         _logger.setLevel(logging.DEBUG)
 
         stream_handler = logging.StreamHandler(sys.stdout)
