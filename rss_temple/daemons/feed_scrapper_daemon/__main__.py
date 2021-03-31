@@ -44,7 +44,7 @@ if args.feed_url or args.feed_uuid:
         feed = models.Feed.objects.get(uuid=uuid.UUID(args.feed_uuid))
     scrape_feed(feed)
 else:
-    lock = filelock.FileLock('feed_scapper_daemon.lock')
+    lock = filelock.FileLock('feed_scrapper_daemon.lock')
     try:
         with lock.acquire(timeout=1):
             while True:
