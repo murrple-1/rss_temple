@@ -49,9 +49,22 @@ def scrape_feed(feed, response_text):
         except ValueError:
             continue
 
-        try:
-            old_feed_entry = models.FeedEntry.objects.get(feed=feed, hash=feed_entry.hash)
+        old_feed_entry = None
+        old_feed_entry_get_kwargs = {
+            'feed': feed,
+            'url': feed_entry.url,
+        }
+        if feed_entry.updated_at is None:
+            old_feed_entry_get_kwargs['updated_at__isnull'] = True
+        else:
+            old_feed_entry_get_kwargs['updated_at'] = feed_entry.updated_at
 
+        try:
+            old_feed_entry = models.FeedEntry.objects.get(**old_feed_entry_get_kwargs)
+        except models.FeedEntry.DoesNotExist:
+            pass
+
+        if old_feed_entry is not None:
             old_feed_entry.id = feed_entry.id
             old_feed_entry.content = feed_entry.content
             old_feed_entry.author_name = feed_entry.author_name
@@ -59,7 +72,7 @@ def scrape_feed(feed, response_text):
             old_feed_entry.updated_at = feed_entry.updated_at
 
             old_feed_entry.save(update_fields=['id', 'content', 'author_name', 'created_at', 'updated_at'])
-        except models.FeedEntry.DoesNotExist:
+        else:
             feed_entry.feed = feed
             new_feed_entries.append(feed_entry)
 

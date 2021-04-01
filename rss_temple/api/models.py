@@ -308,9 +308,10 @@ class FeedUserCategoryMapping(models.Model):
 
 class FeedEntry(models.Model):
     class Meta:
+        unique_together = (('feed', 'url', 'updated_at'))
+
         indexes = [
             models.Index(fields=['id']),
-            models.Index(fields=['hash']),
             models.Index(fields=['url']),
         ]
 
@@ -324,28 +325,8 @@ class FeedEntry(models.Model):
     url = models.TextField()
     content = models.TextField()
     author_name = models.TextField(null=True)
-    hash = models.BinaryField(max_length=64)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
-
-    def save(self, *args, **kwargs):
-        if self.hash is None or len(self.hash) < 1:
-            self.hash = self.entry_hash()
-
-        super().save(*args, **kwargs)
-
-    def _entry_hash_str(self):
-        obj = {
-            'title': self.title,
-            'url': self.url,
-        }
-
-        return ujson.dumps(obj)
-
-    def entry_hash(self):
-        m = hashlib.sha256()
-        m.update(self._entry_hash_str().encode('utf-8'))
-        return m.digest()
 
     def from_subscription(self, user):
         from_subscription = getattr(self, '_from_subscription', None)

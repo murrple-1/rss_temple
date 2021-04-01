@@ -125,8 +125,6 @@ def d_entry_2_feed_entry(d_entry):
 
     feed_entry.author_name = d_entry.get('author')
 
-    feed_entry.hash = feed_entry.entry_hash()
-
     return feed_entry
 
 
