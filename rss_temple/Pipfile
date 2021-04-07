@@ -18,12 +18,12 @@ defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
 url-normalize = "*"
-validate-email = "*"
 enum34 = {version = "*",python_version = "<'3.4'"}
 django-ipware = "*"
 quick-email = "*"
 bleach = "*"
 html5lib = "*"
+validators = "*"
 
 [dev-packages]
 coverage = "*"

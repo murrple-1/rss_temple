@@ -11,7 +11,7 @@ import argon2
 
 import ujson
 
-from validate_email import validate_email
+import validators
 
 from api.exceptions import QueryException
 from api import query_utils, models
@@ -105,7 +105,7 @@ def _user_put(request):
         if type(json_['email']) is not str:
             return HttpResponseBadRequest('\'email\' must be string')
 
-        if not validate_email(json_['email']):
+        if not validators.email(json_['email']):
             return HttpResponseBadRequest('\'email\' malformed')  # pragma: no cover
 
         if user.email != json_['email']:

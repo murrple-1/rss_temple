@@ -12,10 +12,6 @@
     <category>Feed Tag</category>
     <entry>
         <title>First entry title</title>
-        <link rel="alternate" href="/entry/3" />
-        <link rel="related" type="text/html" href="http://search.example.com/" />
-        <link rel="via" type="text/html" href="http://toby.example.com/examples/atom10" />
-        <link rel="enclosure" type="video/mpeg4" href="http://www.example.com/movie.mp4" length="42301" />
         <id>tag:feedparser.org,2005-11-09:/docs/examples/atom10.xml:3</id>
         <published>2005-11-09T00:23:47Z</published>
         <updated>2005-11-09T11:56:34Z</updated>
@@ -39,39 +35,6 @@
             <div xmlns="http://www.w3.org/1999/xhtml">
                 Watch out for
                 <span style="background-image: url(javascript:window.location=’http://example.org/’)">nasty tricks</span>
-            </div>
-        </content>
-        <category>Entry Category</category>
-        <category>Entry Tag</category>
-    </entry>
-    <entry>
-        <title>Second entry title</title>
-        <link rel="alternate" href="/entry/4" />
-        <link rel="related" type="text/html" href="http://search.example.com/" />
-        <link rel="via" type="text/html" href="http://toby.example.com/examples/atom10" />
-        <link rel="enclosure" type="video/mpeg4" href="http://www.example.com/movie2.mp4" length="42301" />
-        <id>tag:feedparser.org,2005-11-09:/docs/examples/atom10.xml:4</id>
-        <published>2005-11-09T00:23:48Z</published>
-        <author>
-            <name>Mark Pilgrim</name>
-            <uri>http://diveintomark.org/</uri>
-            <email>mark@example.org</email>
-        </author>
-        <contributor>
-            <name>Joe</name>
-            <url>http://example.org/joe/</url>
-            <email>joe@example.org</email>
-        </contributor>
-        <contributor>
-            <name>Sam</name>
-            <url>http://example.org/sam/</url>
-            <email>sam@example.org</email>
-        </contributor>
-        <summary type="text">Watch out for nasty tricks 2</summary>
-        <content type="xhtml" xml:base="http://example.org/entry/4" xml:lang="en-US">
-            <div xmlns="http://www.w3.org/1999/xhtml">
-                Watch out for
-                <span style="background-image: url(javascript:window.location=’http://example.org/’)">nasty tricks 2</span>
             </div>
         </content>
         <category>Entry Category</category>

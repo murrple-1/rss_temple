@@ -4,6 +4,8 @@ import logging
 
 import feedparser
 
+import validators
+
 from api import models, content_sanitize
 from api.exceptions import QueryException
 
@@ -96,6 +98,9 @@ def d_entry_2_feed_entry(d_entry):
     url = d_entry.get('link')
     if url is None:
         raise ValueError('url not set')
+
+    if not validators.url(url, public=True):
+        raise ValueError('url malformed')
 
     feed_entry.url = url
 

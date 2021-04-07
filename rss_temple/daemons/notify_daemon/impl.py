@@ -4,7 +4,7 @@ import smtplib
 
 from django.db import transaction
 
-from validate_email import validate_email
+import validators
 
 from api import models
 
@@ -50,7 +50,7 @@ def render(send_email_fn, count_warning_threshold):
                 send_bcc = []
 
                 for recipient in models.NotifyEmailQueueEntryRecipient.objects.filter(entry=notify_email_queue_entry):
-                    if validate_email(recipient.email):
+                    if validators.email(recipient.email):
                         if recipient.type == models.NotifyEmailQueueEntryRecipient.TYPE_TO:
                             send_to.append(recipient.email)
                         elif recipient.type == models.NotifyEmailQueueEntryRecipient.TYPE_CC:

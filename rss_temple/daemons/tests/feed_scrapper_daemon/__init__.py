@@ -31,7 +31,7 @@ class DaemonTestCase(TestCase):
 
     def test_scrape_feed(self):
         text = None
-        with open('api/tests/test_files/rss_2.0/well_formed.xml', 'r') as f:
+        with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
 
         scrape_feed(DaemonTestCase.feed, text)

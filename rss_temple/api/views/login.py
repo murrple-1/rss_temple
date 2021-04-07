@@ -12,7 +12,7 @@ import argon2
 
 import ujson
 
-from validate_email import validate_email
+import validators
 
 from api import models, query_utils
 from api.password_hasher import password_hasher
@@ -139,7 +139,7 @@ def _my_login_post(request):
     if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')
 
-    if not validate_email(json_['email']):
+    if not validators.email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:
@@ -192,7 +192,7 @@ def _google_login_post(request):
     if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')
 
-    if not validate_email(json_['email']):
+    if not validators.email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:
@@ -265,7 +265,7 @@ def _facebook_login_post(request):
     if type(json_['email']) is not str:
         return HttpResponseBadRequest('\'email\' must be string')
 
-    if not validate_email(json_['email']):
+    if not validators.email(json_['email']):
         return HttpResponseBadRequest('\'email\' malformed')
 
     if 'password' not in json_:

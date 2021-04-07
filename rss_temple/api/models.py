@@ -1,11 +1,8 @@
 import uuid
-import hashlib
 
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Now
-
-import ujson
 
 
 class User(models.Model):

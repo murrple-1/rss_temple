@@ -66,7 +66,7 @@ def _save_feed(url):
             feed_entry = None
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 continue
 
             feed_entry.feed = feed

@@ -115,3 +115,43 @@ class FeedHandlerTestCase(TestCase):
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
         self.assertIsInstance(feed_entry, models.FeedEntry)
+
+    def test_d_feed_2_feed_entry_no_title(self):
+        text = None
+        with open('api/tests/test_files/atom_1.0/well_formed_no_title.xml', 'r') as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        with self.assertRaises(ValueError):
+            feed_handler.d_entry_2_feed_entry(d.entries[0])
+
+    def test_d_feed_2_feed_entry_no_url(self):
+        text = None
+        with open('api/tests/test_files/atom_1.0/well_formed_no_url.xml', 'r') as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        with self.assertRaises(ValueError):
+            feed_handler.d_entry_2_feed_entry(d.entries[0])
+
+    def test_d_feed_2_feed_entry_url_is_id(self):
+        text = None
+        with open('api/tests/test_files/atom_1.0/well_formed_url_is_id.xml', 'r') as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        with self.assertRaises(ValueError):
+            feed_handler.d_entry_2_feed_entry(d.entries[0])
+
+    def test_d_feed_2_feed_entry_no_content(self):
+        text = None
+        with open('api/tests/test_files/atom_1.0/well_formed_no_content.xml', 'r') as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        with self.assertRaises(ValueError):
+            feed_handler.d_entry_2_feed_entry(d.entries[0])
