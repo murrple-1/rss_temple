@@ -371,15 +371,6 @@ class FeedTagMapping(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
 
-class FeedEntryTagMapping(models.Model):
-    class Meta:
-        unique_together = (('feed_entry', 'tag'),)
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
-
-
 class ReadFeedEntryUserMapping(models.Model):
     class Meta:
         unique_together = (('feed_entry', 'user'))

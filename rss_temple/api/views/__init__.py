@@ -6,6 +6,7 @@ from .feed_entry import feed_entry, feed_entries_query, feed_entries_query_stabl
 from .user_category import user_category, user_categories_query, user_categories_apply
 from .opml import opml
 from .progress import feed_subscription_progress
+from .tag import tag, tags_query, tags_query_popular
 
 __all__ = [
     my_login,
@@ -36,4 +37,7 @@ __all__ = [
     user_categories_apply,
     opml,
     feed_subscription_progress,
+    tag,
+    tags_query,
+    tags_query_popular,
 ]

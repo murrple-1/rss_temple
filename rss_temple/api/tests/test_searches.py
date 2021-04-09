@@ -136,6 +136,14 @@ class AllSearchesTestCase(TestCase):
                 'readAt_delta': ['older_than:10h'],
             },
         },
+        'tag': {
+            'get_queryset': lambda: models.Tag.objects,
+            'searches': {
+                'uuid': [str(uuid.uuid4())],
+                'labelText': ['test'],
+                'labelText_exact': ['test'],
+            },
+        },
     }
 
     class MockRequest:

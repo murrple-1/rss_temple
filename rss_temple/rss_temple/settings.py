@@ -109,6 +109,10 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'stable-query-cache',
     },
+    'tags': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'tags-cache',
+    },
     'throttle': {
         # this should be memcache or Redis in production. don't enable in dev, as it causes tests to fail
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',

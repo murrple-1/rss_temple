@@ -22,6 +22,7 @@ _object_configs = [
     _ObjectConfig('feed', 12, 1, 'uuid'),
     _ObjectConfig('feedentry', 14, 1, 'uuid'),
     _ObjectConfig('usercategory', 3, 2, 'uuid'),
+    _ObjectConfig('tag', 2, 2, 'uuid'),
 ]
 
 
@@ -107,6 +108,10 @@ class AllFieldsTestCase(TestCase):
     def generate_feedentries(cls):
         return [cls.feed_entry]
 
+    @classmethod
+    def generate_tags(cls):
+        return [cls.tag]
+
     class MockRequest:
         def __init__(self):
             self.user = AllFieldsTestCase.user
@@ -125,6 +130,7 @@ class AllFieldsTestCase(TestCase):
             'usercategory': AllFieldsTestCase.generate_usercategories,
             'feed': AllFieldsTestCase.generate_feeds,
             'feedentry': AllFieldsTestCase.generate_feedentries,
+            'tag': AllFieldsTestCase.generate_tags,
         }
 
         cls.user = models.User.objects.create(
@@ -163,6 +169,10 @@ class AllFieldsTestCase(TestCase):
 
         models.FeedUserCategoryMapping.objects.create(
             feed=cls.feed_with_category, user_category=cls.user_category)
+
+        cls.tag = models.Tag.objects.create(label_text='Tag')
+        models.FeedTagMapping.objects.create(tag=cls.tag, feed=cls.feed_with_category)
+        models.FeedTagMapping.objects.create(tag=cls.tag, feed=cls.feed_without_category)
 
     @classmethod
     def tearDownClass(cls):

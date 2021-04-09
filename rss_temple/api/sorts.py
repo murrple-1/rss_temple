@@ -63,6 +63,10 @@ _sort_configs = {
         'updatedAt': _SortConfig(['created_at'], None),
         'title': _SortConfig(['title'], None),
     },
+    'tag': {
+        'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
+        'labelText': _SortConfig(['label_text'], None),
+    },
 }
 
 __sort_regex = re.compile(r'^([A-Z0-9_]+):(ASC|DESC)$', re.IGNORECASE)

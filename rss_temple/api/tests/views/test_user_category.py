@@ -185,7 +185,7 @@ class UserCategoryTestCase(TestCase):
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
-    def test_usercategories_query_get(self):
+    def test_usercategories_query_post(self):
         models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 

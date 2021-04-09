@@ -123,6 +123,9 @@ class AllSortsTestCase(TestCase):
         'feedentry': {
             'get_queryset': lambda: models.FeedEntry.objects,
         },
+        'tag': {
+            'get_queryset': lambda: models.Tag.objects,
+        },
     }
 
     @classmethod
