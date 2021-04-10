@@ -44,7 +44,5 @@ urlpatterns = [
     re_path(rf'^feed/subscribe/progress/({_uuid_regex})/?$',
             views.feed_subscription_progress),
 
-    re_path(rf'^tag/({_uuid_regex})/?$', views.tag),
-    re_path(r'^tags/query/?$', views.tags_query),
-    re_path(r'^tags/query/popular/?$', views.tags_query_popular),
+    re_path(rf'^explore/?$', views.explore),
 ]

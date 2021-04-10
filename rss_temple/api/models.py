@@ -357,20 +357,6 @@ class FeedEntry(models.Model):
         return self._read_mapping
 
 
-class Tag(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    label_text = models.TextField(unique=True)
-
-
-class FeedTagMapping(models.Model):
-    class Meta:
-        unique_together = (('feed', 'tag'),)
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
-
-
 class ReadFeedEntryUserMapping(models.Model):
     class Meta:
         unique_together = (('feed_entry', 'user'))

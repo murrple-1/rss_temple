@@ -98,11 +98,6 @@ _search_fns = {
         'readAt_exact': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at=DateTime.convertto(search_obj))),
         'readAt_delta': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at__range=DateTimeDeltaRange.convertto(search_obj))),
     },
-    'tag': {
-        'uuid': lambda context, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
-        'labelText': lambda context, search_obj: Q(label_text__icontains=search_obj),
-        'labelText_exact': lambda context, search_obj: Q(label_text__iexact=search_obj),
-    },
 }
 
 

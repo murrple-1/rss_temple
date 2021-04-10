@@ -64,10 +64,6 @@ _field_configs = {
         'isFavorite': _FieldConfig(lambda context, db_obj: db_obj.is_favorite(context.request.user), False),
         'readAt': _FieldConfig(_feedentry_readAt, False),
     },
-    'tag': {
-        'uuid': _FieldConfig(lambda context, db_obj: str(db_obj.uuid), True),
-        'labelText': _FieldConfig(lambda context, db_obj: db_obj.label_text, True),
-    },
 }
 
 
