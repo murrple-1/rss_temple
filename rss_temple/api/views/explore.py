@@ -1,6 +1,6 @@
 from django.http import HttpResponse, HttpResponseNotAllowed
 
-from api import query_utils
+from api import models, query_utils
 
 
 def explore(request):
@@ -14,29 +14,126 @@ def explore(request):
 
 
 def _explore_get(request, uuid_):
-    # TODO for the time being, this will just be static data, because a recommendation engine is quite an endeavour
-    ret_obj = [
+    # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
+    section_lookups = [
         {
-            'tag': 'American News',
-            'feedUuids': [],
+            'tag': 'Gaming',
+            'feeds': [
+                {
+                  'feed_url': 'http://feeds.gawker.com/kotaku/full',
+                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
+                },
+                {
+                  'feed_url': 'http://feeds.feedburner.com/GamasutraFeatureArticles',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://feeds.wolfire.com/WolfireGames',
+                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
+                },
+            ],
         },
         {
-            'tag': 'Tech',
-            'feedUuids': [],
+            'tag': 'Technology',
+            'feeds': [
+                {
+                  'feed_url': 'http://rss.slashdot.org/Slashdot/slashdot',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://feeds.arstechnica.com/arstechnica/index',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://feeds.gawker.com/gizmodo/full',
+                  'image_src': None,
+                },
+            ],
         },
         {
-            'tag': 'Home',
-            'feedUuids': [],
+            'tag': 'World News',
+            'feeds': [
+                {
+                  'feed_url': 'http://www.ctv.ca/generic/generated/freeheadlines/rdf/allNewsRss.xml',
+                  'image_src': None,
+                },
+            ],
         },
         {
-            'tag': 'Business',
-            'feedUuids': [],
+            'tag': 'Programming',
+            'feeds': [
+                {
+                  'feed_url': 'http://feeds.feedburner.com/codinghorror',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://blogs.msdn.com/oldnewthing/rss.xml',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://feeds.wolfire.com/WolfireGames',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://syndication.thedailywtf.com/TheDailyWtf',
+                  'image_src': None,
+                },
+            ],
         },
         {
-            'tag': 'Marketing',
-            'feedUuids': [],
+            'tag': 'Music',
+            'feeds': [
+                {
+                  'feed_url': 'http://battlehelm.com/feed/',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://www.theblackplanet.org/feed/',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://www.angrymetalguy.com/feed/',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://www.terrorizer.com/feed/',
+                  'image_src': None,
+                },
+                {
+                  'feed_url': 'http://deadrhetoric.com/feed/',
+                  'image_src': None,
+                },
+            ],
         },
     ]
+
+    ret_obj = []
+    for section_lookup in section_lookups:
+        feed_objs = []
+        for feed_lookup in section_lookup['feeds']:
+            feed = None
+            try:
+                feed = models.Feed.objects.with_subscription_data(request.user).get(feed_url=feed_lookup['feed_url'], is_subscribed=False)
+            except models.Feed.DoesNotExist:
+                continue
+
+            some_feed_entries = list(models.FeedEntry.objects.filter(feed=feed, title__isnull=False).order_by('published_at').values_list('title', flat=True)[:5])
+            if len(some_feed_entries) < 1:
+                continue
+
+            feed_objs.append({
+                'name': feed.title,
+                'feedUrl': feed.feed_url,
+                'homeUrl': feed.home_url,
+                'imageSrc': feed_lookup['image_src'],
+                'entryTitles': some_feed_entries,
+            })
+
+        if len(feed_objs) > 0:
+            ret_obj.append({
+                'tagName': section_lookup['tag'],
+                'feeds': feed_objs,
+            })
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
