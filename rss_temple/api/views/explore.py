@@ -10,10 +10,10 @@ def explore(request):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'GET':
-        return _explore_get(request, uuid_)
+        return _explore_get(request)
 
 
-def _explore_get(request, uuid_):
+def _explore_get(request):
     # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
     section_lookups = [
         {
@@ -89,7 +89,7 @@ def _explore_get(request, uuid_):
                 },
                 {
                   'feed_url': 'http://www.theblackplanet.org/feed/',
-                  'image_src': None,
+                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
                 },
                 {
                   'feed_url': 'http://www.angrymetalguy.com/feed/',
@@ -113,7 +113,7 @@ def _explore_get(request, uuid_):
         for feed_lookup in section_lookup['feeds']:
             feed = None
             try:
-                feed = models.Feed.objects.with_subscription_data(request.user).get(feed_url=feed_lookup['feed_url'], is_subscribed=False)
+                feed = models.Feed.objects.with_subscription_data(request.user).get(feed_url=feed_lookup['feed_url'])
             except models.Feed.DoesNotExist:
                 continue
 
@@ -127,6 +127,7 @@ def _explore_get(request, uuid_):
                 'homeUrl': feed.home_url,
                 'imageSrc': feed_lookup['image_src'],
                 'entryTitles': some_feed_entries,
+                'isSubscribed': feed.is_subscribed,
             })
 
         if len(feed_objs) > 0:
