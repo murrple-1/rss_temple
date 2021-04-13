@@ -20,12 +20,8 @@ def _explore_get(request):
             'tag': 'Gaming',
             'feeds': [
                 {
-                  'feed_url': 'http://feeds.gawker.com/kotaku/full',
-                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
-                },
-                {
                   'feed_url': 'http://feeds.feedburner.com/GamasutraFeatureArticles',
-                  'image_src': None,
+                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
                 },
                 {
                   'feed_url': 'http://feeds.wolfire.com/WolfireGames',
@@ -44,17 +40,13 @@ def _explore_get(request):
                   'feed_url': 'http://feeds.arstechnica.com/arstechnica/index',
                   'image_src': None,
                 },
-                {
-                  'feed_url': 'http://feeds.gawker.com/gizmodo/full',
-                  'image_src': None,
-                },
             ],
         },
         {
             'tag': 'World News',
             'feeds': [
                 {
-                  'feed_url': 'http://www.ctv.ca/generic/generated/freeheadlines/rdf/allNewsRss.xml',
+                  'feed_url': 'https://www.ctvnews.ca/rss/ctvnews-ca-top-stories-public-rss-1.822009',
                   'image_src': None,
                 },
             ],
@@ -64,10 +56,6 @@ def _explore_get(request):
             'feeds': [
                 {
                   'feed_url': 'http://feeds.feedburner.com/codinghorror',
-                  'image_src': None,
-                },
-                {
-                  'feed_url': 'http://blogs.msdn.com/oldnewthing/rss.xml',
                   'image_src': None,
                 },
                 {
