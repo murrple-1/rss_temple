@@ -84,7 +84,7 @@ def _html_sanitizer_stream(source):
 
         attributes = dict(bleach.sanitizer.ALLOWED_ATTRIBUTES)
         attributes['img'] = ['src']
-        attributes['iframe'] = ['src', 'title', 'width', 'height']
+        attributes['iframe'] = ['src', 'title', 'width', 'height', 'allowfullscreen']
 
         styles = set(bleach.sanitizer.ALLOWED_STYLES)
 
