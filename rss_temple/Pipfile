@@ -24,6 +24,7 @@ quick-email = "*"
 bleach = "*"
 html5lib = "*"
 validators = "*"
+tabulate = "*"
 
 [dev-packages]
 coverage = "*"
