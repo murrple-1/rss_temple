@@ -147,6 +147,100 @@ class FeedTestCase(TestCase):
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
 
+    def test_feed_subscribe_put(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed,
+            user=FeedTestCase.user,
+            custom_feed_title='Custom Title')
+
+        c = Client()
+        response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(models.SubscribedFeedUserMapping.objects.filter(feed=feed, user=FeedTestCase.user, custom_feed_title='Custom Title 2').count(), 1)
+
+    def test_feed_subscribe_put_no_url(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed,
+            user=FeedTestCase.user,
+            custom_feed_title='Custom Title')
+
+        c = Client()
+        response = c.put('/api/feed/subscribe?customtitle=Custom%20Title%202',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(b'url', response.content)
+        self.assertIn(b'missing', response.content)
+
+    def test_feed_subscribe_put_not_subscribed(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        c = Client()
+        response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn(b'not subscribed', response.content)
+
+    def test_feed_subscribe_put_renames(self):
+        feed1 = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
+            title='Sample Feed',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        feed2 = models.Feed.objects.create(
+            feed_url='http://localhost:8080/rss_2.0/well_formed2.xml',
+            title='Sample Feed 2',
+            home_url='http://localhost:8080',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed1,
+            user=FeedTestCase.user,
+            custom_feed_title='Custom Title')
+
+        models.SubscribedFeedUserMapping.objects.create(
+            feed=feed2,
+            user=FeedTestCase.user,
+            custom_feed_title='Custom Title 2')
+
+        c = Client()
+        response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 200)
+
+        response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
+                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+        self.assertEqual(response.status_code, 409)
+        self.assertIn(b'already used', response.content)
+
     def test_feed_subscribe_delete(self):
         feed = models.Feed.objects.create(
             feed_url='http://localhost:8080/rss_2.0/well_formed.xml',

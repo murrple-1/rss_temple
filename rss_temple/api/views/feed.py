@@ -36,13 +36,15 @@ def feeds_query(request):
 
 
 def feed_subscribe(request):
-    permitted_methods = {'POST', 'DELETE'}
+    permitted_methods = {'POST', 'PUT', 'DELETE'}
 
     if request.method not in permitted_methods:
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == 'POST':
         return _feed_subscribe_post(request)
+    elif request.method == 'PUT':
+        return _feed_subscribe_put(request)
     elif request.method == 'DELETE':
         return _feed_subscribe_delete(request)
 
@@ -229,6 +231,35 @@ def _feed_subscribe_post(request):
 
     models.SubscribedFeedUserMapping.objects.create(
         user=user, feed=feed, custom_feed_title=custom_title)
+
+    return HttpResponse()
+
+
+def _feed_subscribe_put(request):
+    user = request.user
+
+    url = request.GET.get('url')
+    if not url:
+        return HttpResponseBadRequest('\'url\' missing')
+
+    url = url_normalize(url)
+
+    custom_title = request.GET.get('customtitle')
+
+    subscribed_feed_mapping = None
+    try:
+        subscribed_feed_mapping = models.SubscribedFeedUserMapping.objects.get(user=user, feed__feed_url=url)
+    except models.SubscribedFeedUserMapping.DoesNotExist:
+        return HttpResponseNotFound('not subscribed')
+
+    existing_custom_titles = frozenset(models.SubscribedFeedUserMapping.objects.filter(user=user).exclude(uuid=subscribed_feed_mapping.uuid).values_list('custom_feed_title', flat=True))
+
+    if custom_title is not None:
+        if models.SubscribedFeedUserMapping.objects.exclude(uuid=subscribed_feed_mapping.uuid).filter(user=user, custom_feed_title=custom_title).exists():
+            return HttpResponse('custom title already used', status=409)
+
+    subscribed_feed_mapping.custom_feed_title = custom_title
+    subscribed_feed_mapping.save(update_fields=['custom_feed_title'])
 
     return HttpResponse()
 
