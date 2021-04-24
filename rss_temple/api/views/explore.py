@@ -21,11 +21,11 @@ def _explore_get(request):
             'feeds': [
                 {
                   'feed_url': 'http://feeds.feedburner.com/GamasutraFeatureArticles',
-                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
+                  'image_src': '/assets/images/explore_banner.png',
                 },
                 {
                   'feed_url': 'http://feeds.wolfire.com/WolfireGames',
-                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
+                  'image_src': '/assets/images/explore_banner.png',
                 },
             ],
         },
@@ -73,23 +73,23 @@ def _explore_get(request):
             'feeds': [
                 {
                   'feed_url': 'http://battlehelm.com/feed/',
-                  'image_src': None,
+                  'image_src': '/assets/images/explore_banner.png',
                 },
                 {
                   'feed_url': 'http://www.theblackplanet.org/feed/',
-                  'image_src': 'https://pbs.twimg.com/profile_banners/759251/1607983278/1080x360',
+                  'image_src': '/assets/images/explore_banner.png',
                 },
                 {
                   'feed_url': 'http://www.angrymetalguy.com/feed/',
-                  'image_src': None,
+                  'image_src': '/assets/images/explore_banner.png',
                 },
                 {
                   'feed_url': 'http://www.terrorizer.com/feed/',
-                  'image_src': None,
+                  'image_src': '/assets/images/explore_banner.png',
                 },
                 {
                   'feed_url': 'http://deadrhetoric.com/feed/',
-                  'image_src': None,
+                  'image_src': '/assets/images/explore_banner.png',
                 },
             ],
         },
