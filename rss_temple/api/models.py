@@ -1,8 +1,25 @@
 import uuid
+import datetime
 
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Now
+from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
+
+
+_USER_UNREAD_GRACE_INTERVAL = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _USER_UNREAD_GRACE_INTERVAL
+
+    _USER_UNREAD_GRACE_INTERVAL = settings.USER_UNREAD_GRACE_INTERVAL
+
+
+_load_global_settings()
 
 
 class User(models.Model):
@@ -256,9 +273,10 @@ class Feed(models.Model):
 
     @staticmethod
     def _generate_counts(feed, user):
-        total_feed_entry_count = feed.feed_entries().count()
+        grace_start = user.created_at + _USER_UNREAD_GRACE_INTERVAL
+        total_feed_entry_count = feed.feed_entries().filter(published_at__gt=grace_start).count()
         read_count = ReadFeedEntryUserMapping.objects.filter(
-            feed_entry__feed=feed, user=user).count()
+            feed_entry__feed=feed, feed_entry__published_at__lte=grace_start, user=user).count()
         unread_count = total_feed_entry_count - read_count
 
         counts = {
@@ -337,7 +355,7 @@ class FeedEntry(models.Model):
     def is_read(self, user):
         is_read = getattr(self, '_is_read', None)
         if is_read is None:
-            is_read = self.uuid in user.read_feed_entry_uuids()
+            is_read = (user.created_at + _USER_UNREAD_GRACE_INTERVAL) > self.published_at or self.uuid in user.read_feed_entry_uuids()
             self._is_read = is_read
 
         return is_read

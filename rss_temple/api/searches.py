@@ -1,6 +1,10 @@
 import logging
+import datetime
 
 from django.db.models import Q
+from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
 
 from pyparsing import ParseException
 
@@ -8,6 +12,19 @@ from api import models
 from api.exceptions import QueryException
 from api.search.parser import parser
 from api.search.convertto import Bool, UuidList, DateTime, DateTimeRange, DateTimeDeltaRange
+
+
+_USER_UNREAD_GRACE_INTERVAL = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _USER_UNREAD_GRACE_INTERVAL
+
+    _USER_UNREAD_GRACE_INTERVAL = settings.USER_UNREAD_GRACE_INTERVAL
+
+
+_load_global_settings()
 
 
 _logger = logging.getLogger('rss_temple')
@@ -24,8 +41,7 @@ def _feedentry_subscribed(context, search_obj):
 
 
 def _feedentry_is_read(context, search_obj):
-    q = Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
-        user=context.request.user).values('feed_entry_id'))
+    q = Q(published_at__gt=context.request.user.created_at + _USER_UNREAD_GRACE_INTERVAL) | Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user).values('feed_entry_id'))
 
     if not Bool.convertto(search_obj):
         q = ~q
