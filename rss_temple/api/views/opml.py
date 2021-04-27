@@ -9,7 +9,7 @@ import xmlschema
 
 from url_normalize import url_normalize
 
-from api import models, opml as opml_util, query_utils
+from api import models, opml as opml_util, query_utils, archived_feed_entry_util
 
 
 def opml(request):
@@ -167,6 +167,10 @@ def _opml_post(request):
             subscribed_feed_user_mappings)
         models.FeedUserCategoryMapping.objects.bulk_create(
             feed_user_category_mappings)
+
+        for feed in feeds_dict.values():
+            if feed is not None:
+                archived_feed_entry_util.mark_archived_entries(archived_feed_entry_util.read_mapping_generator_fn(feed, request.user))
 
         if feed_subscription_progress_entry is not None:
             feed_subscription_progress_entry.save()

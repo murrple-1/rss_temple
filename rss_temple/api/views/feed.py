@@ -7,7 +7,7 @@ import ujson
 
 from url_normalize import url_normalize
 
-from api import models, query_utils, feed_handler, rss_requests
+from api import models, query_utils, feed_handler, rss_requests, archived_feed_entry_util
 from api.exceptions import QueryException
 from api.context import Context
 
@@ -229,8 +229,13 @@ def _feed_subscribe_post(request):
     if feed.feed_url in existing_feed_urls:
         return HttpResponse('user already subscribed', status=409)
 
-    models.SubscribedFeedUserMapping.objects.create(
-        user=user, feed=feed, custom_feed_title=custom_title)
+    read_mapping_generator = archived_feed_entry_util.read_mapping_generator_fn(feed, user)
+
+    with transaction.atomic():
+        models.SubscribedFeedUserMapping.objects.create(
+            user=user, feed=feed, custom_feed_title=custom_title)
+
+        archived_feed_entry_util.mark_archived_entries(read_mapping_generator)
 
     return HttpResponse()
 
