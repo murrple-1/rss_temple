@@ -1,5 +1,6 @@
 import html
 import re
+from urllib.parse import urlparse
 
 import html5lib
 from html5lib.filters.base import Filter as HTML5LibFilter
@@ -69,6 +70,43 @@ class EmptyAnchorFilter(HTML5LibFilter):
                 else:
                     yield token
 
+_bad_iframe_url_fns = [
+    lambda url: url.netloc == 'slashdot.org',
+]
+
+class BadIFrameFilter(HTML5LibFilter):
+    def __iter__(self):
+        is_in_bad_iframe = False
+        for token in super().__iter__():
+            if is_in_bad_iframe:
+                if token['type'] == 'EndTag' and token['name'] == 'iframe':
+                    is_in_bad_iframe = False
+            else:
+                if token['type'] == 'StartTag' and token['name'] == 'iframe':
+                    data = token['data']
+                    if (None, 'src') in data:
+                        src_url = None
+                        try:
+                            src_url = urlparse(data[(None, 'src')])
+                        except ValueError:
+                            is_in_bad_iframe = True
+                            continue
+
+                        found_bad_iframe = False
+                        for bad_iframe_url_fn in _bad_iframe_url_fns:
+                            if bad_iframe_url_fn(src_url):
+                                found_bad_iframe = True
+                                break
+
+                        if found_bad_iframe:
+                            is_in_bad_iframe = True
+                            continue
+                    else:
+                        is_in_bad_iframe = True
+                        continue
+
+                yield token
+
 
 _my_bleach_filter_kwargs_ = None
 
@@ -106,6 +144,7 @@ def _html_sanitizer_stream(source):
     filtered = StyleRemovalFiler(source=filtered)
     filtered = HTTPSOnlyImgFilter(source=filtered)
     filtered = EmptyAnchorFilter(source=filtered)
+    filtered = BadIFrameFilter(source=filtered)
     filtered = bleach.sanitizer.BleachSanitizerFilter(
         source=filtered, **_my_bleach_filter_kwargs_)
 
