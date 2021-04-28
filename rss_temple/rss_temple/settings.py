@@ -188,3 +188,4 @@ PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 VERIFY_URL_FORMAT = 'http://localhost:4200/verify?token={verify_token}'
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
+USER_UNREAD_GRACE_MIN_COUNT = 10
