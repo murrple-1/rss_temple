@@ -44,5 +44,5 @@ urlpatterns = [
     re_path(rf'^feed/subscribe/progress/({_uuid_regex})/?$',
             views.feed_subscription_progress),
 
-    re_path(rf'^explore/?$', views.explore),
+    re_path(r'^explore/?$', views.explore),
 ]

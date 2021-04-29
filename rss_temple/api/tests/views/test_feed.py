@@ -190,7 +190,7 @@ class FeedTestCase(TestCase):
         self.assertIn(b'missing', response.content)
 
     def test_feed_subscribe_put_not_subscribed(self):
-        feed = models.Feed.objects.create(
+        models.Feed.objects.create(
             feed_url='http://localhost:8080/rss_2.0/well_formed.xml',
             title='Sample Feed',
             home_url='http://localhost:8080',

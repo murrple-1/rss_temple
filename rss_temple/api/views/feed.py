@@ -257,8 +257,6 @@ def _feed_subscribe_put(request):
     except models.SubscribedFeedUserMapping.DoesNotExist:
         return HttpResponseNotFound('not subscribed')
 
-    existing_custom_titles = frozenset(models.SubscribedFeedUserMapping.objects.filter(user=user).exclude(uuid=subscribed_feed_mapping.uuid).values_list('custom_feed_title', flat=True))
-
     if custom_title is not None:
         if models.SubscribedFeedUserMapping.objects.exclude(uuid=subscribed_feed_mapping.uuid).filter(user=user, custom_feed_title=custom_title).exists():
             return HttpResponse('custom title already used', status=409)
