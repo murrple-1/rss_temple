@@ -250,7 +250,8 @@ def _feed_entries_query_stable_create_post(request):
 
     token = f'feedentry-{uuid.uuid4().int}'
 
-    cache.set(token, list(models.FeedEntry.objects.filter(*search).order_by(*sort).values_list('uuid', flat=True)))
+    cache.set(token, list(models.FeedEntry.objects.filter(
+        *search).order_by(*sort).values_list('uuid', flat=True)))
 
     content, content_type = query_utils.serialize_content(token)
     return HttpResponse(content, content_type)
@@ -325,7 +326,8 @@ def _feed_entries_query_stable_post(request):
     if return_objects:
         current_uuids = uuids[skip:skip + count]
 
-        feed_entries = dict((feed_entry.uuid, feed_entry) for feed_entry in models.FeedEntry.objects.filter(uuid__in=current_uuids))
+        feed_entries = dict((feed_entry.uuid, feed_entry)
+                            for feed_entry in models.FeedEntry.objects.filter(uuid__in=current_uuids))
 
         objs = []
         if len(current_uuids) == len(feed_entries):
@@ -411,10 +413,12 @@ def _feed_entries_read_post(request):
         if len(feed_entries) != len(_ids):
             return HttpResponseNotFound('feed entry not found')
 
-        old_read_feed_entry_user_mappings = models.ReadFeedEntryUserMapping.objects.filter(user=request.user, feed_entry_id__in=_ids)
+        old_read_feed_entry_user_mappings = models.ReadFeedEntryUserMapping.objects.filter(
+            user=request.user, feed_entry_id__in=_ids)
 
         for feed_entry in feed_entries:
-            read_feed_entry_user_mapping = next((rfem for rfem in old_read_feed_entry_user_mappings if rfem.feed_entry_id == feed_entry.uuid), None)
+            read_feed_entry_user_mapping = next(
+                (rfem for rfem in old_read_feed_entry_user_mappings if rfem.feed_entry_id == feed_entry.uuid), None)
             if read_feed_entry_user_mapping is None:
                 read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.create(
                     feed_entry=feed_entry, user=request.user)

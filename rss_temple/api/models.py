@@ -54,9 +54,11 @@ class User(models.Model):
         return subscribed_feeds_dict
 
     def read_feed_entry_mappings(self):
-        read_feed_entry_mappings = getattr(self, '_read_feed_entry_mappings', None)
+        read_feed_entry_mappings = getattr(
+            self, '_read_feed_entry_mappings', None)
         if read_feed_entry_mappings is None:
-            read_feed_entry_mappings = ReadFeedEntryUserMapping.objects.filter(user=self)
+            read_feed_entry_mappings = ReadFeedEntryUserMapping.objects.filter(
+                user=self)
             self._read_feed_entry_mappings = read_feed_entry_mappings
 
         return read_feed_entry_mappings
@@ -71,9 +73,11 @@ class User(models.Model):
         return read_feed_entry_uuids
 
     def favorite_feed_entry_mappings(self):
-        favorite_feed_entry_mappings = getattr(self, '_favorite_feed_entry_mappings', None)
+        favorite_feed_entry_mappings = getattr(
+            self, '_favorite_feed_entry_mappings', None)
         if favorite_feed_entry_mappings is None:
-            favorite_feed_entry_mappings = FavoriteFeedEntryUserMapping.objects.filter(user=self)
+            favorite_feed_entry_mappings = FavoriteFeedEntryUserMapping.objects.filter(
+                user=self)
             self._favorite_feed_entry_mappings = favorite_feed_entry_mappings
 
         return favorite_feed_entry_mappings
@@ -352,7 +356,8 @@ class FeedEntry(models.Model):
 
     def read_mapping(self, user):
         if not hasattr(self, '_read_mapping'):
-            self._read_mapping = next((rfe for rfe in user.read_feed_entry_mappings() if rfe.feed_entry_id == self.uuid), None)
+            self._read_mapping = next((rfe for rfe in user.read_feed_entry_mappings(
+            ) if rfe.feed_entry_id == self.uuid), None)
 
         return self._read_mapping
 

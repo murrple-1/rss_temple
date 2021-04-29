@@ -70,9 +70,11 @@ class EmptyAnchorFilter(HTML5LibFilter):
                 else:
                     yield token
 
+
 _bad_iframe_url_fns = [
     lambda url: url.netloc == 'slashdot.org',
 ]
+
 
 class BadIFrameFilter(HTML5LibFilter):
     def __iter__(self):
@@ -122,7 +124,8 @@ def _html_sanitizer_stream(source):
 
         attributes = dict(bleach.sanitizer.ALLOWED_ATTRIBUTES)
         attributes['img'] = ['src']
-        attributes['iframe'] = ['src', 'title', 'width', 'height', 'allowfullscreen']
+        attributes['iframe'] = ['src', 'title',
+                                'width', 'height', 'allowfullscreen']
 
         styles = set(bleach.sanitizer.ALLOWED_STYLES)
 

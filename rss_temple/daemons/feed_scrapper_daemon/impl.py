@@ -60,7 +60,8 @@ def scrape_feed(feed, response_text):
             old_feed_entry_get_kwargs['updated_at'] = feed_entry.updated_at
 
         try:
-            old_feed_entry = models.FeedEntry.objects.get(**old_feed_entry_get_kwargs)
+            old_feed_entry = models.FeedEntry.objects.get(
+                **old_feed_entry_get_kwargs)
         except models.FeedEntry.DoesNotExist:
             pass
 
@@ -71,7 +72,8 @@ def scrape_feed(feed, response_text):
             old_feed_entry.created_at = feed_entry.created_at
             old_feed_entry.updated_at = feed_entry.updated_at
 
-            old_feed_entry.save(update_fields=['id', 'content', 'author_name', 'created_at', 'updated_at'])
+            old_feed_entry.save(
+                update_fields=['id', 'content', 'author_name', 'created_at', 'updated_at'])
         else:
             feed_entry.feed = feed
             new_feed_entries.append(feed_entry)

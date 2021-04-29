@@ -219,7 +219,8 @@ class FieldFnsTestCase(TestCase):
             content='<b>Some HTML Content</b>',
             author_name='John Doe')
 
-        models.ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
+        models.ReadFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry2, user=user)
 
         self.assertIsNone(fields._feedentry_readAt(context, feed_entry1))
         self.assertIsNotNone(fields._feedentry_readAt(context, feed_entry2))

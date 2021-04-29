@@ -163,10 +163,11 @@ class FeedTestCase(TestCase):
 
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
-                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(models.SubscribedFeedUserMapping.objects.filter(feed=feed, user=FeedTestCase.user, custom_feed_title='Custom Title 2').count(), 1)
+        self.assertEqual(models.SubscribedFeedUserMapping.objects.filter(
+            feed=feed, user=FeedTestCase.user, custom_feed_title='Custom Title 2').count(), 1)
 
     def test_feed_subscribe_put_no_url(self):
         feed = models.Feed.objects.create(
@@ -184,7 +185,7 @@ class FeedTestCase(TestCase):
 
         c = Client()
         response = c.put('/api/feed/subscribe?customtitle=Custom%20Title%202',
-                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'url', response.content)
         self.assertIn(b'missing', response.content)
@@ -200,7 +201,7 @@ class FeedTestCase(TestCase):
 
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
-                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 404)
         self.assertIn(b'not subscribed', response.content)
 
@@ -233,11 +234,11 @@ class FeedTestCase(TestCase):
 
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title',
-                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
-                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
+                         HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
         self.assertEqual(response.status_code, 409)
         self.assertIn(b'already used', response.content)
 

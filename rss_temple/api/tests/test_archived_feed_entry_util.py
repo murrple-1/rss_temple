@@ -63,15 +63,21 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            read_mappings = list(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            read_mappings = list(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
             self.assertEqual(len(read_mappings), 2)
 
     def test_read_mapping_generator_fn_equalmincount(self):
@@ -130,15 +136,21 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            read_mappings = list(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            read_mappings = list(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
             self.assertEqual(len(read_mappings), 2)
 
     def test_read_mapping_generator_fn_lessthanmincount(self):
@@ -197,20 +209,27 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            read_mappings = list(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            read_mappings = list(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
             self.assertEqual(len(read_mappings), 0)
 
     def test_mark_archived_entries_morethanmincount(self):
         with self.settings(USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7), USER_UNREAD_GRACE_MIN_COUNT=1):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
             user = models.User.objects.create(email='test@test.com')
 
@@ -266,21 +285,29 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            archived_feed_entry_util.mark_archived_entries(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            archived_feed_entry_util.mark_archived_entries(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 2)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 2)
 
     def test_mark_archived_entries_equalmincount(self):
         with self.settings(USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7), USER_UNREAD_GRACE_MIN_COUNT=2):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
             user = models.User.objects.create(email='test@test.com')
 
@@ -336,21 +363,29 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            archived_feed_entry_util.mark_archived_entries(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            archived_feed_entry_util.mark_archived_entries(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 2)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 2)
 
     def test_mark_archived_entries_lessthanmincount(self):
         with self.settings(USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7), USER_UNREAD_GRACE_MIN_COUNT=5):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
             user = models.User.objects.create(email='test@test.com')
 
@@ -406,14 +441,21 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 author_name='John Doe',
                 db_updated_at=None)
 
-            models.FeedEntry.objects.bulk_create([feed_entry1, feed_entry2, feed_entry3, feed_entry4])
+            models.FeedEntry.objects.bulk_create(
+                [feed_entry1, feed_entry2, feed_entry3, feed_entry4])
 
-            feed_entry1.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-10)
+            feed_entry1.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-10)
             feed_entry1.save(update_fields=['published_at'])
 
-            feed_entry2.published_at = user.created_at + settings.USER_UNREAD_GRACE_INTERVAL + datetime.timedelta(days=-1, minutes=-20)
+            feed_entry2.published_at = user.created_at + \
+                settings.USER_UNREAD_GRACE_INTERVAL + \
+                datetime.timedelta(days=-1, minutes=-20)
             feed_entry2.save(update_fields=['published_at'])
 
-            archived_feed_entry_util.mark_archived_entries(archived_feed_entry_util.read_mapping_generator_fn(feed, user))
+            archived_feed_entry_util.mark_archived_entries(
+                archived_feed_entry_util.read_mapping_generator_fn(feed, user))
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(
+                models.ReadFeedEntryUserMapping.objects.all().count(), 0)

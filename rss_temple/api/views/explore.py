@@ -20,12 +20,12 @@ def _explore_get(request):
             'tag': 'Gaming',
             'feeds': [
                 {
-                  'feed_url': 'http://feeds.feedburner.com/GamasutraFeatureArticles',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://feeds.feedburner.com/GamasutraFeatureArticles',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
                 {
-                  'feed_url': 'http://feeds.wolfire.com/WolfireGames',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://feeds.wolfire.com/WolfireGames',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
             ],
         },
@@ -33,12 +33,12 @@ def _explore_get(request):
             'tag': 'Technology',
             'feeds': [
                 {
-                  'feed_url': 'http://rss.slashdot.org/Slashdot/slashdot',
-                  'image_src': None,
+                    'feed_url': 'http://rss.slashdot.org/Slashdot/slashdot',
+                    'image_src': None,
                 },
                 {
-                  'feed_url': 'http://feeds.arstechnica.com/arstechnica/index',
-                  'image_src': None,
+                    'feed_url': 'http://feeds.arstechnica.com/arstechnica/index',
+                    'image_src': None,
                 },
             ],
         },
@@ -46,8 +46,8 @@ def _explore_get(request):
             'tag': 'World News',
             'feeds': [
                 {
-                  'feed_url': 'https://www.ctvnews.ca/rss/ctvnews-ca-top-stories-public-rss-1.822009',
-                  'image_src': None,
+                    'feed_url': 'https://www.ctvnews.ca/rss/ctvnews-ca-top-stories-public-rss-1.822009',
+                    'image_src': None,
                 },
             ],
         },
@@ -55,16 +55,16 @@ def _explore_get(request):
             'tag': 'Programming',
             'feeds': [
                 {
-                  'feed_url': 'http://feeds.feedburner.com/codinghorror',
-                  'image_src': None,
+                    'feed_url': 'http://feeds.feedburner.com/codinghorror',
+                    'image_src': None,
                 },
                 {
-                  'feed_url': 'http://feeds.wolfire.com/WolfireGames',
-                  'image_src': None,
+                    'feed_url': 'http://feeds.wolfire.com/WolfireGames',
+                    'image_src': None,
                 },
                 {
-                  'feed_url': 'http://syndication.thedailywtf.com/TheDailyWtf',
-                  'image_src': None,
+                    'feed_url': 'http://syndication.thedailywtf.com/TheDailyWtf',
+                    'image_src': None,
                 },
             ],
         },
@@ -72,24 +72,24 @@ def _explore_get(request):
             'tag': 'Music',
             'feeds': [
                 {
-                  'feed_url': 'http://battlehelm.com/feed/',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://battlehelm.com/feed/',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
                 {
-                  'feed_url': 'http://www.theblackplanet.org/feed/',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://www.theblackplanet.org/feed/',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
                 {
-                  'feed_url': 'http://www.angrymetalguy.com/feed/',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://www.angrymetalguy.com/feed/',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
                 {
-                  'feed_url': 'http://www.terrorizer.com/feed/',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://www.terrorizer.com/feed/',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
                 {
-                  'feed_url': 'http://deadrhetoric.com/feed/',
-                  'image_src': '/assets/images/explore_banner.png',
+                    'feed_url': 'http://deadrhetoric.com/feed/',
+                    'image_src': '/assets/images/explore_banner.png',
                 },
             ],
         },
@@ -101,11 +101,13 @@ def _explore_get(request):
         for feed_lookup in section_lookup['feeds']:
             feed = None
             try:
-                feed = models.Feed.objects.with_subscription_data(request.user).get(feed_url=feed_lookup['feed_url'])
+                feed = models.Feed.objects.with_subscription_data(
+                    request.user).get(feed_url=feed_lookup['feed_url'])
             except models.Feed.DoesNotExist:
                 continue
 
-            some_feed_entries = list(models.FeedEntry.objects.filter(feed=feed, title__isnull=False).order_by('published_at').values_list('title', flat=True)[:5])
+            some_feed_entries = list(models.FeedEntry.objects.filter(
+                feed=feed, title__isnull=False).order_by('published_at').values_list('title', flat=True)[:5])
             if len(some_feed_entries) < 1:
                 continue
 

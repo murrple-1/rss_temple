@@ -44,6 +44,7 @@ def logger():  # pragma: no cover
 
     return _logger
 
+
 # monkey-patch the feed_handler logging
 feed_handler.logger = logger
 

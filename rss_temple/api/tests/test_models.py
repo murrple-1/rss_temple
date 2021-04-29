@@ -103,7 +103,8 @@ class FeedEntryTestCase(TestCase):
             content='<b>Some HTML Content</b>',
             author_name='John Doe')
 
-        models.ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
+        models.ReadFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry2, user=user)
 
         self.assertFalse(feed_entry1.is_read(user))
         self.assertTrue(feed_entry2.is_read(user))

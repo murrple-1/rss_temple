@@ -568,7 +568,8 @@ class FeedEntryTestCase(TestCase):
 
         data = {}
 
-        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         json_ = ujson.loads(response.content)
@@ -590,7 +591,8 @@ class FeedEntryTestCase(TestCase):
 
         data = {}
 
-        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         json_ = ujson.loads(response.content)
@@ -600,7 +602,8 @@ class FeedEntryTestCase(TestCase):
             'token': json_,
         }
 
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
 
         self.assertEqual(response.status_code, 200)
 
@@ -614,7 +617,8 @@ class FeedEntryTestCase(TestCase):
 
         data = {}
 
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
@@ -626,7 +630,8 @@ class FeedEntryTestCase(TestCase):
             'token': 0,
         }
 
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
@@ -638,7 +643,8 @@ class FeedEntryTestCase(TestCase):
             'token': 'badtoken',
         }
 
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400)
         self.assertIn(b'token', response.content)
         self.assertIn(b'malformed', response.content)
@@ -650,7 +656,8 @@ class FeedEntryTestCase(TestCase):
             'token': 'feedentry-0123456789',
         }
 
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data), 'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
+                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200)
 
         json_ = ujson.loads(response.content)

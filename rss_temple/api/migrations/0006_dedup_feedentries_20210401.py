@@ -8,7 +8,8 @@ def _forward_func_deduplication_feed_entries(apps, schema_editor):
     delete_list = []
 
     for feed_entry in FeedEntry.objects.all():
-        unique_desc = (feed_entry.feed_id, feed_entry.url, feed_entry.updated_at)
+        unique_desc = (feed_entry.feed_id, feed_entry.url,
+                       feed_entry.updated_at)
 
         if unique_desc in unique_set:
             delete_list.append(feed_entry)

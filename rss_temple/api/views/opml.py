@@ -170,7 +170,8 @@ def _opml_post(request):
 
         for feed in feeds_dict.values():
             if feed is not None:
-                archived_feed_entry_util.mark_archived_entries(archived_feed_entry_util.read_mapping_generator_fn(feed, request.user))
+                archived_feed_entry_util.mark_archived_entries(
+                    archived_feed_entry_util.read_mapping_generator_fn(feed, request.user))
 
         if feed_subscription_progress_entry is not None:
             feed_subscription_progress_entry.save()

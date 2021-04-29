@@ -229,7 +229,8 @@ def _feed_subscribe_post(request):
     if feed.feed_url in existing_feed_urls:
         return HttpResponse('user already subscribed', status=409)
 
-    read_mapping_generator = archived_feed_entry_util.read_mapping_generator_fn(feed, user)
+    read_mapping_generator = archived_feed_entry_util.read_mapping_generator_fn(
+        feed, user)
 
     with transaction.atomic():
         models.SubscribedFeedUserMapping.objects.create(
@@ -253,7 +254,8 @@ def _feed_subscribe_put(request):
 
     subscribed_feed_mapping = None
     try:
-        subscribed_feed_mapping = models.SubscribedFeedUserMapping.objects.get(user=user, feed__feed_url=url)
+        subscribed_feed_mapping = models.SubscribedFeedUserMapping.objects.get(
+            user=user, feed__feed_url=url)
     except models.SubscribedFeedUserMapping.DoesNotExist:
         return HttpResponseNotFound('not subscribed')
 
