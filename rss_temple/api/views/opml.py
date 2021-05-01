@@ -180,7 +180,7 @@ def _opml_post(request):
                 feed_subscription_progress_entry_descriptors)
 
     if feed_subscription_progress_entry is None:
-        return HttpResponse()
+        return HttpResponse(status=204)
     else:
         content, content_type = query_utils.serialize_content(
             str(feed_subscription_progress_entry.uuid))

@@ -118,7 +118,7 @@ class UserCategoryTestCase(TestCase):
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_usercategory_put_malformed(self):
         user_category = models.UserCategory.objects.create(
@@ -176,7 +176,7 @@ class UserCategoryTestCase(TestCase):
 
         response = c.delete(f'/api/usercategory/{user_category.uuid}',
                             HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_usercategory_delete_not_found(self):
         c = Client()
@@ -228,7 +228,7 @@ class UserCategoryTestCase(TestCase):
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
             user_category=user_category1, feed=feed1))
@@ -249,7 +249,7 @@ class UserCategoryTestCase(TestCase):
                          ujson.dumps(data),
                          'application/json',
                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
             user_category=user_category1, feed=feed1))

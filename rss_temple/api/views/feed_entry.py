@@ -377,7 +377,7 @@ def _feed_entry_read_delete(request, uuid_):
     models.ReadFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user).delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_entries_read_post(request):
@@ -398,7 +398,8 @@ def _feed_entries_read_post(request):
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(json_) < 1:
-        return HttpResponse()
+        content, content_type = query_utils.serialize_content([])
+        return HttpResponse(content, content_type)
 
     _ids = None
     try:
@@ -450,7 +451,7 @@ def _feed_entries_read_delete(request):
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(json_) < 1:
-        return HttpResponse()
+        return HttpResponse(status=204)
 
     _ids = None
     try:
@@ -461,7 +462,7 @@ def _feed_entries_read_delete(request):
     models.ReadFeedEntryUserMapping.objects.filter(
         feed_entry_id__in=_ids, user=request.user).delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_entry_favorite_post(request, uuid_):
@@ -479,14 +480,14 @@ def _feed_entry_favorite_post(request, uuid_):
     except IntegrityError:
         pass
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_entry_favorite_delete(request, uuid_):
     models.FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user).delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_entries_favorite_post(request):
@@ -503,7 +504,7 @@ def _feed_entries_favorite_post(request):
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(json_) < 1:
-        return HttpResponse()
+        return HttpResponse(status=204)
 
     _ids = None
     try:
@@ -525,7 +526,7 @@ def _feed_entries_favorite_post(request):
         except IntegrityError:
             pass
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_entries_favorite_delete(request):
@@ -542,7 +543,7 @@ def _feed_entries_favorite_delete(request):
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
     if len(json_) < 1:
-        return HttpResponse()
+        return HttpResponse(status=204)
 
     _ids = None
     try:
@@ -553,4 +554,4 @@ def _feed_entries_favorite_delete(request):
     models.FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id__in=_ids, user=request.user).delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)

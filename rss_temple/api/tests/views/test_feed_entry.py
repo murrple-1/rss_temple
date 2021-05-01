@@ -166,7 +166,7 @@ class FeedEntryTestCase(TestCase):
 
         response = c.delete(f'/api/feedentry/{feed_entry.uuid}/read',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertFalse(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
@@ -305,7 +305,7 @@ class FeedEntryTestCase(TestCase):
                             ujson.dumps(data),
                             'application/json',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertFalse(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).exists())
@@ -319,7 +319,7 @@ class FeedEntryTestCase(TestCase):
                             ujson.dumps(data),
                             'application/json',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feedentries_read_delete_malformed(self):
         c = Client()
@@ -348,7 +348,7 @@ class FeedEntryTestCase(TestCase):
 
         response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertTrue(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
@@ -379,7 +379,7 @@ class FeedEntryTestCase(TestCase):
 
         response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feedentry_favorite_delete(self):
         feed_entry = models.FeedEntry.objects.create(
@@ -400,7 +400,7 @@ class FeedEntryTestCase(TestCase):
 
         response = c.delete(f'/api/feedentry/{feed_entry.uuid}/favorite',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertFalse(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
@@ -436,7 +436,7 @@ class FeedEntryTestCase(TestCase):
                           ujson.dumps(data),
                           'application/json',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).count(), 2)
@@ -450,7 +450,7 @@ class FeedEntryTestCase(TestCase):
                           ujson.dumps(data),
                           'application/json',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feedentries_favorite_post_malformed(self):
         c = Client()
@@ -497,7 +497,7 @@ class FeedEntryTestCase(TestCase):
                           ujson.dumps(data),
                           'application/json',
                           HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feedentries_favorite_delete(self):
         feed_entry1 = models.FeedEntry.objects.create(
@@ -536,7 +536,7 @@ class FeedEntryTestCase(TestCase):
                             ujson.dumps(data),
                             'application/json',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertFalse(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).exists())
@@ -550,7 +550,7 @@ class FeedEntryTestCase(TestCase):
                             ujson.dumps(data),
                             'application/json',
                             HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feedentries_favorite_delete_malformed(self):
         c = Client()

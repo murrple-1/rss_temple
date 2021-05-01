@@ -240,7 +240,7 @@ def _user_put(request):
                 models.NotifyEmailQueueEntryRecipient.objects.create(
                     type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=json_['email'], entry=email_queue_entry)
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _google_login_save(google_login):
@@ -272,4 +272,4 @@ def _user_verify_post(request):
 
     verification_token.delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)

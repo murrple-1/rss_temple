@@ -47,25 +47,25 @@ class UserTestCase(TestCase):
             'email': '',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         params = {
             'email': 'malformedemail',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         params = {
             'email': 'unknownemail@test.com',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         params = {
             'email': UserTestCase.USER_EMAIL,
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_passwordresettoken_reset_post(self):
         c = Client()
@@ -112,7 +112,7 @@ class UserTestCase(TestCase):
             'password': 'newpassword',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         my_login = UserTestCase.user.my_login()
         my_login.pw_hash = password_hasher().hash(UserTestCase.USER_PASSWORD)

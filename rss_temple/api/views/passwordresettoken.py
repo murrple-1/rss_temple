@@ -54,7 +54,7 @@ def _passwordresettoken_request_post(request):
     try:
         user = models.User.objects.get(email=email)
     except models.User.DoesNotExist:
-        return HttpResponse()
+        return HttpResponse(status=204)
 
     password_reset_token = models.PasswordResetToken(user=user, expires_at=(
         datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL))
@@ -74,7 +74,7 @@ def _passwordresettoken_request_post(request):
         models.NotifyEmailQueueEntryRecipient.objects.create(
             type=models.NotifyEmailQueueEntryRecipient.TYPE_TO, email=email, entry=email_queue_entry)
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _passwordresettoken_reset_post(request):
@@ -100,4 +100,4 @@ def _passwordresettoken_reset_post(request):
 
         password_reset_token.delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)

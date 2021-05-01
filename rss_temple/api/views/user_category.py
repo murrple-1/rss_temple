@@ -163,7 +163,7 @@ def _user_category_put(request, uuid_):
         except IntegrityError:
             return HttpResponse('user category already exists', status=409)
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _user_category_delete(request, uuid_):
@@ -173,7 +173,7 @@ def _user_category_delete(request, uuid_):
     if count < 1:
         return HttpResponseNotFound('user category not found')
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _user_categories_query_post(request):
@@ -321,4 +321,4 @@ def _user_categories_apply_put(request):
         models.FeedUserCategoryMapping.objects.bulk_create(
             feed_user_category_mappings)
 
-    return HttpResponse()
+    return HttpResponse(status=204)

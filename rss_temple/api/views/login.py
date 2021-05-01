@@ -170,7 +170,7 @@ def _my_login_post(request):
             _prepare_verify_notification(
                 verification_token.token_str(), json_['email'])
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _google_login_post(request):
@@ -243,7 +243,7 @@ def _google_login_post(request):
             _prepare_verify_notification(
                 verification_token.token_str(), json_['email'])
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _facebook_login_post(request):
@@ -316,7 +316,7 @@ def _facebook_login_post(request):
             _prepare_verify_notification(
                 verification_token.token_str(), json_['email'])
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _my_login_session_post(request):
@@ -472,4 +472,4 @@ def _session_delete(request):
 
     models.Session.objects.filter(uuid=session_token_uuid).delete()
 
-    return HttpResponse()
+    return HttpResponse(status=204)

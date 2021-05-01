@@ -65,7 +65,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.User.objects.filter(
             uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 0)
@@ -80,7 +80,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.User.objects.filter(
             uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL).count(), 1)
@@ -133,7 +133,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_user_put_my_typeerror(self):
         body = {
@@ -161,7 +161,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         new_pw_hash = models.MyLogin.objects.get(
             user=UserTestCase.user).pw_hash
@@ -261,7 +261,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_user_put_google_typeerror(self):
         body = {
@@ -287,7 +287,7 @@ class UserTestCase(TestCase):
         with self.settings(GOOGLE_TEST_ID='googleid'):
             response = c.put('/api/user', ujson.dumps(body),
                              content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.GoogleLogin.objects.filter(
             user=UserTestCase.user).count(), 1)
@@ -305,7 +305,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.GoogleLogin.objects.filter(
             user=UserTestCase.user).count(), 0)
@@ -330,7 +330,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_user_put_facebook_typeerror(self):
         body = {
@@ -356,7 +356,7 @@ class UserTestCase(TestCase):
         with self.settings(FACEBOOK_TEST_ID='facebookid'):
             response = c.put('/api/user', ujson.dumps(body),
                              content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.FacebookLogin.objects.filter(
             user=UserTestCase.user).count(), 1)
@@ -374,7 +374,7 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.put('/api/user', ujson.dumps(body),
                          content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.FacebookLogin.objects.filter(
             user=UserTestCase.user).count(), 0)
@@ -400,7 +400,7 @@ class UserTestCase(TestCase):
         }
         c = Client()
         response = c.post('/api/user/verify', params)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_user_verify_post_token_missing(self):
         c = Client()

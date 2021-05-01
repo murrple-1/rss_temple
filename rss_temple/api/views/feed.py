@@ -238,7 +238,7 @@ def _feed_subscribe_post(request):
 
         archived_feed_entry_util.mark_archived_entries(read_mapping_generator)
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_subscribe_put(request):
@@ -266,7 +266,7 @@ def _feed_subscribe_put(request):
     subscribed_feed_mapping.custom_feed_title = custom_title
     subscribed_feed_mapping.save(update_fields=['custom_feed_title'])
 
-    return HttpResponse()
+    return HttpResponse(status=204)
 
 
 def _feed_subscribe_delete(request):
@@ -282,4 +282,4 @@ def _feed_subscribe_delete(request):
     if count < 1:
         return HttpResponseNotFound('user not subscribed')
 
-    return HttpResponse()
+    return HttpResponse(status=204)

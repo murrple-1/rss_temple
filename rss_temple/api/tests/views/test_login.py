@@ -30,7 +30,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_my_login_post_email_missing(self):
         c = Client()
@@ -102,7 +102,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
     def test_google_login_post_duplicate_login(self):
         user1 = models.User.objects.create(email='test1@test.com')
@@ -213,7 +213,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 204)
 
     def test_facebook_login_post_duplicate_login(self):
         user1 = models.User.objects.create(email='test1@test.com')
@@ -329,6 +329,8 @@ class LoginTestCase(TestCase):
         }), 'application/json')
 
         self.assertEqual(response.status_code, 200)
+        json_ = ujson.loads(response.content)
+        self.assertIsInstance(json_, str)
 
     def test_my_login_session_post_email_missing(self):
         c = Client()
@@ -407,6 +409,8 @@ class LoginTestCase(TestCase):
             }), 'application/json')
 
             self.assertEqual(response.status_code, 200)
+            json_ = ujson.loads(response.content)
+            self.assertIsInstance(json_, str)
 
     def test_google_login_session_post_create(self):
         c = Client()
@@ -458,6 +462,8 @@ class LoginTestCase(TestCase):
             }), 'application/json')
 
             self.assertEqual(response.status_code, 200)
+            json_ = ujson.loads(response.content)
+            self.assertIsInstance(json_, str)
 
     def test_facebook_login_session_post_create(self):
         c = Client()
@@ -512,4 +518,4 @@ class LoginTestCase(TestCase):
 
         response = c.delete(
             '/api/session', HTTP_X_SESSION_TOKEN=str(session.uuid))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)

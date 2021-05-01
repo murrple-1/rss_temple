@@ -96,7 +96,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feed_subscribe_post_duplicate(self):
         feed = models.Feed.objects.create(
@@ -164,7 +164,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         self.assertEqual(models.SubscribedFeedUserMapping.objects.filter(
             feed=feed, user=FeedTestCase.user, custom_feed_title='Custom Title 2').count(), 1)
@@ -235,7 +235,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
@@ -258,7 +258,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                             HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
 
     def test_feed_subscribe_delete_not_subscribed(self):
         c = Client()

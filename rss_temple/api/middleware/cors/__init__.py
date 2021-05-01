@@ -38,7 +38,7 @@ class CORSMiddleware:
     def __call__(self, request):
         response = None
         if request.method == 'OPTIONS':
-            response = HttpResponse()
+            response = HttpResponse(status=204)
         else:
             response = self.get_response(request)
 
