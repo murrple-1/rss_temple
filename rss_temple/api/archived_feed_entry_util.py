@@ -23,7 +23,7 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def mark_archived_entries(read_mappings_generator, batch_size=1000):
+def mark_archived_entries(read_mappings_generator, batch_size=768):
     while True:
         batch = list(itertools.islice(read_mappings_generator, batch_size))
         if len(batch) < 1:

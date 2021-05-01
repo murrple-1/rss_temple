@@ -1,10 +1,12 @@
 import uuid
 import re
+import itertools
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseNotAllowed
 from django.db.utils import IntegrityError
 from django.db import transaction
 from django.core.cache import caches
+from django.db.models import Q
 
 import ujson
 
@@ -381,10 +383,6 @@ def _feed_entry_read_delete(request, uuid_):
 
 
 def _feed_entries_read_post(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     if not request.body:
         return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
 
@@ -394,47 +392,62 @@ def _feed_entries_read_post(request):
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest('HTTP body cannot be parsed')
 
-    if type(json_) is not list:
+    if type(json_) is not dict:
         return HttpResponseBadRequest('JSON body must be array')  # pragma: no cover
 
-    if len(json_) < 1:
-        content, content_type = query_utils.serialize_content([])
-        return HttpResponse(content, content_type)
+    q = None
 
-    _ids = None
-    try:
-        _ids = frozenset(uuid.UUID(uuid_) for uuid_ in json_)
-    except (ValueError, TypeError, AttributeError):
-        return HttpResponseBadRequest('uuid malformed')
+    if 'feedUuids' in json_:
+        if type(json_['feedUuids']) is not list:
+            return HttpResponseBadRequest('\'feedUuids\' must be array')
 
-    read_feed_entry_user_mappings = []
+        feed_uuids = set()
+        for feed_uuid_str in json_['feedUuids']:
+            if type(feed_uuid_str) is not str:
+                return HttpResponseBadRequest('\'feedUuids\' element must be string')
+
+            try:
+                feed_uuids.add(uuid.UUID(feed_uuid_str))
+            except ValueError:
+                return HttpResponseBadRequest('\'feedUuids\' element malformed')
+
+        if q is None:
+            q = Q(feed__uuid__in=feed_uuids)
+        else:
+            q |= Q(feed__uuid__in=feed_uuids)  # pragma: no cover
+
+    if 'feedEntryUuids' in json_:
+        if type(json_['feedEntryUuids']) is not list:
+            return HttpResponseBadRequest('\'feedEntryUuids\' must be array')
+
+        feed_entry_uuids = set()
+        for feed_entry_uuid_str in json_['feedEntryUuids']:
+            if type(feed_entry_uuid_str) is not str:
+                return HttpResponseBadRequest('\'feedEntryUuids\' element must be string')
+
+            try:
+                feed_entry_uuids.add(uuid.UUID(feed_entry_uuid_str))
+            except ValueError:
+                return HttpResponseBadRequest('\'feedEntryUuids\' element malformed')
+
+        if q is None:
+            q = Q(uuid__in=feed_entry_uuids)
+        else:
+            q |= Q(uuid__in=feed_entry_uuids)
+
+    if q is None:
+        return HttpResponseBadRequest('no entries to mark read')
+
+    batch_size = 768
+    objs = (models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user) for feed_entry in models.FeedEntry.objects.filter(q).iterator())
     with transaction.atomic():
-        feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
+        while True:
+            batch = list(itertools.islice(objs, batch_size))
+            if not batch:
+                break
+            models.ReadFeedEntryUserMapping.objects.bulk_create(batch, ignore_conflicts=True)
 
-        if len(feed_entries) != len(_ids):
-            return HttpResponseNotFound('feed entry not found')
-
-        old_read_feed_entry_user_mappings = models.ReadFeedEntryUserMapping.objects.filter(
-            user=request.user, feed_entry_id__in=_ids)
-
-        for feed_entry in feed_entries:
-            read_feed_entry_user_mapping = next(
-                (rfem for rfem in old_read_feed_entry_user_mappings if rfem.feed_entry_id == feed_entry.uuid), None)
-            if read_feed_entry_user_mapping is None:
-                read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.create(
-                    feed_entry=feed_entry, user=request.user)
-
-            read_feed_entry_user_mappings.append(read_feed_entry_user_mapping)
-
-    ret_obj = []
-    for read_feed_entry_user_mapping in read_feed_entry_user_mappings:
-        ret_obj.append({
-            'uuid': str(read_feed_entry_user_mapping.uuid),
-            'readAt': context.format_datetime(read_feed_entry_user_mapping.read_at),
-        })
-
-    content, content_type = query_utils.serialize_content(ret_obj)
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _feed_entries_read_delete(request):
