@@ -28,6 +28,7 @@ import requests
 
 from .impl import logger, scrape_feed
 from api import models, rss_requests
+from api.exceptions import QueryException
 
 
 parser = argparse.ArgumentParser()
@@ -53,17 +54,15 @@ else:
                     for feed in models.Feed.objects.select_for_update(skip_locked=True).order_by(F('db_updated_at').desc(nulls_first=True))[:args.count]:
                         count += 1
 
-                        response = None
                         try:
                             response = rss_requests.get(feed.feed_url)
                             response.raise_for_status()
-                        except requests.exceptions.RequestException:
+
+                            scrape_feed(feed, response.text)
+
+                            logger().debug('scrapped \'%s\'', feed.feed_url)
+                        except (requests.exceptions.RequestException, QueryException):
                             logger().exception('failed to scrap feed \'%s\'', feed.feed_url)
-                            continue
-
-                        scrape_feed(feed, response.text)
-
-                        logger().debug('scrapped \'%s\'', feed.feed_url)
 
                 logger().info('scrapped %d feeds this round', count)
 
