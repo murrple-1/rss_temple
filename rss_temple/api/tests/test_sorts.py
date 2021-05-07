@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.db.models import F
 
 from api import sorts, models
 from api.exceptions import QueryException
@@ -6,68 +7,66 @@ from api.exceptions import QueryException
 
 class SortsTestCase(TestCase):
     @staticmethod
-    def _to_sort(object_name, sort, default_sort_enabled):
+    def _to_order_by_args(object_name, sort, default_sort_enabled):
         sort_list = sorts.to_sort_list(object_name, sort, default_sort_enabled)
-        db_sort_list = sorts.sort_list_to_db_sort_list(object_name, sort_list)
+        order_by_args = sorts.sort_list_to_order_by_args(object_name, sort_list)
 
-        sort = sorts.to_order_by_fields(db_sort_list)
-
-        return sort
+        return order_by_args
 
     def test_default(self):
-        sort = SortsTestCase._to_sort('feed', 'title:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC', True)
 
-        self.assertEqual(sort, ['title', 'uuid'])
+        self.assertEqual(order_by_args, [F('title').asc(), F('uuid').asc()])
 
     def test_nondefault(self):
-        sort = SortsTestCase._to_sort('feed', 'title:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC', False)
 
-        self.assertEqual(sort, ['title'])
+        self.assertEqual(order_by_args, [F('title').asc()])
 
     def test_multiple_default(self):
-        sort = SortsTestCase._to_sort('feed', 'title:ASC,homeUrl:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC,homeUrl:ASC', True)
 
-        self.assertEqual(sort, ['title', 'home_url', 'uuid'])
+        self.assertEqual(order_by_args, [F('title').asc(), F('home_url').asc(), F('uuid').asc()])
 
     def test_multiple_nondefault(self):
-        sort = SortsTestCase._to_sort('feed', 'title:ASC,homeUrl:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC,homeUrl:ASC', False)
 
-        self.assertEqual(sort, ['title', 'home_url'])
+        self.assertEqual(order_by_args, [F('title').asc(), F('home_url').asc()])
 
     def test_descending_default(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC', True)
 
-        self.assertEqual(sort, ['-title', 'uuid'])
+        self.assertEqual(order_by_args, [F('title').desc(), F('uuid').asc()])
 
     def test_descending_nondefault(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC', False)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC', False)
 
-        self.assertEqual(sort, ['-title'])
+        self.assertEqual(order_by_args, [F('title').desc()])
 
     def test_multiple_descending_default(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC,homeUrl:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:DESC', True)
 
-        self.assertEqual(sort, ['-title', '-home_url', 'uuid'])
+        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').desc(), F('uuid').asc()])
 
     def test_multiple_descending_nondefault(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC,homeUrl:DESC', False)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:DESC', False)
 
-        self.assertEqual(sort, ['-title', '-home_url'])
+        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').desc()])
 
     def test_multiple_mixed_default(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC,homeUrl:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:ASC', True)
 
-        self.assertEqual(sort, ['-title', 'home_url', 'uuid'])
+        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').asc(), F('uuid').asc()])
 
     def test_multiple_mixed_nondefault(self):
-        sort = SortsTestCase._to_sort('feed', 'title:DESC,homeUrl:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:ASC', False)
 
-        self.assertEqual(sort, ['-title', 'home_url'])
+        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').asc()])
 
     def test_multiple_overwritedefault(self):
-        sort = SortsTestCase._to_sort('feed', 'uuid:ASC,title:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args('feed', 'uuid:ASC,title:DESC', True)
 
-        self.assertEqual(sort, ['uuid', '-title'])
+        self.assertEqual(order_by_args, [F('uuid').asc(), F('title').desc()])
 
     def test_sort_malformed(self):
         with self.assertRaises(QueryException):
@@ -87,21 +86,18 @@ class SortsTestCase(TestCase):
         with self.assertRaises(TypeError):
             sorts._SortConfig(None, None)
 
-        with self.assertRaises(TypeError):
-            sorts._SortConfig('testField', None)
+        with self.assertRaises(ValueError):
+            sorts._SortConfig([], None)
 
         with self.assertRaises(TypeError):
             sorts._SortConfig([None], None)
 
         with self.assertRaises(TypeError):
-            sorts._SortConfig(['testField'], object())
-
-        with self.assertRaises(ValueError):
-            sorts._SortConfig([], None)
+            sorts._SortConfig([lambda dir_: F('testfield').asc()], object())
 
     def test_bad_sort_list(self):
         with self.assertRaises(QueryException):
-            sorts.sort_list_to_db_sort_list('user', [
+            sorts.sort_list_to_order_by_args('user', [
                 {
                     'field_name': 'bad_field',
                     'direction': 'ASC',
@@ -144,10 +140,8 @@ class AllSortsTestCase(TestCase):
             sort_list = sorts.to_sort_list(key, ','.join(
                 f'{sort_key}:ASC' for sort_key in sort_keys), False)
 
-            db_sort_list = sorts.sort_list_to_db_sort_list(key, sort_list)
+            order_by_args = sorts.sort_list_to_order_by_args(key, sort_list)
 
-            sort = sorts.to_order_by_fields(db_sort_list)
-
-            result = list(trial_dict['get_queryset']().order_by(*sort))
+            result = list(trial_dict['get_queryset']().order_by(*order_by_args))
 
             self.assertIsNotNone(result)

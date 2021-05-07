@@ -129,10 +129,9 @@ def get_sort(json_, object_name, param_name='sort',
         default_sort_enabled = not json_[disable_default_sort_param_name]
 
     sort_list = sortutils.to_sort_list(object_name, sort, default_sort_enabled)
-    db_sort_list = sortutils.sort_list_to_db_sort_list(object_name, sort_list)
+    order_by_args = sortutils.sort_list_to_order_by_args(object_name, sort_list)
 
-    sort = sortutils.to_order_by_fields(db_sort_list)
-    return sort
+    return order_by_args
 
 
 def get_search(context, json_, object_name, param_name='search'):

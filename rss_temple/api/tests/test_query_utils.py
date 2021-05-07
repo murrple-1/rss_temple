@@ -152,38 +152,36 @@ class QueryUtilsTestCase(TestCase):
             {}, default=False), False)
 
     @staticmethod
-    def _to_sort(object_name, sort, default_sort_enabled):
+    def _to_order_by_args(object_name, sort, default_sort_enabled):
         sort_list = query_utils.sortutils.to_sort_list(
             object_name, sort, default_sort_enabled)
-        db_sort_list = query_utils.sortutils.sort_list_to_db_sort_list(
+        order_by_args = query_utils.sortutils.sort_list_to_order_by_args(
             object_name, sort_list)
 
-        sort = query_utils.sortutils.to_order_by_fields(db_sort_list)
-
-        return sort
+        return order_by_args
 
     def test_get_sort(self):
         self.assertEqual(query_utils.get_sort(
-            {}, 'feed'), QueryUtilsTestCase._to_sort('feed', '', True))
+            {}, 'feed'), QueryUtilsTestCase._to_order_by_args('feed', '', True))
 
         self.assertEqual(query_utils.get_sort({
             'sort': 'title:ASC',
-        }, 'feed'), QueryUtilsTestCase._to_sort('feed', 'title:ASC', True))
+        }, 'feed'), QueryUtilsTestCase._to_order_by_args('feed', 'title:ASC', True))
 
         self.assertEqual(query_utils.get_sort({
             'tsort': 'title:ASC',
-        }, 'feed', param_name='tsort'), QueryUtilsTestCase._to_sort('feed', 'title:ASC', True))
+        }, 'feed', param_name='tsort'), QueryUtilsTestCase._to_order_by_args('feed', 'title:ASC', True))
 
         self.assertEqual(query_utils.get_sort({
             'disableDefaultSort': True,
-        }, 'feed'), QueryUtilsTestCase._to_sort('feed', '', False))
+        }, 'feed'), QueryUtilsTestCase._to_order_by_args('feed', '', False))
         self.assertEqual(query_utils.get_sort({
             'disableDefaultSort': False,
-        }, 'feed'), QueryUtilsTestCase._to_sort('feed', '', True))
+        }, 'feed'), QueryUtilsTestCase._to_order_by_args('feed', '', True))
 
         self.assertEqual(query_utils.get_sort({
             't_disableDefaultSort': True,
-        }, 'feed', disable_default_sort_param_name='t_disableDefaultSort'), QueryUtilsTestCase._to_sort('feed', '', False))
+        }, 'feed', disable_default_sort_param_name='t_disableDefaultSort'), QueryUtilsTestCase._to_order_by_args('feed', '', False))
 
     def test_get_search(self):
         self.assertEqual(query_utils.get_search(

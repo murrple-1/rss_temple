@@ -1,5 +1,7 @@
 import re
 
+from django.db.models import F
+
 from api.exceptions import QueryException
 
 
@@ -16,52 +18,57 @@ class _DefaultDescriptor:
 
 
 class _SortConfig:
-    def __init__(self, field_names, default_descriptor):
-        if type(field_names) is not list:
-            raise TypeError('field_names must be list')
+    def __init__(self, field_accessor_fns, default_descriptor):
+        if type(field_accessor_fns) is not list:
+            raise TypeError('field_accessor_fns must be list')
 
-        if len(field_names) < 1:
-            raise ValueError('field_names must not be empty')
+        if len(field_accessor_fns) < 1:
+            raise ValueError('field_accessor_fns must not be empty')
 
-        for field_name in field_names:
-            if type(field_name) is not str:
-                raise TypeError('field_names element must be str')
+        for field_accessor_fn in field_accessor_fns:
+            if not callable(field_accessor_fn):
+                raise TypeError('field_accessor_fns element must be callable')
 
         if default_descriptor is not None and type(default_descriptor) is not _DefaultDescriptor:
             raise TypeError(
                 'default_descriptor must be None or _DefaultDescriptor')
 
-        self.field_names = field_names
+        self.field_accessor_fns = field_accessor_fns
         self.default_descriptor = default_descriptor
+
+
+def _standard_sort(field_name):
+    f = F(field_name)
+    return lambda dir_: f.desc() if dir_.upper() == 'DESC' else f.asc()
 
 
 _sort_configs = {
     'user': {
-        'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
-        'email': _SortConfig(['email'], None),
+        'uuid': _SortConfig([_standard_sort('uuid')], _DefaultDescriptor(0, 'ASC')),
+        'email': _SortConfig([_standard_sort('email')], None),
     },
     'usercategory': {
-        'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
-        'text': _SortConfig(['text'], None),
+        'uuid': _SortConfig([_standard_sort('uuid')], _DefaultDescriptor(0, 'ASC')),
+        'text': _SortConfig([_standard_sort('text')], None),
     },
     'feed': {
-        'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
-        'title': _SortConfig(['title'], None),
-        'feedUrl': _SortConfig(['feed_url'], None),
-        'homeUrl': _SortConfig(['home_url'], None),
-        'publishedAt': _SortConfig(['published_at'], None),
-        'updatedAt': _SortConfig(['updated_at'], None),
+        'uuid': _SortConfig([_standard_sort('uuid')], _DefaultDescriptor(0, 'ASC')),
+        'title': _SortConfig([_standard_sort('title')], None),
+        'feedUrl': _SortConfig([_standard_sort('feed_url')], None),
+        'homeUrl': _SortConfig([_standard_sort('home_url')], None),
+        'publishedAt': _SortConfig([_standard_sort('published_at')], None),
+        'updatedAt': _SortConfig([_standard_sort('updated_at')], None),
 
-        'subscribed': _SortConfig(['is_subscribed'], None),
-        'customTitle': _SortConfig(['custom_title'], None),
-        'calculatedTitle': _SortConfig(['custom_title', 'title'], None),
+        'subscribed': _SortConfig([_standard_sort('is_subscribed')], None),
+        'customTitle': _SortConfig([_standard_sort('custom_title')], None),
+        'calculatedTitle': _SortConfig([_standard_sort('custom_title'), _standard_sort('title')], None),
     },
     'feedentry': {
-        'uuid': _SortConfig(['uuid'], _DefaultDescriptor(0, 'ASC')),
-        'createdAt': _SortConfig(['created_at'], None),
-        'publishedAt': _SortConfig(['published_at'], None),
-        'updatedAt': _SortConfig(['created_at'], None),
-        'title': _SortConfig(['title'], None),
+        'uuid': _SortConfig([_standard_sort('uuid')], _DefaultDescriptor(0, 'ASC')),
+        'createdAt': _SortConfig([_standard_sort('created_at')], None),
+        'publishedAt': _SortConfig([_standard_sort('published_at')], None),
+        'updatedAt': _SortConfig([_standard_sort('updated_at')], None),
+        'title': _SortConfig([_standard_sort('title')], None),
     },
 }
 
@@ -121,18 +128,15 @@ def _to_default_sort_list(object_name):
     return sort_list
 
 
-def sort_list_to_db_sort_list(object_name, sort_list):
+def sort_list_to_order_by_args(object_name, sort_list):
     db_sort_list = []
     for sort_desc in sort_list:
         field_name = sort_desc['field_name']
         direction = sort_desc['direction']
-        db_sort_field_names = _to_db_sort_field_names(object_name, field_name)
-        if db_sort_field_names:
-            for db_sort_field_name in db_sort_field_names:
-                db_sort_list.append({
-                    'field_name': db_sort_field_name,
-                    'direction': direction,
-                })
+        db_sort_field_accessor_fns = _to_db_sort_field_accessor_fns(object_name, field_name)
+        if db_sort_field_accessor_fns:
+            for db_sort_field_accessor_fn in db_sort_field_accessor_fns:
+                db_sort_list.append(db_sort_field_accessor_fn(direction))
         else:
             raise QueryException(
                 f'\'{field_name}\' field not recognized for \'sort\'', 400)
@@ -140,27 +144,13 @@ def sort_list_to_db_sort_list(object_name, sort_list):
     return db_sort_list
 
 
-def _to_db_sort_field_names(object_name, field_name):
+def _to_db_sort_field_accessor_fns(object_name, field_name):
     field_name = field_name.lower()
 
     object_sort_configs = _sort_configs[object_name]
 
     for _field_name, object_sort_config in object_sort_configs.items():
         if field_name == _field_name.lower():
-            return object_sort_config.field_names
+            return object_sort_config.field_accessor_fns
 
     return None
-
-
-def to_order_by_fields(sort_list):
-    order_by_fields = []
-
-    for sort_desc in sort_list:
-        field_name = sort_desc['field_name']
-        direction = sort_desc['direction']
-
-        order_by_direction = '-' if direction.upper() == 'DESC' else ''
-
-        order_by_fields.append(f'{order_by_direction}{field_name}')
-
-    return order_by_fields
