@@ -62,6 +62,9 @@ jobs:
       - store_artifacts:
           path: ~/rss_temple/rss_temple/test-results/
       - run:
+          name: codecov envs (temp)
+          command: env
+      - run:
           name: codecov
           command: pipenv run codecov -X gcov
           working_directory: ~/rss_temple/rss_temple/
