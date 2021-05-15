@@ -317,7 +317,7 @@ def _user_categories_apply_put(request):
 
     with transaction.atomic():
         models.FeedUserCategoryMapping.objects.filter(
-            feed__in=feeds.values()).delete()
+            feed_id__in=feeds.keys(), user_category_id__in=user_categories.keys()).delete()
         models.FeedUserCategoryMapping.objects.bulk_create(
             feed_user_category_mappings)
 
