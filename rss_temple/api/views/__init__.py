@@ -1,6 +1,6 @@
 from .login import my_login, google_login, facebook_login, my_login_session, google_login_session, facebook_login_session, session
 from .passwordresettoken import passwordresettoken_request, passwordresettoken_reset
-from .user import user, user_verify
+from .user import user, user_verify, user_attributes
 from .feed import feed, feeds_query, feed_subscribe
 from .feed_entry import feed_entry, feed_entries_query, feed_entries_query_stable_create, feed_entries_query_stable, feed_entry_read, feed_entries_read, feed_entry_favorite, feed_entries_favorite
 from .user_category import user_category, user_categories_query, user_categories_apply
@@ -20,6 +20,7 @@ __all__ = [
     passwordresettoken_reset,
     user,
     user_verify,
+    user_attributes,
     feed,
     feeds_query,
     feed_subscribe,

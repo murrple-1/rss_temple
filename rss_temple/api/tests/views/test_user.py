@@ -422,3 +422,34 @@ class UserTestCase(TestCase):
         c = Client()
         response = c.post('/api/user/verify', params)
         self.assertEqual(response.status_code, 404)
+
+    def test_user_attributes_put(self):
+        body = {
+            'test': 'test_string',
+        }
+        c = Client()
+        response = c.put('/api/user/attributes', ujson.dumps(body),
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 204)
+
+        UserTestCase.user.refresh_from_db()
+        self.assertIn('test', UserTestCase.user.attributes)
+        self.assertEqual(UserTestCase.user.attributes['test'], 'test_string')
+
+    def test_user_attributes_put_deletekeys(self):
+        UserTestCase.user.attributes['test'] = 'test_string'
+        UserTestCase.user.save()
+        UserTestCase.user.refresh_from_db()
+        self.assertIn('test', UserTestCase.user.attributes)
+        self.assertEqual(UserTestCase.user.attributes['test'], 'test_string')
+
+        body = {
+            'test': None,
+        }
+        c = Client()
+        response = c.put('/api/user/attributes', ujson.dumps(body),
+                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        self.assertEqual(response.status_code, 204)
+
+        UserTestCase.user.refresh_from_db()
+        self.assertNotIn('test', UserTestCase.user.attributes)

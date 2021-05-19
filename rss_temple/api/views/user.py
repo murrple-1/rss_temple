@@ -62,6 +62,16 @@ def user_verify(request):
         return _user_verify_post(request)
 
 
+def user_attributes(request):
+    permitted_methods = {'PUT'}
+
+    if request.method not in permitted_methods:
+        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
+
+    if request.method == 'PUT':
+        return _user_attributes_put(request)
+
+
 def _user_get(request):
     context = Context()
     context.parse_request(request)
@@ -271,5 +281,35 @@ def _user_verify_post(request):
         return HttpResponseNotFound('token not found')
 
     verification_token.delete()
+
+    return HttpResponse(status=204)
+
+
+def _user_attributes_put(request):
+    if not request.body:
+        return HttpResponseBadRequest('no HTTP body')  # pragma: no cover
+
+    json_ = None
+    try:
+        json_ = ujson.loads(request.body)
+    except ValueError:  # pragma: no cover
+        return HttpResponseBadRequest('HTTP body cannot be parsed')
+
+    if type(json_) is not dict:
+        return HttpResponseBadRequest('JSON body must be object')  # pragma: no cover
+
+    user = request.user
+
+    user.attributes.update(json_)
+
+    del_keys = set()
+    for key, value in user.attributes.items():
+        if value is None:
+            del_keys.add(key)
+
+    for key in del_keys:
+        del user.attributes[key]
+
+    user.save(update_fields=['attributes'])
 
     return HttpResponse(status=204)

@@ -9,6 +9,7 @@ class User(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     email = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
+    attributes = models.JSONField(null=False, default=dict)
 
     def category_dict(self):
         category_dict = getattr(self, '_category_dict', None)
