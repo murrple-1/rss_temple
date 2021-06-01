@@ -30,14 +30,14 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_my_login_post_email_missing(self):
         c = Client()
         response = c.post('/api/login/my', ujson.dumps({
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -47,7 +47,7 @@ class LoginTestCase(TestCase):
             'email': True,
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -57,7 +57,7 @@ class LoginTestCase(TestCase):
             'email': 'bademail',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'malformed', response.content)
 
@@ -66,7 +66,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/my', ujson.dumps({
             'email': 'test@test.com',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -76,7 +76,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': True,
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -91,7 +91,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 409, response.content)
 
     def test_google_login_post(self):
         c = Client()
@@ -102,7 +102,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 204)
+            self.assertEqual(response.status_code, 204, response.content)
 
     def test_google_login_post_duplicate_login(self):
         user1 = models.User.objects.create(email='test1@test.com')
@@ -120,7 +120,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.status_code, 409, response.content)
 
         with self.settings(GOOGLE_TEST_ID='googleid'):
             response = c.post('/api/login/google', ujson.dumps({
@@ -128,7 +128,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.status_code, 409, response.content)
 
     def test_google_login_post_email_missing(self):
         c = Client()
@@ -136,7 +136,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -147,7 +147,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -158,7 +158,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'malformed', response.content)
 
@@ -168,7 +168,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -179,7 +179,7 @@ class LoginTestCase(TestCase):
             'password': True,
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -189,7 +189,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -200,7 +200,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': True,
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -213,7 +213,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 204)
+            self.assertEqual(response.status_code, 204, response.content)
 
     def test_facebook_login_post_duplicate_login(self):
         user1 = models.User.objects.create(email='test1@test.com')
@@ -232,7 +232,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.status_code, 409, response.content)
 
         with self.settings(FACEBOOK_TEST_ID='facebookid'):
             response = c.post('/api/login/facebook', ujson.dumps({
@@ -240,7 +240,7 @@ class LoginTestCase(TestCase):
                 'password': 'mypassword',
                 'token': 'goodtoken',
             }), 'application/json')
-            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.status_code, 409, response.content)
 
     def test_facebook_login_post_email_missing(self):
         c = Client()
@@ -248,7 +248,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -259,7 +259,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -270,7 +270,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'malformed', response.content)
 
@@ -280,7 +280,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -291,7 +291,7 @@ class LoginTestCase(TestCase):
             'password': True,
             'token': 'goodtoken',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -301,7 +301,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
             'password': 'mypassword',
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -312,7 +312,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
             'token': True,
         }), 'application/json')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -328,7 +328,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
         json_ = ujson.loads(response.content)
         self.assertIsInstance(json_, str)
 
@@ -338,7 +338,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -349,7 +349,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'email', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -359,7 +359,7 @@ class LoginTestCase(TestCase):
             'email': 'test@test.com',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -370,7 +370,7 @@ class LoginTestCase(TestCase):
             'password': True,
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'password', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -381,7 +381,7 @@ class LoginTestCase(TestCase):
             'password': 'mypassword',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 403, response.content)
 
     def test_my_login_session_post_bad_password(self):
         user = models.User.objects.create(email='test@test.com')
@@ -395,7 +395,7 @@ class LoginTestCase(TestCase):
             'password': 'badpassword',
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 403, response.content)
 
     def test_google_login_session_post(self):
         user = models.User.objects.create(email='test@test.com')
@@ -408,7 +408,7 @@ class LoginTestCase(TestCase):
                 'token': 'goodtoken',
             }), 'application/json')
 
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.content)
             json_ = ujson.loads(response.content)
             self.assertIsInstance(json_, str)
 
@@ -420,7 +420,7 @@ class LoginTestCase(TestCase):
                 'token': 'goodtoken',
             }), 'application/json')
 
-            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.status_code, 422, response.content)
 
             json_ = ujson.loads(response.content)
 
@@ -436,7 +436,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/google/session',
                           ujson.dumps({}), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -446,7 +446,7 @@ class LoginTestCase(TestCase):
             'token': True,
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -461,7 +461,7 @@ class LoginTestCase(TestCase):
                 'token': 'goodtoken',
             }), 'application/json')
 
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.content)
             json_ = ujson.loads(response.content)
             self.assertIsInstance(json_, str)
 
@@ -473,7 +473,7 @@ class LoginTestCase(TestCase):
                 'token': 'goodtoken',
             }), 'application/json')
 
-            self.assertEqual(response.status_code, 422)
+            self.assertEqual(response.status_code, 422, response.content)
 
             json_ = ujson.loads(response.content)
 
@@ -489,7 +489,7 @@ class LoginTestCase(TestCase):
         response = c.post('/api/login/facebook/session',
                           ujson.dumps({}), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -499,7 +499,7 @@ class LoginTestCase(TestCase):
             'token': True,
         }), 'application/json')
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
 
@@ -511,11 +511,11 @@ class LoginTestCase(TestCase):
         c = Client()
 
         response = c.delete('/api/session')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         response = c.delete('/api/session', HTTP_X_SESSION_TOKEN='bad-uuid')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         response = c.delete(
             '/api/session', HTTP_X_SESSION_TOKEN=str(session.uuid))
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)

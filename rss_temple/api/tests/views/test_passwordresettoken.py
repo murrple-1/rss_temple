@@ -37,72 +37,72 @@ class UserTestCase(TestCase):
         c = Client()
 
         response = c.post('/api/passwordresettoken/request')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         params = {}
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'email': '',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': 'malformedemail',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': 'unknownemail@test.com',
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': UserTestCase.USER_EMAIL,
         }
         response = c.post('/api/passwordresettoken/request', params)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_passwordresettoken_reset_post(self):
         c = Client()
 
         response = c.post('/api/passwordresettoken/reset')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         params = {}
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'token': '',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'token': '',
             'password': '',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
         params = {
             'token': 'badtoken',
             'password': 'newpassword',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
         params = {
             'token': str(uuid.uuid4()),
             'password': 'newpassword',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
         password_reset_token = models.PasswordResetToken.objects.create(expires_at=(
             datetime.datetime.utcnow() + datetime.timedelta(days=2)), user=UserTestCase.user)
@@ -112,7 +112,7 @@ class UserTestCase(TestCase):
             'password': 'newpassword',
         }
         response = c.post('/api/passwordresettoken/reset', params)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         my_login = UserTestCase.user.my_login()
         my_login.pw_hash = password_hasher().hash(UserTestCase.USER_PASSWORD)

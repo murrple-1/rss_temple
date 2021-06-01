@@ -33,7 +33,7 @@ class AuthenticationTestCase(TestCase):
             response = middleware(request)
 
             self.assertFalse('WWW-Authenticate' in response)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.content)
 
     def test_failed_authentication(self):
         with self.settings(
@@ -53,7 +53,7 @@ class AuthenticationTestCase(TestCase):
             self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'],
                              'X-Basic realm="Test Realm"')
-            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.status_code, 401, response.content)
 
     def test_no_authentication(self):
         with self.settings(
@@ -71,7 +71,7 @@ class AuthenticationTestCase(TestCase):
             response = middleware(request)
 
             self.assertFalse('WWW-Authenticate' in response)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.content)
 
     def test_none_disable(self):
         with self.settings(
@@ -89,7 +89,7 @@ class AuthenticationTestCase(TestCase):
             self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'],
                              'X-Basic realm="Test Realm"')
-            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.status_code, 401, response.content)
 
     def test_none_realm(self):
         with self.settings(
@@ -106,4 +106,4 @@ class AuthenticationTestCase(TestCase):
 
             self.assertIn('WWW-Authenticate', response)
             self.assertEqual(response['WWW-Authenticate'], 'X-Basic')
-            self.assertEqual(response.status_code, 401)
+            self.assertEqual(response.status_code, 401, response.content)

@@ -62,14 +62,14 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.get(
             '/api/feed', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_feed_get_non_rss_url(self):
         c = Client()
         response = c.get('/api/feed', {
             'url': 'http://localhost:8080/rss_2.0/sample-404.xml',
         }, HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_feeds_query_post(self):
         models.Feed.objects.create(
@@ -83,7 +83,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feeds/query', ujson.dumps({'fields': list(fields.field_list(
             'feed'))}), 'application/json', HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
         json_ = ujson.loads(response.content)
 
@@ -96,7 +96,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_feed_subscribe_post_duplicate(self):
         feed = models.Feed.objects.create(
@@ -114,7 +114,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 409, response.content)
 
     def test_feed_subscribe_post_existing_custom_title(self):
         feed = models.Feed.objects.create(
@@ -133,19 +133,19 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0_ns/well_formed.xml&customtitle=Custom%20Title',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 409, response.content)
 
     def test_feed_subscribe_post_no_url(self):
         c = Client()
         response = c.post('/api/feed/subscribe',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_feed_subscribe_post_non_rss_url(self):
         c = Client()
         response = c.post('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/sample-404.xml',
                           HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscribe_put(self):
         feed = models.Feed.objects.create(
@@ -164,7 +164,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.SubscribedFeedUserMapping.objects.filter(
             feed=feed, user=FeedTestCase.user, custom_feed_title='Custom Title 2').count(), 1)
@@ -186,7 +186,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'url', response.content)
         self.assertIn(b'missing', response.content)
 
@@ -202,7 +202,7 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
         self.assertIn(b'not subscribed', response.content)
 
     def test_feed_subscribe_put_renames(self):
@@ -235,11 +235,11 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
         response = c.put('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202',
                          HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.status_code, 409, response.content)
         self.assertIn(b'already used', response.content)
 
     def test_feed_subscribe_delete(self):
@@ -258,16 +258,16 @@ class FeedTestCase(TestCase):
         c = Client()
         response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/well_formed.xml',
                             HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_feed_subscribe_delete_not_subscribed(self):
         c = Client()
         response = c.delete('/api/feed/subscribe?url=http://localhost:8080/rss_2.0/sample-404.xml',
                             HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscribe_delete_no_url(self):
         c = Client()
         response = c.delete('/api/feed/subscribe',
                             HTTP_X_SESSION_TOKEN=FeedTestCase.session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)

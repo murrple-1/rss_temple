@@ -79,7 +79,7 @@ class ThrottleTestCase(TestCase):
 
         with self.settings(THROTTLE_ENABLE=[('test', [], 30, 60)]):
             response = middleware(request)
-            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.status_code, 400, response.content)
 
     def test_throttling(self):
         middleware = throttle.ThrottleMiddleware(
@@ -106,7 +106,7 @@ class ThrottleTestCase(TestCase):
             },
         }):
             response = middleware(request)
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.content)
 
             response = middleware(request)
-            self.assertEqual(response.status_code, 429)
+            self.assertEqual(response.status_code, 429, response.content)

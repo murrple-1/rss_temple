@@ -60,7 +60,7 @@ class ProgressTestCase(TestCase):
 
         response = c.get(f'/api/feed/subscribe/progress/{uuid.uuid4()}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscription_progress_get_not_started(self):
         feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors = ProgressTestCase.generate_entry()
@@ -69,7 +69,7 @@ class ProgressTestCase(TestCase):
 
         response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()
 
@@ -100,7 +100,7 @@ class ProgressTestCase(TestCase):
 
         response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()
 
@@ -127,7 +127,7 @@ class ProgressTestCase(TestCase):
 
         response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
                          HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()
 

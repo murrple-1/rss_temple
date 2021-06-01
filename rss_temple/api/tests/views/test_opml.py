@@ -50,7 +50,7 @@ class OPMLTestCase(TestCase):
 
         response = c.get('/api/opml',
                          HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.content)
 
     def test_opml_post(self):
         OPMLTestCase._reset_db('api/fixtures/default.json')
@@ -65,7 +65,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 202, response.content)
 
     def test_opml_post_malformed_xml(self):
         OPMLTestCase._reset_db('api/fixtures/default.json')
@@ -80,7 +80,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_opml_post_malformed_opml(self):
         OPMLTestCase._reset_db('api/fixtures/default.json')
@@ -95,7 +95,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 400, response.content)
 
     def test_opml_post_duplicates(self):
         OPMLTestCase._reset_db('api/tests/fixtures/opml_mix-pre.json')
@@ -110,7 +110,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 202, response.content)
 
     def test_opml_post_duplicatesinopml(self):
         OPMLTestCase._reset_db('api/tests/fixtures/opml_duplicates-pre.json')
@@ -125,7 +125,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 202)
+        self.assertEqual(response.status_code, 202, response.content)
 
     def test_opml_post_done_before(self):
         OPMLTestCase._reset_db('api/tests/fixtures/opml_no_404-post.json')
@@ -140,7 +140,7 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_opml_post_quick_subscribe(self):
         OPMLTestCase._reset_db('api/tests/fixtures/opml_no_404-post.json')
@@ -160,4 +160,4 @@ class OPMLTestCase(TestCase):
 
         response = c.post('/api/opml', text,
                           content_type='text/xml', HTTP_X_SESSION_TOKEN=session_token_str)
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 204, response.content)
