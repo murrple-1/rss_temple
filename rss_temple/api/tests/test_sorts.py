@@ -9,62 +9,80 @@ class SortsTestCase(TestCase):
     @staticmethod
     def _to_order_by_args(object_name, sort, default_sort_enabled):
         sort_list = sorts.to_sort_list(object_name, sort, default_sort_enabled)
-        order_by_args = sorts.sort_list_to_order_by_args(object_name, sort_list)
+        order_by_args = sorts.sort_list_to_order_by_args(
+            object_name, sort_list)
 
         return order_by_args
 
     def test_default(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:ASC', True)
 
         self.assertEqual(order_by_args, [F('title').asc(), F('uuid').asc()])
 
     def test_nondefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:ASC', False)
 
         self.assertEqual(order_by_args, [F('title').asc()])
 
     def test_multiple_default(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC,homeUrl:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:ASC,homeUrl:ASC', True)
 
-        self.assertEqual(order_by_args, [F('title').asc(), F('home_url').asc(), F('uuid').asc()])
+        self.assertEqual(order_by_args, [F('title').asc(), F(
+            'home_url').asc(), F('uuid').asc()])
 
     def test_multiple_nondefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:ASC,homeUrl:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:ASC,homeUrl:ASC', False)
 
-        self.assertEqual(order_by_args, [F('title').asc(), F('home_url').asc()])
+        self.assertEqual(
+            order_by_args, [F('title').asc(), F('home_url').asc()])
 
     def test_descending_default(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC', True)
 
         self.assertEqual(order_by_args, [F('title').desc(), F('uuid').asc()])
 
     def test_descending_nondefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC', False)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC', False)
 
         self.assertEqual(order_by_args, [F('title').desc()])
 
     def test_multiple_descending_default(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC,homeUrl:DESC', True)
 
-        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').desc(), F('uuid').asc()])
+        self.assertEqual(order_by_args, [F('title').desc(), F(
+            'home_url').desc(), F('uuid').asc()])
 
     def test_multiple_descending_nondefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:DESC', False)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC,homeUrl:DESC', False)
 
-        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').desc()])
+        self.assertEqual(
+            order_by_args, [F('title').desc(), F('home_url').desc()])
 
     def test_multiple_mixed_default(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:ASC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC,homeUrl:ASC', True)
 
-        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').asc(), F('uuid').asc()])
+        self.assertEqual(order_by_args, [F('title').desc(), F(
+            'home_url').asc(), F('uuid').asc()])
 
     def test_multiple_mixed_nondefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'title:DESC,homeUrl:ASC', False)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'title:DESC,homeUrl:ASC', False)
 
-        self.assertEqual(order_by_args, [F('title').desc(), F('home_url').asc()])
+        self.assertEqual(
+            order_by_args, [F('title').desc(), F('home_url').asc()])
 
     def test_multiple_overwritedefault(self):
-        order_by_args = SortsTestCase._to_order_by_args('feed', 'uuid:ASC,title:DESC', True)
+        order_by_args = SortsTestCase._to_order_by_args(
+            'feed', 'uuid:ASC,title:DESC', True)
 
         self.assertEqual(order_by_args, [F('uuid').asc(), F('title').desc()])
 
@@ -142,6 +160,7 @@ class AllSortsTestCase(TestCase):
 
             order_by_args = sorts.sort_list_to_order_by_args(key, sort_list)
 
-            result = list(trial_dict['get_queryset']().order_by(*order_by_args))
+            result = list(trial_dict['get_queryset']
+                          ().order_by(*order_by_args))
 
             self.assertIsNotNone(result)

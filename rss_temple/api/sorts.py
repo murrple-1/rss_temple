@@ -133,7 +133,8 @@ def sort_list_to_order_by_args(object_name, sort_list):
     for sort_desc in sort_list:
         field_name = sort_desc['field_name']
         direction = sort_desc['direction']
-        db_sort_field_accessor_fns = _to_db_sort_field_accessor_fns(object_name, field_name)
+        db_sort_field_accessor_fns = _to_db_sort_field_accessor_fns(
+            object_name, field_name)
         if db_sort_field_accessor_fns:
             for db_sort_field_accessor_fn in db_sort_field_accessor_fns:
                 db_sort_list.append(db_sort_field_accessor_fn(direction))

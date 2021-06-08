@@ -13,7 +13,8 @@ class UserTestCase(TestCase):
         user = models.User.objects.create(
             email='test_fields@test.com')
 
-        user_category = models.UserCategory.objects.create(user=user, text='Category')
+        user_category = models.UserCategory.objects.create(
+            user=user, text='Category')
 
         feed1 = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml',
@@ -34,7 +35,8 @@ class UserTestCase(TestCase):
         models.SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
         models.SubscribedFeedUserMapping.objects.create(feed=feed2, user=user)
 
-        models.FeedUserCategoryMapping.objects.create(feed=feed1, user_category=user_category)
+        models.FeedUserCategoryMapping.objects.create(
+            feed=feed1, user_category=user_category)
 
         category_dict = user.category_dict()
 
@@ -222,14 +224,17 @@ class VerificationTokenTestCase(TestCase):
     def test_find_by_token(self):
         self.assertIsNone(models.VerificationToken.find_by_token('badtoken'))
 
-        self.assertIsNone(models.VerificationToken.find_by_token(str(uuid.uuid4())))
+        self.assertIsNone(
+            models.VerificationToken.find_by_token(str(uuid.uuid4())))
 
         user = models.User.objects.create(
             email='test_fields@test.com')
 
-        verification_token = models.VerificationToken.objects.create(user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1))
+        verification_token = models.VerificationToken.objects.create(
+            user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1))
 
-        self.assertIsNotNone(models.VerificationToken.find_by_token(verification_token.token_str()))
+        self.assertIsNotNone(models.VerificationToken.find_by_token(
+            verification_token.token_str()))
 
 
 class PasswordResetTokenTestCase(TestCase):
@@ -241,14 +246,17 @@ class PasswordResetTokenTestCase(TestCase):
     def test_find_by_token(self):
         self.assertIsNone(models.PasswordResetToken.find_by_token('badtoken'))
 
-        self.assertIsNone(models.PasswordResetToken.find_by_token(str(uuid.uuid4())))
+        self.assertIsNone(
+            models.PasswordResetToken.find_by_token(str(uuid.uuid4())))
 
         user = models.User.objects.create(
             email='test_fields@test.com')
 
-        password_reset_token = models.PasswordResetToken.objects.create(user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1))
+        password_reset_token = models.PasswordResetToken.objects.create(
+            user=user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1))
 
-        self.assertIsNotNone(models.PasswordResetToken.find_by_token(password_reset_token.token_str()))
+        self.assertIsNotNone(models.PasswordResetToken.find_by_token(
+            password_reset_token.token_str()))
 
 
 class UserCategoryTestCase(TestCase):
@@ -256,7 +264,8 @@ class UserCategoryTestCase(TestCase):
         user = models.User.objects.create(
             email='test_fields@test.com')
 
-        user_category = models.UserCategory.objects.create(user=user, text='Category')
+        user_category = models.UserCategory.objects.create(
+            user=user, text='Category')
 
         feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml',
@@ -266,7 +275,8 @@ class UserCategoryTestCase(TestCase):
             updated_at=None,
             db_updated_at=None)
 
-        models.FeedUserCategoryMapping.objects.create(feed=feed, user_category=user_category)
+        models.FeedUserCategoryMapping.objects.create(
+            feed=feed, user_category=user_category)
 
         self.assertEqual(user_category.feeds().count(), 1)
 
@@ -293,7 +303,8 @@ class FeedTestCase(TestCase):
         user = models.User.objects.create(
             email='test_fields@test.com')
 
-        user_category = models.UserCategory.objects.create(user=user, text='Category')
+        user_category = models.UserCategory.objects.create(
+            user=user, text='Category')
 
         feed1 = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml',
@@ -314,7 +325,8 @@ class FeedTestCase(TestCase):
         models.SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
         models.SubscribedFeedUserMapping.objects.create(feed=feed2, user=user)
 
-        models.FeedUserCategoryMapping.objects.create(feed=feed1, user_category=user_category)
+        models.FeedUserCategoryMapping.objects.create(
+            feed=feed1, user_category=user_category)
 
         self.assertEqual(feed1.user_categories(user).count(), 1)
         self.assertEqual(feed2.user_categories(user).count(), 0)

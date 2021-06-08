@@ -439,13 +439,15 @@ def _feed_entries_read_post(request):
         return HttpResponseBadRequest('no entries to mark read')
 
     batch_size = 768
-    objs = (models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user) for feed_entry in models.FeedEntry.objects.filter(q).iterator())
+    objs = (models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
+            for feed_entry in models.FeedEntry.objects.filter(q).iterator())
     with transaction.atomic():
         while True:
             batch = list(itertools.islice(objs, batch_size))
             if not batch:
                 break
-            models.ReadFeedEntryUserMapping.objects.bulk_create(batch, ignore_conflicts=True)
+            models.ReadFeedEntryUserMapping.objects.bulk_create(
+                batch, ignore_conflicts=True)
 
     return HttpResponse(status=204)
 

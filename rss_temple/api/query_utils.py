@@ -129,7 +129,8 @@ def get_sort(json_, object_name, param_name='sort',
         default_sort_enabled = not json_[disable_default_sort_param_name]
 
     sort_list = sortutils.to_sort_list(object_name, sort, default_sort_enabled)
-    order_by_args = sortutils.sort_list_to_order_by_args(object_name, sort_list)
+    order_by_args = sortutils.sort_list_to_order_by_args(
+        object_name, sort_list)
 
     return order_by_args
 

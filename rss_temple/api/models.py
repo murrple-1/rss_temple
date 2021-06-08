@@ -44,7 +44,8 @@ class User(models.Model):
     def subscribed_feeds_dict(self):
         subscribed_feeds_dict = getattr(self, '_subscribed_feeds_dict', None)
         if subscribed_feeds_dict is None:
-            subscribed_feeds_dict = dict((mapping.feed.uuid, mapping.feed) for mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self))
+            subscribed_feeds_dict = dict((mapping.feed.uuid, mapping.feed)
+                                         for mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self))
             self._subscribed_feeds_dict = subscribed_feeds_dict
 
         return subscribed_feeds_dict

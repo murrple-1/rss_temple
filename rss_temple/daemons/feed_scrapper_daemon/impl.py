@@ -59,12 +59,14 @@ def scrape_feed(feed, response_text):
         else:
             old_feed_entry_get_kwargs['updated_at'] = feed_entry.updated_at
 
-        old_feed_entries = list(models.FeedEntry.objects.filter(**old_feed_entry_get_kwargs))
+        old_feed_entries = list(
+            models.FeedEntry.objects.filter(**old_feed_entry_get_kwargs))
         if len(old_feed_entries) > 0:
             old_feed_entry = old_feed_entries[0]
 
             if len(old_feed_entries) > 1:
-                models.FeedEntry.objects.filter(uuid__in=[fe.uuid for fe in old_feed_entries[1:]]).delete()
+                models.FeedEntry.objects.filter(
+                    uuid__in=[fe.uuid for fe in old_feed_entries[1:]]).delete()
 
         if old_feed_entry is not None:
             old_feed_entry.id = feed_entry.id
