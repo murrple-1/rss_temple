@@ -44,12 +44,7 @@ class User(models.Model):
     def subscribed_feeds_dict(self):
         subscribed_feeds_dict = getattr(self, '_subscribed_feeds_dict', None)
         if subscribed_feeds_dict is None:
-            subscribed_feeds_dict = {}
-
-            for feeds in self.category_dict().values():
-                for feed in feeds:
-                    subscribed_feeds_dict[feed.uuid] = feed
-
+            subscribed_feeds_dict = dict((mapping.feed.uuid, mapping.feed) for mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self))
             self._subscribed_feeds_dict = subscribed_feeds_dict
 
         return subscribed_feeds_dict
@@ -95,7 +90,10 @@ class User(models.Model):
 
     def my_login(self):
         if not hasattr(self, '_my_login'):
-            self._my_login = MyLogin.objects.get(user=self)
+            try:
+                self._my_login = MyLogin.objects.get(user=self)
+            except MyLogin.DoesNotExist:
+                self._my_login = None
 
         return self._my_login
 
