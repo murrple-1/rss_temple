@@ -7,7 +7,6 @@ from api import models
 from api.password_hasher import password_hasher
 
 
-# TODO a whole bunch more tests are needed here
 class UserTestCase(TestCase):
     def test_category_dict(self):
         user = models.User.objects.create(
