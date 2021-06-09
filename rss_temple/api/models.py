@@ -228,6 +228,7 @@ class Feed(models.Model):
     updated_at = models.DateTimeField(null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
+    # TODO ability to mark feed as "dead"
 
     def with_subscription_data(self):
         self.custom_title = None
