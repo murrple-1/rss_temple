@@ -2,6 +2,8 @@ import datetime
 import uuid
 
 from django.test import TestCase
+from django.db.utils import IntegrityError
+from django.db import transaction
 
 from api import models
 from api.password_hasher import password_hasher
@@ -537,3 +539,77 @@ class FeedEntryTestCase(TestCase):
 
         self.assertIsNone(feed_entry1.read_mapping(user))
         self.assertIsNotNone(feed_entry2.read_mapping(user))
+
+    def test_unique_feed_url_updated_at(self):
+        now = datetime.datetime.utcnow()
+
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml',
+            title='Sample Feed',
+            home_url='http://example.com',
+            published_at=datetime.datetime.utcnow(),
+            updated_at=None,
+            db_updated_at=None)
+
+        feed_entry1 = models.FeedEntry.objects.create(
+            feed=feed,
+            url='http://example.com/entry1.html',
+            content='<b>Some HTML Content</b>',
+            author_name='John Doe',
+            updated_at=None)
+
+        feed_entry2 = models.FeedEntry.objects.create(
+            feed=feed,
+            url='http://example.com/entry1.html',
+            content='<b>Some HTML Content</b>',
+            author_name='John Doe',
+            updated_at=now)
+
+        feed_entry2.updated_at = None
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                feed_entry2.save(update_fields=['updated_at'])
+
+        feed_entry2.refresh_from_db()
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                models.FeedEntry.objects.create(
+                    feed=feed,
+                    url='http://example.com/entry1.html',
+                    content='<b>Some HTML Content</b>',
+                    author_name='John Doe',
+                    updated_at=now)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                models.FeedEntry.objects.create(
+                    feed=feed,
+                    url='http://example.com/entry1.html',
+                    content='<b>Some HTML Content</b>',
+                    author_name='John Doe',
+                    updated_at=None)
+
+        feed_entry3 = models.FeedEntry.objects.create(
+            feed=feed,
+            url='http://example.com/entry1.html',
+            content='<b>Some HTML Content</b>',
+            author_name='John Doe',
+            updated_at=now + datetime.timedelta(hours=1))
+
+        feed_entry3.updated_at = now
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                feed_entry3.save(update_fields=['updated_at'])
+
+        feed_entry3.refresh_from_db()
+
+        self.assertEqual(feed_entry1.feed_id, feed_entry2.feed_id)
+        self.assertEqual(feed_entry2.feed_id, feed_entry3.feed_id)
+
+        self.assertEqual(feed_entry1.url, feed_entry2.url)
+        self.assertEqual(feed_entry2.url, feed_entry3.url)
+
+        self.assertNotEqual(feed_entry1.updated_at, feed_entry2.updated_at)
+        self.assertNotEqual(feed_entry2.updated_at, feed_entry3.updated_at)
+        self.assertNotEqual(feed_entry1.updated_at, feed_entry3.updated_at)

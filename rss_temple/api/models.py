@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Now
+from django.db.models.query_utils import Q
 
 
 class User(models.Model):
@@ -310,11 +311,14 @@ class FeedUserCategoryMapping(models.Model):
 
 class FeedEntry(models.Model):
     class Meta:
-        unique_together = (('feed', 'url', 'updated_at'))
-
         indexes = [
             models.Index(fields=['id']),
             models.Index(fields=['url']),
+        ]
+
+        constraints = [
+            models.UniqueConstraint(fields=['feed', 'url'], name='unique__feed__url__when__updated_at__null', condition=Q(updated_at__isnull=True)),
+            models.UniqueConstraint(fields=['feed', 'url', 'updated_at'], name='unique__feed__url__when__updated_at__not_null'),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
