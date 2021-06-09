@@ -5675,23 +5675,6 @@
   },
   {
     "model": "api.feedentry",
-    "pk": "8d5e4d71-5937-42eb-a95b-3ecc356a03c3",
-    "fields": {
-      "id": "http://www.misfile.com/news.php?date=2018-12-10 15:21:06#26330",
-      "feed": "f7b7140b-f36e-477d-82b3-d8bfa0f1f5ab",
-      "created_at": null,
-      "published_at": "2018-12-10T15:21:06",
-      "updated_at": null,
-      "title": "News Article: Mon, 10 Dec 2018",
-      "url": "http://www.misfile.com/#news",
-      "content": "Christmas is fast approaching. Still have some time to do some last minute christmas commissions/gifts if you're looking. I work pretty fast.",
-      "author_name": null,
-      "db_created_at": "2018-12-19T03:01:54.131",
-      "db_updated_at": null
-    }
-  },
-  {
-    "model": "api.feedentry",
     "pk": "8e1479fd-df88-4f47-a0cc-e81c7c208c7d",
     "fields": {
       "id": "http://deadrhetoric.com/?p=56628",

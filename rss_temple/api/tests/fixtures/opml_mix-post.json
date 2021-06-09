@@ -7392,23 +7392,6 @@
   },
   {
     "model": "api.feedentry",
-    "pk": "c1f12948-32ea-4c9e-b526-fa1942c0b77e",
-    "fields": {
-      "id": "http://www.misfile.com/news.php?date=2018-12-10 15:21:06#26330",
-      "feed": "202953b8-bf73-448d-b7e6-76d126dc84c0",
-      "created_at": null,
-      "published_at": "2018-12-10T15:21:06",
-      "updated_at": null,
-      "title": "News Article: Mon, 10 Dec 2018",
-      "url": "http://www.misfile.com/#news",
-      "content": "Christmas is fast approaching. Still have some time to do some last minute christmas commissions/gifts if you're looking. I work pretty fast.",
-      "author_name": null,
-      "db_created_at": "2018-12-19T02:53:13.803",
-      "db_updated_at": null
-    }
-  },
-  {
-    "model": "api.feedentry",
     "pk": "c2114039-a079-485d-94a6-6877515529e7",
     "fields": {
       "id": "https://www.animenewsnetwork.com/cms/.140882",
