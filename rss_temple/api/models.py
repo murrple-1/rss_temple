@@ -221,6 +221,11 @@ class _FeedManager(models.Manager):
 class Feed(models.Model):
     objects = _FeedManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['update_backoff_until']),
+        ]
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
     title = models.TextField()
@@ -229,7 +234,7 @@ class Feed(models.Model):
     updated_at = models.DateTimeField(null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
-    # TODO ability to mark feed as "dead"
+    update_backoff_until = models.DateTimeField(default=timezone.now)
 
     def with_subscription_data(self):
         self.custom_title = None

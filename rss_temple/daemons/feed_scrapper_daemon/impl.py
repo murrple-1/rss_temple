@@ -1,5 +1,6 @@
 import logging
 import sys
+import datetime
 
 from django.db.models.functions import Now
 
@@ -81,4 +82,16 @@ def scrape_feed(feed, response_text):
     models.FeedEntry.objects.bulk_create(new_feed_entries)
 
     feed.db_updated_at = Now()
-    feed.save()
+
+
+def new_update_backoff_until(feed):
+    last_written_at = feed.db_updated_at or feed.db_created_at
+
+    backoff_delta_seconds = (feed.update_backoff_until - last_written_at).total_seconds()
+
+    if backoff_delta_seconds == 0.0:
+        backoff_delta_seconds = 1
+
+    backoff_delta_seconds *= 2
+
+    return last_written_at + datetime.timedelta(seconds=backoff_delta_seconds)

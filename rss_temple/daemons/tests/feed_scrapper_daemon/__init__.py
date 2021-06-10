@@ -1,10 +1,11 @@
 import logging
+import datetime
 
 from django.test import TestCase
 
 from api import models
 
-from daemons.feed_scrapper_daemon.impl import scrape_feed, logger
+from daemons.feed_scrapper_daemon.impl import scrape_feed, new_update_backoff_until, logger
 
 
 class DaemonTestCase(TestCase):
@@ -44,3 +45,15 @@ class DaemonTestCase(TestCase):
 
         self.assertEqual(feed_count, models.Feed.objects.count())
         self.assertEqual(feed_entry_count, models.FeedEntry.objects.count())
+
+    def test_new_update_backoff_until(self):
+        self.assertAlmostEqual(DaemonTestCase.feed.db_created_at.timestamp(), DaemonTestCase.feed.update_backoff_until.timestamp(), delta=1)
+        self.assertIsNone(DaemonTestCase.feed.db_updated_at)
+
+        DaemonTestCase.feed.update_backoff_until = DaemonTestCase.feed.db_created_at
+
+        DaemonTestCase.feed.update_backoff_until = new_update_backoff_until(DaemonTestCase.feed)
+        self.assertAlmostEqual(DaemonTestCase.feed.update_backoff_until.timestamp(), (DaemonTestCase.feed.db_created_at + datetime.timedelta(seconds=2)).timestamp(), delta=1)
+
+        DaemonTestCase.feed.update_backoff_until = new_update_backoff_until(DaemonTestCase.feed)
+        self.assertAlmostEqual(DaemonTestCase.feed.update_backoff_until.timestamp(), (DaemonTestCase.feed.db_created_at + datetime.timedelta(seconds=4)).timestamp(), delta=1)
