@@ -18,6 +18,7 @@ django.setup()
 import time
 import argparse
 import uuid
+import datetime
 
 from django.db import transaction
 from django.db.models.functions import Now
@@ -62,7 +63,7 @@ else:
 
                             logger().debug('scrapped \'%s\'', feed.feed_url)
 
-                            feed.update_backoff_until = Now()
+                            feed.update_backoff_until = feed.db_updated_at + datetime.timedelta(minutes=1)
                             feed.save(update_fields=['db_updated_at', 'update_backoff_until'])
                         except (requests.exceptions.RequestException, QueryException):
                             logger().exception('failed to scrap feed \'%s\'', feed.feed_url)
