@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from api import models
 
-from daemons.feed_scrapper_daemon.impl import scrape_feed, new_update_backoff_until, logger
+from daemons.feed_scrapper_daemon.impl import scrape_feed, success_update_backoff_until, error_update_backoff_until, logger
 
 
 class DaemonTestCase(TestCase):
@@ -20,9 +20,6 @@ class DaemonTestCase(TestCase):
         logger().setLevel(logging.CRITICAL)
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
 
-        cls.feed = models.Feed.objects.create(
-            feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -31,29 +28,48 @@ class DaemonTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
 
     def test_scrape_feed(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
+
         text = None
         with open('api/tests/test_files/atom_1.0/well_formed.xml', 'r') as f:
             text = f.read()
 
-        scrape_feed(DaemonTestCase.feed, text)
+        scrape_feed(feed, text)
 
         feed_count = models.Feed.objects.count()
         feed_entry_count = models.FeedEntry.objects.count()
 
         # do it twice to make sure duplicate entries aren't added
-        scrape_feed(DaemonTestCase.feed, text)
+        scrape_feed(feed, text)
 
         self.assertEqual(feed_count, models.Feed.objects.count())
         self.assertEqual(feed_entry_count, models.FeedEntry.objects.count())
 
-    def test_new_update_backoff_until(self):
-        self.assertAlmostEqual(DaemonTestCase.feed.db_created_at.timestamp(), DaemonTestCase.feed.update_backoff_until.timestamp(), delta=1)
-        self.assertIsNone(DaemonTestCase.feed.db_updated_at)
+    def test_success_update_backoff_until(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
 
-        DaemonTestCase.feed.update_backoff_until = DaemonTestCase.feed.db_created_at
+        self.assertAlmostEqual(feed.db_created_at.timestamp(), feed.update_backoff_until.timestamp(), delta=1)
+        self.assertIsNone(feed.db_updated_at)
 
-        DaemonTestCase.feed.update_backoff_until = new_update_backoff_until(DaemonTestCase.feed)
-        self.assertAlmostEqual(DaemonTestCase.feed.update_backoff_until.timestamp(), (DaemonTestCase.feed.db_created_at + datetime.timedelta(seconds=2)).timestamp(), delta=1)
+        feed.db_updated_at = datetime.datetime.utcnow()
 
-        DaemonTestCase.feed.update_backoff_until = new_update_backoff_until(DaemonTestCase.feed)
-        self.assertAlmostEqual(DaemonTestCase.feed.update_backoff_until.timestamp(), (DaemonTestCase.feed.db_created_at + datetime.timedelta(seconds=4)).timestamp(), delta=1)
+        feed.update_backoff_until = success_update_backoff_until(feed)
+
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_updated_at + datetime.timedelta(minutes=1)).timestamp(), delta=1)
+
+    def test_error_update_backoff_until(self):
+        feed = models.Feed.objects.create(
+            feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
+
+        self.assertAlmostEqual(feed.db_created_at.timestamp(), feed.update_backoff_until.timestamp(), delta=1)
+        self.assertIsNone(feed.db_updated_at)
+
+        feed.update_backoff_until = feed.db_created_at
+
+        feed.update_backoff_until = error_update_backoff_until(feed)
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_created_at + datetime.timedelta(seconds=30)).timestamp(), delta=1)
+
+        feed.update_backoff_until = error_update_backoff_until(feed)
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(), delta=1)

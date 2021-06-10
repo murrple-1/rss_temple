@@ -18,7 +18,6 @@ django.setup()
 import time
 import argparse
 import uuid
-import datetime
 
 from django.db import transaction
 from django.db.models.functions import Now
@@ -27,7 +26,7 @@ import filelock
 
 import requests
 
-from .impl import logger, scrape_feed, new_update_backoff_until
+from .impl import logger, scrape_feed, success_update_backoff_until, error_update_backoff_until
 from api import models, rss_requests
 from api.exceptions import QueryException
 
@@ -63,12 +62,12 @@ else:
 
                             logger().debug('scrapped \'%s\'', feed.feed_url)
 
-                            feed.update_backoff_until = feed.db_updated_at + datetime.timedelta(minutes=1)
+                            feed.update_backoff_until = success_update_backoff_until(feed)
                             feed.save(update_fields=['db_updated_at', 'update_backoff_until'])
                         except (requests.exceptions.RequestException, QueryException):
                             logger().exception('failed to scrap feed \'%s\'', feed.feed_url)
 
-                            feed.update_backoff_until = new_update_backoff_until(feed)
+                            feed.update_backoff_until = error_update_backoff_until(feed)
                             feed.save(update_fields=['update_backoff_until'])
 
                 logger().info('scrapped %d feeds this round', count)

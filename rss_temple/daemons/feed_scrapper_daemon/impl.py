@@ -82,14 +82,18 @@ def scrape_feed(feed, response_text):
     feed.db_updated_at = datetime.datetime.utcnow()
 
 
-def new_update_backoff_until(feed):
+def success_update_backoff_until(feed):
+    return feed.db_updated_at + datetime.timedelta(minutes=1)
+
+
+def error_update_backoff_until(feed):
     last_written_at = feed.db_updated_at or feed.db_created_at
 
     backoff_delta_seconds = (feed.update_backoff_until - last_written_at).total_seconds()
 
-    if backoff_delta_seconds == 0.0:
-        backoff_delta_seconds = 1
-
-    backoff_delta_seconds *= 2
+    if backoff_delta_seconds < 30:
+        backoff_delta_seconds = 30
+    else:
+        backoff_delta_seconds *= 2
 
     return last_written_at + datetime.timedelta(seconds=backoff_delta_seconds)
