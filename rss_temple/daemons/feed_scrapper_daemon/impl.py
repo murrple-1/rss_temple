@@ -2,7 +2,30 @@ import logging
 import sys
 import datetime
 
+from django.conf import settings
+from django.dispatch import receiver
+from django.core.signals import setting_changed
+
 from api import feed_handler, models
+
+
+_SUCCESS_BACKOFF_SECONDS = None
+_MIN_ERROR_BACKOFF_SECONDS = None
+_MAX_ERROR_BACKOFF_SECONDS = None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args, **kwargs):
+    global _SUCCESS_BACKOFF_SECONDS
+    global _MIN_ERROR_BACKOFF_SECONDS
+    global _MAX_ERROR_BACKOFF_SECONDS
+
+    _SUCCESS_BACKOFF_SECONDS = settings.SUCCESS_BACKOFF_SECONDS
+    _MIN_ERROR_BACKOFF_SECONDS = settings.MIN_ERROR_BACKOFF_SECONDS
+    _MAX_ERROR_BACKOFF_SECONDS = settings.MAX_ERROR_BACKOFF_SECONDS
+
+
+_load_global_settings()
 
 
 _logger = None
@@ -83,7 +106,7 @@ def scrape_feed(feed, response_text):
 
 
 def success_update_backoff_until(feed):
-    return feed.db_updated_at + datetime.timedelta(minutes=1)
+    return feed.db_updated_at + datetime.timedelta(seconds=_SUCCESS_BACKOFF_SECONDS)
 
 
 def error_update_backoff_until(feed):
@@ -92,8 +115,10 @@ def error_update_backoff_until(feed):
     backoff_delta_seconds = (
         feed.update_backoff_until - last_written_at).total_seconds()
 
-    if backoff_delta_seconds < 30:
-        backoff_delta_seconds = 30
+    if backoff_delta_seconds < _MIN_ERROR_BACKOFF_SECONDS:
+        backoff_delta_seconds = _MIN_ERROR_BACKOFF_SECONDS
+    elif backoff_delta_seconds > _MAX_ERROR_BACKOFF_SECONDS:
+        backoff_delta_seconds += _MAX_ERROR_BACKOFF_SECONDS
     else:
         backoff_delta_seconds *= 2
 
