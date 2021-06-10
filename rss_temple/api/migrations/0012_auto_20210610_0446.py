@@ -18,6 +18,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='feed',
-            index=models.Index(fields=['update_backoff_until'], name='api_feed_update__033cc4_idx'),
+            index=models.Index(
+                fields=['update_backoff_until'], name='api_feed_update__033cc4_idx'),
         ),
     ]

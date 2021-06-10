@@ -50,26 +50,31 @@ class DaemonTestCase(TestCase):
         feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
 
-        self.assertAlmostEqual(feed.db_created_at.timestamp(), feed.update_backoff_until.timestamp(), delta=1)
+        self.assertAlmostEqual(feed.db_created_at.timestamp(
+        ), feed.update_backoff_until.timestamp(), delta=1)
         self.assertIsNone(feed.db_updated_at)
 
         feed.db_updated_at = datetime.datetime.utcnow()
 
         feed.update_backoff_until = success_update_backoff_until(feed)
 
-        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_updated_at + datetime.timedelta(minutes=1)).timestamp(), delta=1)
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(
+        ), (feed.db_updated_at + datetime.timedelta(minutes=1)).timestamp(), delta=1)
 
     def test_error_update_backoff_until(self):
         feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml', title='Fake Feed', home_url='http://example.com')
 
-        self.assertAlmostEqual(feed.db_created_at.timestamp(), feed.update_backoff_until.timestamp(), delta=1)
+        self.assertAlmostEqual(feed.db_created_at.timestamp(
+        ), feed.update_backoff_until.timestamp(), delta=1)
         self.assertIsNone(feed.db_updated_at)
 
         feed.update_backoff_until = feed.db_created_at
 
         feed.update_backoff_until = error_update_backoff_until(feed)
-        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_created_at + datetime.timedelta(seconds=30)).timestamp(), delta=1)
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(
+        ), (feed.db_created_at + datetime.timedelta(seconds=30)).timestamp(), delta=1)
 
         feed.update_backoff_until = error_update_backoff_until(feed)
-        self.assertAlmostEqual(feed.update_backoff_until.timestamp(), (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(), delta=1)
+        self.assertAlmostEqual(feed.update_backoff_until.timestamp(
+        ), (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(), delta=1)

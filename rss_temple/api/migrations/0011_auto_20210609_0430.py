@@ -16,10 +16,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='feedentry',
-            constraint=models.UniqueConstraint(condition=models.Q(('updated_at__isnull', True)), fields=('feed', 'url'), name='unique__feed__url__when__updated_at__null'),
+            constraint=models.UniqueConstraint(condition=models.Q(('updated_at__isnull', True)), fields=(
+                'feed', 'url'), name='unique__feed__url__when__updated_at__null'),
         ),
         migrations.AddConstraint(
             model_name='feedentry',
-            constraint=models.UniqueConstraint(fields=('feed', 'url', 'updated_at'), name='unique__feed__url__when__updated_at__not_null'),
+            constraint=models.UniqueConstraint(fields=(
+                'feed', 'url', 'updated_at'), name='unique__feed__url__when__updated_at__not_null'),
         ),
     ]

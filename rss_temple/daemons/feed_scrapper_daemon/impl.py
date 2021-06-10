@@ -89,7 +89,8 @@ def success_update_backoff_until(feed):
 def error_update_backoff_until(feed):
     last_written_at = feed.db_updated_at or feed.db_created_at
 
-    backoff_delta_seconds = (feed.update_backoff_until - last_written_at).total_seconds()
+    backoff_delta_seconds = (
+        feed.update_backoff_until - last_written_at).total_seconds()
 
     if backoff_delta_seconds < 30:
         backoff_delta_seconds = 30

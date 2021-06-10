@@ -62,12 +62,15 @@ else:
 
                             logger().debug('scrapped \'%s\'', feed.feed_url)
 
-                            feed.update_backoff_until = success_update_backoff_until(feed)
-                            feed.save(update_fields=['db_updated_at', 'update_backoff_until'])
+                            feed.update_backoff_until = success_update_backoff_until(
+                                feed)
+                            feed.save(update_fields=[
+                                      'db_updated_at', 'update_backoff_until'])
                         except (requests.exceptions.RequestException, QueryException):
                             logger().exception('failed to scrap feed \'%s\'', feed.feed_url)
 
-                            feed.update_backoff_until = error_update_backoff_until(feed)
+                            feed.update_backoff_until = error_update_backoff_until(
+                                feed)
                             feed.save(update_fields=['update_backoff_until'])
 
                 logger().info('scrapped %d feeds this round', count)
