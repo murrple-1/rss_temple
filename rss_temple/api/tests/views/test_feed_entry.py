@@ -23,15 +23,24 @@ class FeedEntryTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
         cls.user = models.User.objects.create(email='test@test.com')
 
-        session = models.Session.objects.create(
+        cls.session = models.Session.objects.create(
             user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
 
-        cls.session = session
-
-        cls.session_token = session.uuid
-        cls.session_token_str = str(session.uuid)
+        cls.session_token = cls.session.uuid
+        cls.session_token_str = str(cls.session.uuid)
 
         cls.feed = models.Feed.objects.create(
             feed_url='http://example.com/rss.xml',
@@ -40,13 +49,6 @@ class FeedEntryTestCase(TestCase):
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.getLogger('rss_temple').setLevel(cls.old_app_logger_level)
-        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_feedentry_get(self):
         feed_entry = models.FeedEntry.objects.create(

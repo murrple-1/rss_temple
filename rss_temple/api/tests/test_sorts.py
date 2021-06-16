@@ -140,8 +140,8 @@ class AllSortsTestCase(TestCase):
     }
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def setUpTestData(cls):
+        super().setUpTestData()
 
         cls.user = models.User.objects.create(
             email='test_searches@test.com')

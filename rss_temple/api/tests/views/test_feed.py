@@ -24,16 +24,6 @@ class FeedTestCase(TestCase):
         logging.getLogger('rss_temple').setLevel(logging.CRITICAL)
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        cls.user = models.User.objects.create(email='test@test.com')
-
-        session = models.Session.objects.create(
-            user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
-
-        cls.session = session
-
-        cls.session_token = session.uuid
-        cls.session_token_str = str(session.uuid)
-
         cls.http_process = Process(target=http_server_target, args=(8080,))
         cls.http_process.start()
 
@@ -49,6 +39,18 @@ class FeedTestCase(TestCase):
         cls.http_process.terminate()
 
         time.sleep(2.0)
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        cls.user = models.User.objects.create(email='test@test.com')
+
+        cls.session = models.Session.objects.create(
+            user=cls.user, expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2))
+
+        cls.session_token = cls.session.uuid
+        cls.session_token_str = str(cls.session.uuid)
 
     def test_feed_get(self):
         c = Client()

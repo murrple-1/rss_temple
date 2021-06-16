@@ -22,16 +22,20 @@ class UserTestCase(TestCase):
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
-        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
-
-        models.MyLogin.objects.create(
-            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logging.getLogger('django').setLevel(cls.old_django_logger_level)
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
+
+        models.MyLogin.objects.create(
+            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
     def test_passwordresettoken_request_post(self):
         c = Client()
@@ -113,7 +117,3 @@ class UserTestCase(TestCase):
         }
         response = c.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 204, response.content)
-
-        my_login = UserTestCase.user.my_login()
-        my_login.pw_hash = password_hasher().hash(UserTestCase.USER_PASSWORD)
-        my_login.save()

@@ -96,7 +96,7 @@ def _passwordresettoken_reset_post(request):
     my_login.pw_hash = password_hasher().hash(password)
 
     with transaction.atomic():
-        my_login.save()
+        my_login.save(update_fields=['pw_hash'])
 
         password_reset_token.delete()
 

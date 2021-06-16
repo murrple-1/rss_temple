@@ -26,6 +26,16 @@ class UserTestCase(TestCase):
 
         logging.getLogger('django').setLevel(logging.CRITICAL)
 
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger('django').setLevel(cls.old_django_logger_level)
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
         cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
         models.MyLogin.objects.create(
             user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
@@ -40,12 +50,6 @@ class UserTestCase(TestCase):
             email=UserTestCase.NON_UNIQUE_EMAIL)
         models.MyLogin.objects.create(
             user=user2, pw_hash=password_hasher().hash('password2'))
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.getLogger('django').setLevel(cls.old_django_logger_level)
 
     def test_user_get(self):
         c = Client()
