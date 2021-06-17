@@ -321,6 +321,7 @@ def _feed_entries_query_stable_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
+    cache.touch(token)
     uuids = cache.get(token, [])
 
     ret_obj = {}
