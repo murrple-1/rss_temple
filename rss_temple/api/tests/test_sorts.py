@@ -132,7 +132,7 @@ class AllSortsTestCase(TestCase):
             'get_queryset': lambda: models.UserCategory.objects,
         },
         'feed': {
-            'get_queryset': lambda: models.Feed.objects.with_subscription_data(AllSortsTestCase.user),
+            'get_queryset': lambda: models.Feed.annotate_search_vectors(models.Feed.annotate_subscription_data(models.Feed.objects.all(), AllSortsTestCase.user)),
         },
         'feedentry': {
             'get_queryset': lambda: models.FeedEntry.objects,

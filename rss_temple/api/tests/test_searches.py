@@ -2,7 +2,6 @@ import logging
 import uuid
 
 from django.test import TestCase
-from django.db import connection
 
 from api import searches, models
 from api.exceptions import QueryException
@@ -88,7 +87,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         'feed': {
-            'get_queryset': lambda: models.Feed.objects.with_subscription_data(AllSearchesTestCase.user),
+            'get_queryset': lambda: models.Feed.annotate_search_vectors(models.Feed.annotate_subscription_data(models.Feed.objects.all(), AllSearchesTestCase.user)),
             'searches': {
                 'uuid': [str(uuid.uuid4())],
                 'title': ['test'],

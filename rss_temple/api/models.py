@@ -4,6 +4,7 @@ from django.db import models, connection
 from django.utils import timezone
 from django.db.models.functions import Now
 from django.db.models.query_utils import Q
+from django.db.models.expressions import RawSQL
 
 
 class User(models.Model):
@@ -206,32 +207,11 @@ class UserCategory(models.Model):
         return feeds
 
 
-class _FeedManager(models.Manager):
-    def with_subscription_data(self, user):
-        qs = self.get_queryset()
-        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
-            user=user, feed_id=models.OuterRef('uuid'))
-        return qs.annotate(
-            custom_title=models.Subquery(
-                subscribed_user_feed_mappings.values('custom_feed_title')),
-            is_subscribed=models.Exists(subscribed_user_feed_mappings),
-        )
-
-
 class Feed(models.Model):
-    objects = _FeedManager()
-
     class Meta:
         indexes = [
             models.Index(fields=['update_backoff_until']),
         ]
-
-        if connection.vendor == 'postgresql':
-            from django.contrib.postgres.indexes import GinIndex
-
-            indexes.extend([GinIndex(fields=['title_search_vector'])])
-
-            del GinIndex
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
@@ -243,12 +223,23 @@ class Feed(models.Model):
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
 
-    if connection.vendor == 'postgresql':
-        from django.contrib.postgres.search import SearchVectorField
+    @staticmethod
+    def annotate_search_vectors(qs):
+        if connection.vendor == 'postgresql':
+            from django.contrib.postgres.search import SearchVectorField
+            qs = qs.annotate(title_search_vector=RawSQL('title_search_vector', [], output_field=SearchVectorField()), content_search_vector=RawSQL('content_search_vector', [], output_field=SearchVectorField()))
 
-        title_search_vector = SearchVectorField()
+        return qs
 
-        del SearchVectorField
+    @staticmethod
+    def annotate_subscription_data(qs, user):
+        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
+            user=user, feed_id=models.OuterRef('uuid'))
+        return qs.annotate(
+            custom_title=models.Subquery(
+                subscribed_user_feed_mappings.values('custom_feed_title')),
+            is_subscribed=models.Exists(subscribed_user_feed_mappings),
+        )
 
     def with_subscription_data(self):
         self.custom_title = None
@@ -335,13 +326,6 @@ class FeedEntry(models.Model):
             models.Index(fields=['url']),
         ]
 
-        if connection.vendor == 'postgresql':
-            from django.contrib.postgres.indexes import GinIndex
-
-            indexes.extend([GinIndex(fields=['content_search_vector']), GinIndex(fields=['title_search_vector'])])
-
-            del GinIndex
-
         constraints = [
             models.UniqueConstraint(fields=[
                                     'feed', 'url'], name='unique__feed__url__when__updated_at__null', condition=Q(updated_at__isnull=True)),
@@ -362,13 +346,13 @@ class FeedEntry(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
 
-    if connection.vendor == 'postgresql':
-        from django.contrib.postgres.search import SearchVectorField
+    @staticmethod
+    def annotate_search_vectors(qs):
+        if connection.vendor == 'postgresql':
+            from django.contrib.postgres.search import SearchVectorField
+            qs = qs.annotate(title_search_vector=RawSQL('title_search_vector', [], output_field=SearchVectorField()))
 
-        title_search_vector = SearchVectorField()
-        content_search_vector = SearchVectorField()
-
-        del SearchVectorField
+        return qs
 
     def from_subscription(self, user):
         from_subscription = getattr(self, '_from_subscription', None)
