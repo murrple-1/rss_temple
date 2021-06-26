@@ -99,7 +99,8 @@ def _feed_get(request):
 
     feed = None
     try:
-        feed = models.Feed.annotate_subscription_data(models.Feed.objects.all(), request.user).get(feed_url=url)
+        feed = models.Feed.annotate_subscription_data(
+            models.Feed.objects.all(), request.user).get(feed_url=url)
     except models.Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
@@ -173,7 +174,8 @@ def _feeds_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feeds = models.Feed.annotate_search_vectors(models.Feed.annotate_subscription_data(models.Feed.objects.all(), request.user)).filter(*search)
+    feeds = models.Feed.annotate_search_vectors(models.Feed.annotate_subscription_data(
+        models.Feed.objects.all(), request.user)).filter(*search)
 
     ret_obj = {}
 

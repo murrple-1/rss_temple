@@ -31,5 +31,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(_forward_func_add_feed_entry_search_vector, _reverse_func_add_feed_entry_search_vector),
+        migrations.RunPython(_forward_func_add_feed_entry_search_vector,
+                             _reverse_func_add_feed_entry_search_vector),
     ]
