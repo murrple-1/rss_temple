@@ -128,6 +128,8 @@ class AllSearchesTestCase(TestCase):
                 'url': ['http://example.com/entry1.html'],
                 'authorName': ['John Doe'],
                 'authorName_exact': ['John Doe'],
+                'title': ['Some Text'],
+                'content': ['Some Text'],
 
                 'subscribed': ['true', 'false'],
                 'isRead': ['true', 'false'],
@@ -154,9 +156,6 @@ class AllSearchesTestCase(TestCase):
 
         cls.user = models.User.objects.create(
             email='test_searches@test.com')
-
-        if connection.vendor == 'postgresql':
-            cls.TRIALS['feedentry']['content'] = ['Some Text']
 
     @classmethod
     def tearDownClass(cls):

@@ -226,6 +226,13 @@ class Feed(models.Model):
             models.Index(fields=['update_backoff_until']),
         ]
 
+        if connection.vendor == 'postgresql':
+            from django.contrib.postgres.indexes import GinIndex
+
+            indexes.extend([GinIndex(fields=['title_search_vector'])])
+
+            del GinIndex
+
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_url = models.TextField(unique=True)
     title = models.TextField()
@@ -235,6 +242,13 @@ class Feed(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
+
+    if connection.vendor == 'postgresql':
+        from django.contrib.postgres.search import SearchVectorField
+
+        title_search_vector = SearchVectorField()
+
+        del SearchVectorField
 
     def with_subscription_data(self):
         self.custom_title = None
@@ -324,7 +338,7 @@ class FeedEntry(models.Model):
         if connection.vendor == 'postgresql':
             from django.contrib.postgres.indexes import GinIndex
 
-            indexes.append(GinIndex(fields=['content_search_vector']))
+            indexes.extend([GinIndex(fields=['content_search_vector']), GinIndex(fields=['title_search_vector'])])
 
             del GinIndex
 
@@ -351,7 +365,8 @@ class FeedEntry(models.Model):
     if connection.vendor == 'postgresql':
         from django.contrib.postgres.search import SearchVectorField
 
-        content_search_vector = SearchVectorField(null=True)
+        title_search_vector = SearchVectorField()
+        content_search_vector = SearchVectorField()
 
         del SearchVectorField
 
