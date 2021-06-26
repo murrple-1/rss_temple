@@ -227,8 +227,8 @@ class Feed(models.Model):
     def annotate_search_vectors(qs):
         if connection.vendor == 'postgresql':
             from django.contrib.postgres.search import SearchVectorField
-            qs = qs.annotate(title_search_vector=RawSQL('title_search_vector', [], output_field=SearchVectorField(
-            )), content_search_vector=RawSQL('content_search_vector', [], output_field=SearchVectorField()))
+            qs = qs.annotate(title_search_vector=RawSQL(
+                'title_search_vector', [], output_field=SearchVectorField()))
 
         return qs
 
@@ -351,8 +351,8 @@ class FeedEntry(models.Model):
     def annotate_search_vectors(qs):
         if connection.vendor == 'postgresql':
             from django.contrib.postgres.search import SearchVectorField
-            qs = qs.annotate(title_search_vector=RawSQL(
-                'title_search_vector', [], output_field=SearchVectorField()))
+            qs = qs.annotate(title_search_vector=RawSQL('title_search_vector', [], output_field=SearchVectorField(
+            )), content_search_vector=RawSQL('content_search_vector', [], output_field=SearchVectorField()))
 
         return qs
 

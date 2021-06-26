@@ -102,11 +102,15 @@ _search_fns = {
 }
 
 if connection.vendor == 'postgresql':
+    _search_fns['feed']['title'] = lambda context, search_obj: Q(
+        title_search_vector=search_obj)
     _search_fns['feedentry']['title'] = lambda context, search_obj: Q(
         title_search_vector=search_obj)
     _search_fns['feedentry']['content'] = lambda context, search_obj: Q(
         content_search_vector=search_obj)
 else:
+    _search_fns['feed']['title'] = lambda context, search_obj: Q(
+        title__icontains=search_obj)
     _search_fns['feedentry']['title'] = lambda context, search_obj: Q(
         title__icontains=search_obj)
     _search_fns['feedentry']['content'] = lambda context, search_obj: Q(

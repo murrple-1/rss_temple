@@ -198,7 +198,8 @@ def _feed_entries_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feed_entries = models.FeedEntry.objects.filter(*search)
+    feed_entries = models.FeedEntry.annotate_search_vectors(
+        models.FeedEntry.objects.all()).filter(*search)
 
     ret_obj = {}
 
@@ -252,7 +253,7 @@ def _feed_entries_query_stable_create_post(request):
 
     token = f'feedentry-{uuid.uuid4().int}'
 
-    cache.set(token, list(models.FeedEntry.objects.filter(
+    cache.set(token, list(models.FeedEntry.annotate_search_vectors(models.FeedEntry.objects.all()).filter(
         *search).order_by(*sort).values_list('uuid', flat=True)))
 
     content, content_type = query_utils.serialize_content(token)
