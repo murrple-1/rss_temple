@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q
+from django.db import connection
 
 from pyparsing import ParseException
 
@@ -99,6 +100,9 @@ _search_fns = {
         'readAt_delta': lambda context, search_obj: Q(uuid__in=models.ReadFeedEntryUserMapping.objects.filter(user=context.request.user, read_at__range=DateTimeDeltaRange.convertto(search_obj))),
     },
 }
+
+if connection.vendor == 'postgresql':
+    _search_fns['feedentry']['content'] = lambda context, search_obj: Q(content_search_vector=search_obj)
 
 
 def to_filter_args(object_name, context, search):

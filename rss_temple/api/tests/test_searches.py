@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from django.test import TestCase
+from django.db import connection
 
 from api import searches, models
 from api.exceptions import QueryException
@@ -153,6 +154,9 @@ class AllSearchesTestCase(TestCase):
 
         cls.user = models.User.objects.create(
             email='test_searches@test.com')
+
+        if connection.vendor == 'postgresql':
+            cls.TRIALS['feedentry']['content'] = ['Some Text']
 
     @classmethod
     def tearDownClass(cls):

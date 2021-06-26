@@ -1,6 +1,6 @@
 import uuid
 
-from django.db import models
+from django.db import models, connection
 from django.utils import timezone
 from django.db.models.functions import Now
 from django.db.models.query_utils import Q
@@ -321,6 +321,13 @@ class FeedEntry(models.Model):
             models.Index(fields=['url']),
         ]
 
+        if connection.vendor == 'postgresql':
+            from django.contrib.postgres.indexes import GinIndex
+
+            indexes.append(GinIndex(fields=['content_search_vector']))
+
+            del GinIndex
+
         constraints = [
             models.UniqueConstraint(fields=[
                                     'feed', 'url'], name='unique__feed__url__when__updated_at__null', condition=Q(updated_at__isnull=True)),
@@ -340,6 +347,13 @@ class FeedEntry(models.Model):
     author_name = models.TextField(null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
+
+    if connection.vendor == 'postgresql':
+        from django.contrib.postgres.search import SearchVectorField
+
+        content_search_vector = SearchVectorField(null=True)
+
+        del SearchVectorField
 
     def from_subscription(self, user):
         from_subscription = getattr(self, '_from_subscription', None)
