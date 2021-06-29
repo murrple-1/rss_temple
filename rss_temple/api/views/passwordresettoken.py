@@ -52,7 +52,7 @@ def _passwordresettoken_request_post(request):
 
     user = None
     try:
-        user = models.User.objects.get(email=email)
+        user = models.User.objects.get(email__iexact=email)
     except models.User.DoesNotExist:
         return HttpResponse(status=204)
 

@@ -148,14 +148,14 @@ def _my_login_post(request):
     if type(json_['password']) is not str:
         return HttpResponseBadRequest('\'password\' must be string')
 
-    if models.MyLogin.objects.filter(user__email=json_['email']).exists():
+    if models.MyLogin.objects.filter(user__email__iexact=json_['email']).exists():
         return HttpResponse('login already exists', status=409)
 
     with transaction.atomic():
         user = None
         verification_token = None
         try:
-            user = models.User.objects.get(email=json_['email'])
+            user = models.User.objects.get(email__iexact=json_['email'])
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=json_['email'])
 
@@ -215,7 +215,7 @@ def _google_login_post(request):
 
     if (
         models.GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
-        or models.MyLogin.objects.filter(user__email=json_['email']).exists()
+        or models.MyLogin.objects.filter(user__email__iexact=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -224,7 +224,7 @@ def _google_login_post(request):
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email=json_['email'])
+            user = models.User.objects.get(email__iexact=json_['email'])
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=json_['email'])
 
@@ -288,7 +288,7 @@ def _facebook_login_post(request):
 
     if (
         models.FacebookLogin.objects.filter(profile_id=fb_id).exists()
-        or models.MyLogin.objects.filter(user__email=json_['email']).exists()
+        or models.MyLogin.objects.filter(user__email__iexact=json_['email']).exists()
     ):
         return HttpResponse('login already exists', status=409)
 
@@ -297,7 +297,7 @@ def _facebook_login_post(request):
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email=json_['email'])
+            user = models.User.objects.get(email__iexact=json_['email'])
         except models.User.DoesNotExist:
             user = models.User.objects.create(email=json_['email'])
 
@@ -346,7 +346,7 @@ def _my_login_session_post(request):
 
     my_login = None
     try:
-        my_login = models.MyLogin.objects.get(user__email=json_['email'])
+        my_login = models.MyLogin.objects.get(user__email__iexact=json_['email'])
     except models.MyLogin.DoesNotExist:
         return HttpResponseForbidden()
 
