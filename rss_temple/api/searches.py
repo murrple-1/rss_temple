@@ -101,7 +101,7 @@ _search_fns = {
     },
 }
 
-if connection.vendor == 'postgresql':
+if connection.vendor == 'postgresql':  # pragma: no cover
     _search_fns['feed']['title'] = lambda context, search_obj: Q(
         title_search_vector=search_obj)
     _search_fns['feedentry']['title'] = lambda context, search_obj: Q(
