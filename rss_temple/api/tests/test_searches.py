@@ -177,11 +177,12 @@ class AllSearchesTestCase(TestCase):
 
             for field, test_values in trial_searches.items():
                 for test_value in test_values:
-                    context = Context()
+                    with self.subTest(key=key, field=field, test_value=test_value):
+                        context = Context()
 
-                    context.request = AllSearchesTestCase.MockRequest()
+                        context.request = AllSearchesTestCase.MockRequest()
 
-                    q = search_fns_dict[field](context, test_value)
-                    result = list(queryset.filter(q))
+                        q = search_fns_dict[field](context, test_value)
+                        result = list(queryset.filter(q))
 
-                    self.assertIsNotNone(result)
+                        self.assertIsNotNone(result)

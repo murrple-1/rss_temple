@@ -179,16 +179,17 @@ class AllFieldsTestCase(TestCase):
                          len(fields._field_configs))
 
         for key, generator in AllFieldsTestCase.TRIALS.items():
-            db_objs = generator()
+            with self.subTest(key=key):
+                db_objs = generator()
 
-            fields_dict = fields._field_configs[key]
+                fields_dict = fields._field_configs[key]
 
-            for db_obj in db_objs:
-                for field_config in fields_dict.values():
-                    context = Context()
-                    context.request = AllFieldsTestCase.MockRequest()
+                for db_obj in db_objs:
+                    for field_config in fields_dict.values():
+                        context = Context()
+                        context.request = AllFieldsTestCase.MockRequest()
 
-                    field_config.accessor(context, db_obj)
+                        field_config.accessor(context, db_obj)
 
 
 class FieldFnsTestCase(TestCase):

@@ -151,16 +151,17 @@ class AllSortsTestCase(TestCase):
                          len(sorts._sort_configs))
 
         for key, trial_dict in AllSortsTestCase.TRIALS.items():
-            sorts_dict = sorts._sort_configs[key]
+            with self.subTest(key=key):
+                sorts_dict = sorts._sort_configs[key]
 
-            sort_keys = sorts_dict.keys()
+                sort_keys = sorts_dict.keys()
 
-            sort_list = sorts.to_sort_list(key, ','.join(
-                f'{sort_key}:ASC' for sort_key in sort_keys), False)
+                sort_list = sorts.to_sort_list(key, ','.join(
+                    f'{sort_key}:ASC' for sort_key in sort_keys), False)
 
-            order_by_args = sorts.sort_list_to_order_by_args(key, sort_list)
+                order_by_args = sorts.sort_list_to_order_by_args(key, sort_list)
 
-            result = list(trial_dict['get_queryset']
-                          ().order_by(*order_by_args))
+                result = list(trial_dict['get_queryset']
+                              ().order_by(*order_by_args))
 
-            self.assertIsNotNone(result)
+                self.assertIsNotNone(result)
