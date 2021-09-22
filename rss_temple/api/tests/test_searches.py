@@ -168,21 +168,22 @@ class AllSearchesTestCase(TestCase):
                          len(searches._search_fns))
 
         for key, trial_dict in AllSearchesTestCase.TRIALS.items():
-            search_fns_dict = searches._search_fns[key]
+            with self.subTest(key=key):
+                search_fns_dict = searches._search_fns[key]
 
-            trial_searches = trial_dict['searches']
-            self.assertEqual(len(trial_searches), len(search_fns_dict))
+                trial_searches = trial_dict['searches']
+                self.assertEqual(len(trial_searches), len(search_fns_dict))
 
-            queryset = trial_dict['get_queryset']()
+                queryset = trial_dict['get_queryset']()
 
-            for field, test_values in trial_searches.items():
-                for test_value in test_values:
-                    with self.subTest(key=key, field=field, test_value=test_value):
-                        context = Context()
+                for field, test_values in trial_searches.items():
+                    for test_value in test_values:
+                        with self.subTest(field=field, test_value=test_value):
+                            context = Context()
 
-                        context.request = AllSearchesTestCase.MockRequest()
+                            context.request = AllSearchesTestCase.MockRequest()
 
-                        q = search_fns_dict[field](context, test_value)
-                        result = list(queryset.filter(q))
+                            q = search_fns_dict[field](context, test_value)
+                            result = list(queryset.filter(q))
 
-                        self.assertIsNotNone(result)
+                            self.assertIsNotNone(result)

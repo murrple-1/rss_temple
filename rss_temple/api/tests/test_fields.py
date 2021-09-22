@@ -77,8 +77,7 @@ class FieldsTestCase(TestCase):
 
             test_context = TestContext()
             test_obj = TestObject()
-            self.assertIs(type(field_map['accessor'](
-                test_context, test_obj)), str)
+            field_map['accessor'](test_context, test_obj)
 
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)
