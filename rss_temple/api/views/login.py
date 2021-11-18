@@ -346,7 +346,8 @@ def _my_login_session_post(request):
 
     my_login = None
     try:
-        my_login = models.MyLogin.objects.get(user__email__iexact=json_['email'])
+        my_login = models.MyLogin.objects.get(
+            user__email__iexact=json_['email'])
     except models.MyLogin.DoesNotExist:
         return HttpResponseForbidden()
 

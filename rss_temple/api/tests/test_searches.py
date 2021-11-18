@@ -101,7 +101,6 @@ class AllSearchesTestCase(TestCase):
                 'updatedAt_exact': ['2018-11-26 00:00:00'],
                 'updatedAt_delta': ['older_than:10h'],
                 'subscribed': ['true', 'false'],
-                'title': ['Some Text'],
 
                 'customTitle': ['custom title'],
                 'customTitle_exact': ['custom title'],

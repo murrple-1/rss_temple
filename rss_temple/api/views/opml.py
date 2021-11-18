@@ -85,8 +85,8 @@ def _opml_post(request):
     existing_subscriptions = set(models.SubscribedFeedUserMapping.objects.filter(
         user=request.user).values_list('feed__feed_url', flat=True))
 
-    existing_categories = dict((user_category.text, user_category)
-                               for user_category in models.UserCategory.objects.filter(user=request.user))
+    existing_categories = {
+        user_category.text: user_category for user_category in models.UserCategory.objects.filter(user=request.user)}
 
     existing_category_mappings = {}
     for feed_user_category_mapping in models.FeedUserCategoryMapping.objects.select_related('feed', 'user_category').filter(user_category__user=request.user):

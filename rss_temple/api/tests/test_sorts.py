@@ -159,7 +159,8 @@ class AllSortsTestCase(TestCase):
                 sort_list = sorts.to_sort_list(key, ','.join(
                     f'{sort_key}:ASC' for sort_key in sort_keys), False)
 
-                order_by_args = sorts.sort_list_to_order_by_args(key, sort_list)
+                order_by_args = sorts.sort_list_to_order_by_args(
+                    key, sort_list)
 
                 result = list(trial_dict['get_queryset']
                               ().order_by(*order_by_args))

@@ -330,8 +330,8 @@ def _feed_entries_query_stable_post(request):
     if return_objects:
         current_uuids = uuids[skip:skip + count]
 
-        feed_entries = dict((feed_entry.uuid, feed_entry)
-                            for feed_entry in models.FeedEntry.objects.filter(uuid__in=current_uuids))
+        feed_entries = {feed_entry.uuid: feed_entry for feed_entry in models.FeedEntry.objects.filter(
+            uuid__in=current_uuids)}
 
         objs = []
         if len(current_uuids) == len(feed_entries):

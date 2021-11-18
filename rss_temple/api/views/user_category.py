@@ -301,8 +301,8 @@ def _user_categories_apply_put(request):
     if len(feeds) < len(all_feed_uuids):
         return HttpResponseNotFound('feed not found')
 
-    user_categories = dict((user_category.uuid, user_category) for user_category in models.UserCategory.objects.filter(
-        uuid__in=all_user_category_uuids, user=request.user))
+    user_categories = {user_category.uuid: user_category for user_category in models.UserCategory.objects.filter(
+        uuid__in=all_user_category_uuids, user=request.user)}
 
     if len(user_categories) < len(all_user_category_uuids):
         return HttpResponseNotFound('user category not found')
