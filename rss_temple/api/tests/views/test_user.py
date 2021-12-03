@@ -2,15 +2,14 @@ import datetime
 import logging
 import uuid
 
-from django.test import TestCase, Client
-
 import ujson
 
+from api.tests.views import ViewTestCase
 from api import models, fields
 from api.password_hasher import password_hasher
 
 
-class UserTestCase(TestCase):
+class UserTestCase(ViewTestCase):
     USER_EMAIL = 'test@test.com'
     NON_UNIQUE_EMAIL = 'nonunique@test.com'
     UNIQUE_EMAIL = 'unique@test.com'
@@ -52,8 +51,7 @@ class UserTestCase(TestCase):
             user=user2, pw_hash=password_hasher().hash('password2'))
 
     def test_user_get(self):
-        c = Client()
-        response = c.get('/api/user', {'fields': ','.join(fields.field_list(
+        response = self.client.get('/api/user', {'fields': ','.join(fields.field_list(
             'user'))}, HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -66,9 +64,8 @@ class UserTestCase(TestCase):
             'email': UserTestCase.UNIQUE_EMAIL,
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.User.objects.filter(
@@ -81,9 +78,8 @@ class UserTestCase(TestCase):
             'email': UserTestCase.USER_EMAIL,
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.User.objects.filter(
@@ -94,9 +90,8 @@ class UserTestCase(TestCase):
             'email': 1,
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_email_empty(self):
@@ -104,9 +99,8 @@ class UserTestCase(TestCase):
             'email': '',
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_email_malformed(self):
@@ -114,9 +108,8 @@ class UserTestCase(TestCase):
             'email': 'malformed',
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_email_nonunique(self):
@@ -124,9 +117,8 @@ class UserTestCase(TestCase):
             'email': UserTestCase.NON_UNIQUE_EMAIL,
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_user_put_my(self):
@@ -134,9 +126,8 @@ class UserTestCase(TestCase):
             'my': {},
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_user_put_my_typeerror(self):
@@ -144,9 +135,8 @@ class UserTestCase(TestCase):
             'my': None,
         }
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password(self):
@@ -162,9 +152,8 @@ class UserTestCase(TestCase):
         old_pw_hash = models.MyLogin.objects.get(
             user=UserTestCase.user).pw_hash
 
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         new_pw_hash = models.MyLogin.objects.get(
@@ -178,10 +167,8 @@ class UserTestCase(TestCase):
                 'password': None,
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password_old_missing(self):
@@ -192,10 +179,8 @@ class UserTestCase(TestCase):
                 },
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password_old_typeerror(self):
@@ -207,10 +192,8 @@ class UserTestCase(TestCase):
                 },
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password_new_missing(self):
@@ -221,10 +204,8 @@ class UserTestCase(TestCase):
                 },
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password_new_typeerror(self):
@@ -236,10 +217,8 @@ class UserTestCase(TestCase):
                 },
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_my_password_badoldpassword(self):
@@ -251,30 +230,24 @@ class UserTestCase(TestCase):
                 },
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 403, response.content)
 
     def test_user_put_google(self):
         body = {
             'google': {},
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_user_put_google_typeerror(self):
         body = {
             'google': 1,
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_google_create(self):
@@ -286,11 +259,9 @@ class UserTestCase(TestCase):
                 'token': 'goodtoken',
             },
         }
-
-        c = Client()
         with self.settings(GOOGLE_TEST_ID='googleid'):
-            response = c.put('/api/user', ujson.dumps(body),
-                             content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+            response = self.client.put('/api/user', ujson.dumps(body),
+                                       content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
             self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.GoogleLogin.objects.filter(
@@ -305,10 +276,8 @@ class UserTestCase(TestCase):
         body = {
             'google': None,
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.GoogleLogin.objects.filter(
@@ -320,30 +289,24 @@ class UserTestCase(TestCase):
                 'token': None,
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_facebook(self):
         body = {
             'facebook': {},
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_user_put_facebook_typeerror(self):
         body = {
             'facebook': 1,
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_facebook_create(self):
@@ -355,11 +318,9 @@ class UserTestCase(TestCase):
                 'token': 'goodtoken',
             },
         }
-
-        c = Client()
         with self.settings(FACEBOOK_TEST_ID='facebookid'):
-            response = c.put('/api/user', ujson.dumps(body),
-                             content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+            response = self.client.put('/api/user', ujson.dumps(body),
+                                       content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
             self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.FacebookLogin.objects.filter(
@@ -374,10 +335,8 @@ class UserTestCase(TestCase):
         body = {
             'facebook': None,
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.FacebookLogin.objects.filter(
@@ -389,10 +348,8 @@ class UserTestCase(TestCase):
                 'token': None,
             },
         }
-
-        c = Client()
-        response = c.put('/api/user', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_verify_post(self):
@@ -402,38 +359,33 @@ class UserTestCase(TestCase):
         params = {
             'token': verification_token.token_str(),
         }
-        c = Client()
-        response = c.post('/api/user/verify', params)
+        response = self.client.post('/api/user/verify', params)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_user_verify_post_token_missing(self):
-        c = Client()
-        response = c.post('/api/user/verify')
+        response = self.client.post('/api/user/verify')
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_verify_post_token_malformed(self):
         params = {
             'token': 'BAD_TOKEN',
         }
-        c = Client()
-        response = c.post('/api/user/verify', params)
+        response = self.client.post('/api/user/verify', params)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_user_verify_post_token_notfound(self):
         params = {
             'token': str(uuid.uuid4()),
         }
-        c = Client()
-        response = c.post('/api/user/verify', params)
+        response = self.client.post('/api/user/verify', params)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_user_attributes_put(self):
         body = {
             'test': 'test_string',
         }
-        c = Client()
-        response = c.put('/api/user/attributes', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+        response = self.client.put('/api/user/attributes', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         UserTestCase.user.refresh_from_db()
@@ -450,9 +402,9 @@ class UserTestCase(TestCase):
         body = {
             'test': None,
         }
-        c = Client()
-        response = c.put('/api/user/attributes', ujson.dumps(body),
-                         content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
+
+        response = self.client.put('/api/user/attributes', ujson.dumps(body),
+                                   content_type='application/json', HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         UserTestCase.user.refresh_from_db()

@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from api.third_party_login import google
 
@@ -15,7 +15,8 @@ from api.third_party_login import google
 # Note that the access token expires pretty quickly, so you'll have to regenerate pretty frequently
 
 
-@unittest.skipIf(not {'TEST_REMOTE', 'TEST_GOOGLE_TOKEN', 'GOOGLE_CLIENT_ID'}.issubset(frozenset(os.environ.keys())), '`TEST_REMOTE`, `TEST_GOOGLE_TOKEN`, and `GOOGLE_CLIENT_ID` env var(s) must be set: remote test')
+@tag('remote')
+@unittest.skipIf(not {'TEST_GOOGLE_TOKEN', 'GOOGLE_CLIENT_ID'}.issubset(frozenset(os.environ.keys())), '`TEST_GOOGLE_TOKEN`, and `GOOGLE_CLIENT_ID` env var(s) must be set')
 class GoogleTestCase(TestCase):
     def test_get_id(self):
         g_user_id = google.get_id(os.environ['TEST_GOOGLE_TOKEN'])

@@ -1,19 +1,15 @@
 import logging
-import time
 import datetime
-from multiprocessing import Process
-import unittest
-import os
 
-from django.test import TestCase
+from django.test import tag
 
+from api.tests import TestFileServerTestCase
 from api import models
-from api.tests.http_server import http_server_target
 
 from daemons.subscription_setup_daemon.impl import get_first_entry, do_subscription, logger
 
 
-class DaemonTestCase(TestCase):
+class DaemonTestCase(TestFileServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -22,30 +18,24 @@ class DaemonTestCase(TestCase):
 
         logger().setLevel(logging.CRITICAL)
 
-        cls.user = models.User.objects.create(email='test@test.com')
-
-        cls.http_process = Process(target=http_server_target, args=(8080,))
-        cls.http_process.start()
-
-        time.sleep(2.0)
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logger().setLevel(cls.old_logger_level)
 
-        cls.http_process.terminate()
-
-        time.sleep(2.0)
+    def generate_credentials(self):
+        return models.User.objects.create(email='test@test.com')
 
     def test_get_first_entry(self):
+        user = self.generate_credentials()
+
         feed_subscription_progress_entry = get_first_entry()
 
         self.assertIsNone(feed_subscription_progress_entry)
 
         feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
-            user=DaemonTestCase.user)
+            user=user)
 
         self.assertEqual(feed_subscription_progress_entry.status,
                          models.FeedSubscriptionProgressEntry.NOT_STARTED)
@@ -56,43 +46,45 @@ class DaemonTestCase(TestCase):
         self.assertEqual(feed_subscription_progress_entry.status,
                          models.FeedSubscriptionProgressEntry.STARTED)
 
-    @unittest.skipIf({'TEST_SUBSCRIPTION_SETUP_DAEMON_DO_SUBSCRIPTION', 'CI'}.isdisjoint(frozenset(os.environ.keys())), '`TEST_SUBSCRIPTION_SETUP_DAEMON_DO_SUBSCRIPTION` env var(s) must be set: long test')
+    @tag('slow')
     def test_do_subscription(self):
+        user = self.generate_credentials()
+
         feed1 = models.Feed.objects.create(
-            feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing',
+            feed_url=f'{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing',
             title='Sample Feed',
-            home_url='http://localhost:8080',
+            home_url=DaemonTestCase.live_server_url,
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
 
         feed2 = models.Feed.objects.create(
-            feed_url='http://localhost:8080/rss_2.0/well_formed.xml?_=existing_with_custom_title',
+            feed_url=f'{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title',
             title='Sample Feed',
-            home_url='http://localhost:8080',
+            home_url=DaemonTestCase.live_server_url,
             published_at=datetime.datetime.utcnow(),
             updated_at=None,
             db_updated_at=None)
 
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed1,
-            user=DaemonTestCase.user)
+            user=user)
         models.SubscribedFeedUserMapping.objects.create(
             feed=feed2,
-            user=DaemonTestCase.user,
+            user=user,
             custom_feed_title='Old Custom Title')
 
         models.UserCategory.objects.create(
-            user=DaemonTestCase.user, text='Old User Category')
+            user=user, text='Old User Category')
 
         feed_subscription_progress_entry = models.FeedSubscriptionProgressEntry.objects.create(
-            user=DaemonTestCase.user)
+            user=user)
 
         self.assertEqual(feed_subscription_progress_entry.status,
                          models.FeedSubscriptionProgressEntry.NOT_STARTED)
 
         count = 0
-        for feed_url in ['http://localhost:8080/rss_2.0/well_formed.xml', 'http://localhost:8080/rss_2.0/well_formed.xml?_={s}', 'http://localhost:8080/rss_2.0/sample-404.xml', 'http://localhost:8080/rss_2.0/sample-404.xml?_={s}']:
+        for feed_url in [f'{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml', f'{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_={{s}}', f'{DaemonTestCase.live_server_url}/rss_2.0/sample-404.xml', f'{DaemonTestCase.live_server_url}/rss_2.0/sample-404.xml?_={{s}}']:
             for custom_feed_title in [None, 'Old Custom Title', 'New Custom Title', 'New Custom Title {s}', 'Sample Feed']:
                 for user_category_text in [None, 'Old User Category', 'New User Category', 'New User Category {s}']:
                     feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(

@@ -22,9 +22,7 @@ fi
 cd "$INITIAL_DIR/../rss_temple/" || exit
 
 if [ "$1" = "" ]; then
-	pipenv run coverage run manage.py test --exclude-tag=slow --exclude-tag=remote api.tests daemons.tests
+	pipenv run python manage.py test --exclude-tag=slow --exclude-tag=remote --parallel=4 api.tests daemons.tests
 else
-	pipenv run coverage run manage.py test "$@"
+	pipenv run python manage.py test "$@"
 fi
-
-pipenv run coverage html

@@ -115,7 +115,6 @@ CACHES = {
     },
 }
 
-
 _test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'standard').lower()
 if _test_runner_type == 'standard':
     pass

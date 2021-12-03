@@ -2,13 +2,12 @@ import datetime
 import logging
 import uuid
 
-from django.test import TestCase, Client
-
+from api.tests.views import ViewTestCase
 from api import models
 from api.password_hasher import password_hasher
 
 
-class UserTestCase(TestCase):
+class UserTestCase(ViewTestCase):
     USER_EMAIL = 'test@test.com'
 
     USER_PASSWORD = 'password'
@@ -38,74 +37,70 @@ class UserTestCase(TestCase):
             user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD))
 
     def test_passwordresettoken_request_post(self):
-        c = Client()
-
-        response = c.post('/api/passwordresettoken/request')
+        response = self.client.post('/api/passwordresettoken/request')
         self.assertEqual(response.status_code, 400, response.content)
 
         params = {}
-        response = c.post('/api/passwordresettoken/request', params)
+        response = self.client.post('/api/passwordresettoken/request', params)
         self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'email': '',
         }
-        response = c.post('/api/passwordresettoken/request', params)
+        response = self.client.post('/api/passwordresettoken/request', params)
         self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': 'malformedemail',
         }
-        response = c.post('/api/passwordresettoken/request', params)
+        response = self.client.post('/api/passwordresettoken/request', params)
         self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': 'unknownemail@test.com',
         }
-        response = c.post('/api/passwordresettoken/request', params)
+        response = self.client.post('/api/passwordresettoken/request', params)
         self.assertEqual(response.status_code, 204, response.content)
 
         params = {
             'email': UserTestCase.USER_EMAIL,
         }
-        response = c.post('/api/passwordresettoken/request', params)
+        response = self.client.post('/api/passwordresettoken/request', params)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_passwordresettoken_reset_post(self):
-        c = Client()
-
-        response = c.post('/api/passwordresettoken/reset')
+        response = self.client.post('/api/passwordresettoken/reset')
         self.assertEqual(response.status_code, 400, response.content)
 
         params = {}
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'token': '',
         }
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 400, response.content)
 
         params = {
             'token': '',
             'password': '',
         }
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 404, response.content)
 
         params = {
             'token': 'badtoken',
             'password': 'newpassword',
         }
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 404, response.content)
 
         params = {
             'token': str(uuid.uuid4()),
             'password': 'newpassword',
         }
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 404, response.content)
 
         password_reset_token = models.PasswordResetToken.objects.create(expires_at=(
@@ -115,5 +110,5 @@ class UserTestCase(TestCase):
             'token': password_reset_token.token_str(),
             'password': 'newpassword',
         }
-        response = c.post('/api/passwordresettoken/reset', params)
+        response = self.client.post('/api/passwordresettoken/reset', params)
         self.assertEqual(response.status_code, 204, response.content)

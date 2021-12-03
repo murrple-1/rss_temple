@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from api.third_party_login import facebook
 
@@ -15,7 +15,8 @@ from api.third_party_login import facebook
 # Note that the access token expires pretty quickly, so you'll have to regenerate pretty frequently
 
 
-@unittest.skipIf(not {'TEST_REMOTE', 'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os.environ.keys())), '`TEST_REMOTE`, and `TEST_FACEBOOK_TOKEN` env var(s) must be set: remote test')
+@tag('remote')
+@unittest.skipIf(not {'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os.environ.keys())), '`TEST_FACEBOOK_TOKEN` env var(s) must be set')
 class FacebookTestCase(TestCase):
     def test_get_id(self):
         profile_id = facebook.get_id(os.environ['TEST_FACEBOOK_TOKEN'])

@@ -17,13 +17,17 @@ class DaemonTestCase(TestCase):
 
         logger().setLevel(logging.CRITICAL)
 
-        cls.user = models.User.objects.create(email='test@test.com')
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logger().setLevel(cls.old_logger_level)
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+
+        cls.user = models.User.objects.create(email='test@test.com')
 
     def test_none(self):
         user = DaemonTestCase.user

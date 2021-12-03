@@ -3,12 +3,11 @@ import datetime
 import uuid
 import random
 
-from django.test import TestCase, Client
-
+from api.tests.views import ViewTestCase
 from api import models
 
 
-class ProgressTestCase(TestCase):
+class ProgressTestCase(ViewTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -58,19 +57,15 @@ class ProgressTestCase(TestCase):
         return feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors
 
     def test_feed_subscription_progress_get_404(self):
-        c = Client()
-
-        response = c.get(f'/api/feed/subscribe/progress/{uuid.uuid4()}',
-                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+        response = self.client.get(f'/api/feed/subscribe/progress/{uuid.uuid4()}',
+                                   HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscription_progress_get_not_started(self):
         feed_subscription_progress_entry, feed_subscription_progress_entry_descriptors = ProgressTestCase.generate_entry()
 
-        c = Client()
-
-        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
-                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+        response = self.client.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
+                                   HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()
@@ -98,10 +93,8 @@ class ProgressTestCase(TestCase):
                 feed_subscription_progress_entry_descriptor.save()
                 finished_count += 1
 
-        c = Client()
-
-        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
-                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+        response = self.client.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
+                                   HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()
@@ -125,10 +118,8 @@ class ProgressTestCase(TestCase):
             feed_subscription_progress_entry_descriptor.is_finished = True
             feed_subscription_progress_entry_descriptor.save()
 
-        c = Client()
-
-        response = c.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
-                         HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
+        response = self.client.get(f'/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}',
+                                   HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = response.json()

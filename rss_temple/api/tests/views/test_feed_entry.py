@@ -2,15 +2,15 @@ import logging
 import datetime
 import uuid
 
-from django.test import TestCase, Client
 from django.db import transaction
 
 import ujson
 
+from api.tests.views import ViewTestCase
 from api import models
 
 
-class FeedEntryTestCase(TestCase):
+class FeedEntryTestCase(ViewTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -62,17 +62,13 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        response = c.get(f'/api/feedentry/{feed_entry.uuid}',
-                         HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.get(f'/api/feedentry/{feed_entry.uuid}',
+                                   HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_feedentry_get_not_found(self):
-        c = Client()
-
-        response = c.get(f'/api/feedentry/{uuid.uuid4()}',
-                         HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.get(f'/api/feedentry/{uuid.uuid4()}',
+                                   HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentries_query_post(self):
@@ -87,10 +83,8 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        response = c.post('/api/feedentries/query', '{}', 'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/query', ujson.dumps({}), 'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_feedentry_read_post(self):
@@ -105,10 +99,8 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        response = c.post(f'/api/feedentry/{feed_entry.uuid}/read',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post(f'/api/feedentry/{feed_entry.uuid}/read',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = ujson.loads(response.content)
@@ -118,10 +110,8 @@ class FeedEntryTestCase(TestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
     def test_feedentry_read_post_not_found(self):
-        c = Client()
-
-        response = c.post(f'/api/feedentry/{uuid.uuid4()}/read',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post(f'/api/feedentry/{uuid.uuid4()}/read',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentry_read_post_duplicate(self):
@@ -139,11 +129,9 @@ class FeedEntryTestCase(TestCase):
         models.ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
-        c = Client()
-
         with transaction.atomic():
-            response = c.post(f'/api/feedentry/{feed_entry.uuid}/read',
-                              HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+            response = self.client.post(f'/api/feedentry/{feed_entry.uuid}/read',
+                                        HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
             self.assertEqual(response.status_code, 200, response.content)
 
         self.assertTrue(models.ReadFeedEntryUserMapping.objects.filter(
@@ -164,10 +152,8 @@ class FeedEntryTestCase(TestCase):
         models.ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
-        c = Client()
-
-        response = c.delete(f'/api/feedentry/{feed_entry.uuid}/read',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete(f'/api/feedentry/{feed_entry.uuid}/read',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(models.ReadFeedEntryUserMapping.objects.filter(
@@ -196,16 +182,12 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        data = {
-            'feedUuids': [str(FeedEntryTestCase.feed.uuid)],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedUuids': [str(FeedEntryTestCase.feed.uuid)],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.ReadFeedEntryUserMapping.objects.filter(
@@ -213,14 +195,12 @@ class FeedEntryTestCase(TestCase):
 
         models.ReadFeedEntryUserMapping.objects.all().delete()
 
-        data = {
-            'feedEntryUuids': [str(feed_entry1.uuid), str(feed_entry2.uuid)],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.ReadFeedEntryUserMapping.objects.filter(
@@ -228,118 +208,84 @@ class FeedEntryTestCase(TestCase):
 
         models.ReadFeedEntryUserMapping.objects.all().delete()
 
-        data = {
-            'feedEntryUuids': [str(feed_entry1.uuid)],
-            'feedUuids': [str(FeedEntryTestCase.feed.uuid)],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': [str(feed_entry1.uuid)],
+                                        'feedUuids': [str(FeedEntryTestCase.feed.uuid)],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).count(), 2)
 
     def test_feedentries_read_post_noentries(self):
-        c = Client()
-
-        data = {}
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({}),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_typeerror(self):
-        c = Client()
-
-        data = []
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps([]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_typeerror(self):
-        c = Client()
-
-        data = {
-            'feedUuids': 0,
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedUuids': 0,
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_element_typeerror(self):
-        c = Client()
-
-        data = {
-            'feedUuids': [0],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedUuids': [0],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_element_malformed(self):
-        c = Client()
-
-        data = {
-            'feedUuids': ['baduuid'],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedUuids': ['baduuid'],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_typeerror(self):
-        c = Client()
-
-        data = {
-            'feedEntryUuids': 0,
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': 0,
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_element_typeerror(self):
-        c = Client()
-
-        data = {
-            'feedEntryUuids': [0],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': [0],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_element_malformed(self):
-        c = Client()
-
-        data = {
-            'feedEntryUuids': ['baduuid'],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': ['baduuid'],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_duplicate(self):
@@ -357,16 +303,12 @@ class FeedEntryTestCase(TestCase):
         models.ReadFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
-        c = Client()
-
-        data = {
-            'feedEntryUuids': [str(feed_entry.uuid)],
-        }
-
-        response = c.post('/api/feedentries/read',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/read',
+                                    ujson.dumps({
+                                        'feedEntryUuids': [str(feed_entry.uuid)],
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_read_delete(self):
@@ -398,39 +340,28 @@ class FeedEntryTestCase(TestCase):
         models.ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry2)
 
-        c = Client()
-
-        data = [str(feed_entry1.uuid), str(feed_entry2.uuid)]
-
-        response = c.delete('/api/feedentries/read',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/read',
+                                      ujson.dumps(
+                                          [str(feed_entry1.uuid), str(feed_entry2.uuid)]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(models.ReadFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).exists())
 
     def test_feedentries_read_delete_shortcut(self):
-        c = Client()
-
-        data = []
-
-        response = c.delete('/api/feedentries/read',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/read',
+                                      ujson.dumps([]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_read_delete_malformed(self):
-        c = Client()
-
-        data = [0]
-
-        response = c.delete('/api/feedentries/read',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/read',
+                                      ujson.dumps([0]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentry_favorite_post(self):
@@ -445,20 +376,16 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertTrue(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry=feed_entry).exists())
 
     def test_feedentry_favorite_post_not_found(self):
-        c = Client()
-
-        response = c.post(f'/api/feedentry/{uuid.uuid4()}/favorite',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post(f'/api/feedentry/{uuid.uuid4()}/favorite',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentry_favorite_post_duplicate(self):
@@ -476,10 +403,8 @@ class FeedEntryTestCase(TestCase):
         models.FavoriteFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
-        c = Client()
-
-        response = c.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post(f'/api/feedentry/{feed_entry.uuid}/favorite',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentry_favorite_delete(self):
@@ -497,10 +422,8 @@ class FeedEntryTestCase(TestCase):
         models.FavoriteFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry)
 
-        c = Client()
-
-        response = c.delete(f'/api/feedentry/{feed_entry.uuid}/favorite',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete(f'/api/feedentry/{feed_entry.uuid}/favorite',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(models.FavoriteFeedEntryUserMapping.objects.filter(
@@ -529,50 +452,35 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        data = [str(feed_entry1.uuid), str(feed_entry2.uuid)]
-
-        response = c.post('/api/feedentries/favorite',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/favorite',
+                                    ujson.dumps(
+                                        [str(feed_entry1.uuid), str(feed_entry2.uuid)]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).count(), 2)
 
     def test_feedentries_favorite_post_shortcut(self):
-        c = Client()
-
-        data = []
-
-        response = c.post('/api/feedentries/favorite',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/favorite',
+                                    ujson.dumps([]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_post_malformed(self):
-        c = Client()
-
-        data = [0]
-
-        response = c.post('/api/feedentries/favorite',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/favorite',
+                                    ujson.dumps([0]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_favorite_post_not_found(self):
-        c = Client()
-
-        data = [str(uuid.uuid4())]
-
-        response = c.post('/api/feedentries/favorite',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/favorite',
+                                    ujson.dumps([str(uuid.uuid4())]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentries_favorite_post_duplicate(self):
@@ -590,14 +498,10 @@ class FeedEntryTestCase(TestCase):
         models.FavoriteFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user)
 
-        c = Client()
-
-        data = [str(feed_entry.uuid)]
-
-        response = c.post('/api/feedentries/favorite',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/favorite',
+                                    ujson.dumps([str(feed_entry.uuid)]),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_delete(self):
@@ -629,48 +533,33 @@ class FeedEntryTestCase(TestCase):
         models.FavoriteFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry2)
 
-        c = Client()
-
-        data = [str(feed_entry1.uuid), str(feed_entry2.uuid)]
-
-        response = c.delete('/api/feedentries/favorite',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/favorite',
+                                      ujson.dumps(
+                                          [str(feed_entry1.uuid), str(feed_entry2.uuid)]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(models.FavoriteFeedEntryUserMapping.objects.filter(
             user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]).exists())
 
     def test_feedentries_favorite_delete_shortcut(self):
-        c = Client()
-
-        data = []
-
-        response = c.delete('/api/feedentries/favorite',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/favorite',
+                                      ujson.dumps([]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_delete_malformed(self):
-        c = Client()
-
-        data = [0]
-
-        response = c.delete('/api/feedentries/favorite',
-                            ujson.dumps(data),
-                            'application/json',
-                            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.delete('/api/feedentries/favorite',
+                                      ujson.dumps([0]),
+                                      'application/json',
+                                      HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_query_stable_create_post(self):
-        c = Client()
-
-        data = {}
-
-        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/query/stable/create', ujson.dumps({}),
+                                    'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = ujson.loads(response.content)
@@ -688,23 +577,17 @@ class FeedEntryTestCase(TestCase):
             author_name='John Doe',
             db_updated_at=None)
 
-        c = Client()
-
-        data = {}
-
-        response = c.post('/api/feedentries/query/stable/create', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/query/stable/create', ujson.dumps({}),
+                                    'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = ujson.loads(response.content)
         self.assertIsInstance(json_, str)
 
-        data = {
+        response = self.client.post('/api/feedentries/query/stable', ujson.dumps({
             'token': json_,
-        }
-
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        }),
+            'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
 
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -714,51 +597,35 @@ class FeedEntryTestCase(TestCase):
         self.assertIsInstance(json_['objects'], list)
 
     def test_feedentries_query_stable_post_token_missing(self):
-        c = Client()
-
-        data = {}
-
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        response = self.client.post('/api/feedentries/query/stable', ujson.dumps({}),
+                                    'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'missing', response.content)
 
     def test_feedentries_query_stable_post_token_typeerror(self):
-        c = Client()
-
-        data = {
+        response = self.client.post('/api/feedentries/query/stable', ujson.dumps({
             'token': 0,
-        }
-
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        }),
+            'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'must be', response.content)
 
     def test_feedentries_query_stable_post_token_malformed(self):
-        c = Client()
-
-        data = {
+        response = self.client.post('/api/feedentries/query/stable', ujson.dumps({
             'token': 'badtoken',
-        }
-
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        }),
+            'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b'token', response.content)
         self.assertIn(b'malformed', response.content)
 
     def test_feedentries_query_stable_post_token_valid(self):
-        c = Client()
-
-        data = {
+        response = self.client.post('/api/feedentries/query/stable', ujson.dumps({
             'token': 'feedentry-0123456789',
-        }
-
-        response = c.post('/api/feedentries/query/stable', ujson.dumps(data),
-                          'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
+        }),
+            'application/json', HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
         json_ = ujson.loads(response.content)

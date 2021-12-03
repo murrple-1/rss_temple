@@ -2,14 +2,13 @@ import logging
 import datetime
 import uuid
 
-from django.test import TestCase, Client
-
 import ujson
 
+from api.tests.views import ViewTestCase
 from api import models
 
 
-class UserCategoryTestCase(TestCase):
+class UserCategoryTestCase(ViewTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -45,112 +44,82 @@ class UserCategoryTestCase(TestCase):
         user_category = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        response = c.get(f'/api/usercategory/{user_category.uuid}',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.get(f'/api/usercategory/{user_category.uuid}',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategory_get_not_found(self):
-        c = Client()
-
-        response = c.get(f'/api/usercategory/{uuid.uuid4()}',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.get(f'/api/usercategory/{uuid.uuid4()}',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_usercategory_post(self):
-        c = Client()
-
-        data = {
-            'text': 'test_usercategory_post',
-        }
-
-        response = c.post('/api/usercategory',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.post('/api/usercategory',
+                                    ujson.dumps({
+                                        'text': 'test_usercategory_post',
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategory_post_malformed(self):
-        c = Client()
-
-        data = {}
-
-        response = c.post('/api/usercategory',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.post('/api/usercategory',
+                                    ujson.dumps({}),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
-        data = {
-            'text': 0,
-        }
-
-        response = c.post('/api/usercategory',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.post('/api/usercategory',
+                                    ujson.dumps({
+                                        'text': 0,
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategory_post_already_exists(self):
         models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        data = {
-            'text': 'Test User Category',
-        }
-
-        response = c.post('/api/usercategory',
-                          ujson.dumps(data),
-                          'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.post('/api/usercategory',
+                                    ujson.dumps({
+                                        'text': 'Test User Category',
+                                    }),
+                                    'application/json',
+                                    HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_usercategory_put(self):
         user_category = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        data = {
-            'text': 'Test User Category 2',
-        }
-
-        response = c.put(f'/api/usercategory/{user_category.uuid}',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put(f'/api/usercategory/{user_category.uuid}',
+                                   ujson.dumps({
+                                       'text': 'Test User Category 2',
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_usercategory_put_malformed(self):
         user_category = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        data = {
-            'text': 0,
-        }
-
-        response = c.put(f'/api/usercategory/{user_category.uuid}',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put(f'/api/usercategory/{user_category.uuid}',
+                                   ujson.dumps({
+                                       'text': 0,
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategory_put_not_found(self):
-        c = Client()
-
-        data = {
-            'text': 'Does not matter :)',
-        }
-
-        response = c.put(f'/api/usercategory/{uuid.uuid4()}',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put(f'/api/usercategory/{uuid.uuid4()}',
+                                   ujson.dumps({
+                                       'text': 'Does not matter :)',
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_usercategory_put_already_exists(self):
@@ -160,43 +129,33 @@ class UserCategoryTestCase(TestCase):
         user_category = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        data = {
-            'text': 'Already Exists Text',
-        }
-
-        response = c.put(f'/api/usercategory/{user_category.uuid}',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put(f'/api/usercategory/{user_category.uuid}',
+                                   ujson.dumps({
+                                       'text': 'Already Exists Text',
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_usercategory_delete(self):
         user_category = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        response = c.delete(f'/api/usercategory/{user_category.uuid}',
-                            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.delete(f'/api/usercategory/{user_category.uuid}',
+                                      HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_usercategory_delete_not_found(self):
-        c = Client()
-
-        response = c.delete(f'/api/usercategory/{uuid.uuid4()}',
-                            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.delete(f'/api/usercategory/{uuid.uuid4()}',
+                                      HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_usercategories_query_post(self):
         models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        response = c.post('/api/usercategories/query', '{}', 'application/json',
-                          HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.post('/api/usercategories/query', ujson.dumps({}), 'application/json',
+                                    HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategories_apply_put(self):
@@ -221,17 +180,13 @@ class UserCategoryTestCase(TestCase):
         user_category2 = models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category 2')
 
-        c = Client()
-
-        data = {
-            str(feed1.uuid): [str(user_category1.uuid)],
-            str(feed2.uuid): [str(user_category1.uuid), str(user_category2.uuid)],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(feed1.uuid): [str(user_category1.uuid)],
+                                       str(feed2.uuid): [str(user_category1.uuid), str(user_category2.uuid)],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
@@ -244,15 +199,13 @@ class UserCategoryTestCase(TestCase):
         models.FeedUserCategoryMapping.objects.filter(
             user_category__in=[user_category1, user_category2], feed__in=[feed1, feed2]).delete()
 
-        data = {
-            str(feed1.uuid): [str(user_category1.uuid)],
-            str(feed2.uuid): [str(user_category1.uuid), str(user_category2.uuid), str(user_category1.uuid)],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(feed1.uuid): [str(user_category1.uuid)],
+                                       str(feed2.uuid): [str(user_category1.uuid), str(user_category2.uuid), str(user_category1.uuid)],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertIsNotNone(models.FeedUserCategoryMapping.objects.get(
@@ -266,36 +219,28 @@ class UserCategoryTestCase(TestCase):
         models.UserCategory.objects.create(
             user=UserCategoryTestCase.user, text='Test User Category')
 
-        c = Client()
-
-        data = {
-            'test': [],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       'test': [],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
-        data = {
-            str(uuid.uuid4()): 'test',
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(uuid.uuid4()): 'test',
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
-        data = {
-            str(uuid.uuid4()): ['test'],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(uuid.uuid4()): ['test'],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategories_apply_put_not_found(self):
@@ -307,24 +252,18 @@ class UserCategoryTestCase(TestCase):
             updated_at=None,
             db_updated_at=None)
 
-        c = Client()
-
-        data = {
-            str(uuid.uuid4()): [],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(uuid.uuid4()): [],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
 
-        data = {
-            str(feed.uuid): [str(uuid.uuid4())],
-        }
-
-        response = c.put('/api/usercategories/apply',
-                         ujson.dumps(data),
-                         'application/json',
-                         HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
+        response = self.client.put('/api/usercategories/apply',
+                                   ujson.dumps({
+                                       str(feed.uuid): [str(uuid.uuid4())],
+                                   }),
+                                   'application/json',
+                                   HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str)
         self.assertEqual(response.status_code, 404, response.content)
