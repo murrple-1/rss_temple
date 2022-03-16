@@ -25,6 +25,9 @@ bleach = "*"
 html5lib = "*"
 validators = "*"
 tabulate = "*"
+djangorestframework = "*"
+django-filter = "*"
+drf-yasg = "*"
 
 [dev-packages]
 coverage = "*"
