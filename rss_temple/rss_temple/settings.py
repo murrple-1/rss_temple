@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import datetime
 import os
 from pathlib import Path
-import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$*7qpc@r-g3e67e=qze01cq3zbwwy9z^5qws1$qmr^+%=z*h6b'
+SECRET_KEY = "django-insecure-$*7qpc@r-g3e67e=qze01cq3zbwwy9z^5qws1$qmr^+%=z*h6b"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -33,57 +33,55 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'rest_framework',
-
-    'api.apps.ApiConfig',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'rss_temple.urls'
+ROOT_URLCONF = "rss_temple.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
-        'APP_DIRS': True,
-        'DIRS': [
-            'api/render',
+        "APP_DIRS": True,
+        "DIRS": [
+            "api/render",
         ],
     },
 ]
 
-WSGI_APPLICATION = 'rss_temple.wsgi.application'
+WSGI_APPLICATION = "rss_temple.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     },
 }
 
@@ -93,16 +91,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -110,9 +108,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -124,67 +122,66 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
         },
-        'rss_temple': {
-            'handlers': ['console'],
-            'level': os.environ.get('RSS_TEMPLE_LOG_LEVEL', 'INFO'),
+        "rss_temple": {
+            "handlers": ["console"],
+            "level": os.environ.get("RSS_TEMPLE_LOG_LEVEL", "INFO"),
         },
-        'metrics': {
-            'handlers': ['console'],
-            'level': os.environ.get('METRICS_LOG_LEVEL', 'INFO'),
+        "metrics": {
+            "handlers": ["console"],
+            "level": os.environ.get("METRICS_LOG_LEVEL", "INFO"),
         },
     },
 }
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'default-cache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "default-cache",
     },
-    'stable_query': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'stable-query-cache',
+    "stable_query": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "stable-query-cache",
     },
-    'throttle': {
+    "throttle": {
         # this should be memcache or Redis in production. don't enable in dev, as it causes tests to fail
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     },
 }
 
-_test_runner_type = os.environ.get('TEST_RUNNER_TYPE', 'standard').lower()
-if _test_runner_type == 'standard':
+_test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
+if _test_runner_type == "standard":
     pass
-elif _test_runner_type == 'xml':
-    TEST_RUNNER = 'xmlrunner.extra.djangotestrunner.XMLTestRunner'
-    TEST_OUTPUT_DIR = './test-results/'
-    TEST_OUTPUT_VERBOSE = int(os.environ.get('TEST_OUTPUT_VERBOSE', '1'))
-elif _test_runner_type == 'timed':
-    TEST_RUNNER = 'rss_temple.testrunner.DjangoTimedTestRunner'
-    TEST_SLOW_TEST_THRESHOLD = float(
-        os.environ.get('TEST_SLOW_TEST_THRESHOLD', '0.5'))
+elif _test_runner_type == "xml":
+    TEST_RUNNER = "xmlrunner.extra.djangotestrunner.XMLTestRunner"
+    TEST_OUTPUT_DIR = "./test-results/"
+    TEST_OUTPUT_VERBOSE = int(os.environ.get("TEST_OUTPUT_VERBOSE", "1"))
+elif _test_runner_type == "timed":
+    TEST_RUNNER = "rss_temple.testrunner.DjangoTimedTestRunner"
+    TEST_SLOW_TEST_THRESHOLD = float(os.environ.get("TEST_SLOW_TEST_THRESHOLD", "0.5"))
 else:
-    raise RuntimeError('unknown \'TEST_RUNNER_TYPE\'')
+    raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
-REALM = 'RSS Temple'
+REALM = "RSS Temple"
 
 DEFAULT_COUNT = 50
 MAX_COUNT = 1000
@@ -192,17 +189,17 @@ DEFAULT_SKIP = 0
 DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
 
-DEFAULT_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-DEFAULT_DATE_FORMAT = '%Y-%m-%d'
-DEFAULT_TIME_FORMAT = '%H:%M:%S'
+DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+DEFAULT_TIME_FORMAT = "%H:%M:%S"
 
 SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 
-GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
+GOOGLE_CLIENT_ID = os.environ["GOOGLE_CLIENT_ID"]
 
 USER_VERIFICATION_EXPIRY_INTERVAL = datetime.timedelta(days=30)
 PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)
-VERIFY_URL_FORMAT = 'http://localhost:4200/verify?token={verify_token}'
+VERIFY_URL_FORMAT = "http://localhost:4200/verify?token={verify_token}"
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10

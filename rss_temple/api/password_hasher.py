@@ -1,6 +1,5 @@
 import argon2
 
-
 _password_hasher = None
 
 

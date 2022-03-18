@@ -2,12 +2,12 @@
 
 import os
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rss_temple.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "rss_temple.settings")
 
 # django.conf.settings requires these be set, but the value doesn't matter
 # for this script
-os.environ.setdefault('SECRET_KEY', '<SECRET_KEY>')
-os.environ.setdefault('GOOGLE_CLIENT_ID', '<GOOGLE_CLIENT_ID>')
+os.environ.setdefault("SECRET_KEY", "<SECRET_KEY>")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "<GOOGLE_CLIENT_ID>")
 
 import django
 
@@ -19,11 +19,9 @@ import argparse
 import logging
 import sys
 
+from api import feed_handler, models, rss_requests
 from django.db import transaction
-
 from tabulate import tabulate
-
-from api import models, rss_requests, feed_handler
 
 _logger = None
 
@@ -38,8 +36,10 @@ def logger():  # pragma: no cover
         stream_handler.setLevel(logging.DEBUG)
         stream_handler.setFormatter(
             logging.Formatter(
-                fmt='%(asctime)s (%(levelname)s): %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'))
+                fmt="%(asctime)s (%(levelname)s): %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
         _logger.addHandler(stream_handler)
 
     return _logger
@@ -49,10 +49,10 @@ def logger():  # pragma: no cover
 feed_handler.logger = logger
 
 parser = argparse.ArgumentParser()
-parser.add_argument('feed_url')
-parser.add_argument('-s', '--save', action='store_true')
-parser.add_argument('-f', '--print-feed', action='store_true')
-parser.add_argument('-e', '--print-entries', action='store_true')
+parser.add_argument("feed_url")
+parser.add_argument("-s", "--save", action="store_true")
+parser.add_argument("-f", "--print-feed", action="store_true")
+parser.add_argument("-e", "--print-entries", action="store_true")
 args = parser.parse_args()
 
 response = rss_requests.get(args.feed_url)
@@ -64,12 +64,12 @@ feed = feed_handler.d_feed_2_feed(d.feed, args.feed_url)
 
 feed_entries = []
 
-for index, d_entry in enumerate(d.get('entries', [])):
+for index, d_entry in enumerate(d.get("entries", [])):
     feed_entry = None
     try:
         feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
     except ValueError:  # pragma: no cover
-        logger().exception(f'unable to parse d_entry {index}')
+        logger().exception(f"unable to parse d_entry {index}")
         continue
 
     feed_entry.feed = feed
@@ -87,39 +87,51 @@ if args.print_feed:
             feed.updated_at,
         ],
     ]
-    print(tabulate(table, headers=[
-        'UUID',
-        'Feed URL',
-        'Title',
-        'Home URL',
-        'Published At',
-        'Updated At',
-    ]))
+    print(
+        tabulate(
+            table,
+            headers=[
+                "UUID",
+                "Feed URL",
+                "Title",
+                "Home URL",
+                "Published At",
+                "Updated At",
+            ],
+        )
+    )
 
 if args.print_entries:
     table = []
     for feed_entry in feed_entries:
-        table.append([
-            feed_entry.uuid,
-            feed_entry.id,
-            feed_entry.created_at,
-            feed_entry.updated_at,
-            feed_entry.title,
-            feed_entry.url,
-            feed_entry.content,
-            feed_entry.author_name,
-        ])
+        table.append(
+            [
+                feed_entry.uuid,
+                feed_entry.id,
+                feed_entry.created_at,
+                feed_entry.updated_at,
+                feed_entry.title,
+                feed_entry.url,
+                feed_entry.content,
+                feed_entry.author_name,
+            ]
+        )
 
-    print(tabulate(table, headers=[
-        'UUID',
-        'ID',
-        'Created At',
-        'Updated At',
-        'Title',
-        'URL',
-        'Content',
-        'Author Name',
-    ]))
+    print(
+        tabulate(
+            table,
+            headers=[
+                "UUID",
+                "ID",
+                "Created At",
+                "Updated At",
+                "Title",
+                "URL",
+                "Content",
+                "Author Name",
+            ],
+        )
+    )
 
 if args.save:
     feed.with_subscription_data()

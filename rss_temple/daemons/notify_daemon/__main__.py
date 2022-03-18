@@ -2,12 +2,12 @@
 
 import os
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rss_temple.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "rss_temple.settings")
 
 # django.conf.settings requires these be set, but the value doesn't matter
 # for this script
-os.environ.setdefault('SECRET_KEY', '<SECRET_KEY>')
-os.environ.setdefault('GOOGLE_CLIENT_ID', '<GOOGLE_CLIENT_ID>')
+os.environ.setdefault("SECRET_KEY", "<SECRET_KEY>")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "<GOOGLE_CLIENT_ID>")
 
 import django
 
@@ -19,25 +19,25 @@ import os
 import time
 
 import filelock
-
 from quick_email import send_email
 
 from .impl import logger, render
 
+SMTP_HOST = os.environ["SMTP_HOST"]
+SMTP_PORT = int(os.environ["SMTP_PORT"])
+SMTP_USER = os.environ["SMTP_USER"]
+SMTP_PASS = os.environ["SMTP_PASS"]
+SMTP_IS_TLS = os.environ.get("SMTP_IS_TLS", "").lower() == "true"
+SMTP_TIMEOUT = float(os.environ["SMTP_TIMEOUT"])
+SMTP_SENDER = os.environ["SMTP_SENDER"]
 
-SMTP_HOST = os.environ['SMTP_HOST']
-SMTP_PORT = int(os.environ['SMTP_PORT'])
-SMTP_USER = os.environ['SMTP_USER']
-SMTP_PASS = os.environ['SMTP_PASS']
-SMTP_IS_TLS = os.environ.get('SMTP_IS_TLS', '').lower() == 'true'
-SMTP_TIMEOUT = float(os.environ['SMTP_TIMEOUT'])
-SMTP_SENDER = os.environ['SMTP_SENDER']
-
-SLEEP_SECONDS = int(os.environ.get('SLEEP_SECONDS', '15'))
-COUNT_WARNING_THRESHOLD = int(os.environ.get('COUNT_WARNING_THRESHOLD', '10'))
+SLEEP_SECONDS = int(os.environ.get("SLEEP_SECONDS", "15"))
+COUNT_WARNING_THRESHOLD = int(os.environ.get("COUNT_WARNING_THRESHOLD", "10"))
 
 
-def send_email_(subject, plain_text=None, html_text=None, send_to=None, send_cc=None, send_bcc=None):
+def send_email_(
+    subject, plain_text=None, html_text=None, send_to=None, send_cc=None, send_bcc=None
+):
     send_email(
         SMTP_HOST,
         SMTP_PORT,
@@ -55,17 +55,17 @@ def send_email_(subject, plain_text=None, html_text=None, send_to=None, send_cc=
     )
 
 
-lock = filelock.FileLock('notify_daemon.lock')
+lock = filelock.FileLock("notify_daemon.lock")
 try:
     with lock.acquire(timeout=1):
         while True:
-            logger().debug('render loop started')
+            logger().debug("render loop started")
             render(send_email_, COUNT_WARNING_THRESHOLD)
-            logger().debug('render loop complete')
+            logger().debug("render loop complete")
 
             time.sleep(SLEEP_SECONDS)
 except filelock.Timeout:
-    logger().info('only 1 process allowed at a time - lock file already held')
+    logger().info("only 1 process allowed at a time - lock file already held")
 except Exception:
-    logger().exception('render loop stopped unexpectedly')
+    logger().exception("render loop stopped unexpectedly")
     raise

@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0003_auto_20210114_0439'),
+        ("api", "0003_auto_20210114_0439"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='feedentry',
-            name='content',
+            model_name="feedentry",
+            name="content",
             field=models.TextField(),
         ),
         migrations.AlterField(
-            model_name='feedentry',
-            name='title',
+            model_name="feedentry",
+            name="title",
             field=models.TextField(),
         ),
         migrations.AlterField(
-            model_name='feedentry',
-            name='url',
+            model_name="feedentry",
+            name="url",
             field=models.TextField(),
         ),
     ]

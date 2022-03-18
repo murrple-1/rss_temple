@@ -1,12 +1,12 @@
-from django.test.testcases import LiveServerTestCase, FSFilesHandler
+from django.test.testcases import FSFilesHandler, LiveServerTestCase
 
 
 class _TestFilesHandler(FSFilesHandler):
     def get_base_dir(self):
-        return 'api/tests/test_files/'
+        return "api/tests/test_files/"
 
     def get_base_url(self):
-        return '/'
+        return "/"
 
 
 class TestFileServerTestCase(LiveServerTestCase):

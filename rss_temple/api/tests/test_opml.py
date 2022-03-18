@@ -1,10 +1,8 @@
 from xml.etree.cElementTree import fromstring
 
-from django.test import TestCase
-
 import xmlschema
-
 from api import opml
+from django.test import TestCase
 
 
 class OPMLTestCase(TestCase):
@@ -13,7 +11,7 @@ class OPMLTestCase(TestCase):
 
     def test_schema_success(self):
         text = None
-        with open('api/tests/test_files/opml/opml-mix.xml') as f:
+        with open("api/tests/test_files/opml/opml-mix.xml") as f:
             text = f.read()
 
         element = fromstring(text)
@@ -22,7 +20,7 @@ class OPMLTestCase(TestCase):
 
     def test_schema_failed(self):
         text = None
-        with open('api/tests/test_files/opml/invalid_opml.xml') as f:
+        with open("api/tests/test_files/opml/invalid_opml.xml") as f:
             text = f.read()
 
         element = fromstring(text)

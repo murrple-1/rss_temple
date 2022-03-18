@@ -6,20 +6,20 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0006_dedup_feedentries_20210401'),
+        ("api", "0006_dedup_feedentries_20210401"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='feedentry',
-            name='api_feedent_hash_5fbffa_idx',
+            model_name="feedentry",
+            name="api_feedent_hash_5fbffa_idx",
         ),
         migrations.AlterUniqueTogether(
-            name='feedentry',
-            unique_together={('feed', 'url', 'updated_at')},
+            name="feedentry",
+            unique_together={("feed", "url", "updated_at")},
         ),
         migrations.RemoveField(
-            model_name='feedentry',
-            name='hash',
+            model_name="feedentry",
+            name="hash",
         ),
     ]

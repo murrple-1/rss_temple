@@ -1,9 +1,7 @@
-from django.conf import settings
-from django.dispatch import receiver
-from django.core.signals import setting_changed
-
 import facebook
-
+from django.conf import settings
+from django.core.signals import setting_changed
+from django.dispatch import receiver
 
 _FACEBOOK_TEST_ID = None
 
@@ -12,7 +10,7 @@ _FACEBOOK_TEST_ID = None
 def _load_global_settings(*args, **kwargs):
     global _FACEBOOK_TEST_ID
 
-    _FACEBOOK_TEST_ID = getattr(settings, 'FACEBOOK_TEST_ID', None)
+    _FACEBOOK_TEST_ID = getattr(settings, "FACEBOOK_TEST_ID", None)
 
 
 _load_global_settings()
@@ -24,11 +22,11 @@ def get_id(token):
 
         profile = None
         try:
-            profile = graph.get_object('me', fields='id')
+            profile = graph.get_object("me", fields="id")
         except facebook.GraphAPIError as e:
-            raise ValueError('Facebook Graph API error') from e
+            raise ValueError("Facebook Graph API error") from e
 
-        return profile['id']
+        return profile["id"]
     else:
         return _FACEBOOK_TEST_ID
 
@@ -39,10 +37,10 @@ def get_id_and_email(token):
 
         profile = None
         try:
-            profile = graph.get_object('me', fields='id,email')
+            profile = graph.get_object("me", fields="id,email")
         except facebook.GraphAPIError as e:
-            raise ValueError('Facebook Graph API error') from e
+            raise ValueError("Facebook Graph API error") from e
 
-        return profile['id'], profile.get('email', None)
+        return profile["id"], profile.get("email", None)
     else:
         return _FACEBOOK_TEST_ID, None

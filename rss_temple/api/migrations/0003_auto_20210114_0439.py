@@ -6,22 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0002_notifyemailqueueentry_notifyemailqueueentryrecipient'),
+        ("api", "0002_notifyemailqueueentry_notifyemailqueueentryrecipient"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='feedentry',
-            name='hash',
+            model_name="feedentry",
+            name="hash",
         ),
         migrations.AddField(
-            model_name='feedentry',
-            name='hash',
+            model_name="feedentry",
+            name="hash",
             field=models.BinaryField(max_length=64),
         ),
         migrations.AddIndex(
-            model_name='feedentry',
-            index=models.Index(
-                fields=['hash'], name='api_feedent_hash_5fbffa_idx'),
+            model_name="feedentry",
+            index=models.Index(fields=["hash"], name="api_feedent_hash_5fbffa_idx"),
         ),
     ]

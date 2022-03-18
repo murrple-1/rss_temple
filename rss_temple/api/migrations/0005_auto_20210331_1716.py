@@ -6,13 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0004_auto_20210331_0442'),
+        ("api", "0004_auto_20210331_0442"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='feedentry',
-            index=models.Index(
-                fields=['url'], name='api_feedent_url_a60cf6_idx'),
+            model_name="feedentry",
+            index=models.Index(fields=["url"], name="api_feedent_url_a60cf6_idx"),
         ),
     ]

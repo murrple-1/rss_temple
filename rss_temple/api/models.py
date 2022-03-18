@@ -1,10 +1,10 @@
 import uuid
 
-from django.db import models, connection
-from django.utils import timezone
+from django.db import connection, models
+from django.db.models.expressions import RawSQL
 from django.db.models.functions import Now
 from django.db.models.query_utils import Q
-from django.db.models.expressions import RawSQL
+from django.utils import timezone
 
 
 class User(models.Model):
@@ -14,18 +14,27 @@ class User(models.Model):
     attributes = models.JSONField(null=False, default=dict)
 
     def category_dict(self):
-        category_dict = getattr(self, '_category_dict', None)
+        category_dict = getattr(self, "_category_dict", None)
         if category_dict is None:
             category_dict = {}
 
-            for subscribed_feed_user_mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self):
-                feed_user_category_mappings = list(FeedUserCategoryMapping.objects.select_related(
-                    'user_category').filter(feed=subscribed_feed_user_mapping.feed))
+            for (
+                subscribed_feed_user_mapping
+            ) in SubscribedFeedUserMapping.objects.select_related("feed").filter(
+                user=self
+            ):
+                feed_user_category_mappings = list(
+                    FeedUserCategoryMapping.objects.select_related(
+                        "user_category"
+                    ).filter(feed=subscribed_feed_user_mapping.feed)
+                )
 
                 keys = None
                 if len(feed_user_category_mappings) > 0:
                     keys = frozenset(
-                        feed_user_category_mapping.user_category.uuid for feed_user_category_mapping in feed_user_category_mappings)
+                        feed_user_category_mapping.user_category.uuid
+                        for feed_user_category_mapping in feed_user_category_mappings
+                    )
                 else:
                     keys = [None]
 
@@ -44,55 +53,68 @@ class User(models.Model):
         return category_dict
 
     def subscribed_feeds_dict(self):
-        subscribed_feeds_dict = getattr(self, '_subscribed_feeds_dict', None)
+        subscribed_feeds_dict = getattr(self, "_subscribed_feeds_dict", None)
         if subscribed_feeds_dict is None:
             subscribed_feeds_dict = {
-                mapping.feed.uuid: mapping.feed for mapping in SubscribedFeedUserMapping.objects.select_related('feed').filter(user=self)}
+                mapping.feed.uuid: mapping.feed
+                for mapping in SubscribedFeedUserMapping.objects.select_related(
+                    "feed"
+                ).filter(user=self)
+            }
             self._subscribed_feeds_dict = subscribed_feeds_dict
 
         return subscribed_feeds_dict
 
     def read_feed_entry_mappings(self):
-        read_feed_entry_mappings = getattr(
-            self, '_read_feed_entry_mappings', None)
+        read_feed_entry_mappings = getattr(self, "_read_feed_entry_mappings", None)
         if read_feed_entry_mappings is None:
             read_feed_entry_mappings = ReadFeedEntryUserMapping.objects.filter(
-                user=self)
+                user=self
+            )
             self._read_feed_entry_mappings = read_feed_entry_mappings
 
         return read_feed_entry_mappings
 
     def read_feed_entry_uuids(self):
-        read_feed_entry_uuids = getattr(self, '_read_feed_entry_uuids', None)
+        read_feed_entry_uuids = getattr(self, "_read_feed_entry_uuids", None)
         if read_feed_entry_uuids is None:
             read_feed_entry_uuids = frozenset(
-                _uuid for _uuid in self.read_feed_entry_mappings().values_list('feed_entry_id', flat=True))
+                _uuid
+                for _uuid in self.read_feed_entry_mappings().values_list(
+                    "feed_entry_id", flat=True
+                )
+            )
             self._read_feed_entry_uuids = read_feed_entry_uuids
 
         return read_feed_entry_uuids
 
     def favorite_feed_entry_mappings(self):
         favorite_feed_entry_mappings = getattr(
-            self, '_favorite_feed_entry_mappings', None)
+            self, "_favorite_feed_entry_mappings", None
+        )
         if favorite_feed_entry_mappings is None:
             favorite_feed_entry_mappings = FavoriteFeedEntryUserMapping.objects.filter(
-                user=self)
+                user=self
+            )
             self._favorite_feed_entry_mappings = favorite_feed_entry_mappings
 
         return favorite_feed_entry_mappings
 
     def favorite_feed_entry_uuids(self):
-        favorite_feed_entry_uuids = getattr(
-            self, '_favorite_feed_entry_uuids', None)
+        favorite_feed_entry_uuids = getattr(self, "_favorite_feed_entry_uuids", None)
         if favorite_feed_entry_uuids is None:
             favorite_feed_entry_uuids = frozenset(
-                _uuid for _uuid in self.favorite_feed_entry_mappings().values_list('feed_entry_id', flat=True))
+                _uuid
+                for _uuid in self.favorite_feed_entry_mappings().values_list(
+                    "feed_entry_id", flat=True
+                )
+            )
             self._favorite_feed_entry_uuids = favorite_feed_entry_uuids
 
         return favorite_feed_entry_uuids
 
     def my_login(self):
-        if not hasattr(self, '_my_login'):
+        if not hasattr(self, "_my_login"):
             try:
                 self._my_login = MyLogin.objects.get(user=self)
             except MyLogin.DoesNotExist:
@@ -101,7 +123,7 @@ class User(models.Model):
         return self._my_login
 
     def google_login(self):
-        if not hasattr(self, '_google_login'):
+        if not hasattr(self, "_google_login"):
             try:
                 self._google_login = GoogleLogin.objects.get(user=self)
             except GoogleLogin.DoesNotExist:
@@ -110,7 +132,7 @@ class User(models.Model):
         return self._google_login
 
     def facebook_login(self):
-        if not hasattr(self, '_facebook_login'):
+        if not hasattr(self, "_facebook_login"):
             try:
                 self._facebook_login = FacebookLogin.objects.get(user=self)
             except FacebookLogin.DoesNotExist:
@@ -191,17 +213,20 @@ class PasswordResetToken(models.Model):
 
 class UserCategory(models.Model):
     class Meta:
-        unique_together = (('user', 'text'),)
+        unique_together = (("user", "text"),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
 
     def feeds(self):
-        feeds = getattr(self, '_feeds', None)
+        feeds = getattr(self, "_feeds", None)
         if feeds is None:
             feeds = Feed.objects.filter(
-                uuid__in=FeedUserCategoryMapping.objects.filter(user_category=self).values_list('feed_id', flat=True))
+                uuid__in=FeedUserCategoryMapping.objects.filter(
+                    user_category=self
+                ).values_list("feed_id", flat=True)
+            )
             self._feeds = feeds
 
         return feeds
@@ -210,7 +235,7 @@ class UserCategory(models.Model):
 class Feed(models.Model):
     class Meta:
         indexes = [
-            models.Index(fields=['update_backoff_until']),
+            models.Index(fields=["update_backoff_until"]),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -225,20 +250,26 @@ class Feed(models.Model):
 
     @staticmethod
     def annotate_search_vectors(qs):
-        if connection.vendor == 'postgresql':  # pragma: no cover
+        if connection.vendor == "postgresql":  # pragma: no cover
             from django.contrib.postgres.search import SearchVectorField
-            qs = qs.annotate(title_search_vector=RawSQL(
-                'title_search_vector', [], output_field=SearchVectorField()))
+
+            qs = qs.annotate(
+                title_search_vector=RawSQL(
+                    "title_search_vector", [], output_field=SearchVectorField()
+                )
+            )
 
         return qs
 
     @staticmethod
     def annotate_subscription_data(qs, user):
         subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
-            user=user, feed_id=models.OuterRef('uuid'))
+            user=user, feed_id=models.OuterRef("uuid")
+        )
         return qs.annotate(
             custom_title=models.Subquery(
-                subscribed_user_feed_mappings.values('custom_feed_title')),
+                subscribed_user_feed_mappings.values("custom_feed_title")
+            ),
             is_subscribed=models.Exists(subscribed_user_feed_mappings),
         )
 
@@ -247,7 +278,7 @@ class Feed(models.Model):
         self.is_subscribed = False
 
     def user_categories(self, user):
-        if not hasattr(self, '_user_categories'):
+        if not hasattr(self, "_user_categories"):
             category_dict = user.category_dict()
 
             user_category_uuids = set()
@@ -259,12 +290,13 @@ class Feed(models.Model):
                     user_category_uuids.add(uuid_)
 
             self._user_categories = UserCategory.objects.filter(
-                uuid__in=user_category_uuids)
+                uuid__in=user_category_uuids
+            )
 
         return self._user_categories
 
     def feed_entries(self):
-        feed_entries = getattr(self, '_feed_entries', None)
+        feed_entries = getattr(self, "_feed_entries", None)
         if feed_entries is None:
             feed_entries = FeedEntry.objects.filter(feed=self)
             self._feed_entries = feed_entries
@@ -275,18 +307,19 @@ class Feed(models.Model):
     def _generate_counts(feed, user):
         total_feed_entry_count = feed.feed_entries().count()
         read_count = ReadFeedEntryUserMapping.objects.filter(
-            feed_entry__feed=feed, user=user).count()
+            feed_entry__feed=feed, user=user
+        ).count()
         unread_count = total_feed_entry_count - read_count
 
         counts = {
-            'unread_count': unread_count,
-            'read_count': read_count,
+            "unread_count": unread_count,
+            "read_count": read_count,
         }
 
         return counts
 
     def _counts(self, user):
-        counts = getattr(self, '_counts_', None)
+        counts = getattr(self, "_counts_", None)
         if counts is None:
             counts = Feed._generate_counts(self, user)
             self._counts_ = counts
@@ -294,15 +327,15 @@ class Feed(models.Model):
         return counts
 
     def unread_count(self, user):
-        return self._counts(user)['unread_count']
+        return self._counts(user)["unread_count"]
 
     def read_count(self, user):
-        return self._counts(user)['read_count']
+        return self._counts(user)["read_count"]
 
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
-        unique_together = (('user', 'feed'), ('user', 'custom_feed_title'))
+        unique_together = (("user", "feed"), ("user", "custom_feed_title"))
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
@@ -312,26 +345,30 @@ class SubscribedFeedUserMapping(models.Model):
 
 class FeedUserCategoryMapping(models.Model):
     class Meta:
-        unique_together = (('feed', 'user_category'),)
+        unique_together = (("feed", "user_category"),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
-    user_category = models.ForeignKey(
-        UserCategory, on_delete=models.CASCADE)
+    user_category = models.ForeignKey(UserCategory, on_delete=models.CASCADE)
 
 
 class FeedEntry(models.Model):
     class Meta:
         indexes = [
-            models.Index(fields=['id']),
-            models.Index(fields=['url']),
+            models.Index(fields=["id"]),
+            models.Index(fields=["url"]),
         ]
 
         constraints = [
-            models.UniqueConstraint(fields=[
-                                    'feed', 'url'], name='unique__feed__url__when__updated_at__null', condition=Q(updated_at__isnull=True)),
-            models.UniqueConstraint(fields=[
-                                    'feed', 'url', 'updated_at'], name='unique__feed__url__when__updated_at__not_null'),
+            models.UniqueConstraint(
+                fields=["feed", "url"],
+                name="unique__feed__url__when__updated_at__null",
+                condition=Q(updated_at__isnull=True),
+            ),
+            models.UniqueConstraint(
+                fields=["feed", "url", "updated_at"],
+                name="unique__feed__url__when__updated_at__not_null",
+            ),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
@@ -349,24 +386,32 @@ class FeedEntry(models.Model):
 
     @staticmethod
     def annotate_search_vectors(qs):
-        if connection.vendor == 'postgresql':  # pragma: no cover
+        if connection.vendor == "postgresql":  # pragma: no cover
             from django.contrib.postgres.search import SearchVectorField
-            qs = qs.annotate(title_search_vector=RawSQL('title_search_vector', [], output_field=SearchVectorField(
-            )), content_search_vector=RawSQL('content_search_vector', [], output_field=SearchVectorField()))
+
+            qs = qs.annotate(
+                title_search_vector=RawSQL(
+                    "title_search_vector", [], output_field=SearchVectorField()
+                ),
+                content_search_vector=RawSQL(
+                    "content_search_vector", [], output_field=SearchVectorField()
+                ),
+            )
 
         return qs
 
     def from_subscription(self, user):
-        from_subscription = getattr(self, '_from_subscription', None)
+        from_subscription = getattr(self, "_from_subscription", None)
         if from_subscription is None:
             from_subscription = self.feed_id in (
-                f.uuid for f in user.subscribed_feeds_dict().values())
+                f.uuid for f in user.subscribed_feeds_dict().values()
+            )
             self._from_subscription = from_subscription
 
         return from_subscription
 
     def is_read(self, user):
-        is_read = getattr(self, '_is_read', None)
+        is_read = getattr(self, "_is_read", None)
         if is_read is None:
             is_read = self.uuid in user.read_feed_entry_uuids()
             self._is_read = is_read
@@ -374,7 +419,7 @@ class FeedEntry(models.Model):
         return is_read
 
     def is_favorite(self, user):
-        is_favorite = getattr(self, '_is_favorite', None)
+        is_favorite = getattr(self, "_is_favorite", None)
         if is_favorite is None:
             is_favorite = self.uuid in user.favorite_feed_entry_uuids()
             self._is_favorite = is_favorite
@@ -382,16 +427,22 @@ class FeedEntry(models.Model):
         return is_favorite
 
     def read_mapping(self, user):
-        if not hasattr(self, '_read_mapping'):
-            self._read_mapping = next((rfe for rfe in user.read_feed_entry_mappings(
-            ) if rfe.feed_entry_id == self.uuid), None)
+        if not hasattr(self, "_read_mapping"):
+            self._read_mapping = next(
+                (
+                    rfe
+                    for rfe in user.read_feed_entry_mappings()
+                    if rfe.feed_entry_id == self.uuid
+                ),
+                None,
+            )
 
         return self._read_mapping
 
 
 class ReadFeedEntryUserMapping(models.Model):
     class Meta:
-        unique_together = (('feed_entry', 'user'))
+        unique_together = ("feed_entry", "user")
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
@@ -401,7 +452,7 @@ class ReadFeedEntryUserMapping(models.Model):
 
 class FavoriteFeedEntryUserMapping(models.Model):
     class Meta:
-        unique_together = (('feed_entry', 'user'))
+        unique_together = ("feed_entry", "user")
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
@@ -415,14 +466,21 @@ class FeedSubscriptionProgressEntry(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.IntegerField(default=NOT_STARTED, choices=[(
-        NOT_STARTED, 'Not Started'), (STARTED, 'Started'), (FINISHED, 'Finished')])
+    status = models.IntegerField(
+        default=NOT_STARTED,
+        choices=[
+            (NOT_STARTED, "Not Started"),
+            (STARTED, "Started"),
+            (FINISHED, "Finished"),
+        ],
+    )
 
 
 class FeedSubscriptionProgressEntryDescriptor(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_subscription_progress_entry = models.ForeignKey(
-        FeedSubscriptionProgressEntry, on_delete=models.CASCADE)
+        FeedSubscriptionProgressEntry, on_delete=models.CASCADE
+    )
     feed_url = models.TextField()
     custom_feed_title = models.TextField(null=True)
     user_category_text = models.TextField(null=True)
@@ -442,9 +500,9 @@ class NotifyEmailQueueEntryRecipient(models.Model):
     TYPE_BCC = 2
 
     TYPE_CHOICES = (
-        (TYPE_TO, 'To'),
-        (TYPE_CC, 'CC'),
-        (TYPE_BCC, 'BCC'),
+        (TYPE_TO, "To"),
+        (TYPE_CC, "CC"),
+        (TYPE_BCC, "BCC"),
     )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)

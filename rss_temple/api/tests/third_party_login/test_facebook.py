@@ -1,9 +1,8 @@
-import unittest
 import os
-
-from django.test import TestCase, tag
+import unittest
 
 from api.third_party_login import facebook
+from django.test import TestCase, tag
 
 # To get a testable Acess Token,
 # go to: https://developers.facebook.com/
@@ -15,23 +14,25 @@ from api.third_party_login import facebook
 # Note that the access token expires pretty quickly, so you'll have to regenerate pretty frequently
 
 
-@tag('remote')
-@unittest.skipIf(not {'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os.environ.keys())), '`TEST_FACEBOOK_TOKEN` env var(s) must be set')
+@tag("remote")
+@unittest.skipIf(
+    not {"TEST_FACEBOOK_TOKEN"}.issubset(frozenset(os.environ.keys())),
+    "`TEST_FACEBOOK_TOKEN` env var(s) must be set",
+)
 class FacebookTestCase(TestCase):
     def test_get_id(self):
-        profile_id = facebook.get_id(os.environ['TEST_FACEBOOK_TOKEN'])
+        profile_id = facebook.get_id(os.environ["TEST_FACEBOOK_TOKEN"])
         self.assertIsInstance(profile_id, str)
 
     def test_get_id_badtoken(self):
         with self.assertRaises(ValueError):
-            facebook.get_id('badtoken')
+            facebook.get_id("badtoken")
 
     def test_get_id_and_email(self):
-        profile_id, email = facebook.get_id_and_email(
-            os.environ['TEST_FACEBOOK_TOKEN'])
+        profile_id, email = facebook.get_id_and_email(os.environ["TEST_FACEBOOK_TOKEN"])
         self.assertIsInstance(profile_id, str)
         self.assertTrue(email is None or type(email) is str)
 
     def test_get_id_and_email_badtoken(self):
         with self.assertRaises(ValueError):
-            facebook.get_id_and_email('badtoken')
+            facebook.get_id_and_email("badtoken")

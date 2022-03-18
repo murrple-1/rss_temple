@@ -6,14 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0008_delete_feedentrytagmapping'),
+        ("api", "0008_delete_feedentrytagmapping"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='FeedTagMapping',
+            name="FeedTagMapping",
         ),
         migrations.DeleteModel(
-            name='Tag',
+            name="Tag",
         ),
     ]

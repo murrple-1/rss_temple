@@ -1,11 +1,9 @@
 import datetime
 import logging
 
-from django.test import TestCase
-
 from api import models
-
 from daemons.session_cleanup_daemon.impl import cleanup, logger
+from django.test import TestCase
 
 
 class DaemonTestCase(TestCase):
@@ -27,7 +25,7 @@ class DaemonTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email='test@test.com')
+        cls.user = models.User.objects.create(email="test@test.com")
 
     def test_none(self):
         user = DaemonTestCase.user
@@ -43,11 +41,15 @@ class DaemonTestCase(TestCase):
 
         self.assertEqual(models.Session.objects.filter(user=user).count(), 0)
 
-        models.Session.objects.create(expires_at=datetime.datetime.utcnow()
-                                      + datetime.timedelta(days=-1), user=user)
+        models.Session.objects.create(
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=-1),
+            user=user,
+        )
 
-        models.Session.objects.create(expires_at=datetime.datetime.utcnow()
-                                      + datetime.timedelta(days=1), user=user)
+        models.Session.objects.create(
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1),
+            user=user,
+        )
 
         self.assertEqual(models.Session.objects.filter(user=user).count(), 2)
 

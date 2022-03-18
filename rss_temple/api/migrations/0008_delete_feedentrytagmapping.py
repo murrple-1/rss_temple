@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0007_auto_20210401_0502'),
+        ("api", "0007_auto_20210401_0502"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='FeedEntryTagMapping',
+            name="FeedEntryTagMapping",
         ),
     ]

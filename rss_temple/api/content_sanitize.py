@@ -2,23 +2,22 @@ import html
 import re
 from urllib.parse import urlparse
 
+import bleach
 import html5lib
 from html5lib.filters.base import Filter as HTML5LibFilter
-
-import bleach
 
 
 class TagRemovalFilter(HTML5LibFilter):
     def __init__(self, *args, **kwargs):
-        self.tag = kwargs.pop('tag')
+        self.tag = kwargs.pop("tag")
         super().__init__(*args, **kwargs)
 
     def __iter__(self):
         tag_depth = 0
         for token in super().__iter__():
-            if token['type'] == 'StartTag' and token['name'] == self.tag:
+            if token["type"] == "StartTag" and token["name"] == self.tag:
                 tag_depth += 1
-            elif token['type'] == 'EndTag' and token['name'] == self.tag:
+            elif token["type"] == "EndTag" and token["name"] == self.tag:
                 tag_depth -= 1
             else:
                 if tag_depth <= 0:
@@ -27,20 +26,22 @@ class TagRemovalFilter(HTML5LibFilter):
 
 class ScriptRemovalFiler(TagRemovalFilter):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, tag='script', **kwargs)
+        super().__init__(*args, tag="script", **kwargs)
 
 
 class StyleRemovalFiler(TagRemovalFilter):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, tag='style', **kwargs)
+        super().__init__(*args, tag="style", **kwargs)
 
 
 class HTTPSOnlyImgFilter(HTML5LibFilter):
     def __iter__(self):
         for token in super().__iter__():
-            if token['type'] == 'EmptyTag' and token['name'] == 'img':
-                data = token['data']
-                if (None, 'src') in data and not data[(None, 'src')].startswith('https://'):
+            if token["type"] == "EmptyTag" and token["name"] == "img":
+                data = token["data"]
+                if (None, "src") in data and not data[(None, "src")].startswith(
+                    "https://"
+                ):
                     continue
 
             yield token
@@ -51,15 +52,20 @@ class EmptyAnchorFilter(HTML5LibFilter):
         tag_depth = 0
         seen_tokens = []
         for token in super().__iter__():
-            if token['type'] == 'StartTag' and token['name'] == 'a':
+            if token["type"] == "StartTag" and token["name"] == "a":
                 tag_depth += 1
                 seen_tokens.append(token)
-            elif token['type'] == 'EndTag' and token['name'] == 'a':
+            elif token["type"] == "EndTag" and token["name"] == "a":
                 tag_depth -= 1
                 seen_tokens.append(token)
 
                 if tag_depth <= 0:
-                    if any(True if (t['type'] == 'Characters' and len(t['data']) > 0) else False for t in seen_tokens):
+                    if any(
+                        True
+                        if (t["type"] == "Characters" and len(t["data"]) > 0)
+                        else False
+                        for t in seen_tokens
+                    ):
                         for t in seen_tokens:
                             yield t
 
@@ -72,7 +78,7 @@ class EmptyAnchorFilter(HTML5LibFilter):
 
 
 _bad_iframe_url_fns = [
-    lambda url: url.netloc == 'slashdot.org',
+    lambda url: url.netloc == "slashdot.org",
 ]
 
 
@@ -81,15 +87,15 @@ class BadIFrameFilter(HTML5LibFilter):
         is_in_bad_iframe = False
         for token in super().__iter__():
             if is_in_bad_iframe:
-                if token['type'] == 'EndTag' and token['name'] == 'iframe':
+                if token["type"] == "EndTag" and token["name"] == "iframe":
                     is_in_bad_iframe = False
             else:
-                if token['type'] == 'StartTag' and token['name'] == 'iframe':
-                    data = token['data']
-                    if (None, 'src') in data:
+                if token["type"] == "StartTag" and token["name"] == "iframe":
+                    data = token["data"]
+                    if (None, "src") in data:
                         src_url = None
                         try:
-                            src_url = urlparse(data[(None, 'src')])
+                            src_url = urlparse(data[(None, "src")])
                         except ValueError:
                             is_in_bad_iframe = True
                             continue
@@ -117,15 +123,14 @@ def _html_sanitizer_stream(source):
     global _my_bleach_filter_kwargs_
     if _my_bleach_filter_kwargs_ is None:
         tags = set(bleach.sanitizer.ALLOWED_TAGS)
-        tags.add('p')
-        tags.add('img')
-        tags.add('br')
-        tags.add('iframe')
+        tags.add("p")
+        tags.add("img")
+        tags.add("br")
+        tags.add("iframe")
 
         attributes = dict(bleach.sanitizer.ALLOWED_ATTRIBUTES)
-        attributes['img'] = ['src']
-        attributes['iframe'] = ['src', 'title',
-                                'width', 'height', 'allowfullscreen']
+        attributes["img"] = ["src"]
+        attributes["iframe"] = ["src", "title", "width", "height", "allowfullscreen"]
 
         styles = set(bleach.sanitizer.ALLOWED_STYLES)
 
@@ -133,14 +138,14 @@ def _html_sanitizer_stream(source):
 
         _my_bleach_filter_kwargs_ = {
             # see https://github.com/mozilla/bleach/blob/3e5d6aa375677821aaf249127e44ac51a815cf2b/bleach/sanitizer.py#L179
-            'attributes': attributes,
-            'strip_disallowed_elements': True,
-            'strip_html_comments': True,
+            "attributes": attributes,
+            "strip_disallowed_elements": True,
+            "strip_html_comments": True,
             # see https://github.com/mozilla/bleach/blob/3e5d6aa375677821aaf249127e44ac51a815cf2b/bleach/sanitizer.py#L183
-            'allowed_elements': tags,
-            'allowed_css_properties': styles,
-            'allowed_protocols': protocols,
-            'allowed_svg_properties': [],
+            "allowed_elements": tags,
+            "allowed_css_properties": styles,
+            "allowed_protocols": protocols,
+            "allowed_svg_properties": [],
         }
 
     filtered = ScriptRemovalFiler(source=source)
@@ -149,12 +154,13 @@ def _html_sanitizer_stream(source):
     filtered = EmptyAnchorFilter(source=filtered)
     filtered = BadIFrameFilter(source=filtered)
     filtered = bleach.sanitizer.BleachSanitizerFilter(
-        source=filtered, **_my_bleach_filter_kwargs_)
+        source=filtered, **_my_bleach_filter_kwargs_
+    )
 
     return filtered
 
 
-_is_html_regex = re.compile(r'<\/?[a-z][\s\S]*>', re.IGNORECASE)
+_is_html_regex = re.compile(r"<\/?[a-z][\s\S]*>", re.IGNORECASE)
 
 
 def is_html(text):
@@ -172,11 +178,11 @@ _html_serializer = html5lib.serializer.HTMLSerializer(resolve_entities=False)
 
 
 def sanitize_html(text):
-    dom = html5lib.parse(text, treebuilder='lxml')
-    walker = html5lib.getTreeWalker('lxml')
+    dom = html5lib.parse(text, treebuilder="lxml")
+    walker = html5lib.getTreeWalker("lxml")
     stream = _html_sanitizer_stream(walker(dom))
     return _html_serializer.render(stream)
 
 
 def sanitize_plain(text):
-    return '<br>'.join(html.escape(text).splitlines())
+    return "<br>".join(html.escape(text).splitlines())
