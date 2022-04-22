@@ -19,10 +19,10 @@ if [ -f "$INITIAL_DIR/.env.test" ]; then
 fi
 
 
-cd "$INITIAL_DIR/../rss_temple/" || exit
+cd "$INITIAL_DIR/../" || exit
 
 if [ "$1" = "" ]; then
-	pipenv run coverage run manage.py test --exclude-tag=slow --exclude-tag=remote api.tests daemons.tests
+	pipenv run coverage run manage.py test --exclude-tag=slow --exclude-tag=remote api.tests
 else
 	pipenv run coverage run manage.py test "$@"
 fi

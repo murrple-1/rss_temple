@@ -1,0 +1,46 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = {version = "*", extras = ["argon2"]}
+feedparser = "*"
+requests = "*"
+filelock = "*"
+defusedxml = "*"
+lxml = "*"
+xmlschema = "*"
+url-normalize = "*"
+quick-email = "*"
+bleach = {version = "*",extras = ["css"]}
+html5lib = "*"
+validators = "*"
+tabulate = "*"
+djangorestframework = "*"
+django-filter = "*"
+drf-yasg = "*"
+drf_ujson2 = "*"
+django-allauth = "*"
+djangorestframework-queryfields = "*"
+
+[dev-packages]
+coverage = "*"
+codecov = "*"
+Faker = "*"
+unittest-xml-reporting = "*"
+coverage-conditional-plugin = "*"
+packaging = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
+mypy = "*"
+django-stubs = "*"
+djangorestframework-stubs = {version = "*",extras = ["compatible-mypy"]}
+types-bleach = "*"
+types-tabulate = "*"
+types-requests = "*"
+types-html5lib = "*"
+
+[requires]
+python_version = "3.10"

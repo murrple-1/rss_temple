@@ -1,0 +1,109 @@
+[
+  {
+    "model": "api.user",
+    "pk": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+    "fields": {
+      "email": "test@test.com",
+      "password": "argon2$argon2id$v=19$m=102400,t=2,p=8$aXVWSkJyUGlvMzR5d05ZelFGcXFteg$3IVVSvsoZYW5Y05bAnRWBT4Sq5LeNp2dLdp1egFkUMs"
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentry",
+    "pk": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "status": 0
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "227fa649-5964-489b-9ac0-296c5a83b4cc",
+    "fields": {
+      "feed_subscription_progress_entry": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+      "feed_url": "http://www.ultimate-guitar.com/modules/rss/all_updates.xml",
+      "custom_feed_title": "All Updates @ Ultimate-Guitar.Com",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "2c578d12-6a7d-4dad-99d0-b334054fa702",
+    "fields": {
+      "feed_subscription_progress_entry": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+      "feed_url": "http://www.belzebubs.com/rss",
+      "custom_feed_title": "belzebubs",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "818f57f6-18d0-4ca0-8816-7919b44d5012",
+    "fields": {
+      "feed_subscription_progress_entry": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+      "feed_url": "http://feeds.gawker.com/kotaku/full",
+      "custom_feed_title": "Kotaku",
+      "user_category_text": "Gaming",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "878fcacc-95bb-4940-9fa4-726a6d2aeffb",
+    "fields": {
+      "feed_subscription_progress_entry": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+      "feed_url": "http://feeds.gawker.com/gizmodo/full",
+      "custom_feed_title": "Gizmodo",
+      "user_category_text": "Technology",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "8c64cb42-3bfd-4b98-acc4-f942b489137d",
+    "fields": {
+      "feed_subscription_progress_entry": "3503c68b-36a0-48b2-8352-d08fcd085bcd",
+      "feed_url": "http://blogs.msdn.com/oldnewthing/rss.xml",
+      "custom_feed_title": "The Old New Thing",
+      "user_category_text": "Technology",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "1d1edaf5-c88b-482e-9c4a-54d8f531e3fd",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Music",
+      "feeds": []
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "38ed7c98-bb9d-49eb-9ec2-a23181ab9c2f",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Comics",
+      "feeds": []
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "e31ca075-95b6-4f69-8cc1-729acd3731a4",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Technology",
+      "feeds": []
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "faa38f99-ebcb-4077-9671-03ad23fa6d50",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Gaming",
+      "feeds": []
+    }
+  }
+]

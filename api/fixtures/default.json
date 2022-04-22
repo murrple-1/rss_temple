@@ -1,0 +1,9 @@
+[
+{
+    "model": "api.user",
+    "fields": {
+        "email": "test@test.com",
+        "password": "argon2$argon2id$v=19$m=102400,t=2,p=8$aXVWSkJyUGlvMzR5d05ZelFGcXFteg$3IVVSvsoZYW5Y05bAnRWBT4Sq5LeNp2dLdp1egFkUMs"
+    }
+}
+]

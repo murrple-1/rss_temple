@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-
-cd /path/to/rss_temple/git/repo/rss_temple/ || exit # directory should contain Pipfile
-pipenv run python -m daemons.subscription_setup_daemon "$@"

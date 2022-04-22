@@ -1,3 +1,0 @@
-{% autoescape off %}
-Password Reset Token: {{ password_reset_token }}
-{% endautoescape %}
