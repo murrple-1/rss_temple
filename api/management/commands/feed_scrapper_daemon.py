@@ -5,7 +5,6 @@ import sys
 import time
 import uuid
 
-import filelock
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -18,9 +17,9 @@ from django.utils import timezone
 from api import feed_handler, rss_requests
 from api.models import Feed, FeedEntry
 
-_SUCCESS_BACKOFF_SECONDS = 0
-_MIN_ERROR_BACKOFF_SECONDS = 0
-_MAX_ERROR_BACKOFF_SECONDS = 0
+_SUCCESS_BACKOFF_SECONDS: int
+_MIN_ERROR_BACKOFF_SECONDS: int
+_MAX_ERROR_BACKOFF_SECONDS: int
 
 
 @receiver(setting_changed)
@@ -37,39 +36,7 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-_logger: logging.Logger | None = None
-
-
-def logger():  # pragma: no cover
-    global _logger
-
-    if _logger is None:
-        _logger = logging.getLogger("feed_scrapper_daemon")
-        _logger.setLevel(logging.DEBUG)
-
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(stream_handler)
-
-        file_handler = logging.handlers.RotatingFileHandler(
-            filename="feed_scrapper_daemon.log", maxBytes=(50 * 100000), backupCount=3
-        )
-        file_handler.setLevel(logging.WARNING)
-        file_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(file_handler)
-
-    return _logger
+_logger = logging.getLogger("rss_temple")
 
 
 def scrape_feed(feed: Feed, response_text: str):
@@ -169,53 +136,47 @@ class Command(BaseCommand):
 
             scrape_feed(feed, response.text)
         else:
-            lock = filelock.FileLock("feed_scrapper_daemon.lock")
             try:
-                with lock.acquire(timeout=1):
-                    while True:
-                        count = 0
-                        with transaction.atomic():
-                            for feed in (
-                                Feed.objects.select_for_update(skip_locked=True)
-                                .filter(update_backoff_until__lte=Now())
-                                .order_by("update_backoff_until")[: options["count"]]
-                            ):
-                                count += 1
+                while True:
+                    count = 0
+                    with transaction.atomic():
+                        for feed in (
+                            Feed.objects.select_for_update(skip_locked=True)
+                            .filter(update_backoff_until__lte=Now())
+                            .order_by("update_backoff_until")[: options["count"]]
+                        ):
+                            count += 1
 
-                                try:
-                                    response = rss_requests.get(feed.feed_url)
-                                    response.raise_for_status()
+                            try:
+                                response = rss_requests.get(feed.feed_url)
+                                response.raise_for_status()
 
-                                    scrape_feed(feed, response.text)
+                                scrape_feed(feed, response.text)
 
-                                    logger().debug("scrapped '%s'", feed.feed_url)
+                                _logger.debug("scrapped '%s'", feed.feed_url)
 
-                                    feed.update_backoff_until = (
-                                        success_update_backoff_until(feed)
-                                    )
-                                    feed.save(
-                                        update_fields=[
-                                            "db_updated_at",
-                                            "update_backoff_until",
-                                        ]
-                                    )
-                                except requests.exceptions.RequestException:
-                                    logger().exception(
-                                        "failed to scrap feed '%s'", feed.feed_url
-                                    )
+                                feed.update_backoff_until = (
+                                    success_update_backoff_until(feed)
+                                )
+                                feed.save(
+                                    update_fields=[
+                                        "db_updated_at",
+                                        "update_backoff_until",
+                                    ]
+                                )
+                            except requests.exceptions.RequestException:
+                                _logger.exception(
+                                    "failed to scrap feed '%s'", feed.feed_url
+                                )
 
-                                    feed.update_backoff_until = (
-                                        error_update_backoff_until(feed)
-                                    )
-                                    feed.save(update_fields=["update_backoff_until"])
+                                feed.update_backoff_until = error_update_backoff_until(
+                                    feed
+                                )
+                                feed.save(update_fields=["update_backoff_until"])
 
-                        logger().info("scrapped %d feeds this round", count)
+                    _logger.info("scrapped %d feeds this round", count)
 
-                        time.sleep(30)
-            except filelock.Timeout:
-                logger().info(
-                    "only 1 process allowed at a time - lock file already held"
-                )
+                    time.sleep(30)
             except Exception:
-                logger().exception("loop stopped unexpectedly")
+                _logger.exception("loop stopped unexpectedly")
                 raise

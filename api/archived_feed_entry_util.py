@@ -7,8 +7,8 @@ from django.dispatch import receiver
 
 from api.models import FeedEntry, ReadFeedEntryUserMapping
 
-_USER_UNREAD_GRACE_INTERVAL = 0
-_USER_UNREAD_GRACE_MIN_COUNT = 0
+_USER_UNREAD_GRACE_INTERVAL: int
+_USER_UNREAD_GRACE_MIN_COUNT: int
 
 
 @receiver(setting_changed)

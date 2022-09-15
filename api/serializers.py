@@ -20,7 +20,7 @@ from api.models import (
 )
 from api.render import verify as verifyrender
 
-_USER_VERIFICATION_EXPIRY_INTERVAL = datetime.datetime.min
+_USER_VERIFICATION_EXPIRY_INTERVAL: datetime.datetime
 
 
 @receiver(setting_changed)

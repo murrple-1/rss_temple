@@ -1,0 +1,5 @@
+:80 {
+	encode gzip
+
+	reverse_proxy rss_temple:8000
+}

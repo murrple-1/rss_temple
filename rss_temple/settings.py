@@ -87,8 +87,12 @@ WSGI_APPLICATION = "rss_temple.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.getenv("DB_NAME", "postgres"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "password"),
+        "HOST": os.getenv("DB_HOST", "postgresql"),
+        "PORT": os.getenv("DB_PORT", ""),
     },
 }
 
@@ -147,15 +151,15 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
         },
         "rss_temple": {
             "handlers": ["console"],
-            "level": os.environ.get("RSS_TEMPLE_LOG_LEVEL", "INFO"),
+            "level": os.getenv("RSS_TEMPLE_LOG_LEVEL", "INFO"),
         },
         "metrics": {
             "handlers": ["console"],
-            "level": os.environ.get("METRICS_LOG_LEVEL", "INFO"),
+            "level": os.getenv("METRICS_LOG_LEVEL", "INFO"),
         },
     },
 }
@@ -166,12 +170,13 @@ CACHES = {
         "LOCATION": "default-cache",
     },
     "stable_query": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "stable-query-cache",
-    },
-    "throttle": {
-        # this should be memcache or Redis in production. don't enable in dev, as it causes tests to fail
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "KEY_PREFIX": "stable_query:",
+        "TIMEOUT": 28800,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     },
 }
 
@@ -214,16 +219,16 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-_test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
+_test_runner_type = os.getenv("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
     pass
 elif _test_runner_type == "xml":
     TEST_RUNNER = "xmlrunner.extra.djangotestrunner.XMLTestRunner"
     TEST_OUTPUT_DIR = "./test-results/"
-    TEST_OUTPUT_VERBOSE = int(os.environ.get("TEST_OUTPUT_VERBOSE", "1"))
+    TEST_OUTPUT_VERBOSE = int(os.getenv("TEST_OUTPUT_VERBOSE", "1"))
 elif _test_runner_type == "timed":
     TEST_RUNNER = "rss_temple.testrunner.DjangoTimedTestRunner"
-    TEST_SLOW_TEST_THRESHOLD = float(os.environ.get("TEST_SLOW_TEST_THRESHOLD", "0.5"))
+    TEST_SLOW_TEST_THRESHOLD = float(os.getenv("TEST_SLOW_TEST_THRESHOLD", "0.5"))
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 

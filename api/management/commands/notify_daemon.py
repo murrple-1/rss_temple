@@ -4,7 +4,6 @@ import smtplib
 import sys
 import time
 
-import filelock
 import validators
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -12,39 +11,7 @@ from quick_email import send_email
 
 from api.models import NotifyEmailQueueEntry, NotifyEmailQueueEntryRecipient
 
-_logger: logging.Logger | None = None
-
-
-def logger():
-    global _logger
-
-    if _logger is None:
-        _logger = logging.getLogger("notify_daemon")
-        _logger.setLevel(logging.DEBUG)
-
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(stream_handler)
-
-        file_handler = logging.handlers.RotatingFileHandler(
-            filename="notify_daemon.log", maxBytes=(50 * 100000), backupCount=3
-        )
-        file_handler.setLevel(logging.WARNING)
-        file_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(file_handler)
-
-    return _logger
+_logger = logging.getLogger("rss_temple")
 
 
 def render(send_email_fn, count_warning_threshold):
@@ -69,7 +36,7 @@ def render(send_email_fn, count_warning_threshold):
                         elif recipient.type == NotifyEmailQueueEntryRecipient.TYPE_BCC:
                             send_bcc.append(recipient.email)
 
-                logger().debug(
+                _logger.debug(
                     "sending email to %s, %s, %s...", send_to, send_cc, send_bcc
                 )
 
@@ -83,9 +50,9 @@ def render(send_email_fn, count_warning_threshold):
                         html_text=notify_email_queue_entry.html_text,
                     )
             except smtplib.SMTPServerDisconnected as e:
-                logger().error("SMTP server disconnected: %s", e)
+                _logger.error("SMTP server disconnected: %s", e)
             except Exception:
-                logger().exception(
+                _logger.exception(
                     "error sending email notification: %s",
                     notify_email_queue_entry.uuid,
                 )
@@ -94,13 +61,13 @@ def render(send_email_fn, count_warning_threshold):
                 notify_email_queue_entry.delete()
 
     if entry_count > 0:
-        logger().info("completed %s notify queue entries", entry_count)
+        _logger.info("completed %s notify queue entries", entry_count)
     else:
-        logger().info("no notify queue entries found")
+        _logger.info("no notify queue entries found")
 
     email_count = NotifyEmailQueueEntry.objects.count()
     if email_count >= count_warning_threshold:
-        logger().warning(
+        _logger.warning(
             "still more email queue entries than expected: %d (threshold: %d)",
             email_count,
             count_warning_threshold,
@@ -147,17 +114,13 @@ class Command(BaseCommand):
                 require_starttls=options["smtp_is_tls"],
             )
 
-        lock = filelock.FileLock("notify_daemon.lock")
         try:
-            with lock.acquire(timeout=1):
-                while True:
-                    logger().debug("render loop started")
-                    render(send_email, options["count_warning_threshold"])
-                    logger().debug("render loop complete")
+            while True:
+                _logger.debug("render loop started")
+                render(send_email, options["count_warning_threshold"])
+                _logger.debug("render loop complete")
 
-                    time.sleep(options["sleep_seconds"])
-        except filelock.Timeout:
-            logger().info("only 1 process allowed at a time - lock file already held")
+                time.sleep(options["sleep_seconds"])
         except Exception:
-            logger().exception("render loop stopped unexpectedly")
+            _logger.exception("render loop stopped unexpectedly")
             raise

@@ -4,7 +4,7 @@ from django.dispatch import receiver
 
 from api import render
 
-_VERIFY_URL_FORMAT = ""
+_VERIFY_URL_FORMAT: str
 
 
 @receiver(setting_changed)
