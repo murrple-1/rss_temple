@@ -5,7 +5,7 @@ import ujson
 from django.test import modify_settings, tag
 from django.utils import timezone
 
-from api.models import User, Feed, SubscribedFeedUserMapping
+from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
 
 
@@ -14,11 +14,6 @@ def _encode_url(url):
 
 
 @tag("views")
-@modify_settings(
-    MIDDLEWARE={
-        "remove": ["api.middleware.throttle.ThrottleMiddleware"],
-    }
-)
 class FeedTestCase(TestFileServerTestCase):
     @classmethod
     def setUpClass(cls):

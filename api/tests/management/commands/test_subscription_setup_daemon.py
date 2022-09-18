@@ -1,20 +1,21 @@
 import logging
+from typing import cast
 
 from django.test import tag
 from django.utils import timezone
 
-from api.models import (
-    User,
-    FeedSubscriptionProgressEntry,
-    SubscribedFeedUserMapping,
-    FeedSubscriptionProgressEntryDescriptor,
-    UserCategory,
-    Feed,
-)
 from api.management.commands.subscription_setup_daemon import (
+    _logger,
     do_subscription,
     get_first_entry,
-    logger,
+)
+from api.models import (
+    Feed,
+    FeedSubscriptionProgressEntry,
+    FeedSubscriptionProgressEntryDescriptor,
+    SubscribedFeedUserMapping,
+    User,
+    UserCategory,
 )
 from api.tests import TestFileServerTestCase
 
@@ -24,15 +25,15 @@ class DaemonTestCase(TestFileServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logger().getEffectiveLevel()
+        cls.old_logger_level = _logger.getEffectiveLevel()
 
-        logger().setLevel(logging.CRITICAL)
+        _logger.setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logger().setLevel(cls.old_logger_level)
+        _logger.setLevel(cls.old_logger_level)
 
     def generate_credentials(self):
         return User.objects.create_user("test@test.com", "password")
@@ -136,6 +137,10 @@ class DaemonTestCase(TestFileServerTestCase):
                     count += 1
 
         feed_subscription_progress_entry = get_first_entry()
+        self.assertIsNotNone(feed_subscription_progress_entry)
+        feed_subscription_progress_entry = cast(
+            FeedSubscriptionProgressEntry, feed_subscription_progress_entry
+        )
 
         self.assertEqual(
             feed_subscription_progress_entry.status,

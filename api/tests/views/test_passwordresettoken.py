@@ -1,12 +1,12 @@
 import logging
 
 from django.contrib.auth.tokens import default_token_generator
+from django.test import TestCase
 
 from api.models import User
-from api.tests.views import ViewTestCase
 
 
-class UserTestCase(ViewTestCase):
+class UserTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

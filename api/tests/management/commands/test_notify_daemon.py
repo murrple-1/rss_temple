@@ -4,8 +4,8 @@ import smtplib
 
 from django.test import TestCase
 
+from api.management.commands.notify_daemon import _logger, render
 from api.models import NotifyEmailQueueEntry, NotifyEmailQueueEntryRecipient
-from api.management.commands.notify_daemon import logger, render
 
 
 def _mock_send_email(*args, **kwargs):
@@ -20,15 +20,15 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logger().getEffectiveLevel()
+        cls.old_logger_level = _logger.getEffectiveLevel()
 
-        logger().setLevel(logging.CRITICAL)
+        _logger.setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logger().setLevel(cls.old_logger_level)
+        _logger.setLevel(cls.old_logger_level)
 
     def test_render_empty(self):
         self.assertEqual(NotifyEmailQueueEntry.objects.count(), 0)
@@ -71,7 +71,7 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise smtplib.SMTPServerDisconnected()
 
-        with self.assertLogs(logger(), logging.ERROR) as cm:
+        with self.assertLogs(_logger, logging.ERROR) as cm:
             render(_mock_send_email, COUNT_WARNING_THRESHOLD)
 
             self.assertGreaterEqual(
@@ -98,7 +98,7 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise Exception()
 
-        with self.assertLogs(logger(), logging.ERROR) as cm:
+        with self.assertLogs(_logger, logging.ERROR) as cm:
             render(_mock_send_email, COUNT_WARNING_THRESHOLD)
 
             self.assertGreaterEqual(
@@ -134,7 +134,7 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise Exception()
 
-        with self.assertLogs(logger(), logging.WARNING) as cm:
+        with self.assertLogs(_logger, logging.WARNING) as cm:
             render(_mock_send_email, 1)
 
             self.assertGreaterEqual(

@@ -17,46 +17,12 @@ from api.models import (
     UserCategory,
 )
 
-_logger: logging.Logger | None = None
-
-
-def logger():  # pragma: no cover
-    global _logger
-
-    if _logger is None:
-        _logger = logging.getLogger("subscription_setup_daemon")
-        _logger.setLevel(logging.DEBUG)
-
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(stream_handler)
-
-        file_handler = logging.handlers.RotatingFileHandler(
-            filename="subscription_setup_daemon.log",
-            maxBytes=(50 * 100000),
-            backupCount=3,
-        )
-        file_handler.setLevel(logging.WARNING)
-        file_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s (%(levelname)s): %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-        )
-        _logger.addHandler(file_handler)
-
-    return _logger
+_logger = logging.getLogger("rss_temple")
 
 
 def get_first_entry():
     with transaction.atomic():
-        feed_subscription_progress_entry = (
+        feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None = (
             FeedSubscriptionProgressEntry.objects.filter(
                 status=FeedSubscriptionProgressEntry.NOT_STARTED
             )
@@ -74,7 +40,7 @@ def get_first_entry():
 
 
 def do_subscription(
-    feed_subscription_progress_entry,
+    feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     feeds: dict[str, Feed] = {}
     subscriptions: set[str] = set()
@@ -112,7 +78,7 @@ def do_subscription(
                 try:
                     feed = _generate_feed(feed_url)
                 except requests.exceptions.RequestException:
-                    logger().exception("could not load feed for '%s'", feed_url)
+                    _logger.exception("could not load feed for '%s'", feed_url)
                     continue
 
             feeds[feed_url] = feed
@@ -177,7 +143,9 @@ def do_subscription(
     feed_subscription_progress_entry.save()
 
 
-def _generate_feed(url):  # pragma: testing-subscription-setup-daemon-do-subscription
+def _generate_feed(
+    url: str,
+):  # pragma: testing-subscription-setup-daemon-do-subscription
     response = rss_requests.get(url)
     response.raise_for_status()
 
@@ -213,11 +181,11 @@ class Command(BaseCommand):
             while True:
                 feed_subscription_progress_entry = get_first_entry()
                 if feed_subscription_progress_entry is not None:
-                    logger().info("starting subscription processing...")
+                    _logger.info("starting subscription processing...")
                     do_subscription(feed_subscription_progress_entry)
                 else:
-                    logger().info("no subscription process available. sleeping...")
+                    _logger.info("no subscription process available. sleeping...")
                     time.sleep(5)
         except Exception:
-            logger().exception("loop stopped unexpectedly")
+            _logger.exception("loop stopped unexpectedly")
             raise

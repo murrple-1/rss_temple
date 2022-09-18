@@ -22,9 +22,9 @@ fi
 cd "$INITIAL_DIR/../" || exit
 
 if [ "$1" = "" ]; then
-	pipenv run coverage run manage.py test --exclude-tag=slow --exclude-tag=remote api.tests
+	docker compose run --rm rss_temple coverage run manage.py test --exclude-tag=slow --exclude-tag=remote api.tests
 else
-	pipenv run coverage run manage.py test "$@"
+	docker compose run --rm rss_temple coverage run manage.py test "$@"
 fi
 
-pipenv run coverage html
+docker compose run --rm rss_temple coverage html

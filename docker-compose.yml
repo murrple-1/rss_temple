@@ -2,52 +2,85 @@ version: "3.9"
 services:
   rss_temple:
     image: rss_temple:latest
-    build: .
+    build:
+      context: .
+      args:
+        APP_ENVIRONMENT: dev
     env_file:
       - .env
     command: >
-      sh -c "while ! pipenv run python manage.py test_ready; do
+      sh -c "while ! python manage.py test_ready; do
               sleep 0.1
             done
 
-            pipenv run python manage.py migrate
+            python manage.py migrate
 
-            pipenv run daphne -b 0.0.0.0 -p 8001 rss_temple.asgi:application"
+            daphne -b 0.0.0.0 -p 8001 rss_temple.asgi:application
+            "
     depends_on:
-      - postgresql
+      - postgres
       - redis
+    volumes:
+      - ./:/rss_temple/
   rss_temple_daemon_feed_scrapper:
     image: rss_temple:latest
-    build: .
-    command: pipenv run python manage.py feed_scrapper_daemon
+    build:
+      context: .
+      args:
+        APP_ENVIRONMENT: dev
+    command: >
+      sh -c "while ! python manage.py test_ready; do
+              sleep 0.1
+            done
+
+            python manage.py feed_scrapper_daemon
+            "
     depends_on:
-      - postgresql
+      - postgres
+    volumes:
+      - ./:/rss_temple/
   rss_temple_daemon_notify:
     image: rss_temple:latest
-    build: .
-    command: pipenv run python manage.py notify_daemon
+    build:
+      context: .
+      args:
+        APP_ENVIRONMENT: dev
+    command: >
+      sh -c "while ! python manage.py test_ready; do
+              sleep 0.1
+            done
+
+            python manage.py notify_daemon
+            "
     depends_on:
-      - postgresql
-  rss_temple_daemon_session_cleanup:
-    image: rss_temple:latest
-    build: .
-    command: pipenv run python manage.py session_cleanup_daemon
-    depends_on:
-      - postgresql
+      - postgres
+    volumes:
+      - ./:/rss_temple/
   rss_temple_subscription_setup:
     image: rss_temple:latest
-    build: .
-    command: pipenv run python manage.py subscription_setup_daemon
+    build:
+      context: .
+      args:
+        APP_ENVIRONMENT: dev
+    command: >
+      sh -c "while ! python manage.py test_ready; do
+              sleep 0.1
+            done
+
+            python manage.py subscription_setup_daemon
+            "
     depends_on:
-      - postgresql
+      - postgres
+    volumes:
+      - ./:/rss_temple/
   redis:
     image: redis:7
-  postgresql:
+  postgres:
     image: postgres:14
     env_file:
       - .env
     volumes:
-      - postgresql_data:/data
+      - postgres_data:/data
   caddy:
     image: caddy:2
     ports:
@@ -55,5 +88,5 @@ services:
     volumes:
       - caddy_data:/data
 volumes:
-  postgresql_data:
+  postgres_data:
   caddy_data:

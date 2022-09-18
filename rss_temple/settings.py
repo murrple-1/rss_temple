@@ -91,7 +91,7 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME", "postgres"),
         "USER": os.getenv("DB_USER", "postgres"),
         "PASSWORD": os.getenv("DB_PASSWORD", "password"),
-        "HOST": os.getenv("DB_HOST", "postgresql"),
+        "HOST": os.getenv("DB_HOST", "postgres"),
         "PORT": os.getenv("DB_PORT", ""),
     },
 }
@@ -164,6 +164,9 @@ LOGGING = {
     },
 }
 
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -171,7 +174,7 @@ CACHES = {
     },
     "stable_query": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         "KEY_PREFIX": "stable_query:",
         "TIMEOUT": 28800,
         "OPTIONS": {

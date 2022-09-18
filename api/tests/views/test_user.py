@@ -3,15 +3,14 @@ import logging
 import uuid
 
 import ujson
-from django.test import tag
+from django.test import TestCase, tag
 from django.utils import timezone
 
 from api.models import User, VerificationToken
-from api.tests.views import ViewTestCase
 
 
 @tag("views")
-class UserTestCase(ViewTestCase):
+class UserTestCase(TestCase):
     USER_EMAIL = "test@test.com"
     NON_UNIQUE_EMAIL = "nonunique@test.com"
     UNIQUE_EMAIL = "unique@test.com"

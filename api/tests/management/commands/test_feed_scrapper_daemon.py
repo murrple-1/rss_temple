@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.management.commands.feed_scrapper_daemon import (
+    _logger,
     error_update_backoff_until,
-    logger,
     scrape_feed,
     success_update_backoff_until,
 )
@@ -18,17 +18,17 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_daemon_logger_level = logger().getEffectiveLevel()
+        cls.old_daemon_logger_level = _logger.getEffectiveLevel()
         cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
 
-        logger().setLevel(logging.CRITICAL)
+        _logger.setLevel(logging.CRITICAL)
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logger().setLevel(cls.old_daemon_logger_level)
+        _logger.setLevel(cls.old_daemon_logger_level)
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
 
     def test_scrape_feed(self):

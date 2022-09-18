@@ -2,18 +2,17 @@ import logging
 import random
 import uuid
 
-from django.test import tag
+from django.test import TestCase, tag
 
 from api.models import (
-    User,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
+    User,
 )
-from api.tests.views import ViewTestCase
 
 
 @tag("views")
-class ProgressTestCase(ViewTestCase):
+class ProgressTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

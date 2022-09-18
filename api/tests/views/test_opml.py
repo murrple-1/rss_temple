@@ -1,14 +1,13 @@
 import logging
 
 from django.core.management import call_command
-from django.test import tag
+from django.test import TestCase, tag
 
 from api.models import SubscribedFeedUserMapping, User
-from api.tests.views import ViewTestCase
 
 
 @tag("views")
-class OPMLTestCase(ViewTestCase):
+class OPMLTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

@@ -4,6 +4,5 @@ INITIAL_DIR=$(dirname $(readlink -f "$0"))
 
 cd "$INITIAL_DIR/../" || exit
 
-rm db.sqlite3
-pipenv run python manage.py migrate
-pipenv run python manage.py loaddata api/fixtures/default.json
+docker compose run --rm rss_temple python manage.py flush
+docker compose run --rm rss_temple python manage.py loaddata api/fixtures/default.json

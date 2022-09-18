@@ -2,15 +2,14 @@ import logging
 import uuid
 
 import ujson
-from django.test import tag
+from django.test import TestCase, tag
 from django.utils import timezone
 
-from api.models import User, UserCategory, Feed
-from api.tests.views import ViewTestCase
+from api.models import Feed, User, UserCategory
 
 
 @tag("views")
-class UserCategoryTestCase(ViewTestCase):
+class UserCategoryTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

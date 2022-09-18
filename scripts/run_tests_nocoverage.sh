@@ -22,7 +22,7 @@ fi
 cd "$INITIAL_DIR/../" || exit
 
 if [ "$1" = "" ]; then
-	pipenv run python manage.py test --exclude-tag=slow --exclude-tag=remote --parallel=4 api.tests
+	docker compose run --rm rss_temple python manage.py test --exclude-tag=slow --exclude-tag=remote --parallel=4 api.tests
 else
-	pipenv run python manage.py test "$@"
+	docker compose run --rm rss_temple python manage.py test "$@"
 fi

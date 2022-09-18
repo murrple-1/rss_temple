@@ -1,9 +1,16 @@
 FROM python:3.10-slim
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONFAULTHANDLER 1
-RUN pip install pipenv
-ENV PIPENV_VENV_IN_PROJECT 1
+
+ARG APP_ENVIRONMENT=production
+
+ENV LANG="C.UTF-8"\
+	LC_ALL="C.UTF-8"\
+	PYTHONDONTWRITEBYTECODE=1\
+	PYTHONFAULTHANDLER=1
+
+WORKDIR /rss_temple
+
 COPY . .
-RUN pipenv install --deploy
+
+RUN pip install -U pip\
+	&& pip install --no-cache-dir pipenv\
+	&& pipenv install --system --deploy $(if [ "$APP_ENVIRONMENT" != "production" ]; then echo '--dev'; fi)
