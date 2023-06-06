@@ -4,6 +4,9 @@ import uuid
 
 from dateutil.relativedelta import relativedelta
 
+_min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+_max_dt = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+
 
 class CustomConvertTo:
     @staticmethod
@@ -49,24 +52,20 @@ class FloatRange(CustomConvertTo):
 class DateTime(CustomConvertTo):
     @staticmethod
     def convertto(search_obj):
-        return datetime.datetime.strptime(search_obj, "%Y-%m-%d %H:%M:%S")
+        return datetime.datetime.fromisoformat(search_obj)
 
 
 class DateTimeRange(CustomConvertTo):
     @staticmethod
     def _to_datetime(part):
-        return datetime.datetime.strptime(part, "%Y-%m-%d %H:%M:%S")
+        return datetime.datetime.fromisoformat(part)
 
     @staticmethod
     def convertto(search_obj):
         parts = search_obj.split("|")
 
-        start_datetime = (
-            DateTimeRange._to_datetime(parts[0]) if parts[0] else datetime.datetime.min
-        )
-        end_datetime = (
-            DateTimeRange._to_datetime(parts[1]) if parts[1] else datetime.datetime.max
-        )
+        start_datetime = DateTimeRange._to_datetime(parts[0]) if parts[0] else _min_dt
+        end_datetime = DateTimeRange._to_datetime(parts[1]) if parts[1] else _max_dt
         return start_datetime, end_datetime
 
 
@@ -108,14 +107,14 @@ class DateTimeDeltaRange(CustomConvertTo):
 
     @staticmethod
     def convertto(search_obj, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or datetime.datetime.now(datetime.timezone.utc)
 
         older_than_match = _DATE_DELTA_RANGE_OLDER_THAN_REGEX.search(search_obj)
         if older_than_match:
             number = int(older_than_match.group(1))
             type_ = older_than_match.group(2)
 
-            return datetime.datetime.min, now + DateTimeDeltaRange._diff(type_, number)
+            return _min_dt, now + DateTimeDeltaRange._diff(type_, number)
         else:
             earlier_than_match = _DATE_DELTA_RANGE_EARLIER_THAN_REGEX.search(search_obj)
             if earlier_than_match:
@@ -124,7 +123,7 @@ class DateTimeDeltaRange(CustomConvertTo):
 
                 return (
                     now + DateTimeDeltaRange._diff(type_, number),
-                    datetime.datetime.max,
+                    _max_dt,
                 )
             else:
                 raise ValueError("date delta malformed")

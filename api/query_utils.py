@@ -129,7 +129,7 @@ def get_sort(
     return order_by_args
 
 
-def get_search(context, json_, object_name, param_name="search"):
+def get_search(request, json_, object_name, param_name="search"):
     if param_name not in json_:
         return []
 
@@ -138,7 +138,7 @@ def get_search(context, json_, object_name, param_name="search"):
     if type(search) is not str:
         raise QueryException(f"'{param_name}' must be string", 400)  # pragma: no cover
 
-    filter_args = searchutils.to_filter_args(object_name, context, search)
+    filter_args = searchutils.to_filter_args(object_name, request, search)
     return filter_args
 
 
@@ -185,10 +185,10 @@ def get_field_maps(fields, object_name, param_name="fields"):
     return field_maps
 
 
-def generate_return_object(field_maps, db_obj, context):
+def generate_return_object(field_maps, db_obj, request):
     return_obj = {}
     for field_map in field_maps:
         field_name = field_map["field_name"]
-        return_obj[field_name] = field_map["accessor"](context, db_obj)
+        return_obj[field_name] = field_map["accessor"](request, db_obj)
 
     return return_obj

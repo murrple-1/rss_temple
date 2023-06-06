@@ -18,7 +18,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -105,7 +105,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -192,7 +192,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -281,7 +281,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -371,7 +371,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -461,7 +461,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.utcnow(),
+                published_at=datetime.datetime.now(datetime.timezone.utc),
                 updated_at=None,
                 db_updated_at=None,
             )

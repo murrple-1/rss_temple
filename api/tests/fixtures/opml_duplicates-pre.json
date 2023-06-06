@@ -29,9 +29,9 @@
       "feed_url": "http://tapastic.com/rss/series/8999",
       "title": "My Pet Succubus",
       "home_url": "https://tapas.io/series/8999",
-      "published_at": "2018-12-19T03:01:46.930",
-      "updated_at": "2018-12-14T08:24:57",
-      "db_created_at": "2018-12-19T03:01:46.930",
+      "published_at": "2018-12-19T03:01:46.930+0000",
+      "updated_at": "2018-12-14T08:24:57+0000",
+      "db_created_at": "2018-12-19T03:01:46.930+0000",
       "db_updated_at": null
     }
   },
@@ -42,9 +42,9 @@
       "feed_url": "http://www.angrymetalguy.com/feed/",
       "title": "Angry Metal Guy",
       "home_url": "https://www.angrymetalguy.com",
-      "published_at": "2018-12-19T03:02:11.757",
-      "updated_at": "2018-12-18T23:02:54",
-      "db_created_at": "2018-12-19T03:02:11.757",
+      "published_at": "2018-12-19T03:02:11.757+0000",
+      "updated_at": "2018-12-18T23:02:54+0000",
+      "db_created_at": "2018-12-19T03:02:11.757+0000",
       "db_updated_at": null
     }
   },
@@ -55,9 +55,9 @@
       "feed_url": "http://feeds.feedburner.com/Explosm",
       "title": "Explosm.net",
       "home_url": "http://explosm.net",
-      "published_at": "2018-12-19T03:01:41.707",
+      "published_at": "2018-12-19T03:01:41.707+0000",
       "updated_at": null,
-      "db_created_at": "2018-12-19T03:01:41.707",
+      "db_created_at": "2018-12-19T03:01:41.707+0000",
       "db_updated_at": null
     }
   },
@@ -68,9 +68,9 @@
       "feed_url": "http://www.pantheracomic.com/?feed=rss2",
       "title": "Panthera – Manga Webcomic/Graphic Novel",
       "home_url": "http://www.pantheracomic.com",
-      "published_at": "2018-12-19T03:01:49.635",
-      "updated_at": "2017-02-13T19:17:22",
-      "db_created_at": "2018-12-19T03:01:49.635",
+      "published_at": "2018-12-19T03:01:49.635+0000",
+      "updated_at": "2017-02-13T19:17:22+0000",
+      "db_created_at": "2018-12-19T03:01:49.635+0000",
       "db_updated_at": null
     }
   },
@@ -81,9 +81,9 @@
       "feed_url": "http://xkcd.com/rss.xml",
       "title": "xkcd.com",
       "home_url": "https://xkcd.com/",
-      "published_at": "2018-12-19T03:01:51.714",
+      "published_at": "2018-12-19T03:01:51.714+0000",
       "updated_at": null,
-      "db_created_at": "2018-12-19T03:01:51.714",
+      "db_created_at": "2018-12-19T03:01:51.714+0000",
       "db_updated_at": null
     }
   },
@@ -94,9 +94,9 @@
       "feed_url": "http://syndication.thedailywtf.com/TheDailyWtf",
       "title": "The Daily WTF",
       "home_url": "http://thedailywtf.com/",
-      "published_at": "2018-12-19T03:01:31.200",
-      "updated_at": "2018-12-19T02:59:49",
-      "db_created_at": "2018-12-19T03:01:31.200",
+      "published_at": "2018-12-19T03:01:31.200+0000",
+      "updated_at": "2018-12-19T02:59:49+0000",
+      "db_created_at": "2018-12-19T03:01:31.200+0000",
       "db_updated_at": null
     }
   },
@@ -107,9 +107,9 @@
       "feed_url": "http://www.japanator.com/?mode=atom",
       "title": "Japanator",
       "home_url": "https://www.japanator.com/?mode=atom",
-      "published_at": "2018-12-19T03:01:33.756",
-      "updated_at": "2018-11-14T16:00:00",
-      "db_created_at": "2018-12-19T03:01:33.756",
+      "published_at": "2018-12-19T03:01:33.756+0000",
+      "updated_at": "2018-11-14T16:00:00+0000",
+      "db_created_at": "2018-12-19T03:01:33.756+0000",
       "db_updated_at": null
     }
   },
@@ -120,9 +120,9 @@
       "feed_url": "http://deadrhetoric.com/feed/",
       "title": "Dead Rhetoric",
       "home_url": "http://deadrhetoric.com",
-      "published_at": "2018-12-19T03:02:07.932",
-      "updated_at": "2018-12-19T00:03:56",
-      "db_created_at": "2018-12-19T03:02:07.932",
+      "published_at": "2018-12-19T03:02:07.932+0000",
+      "updated_at": "2018-12-19T00:03:56+0000",
+      "db_created_at": "2018-12-19T03:02:07.932+0000",
       "db_updated_at": null
     }
   },
@@ -133,9 +133,9 @@
       "feed_url": "http://www.animenewsnetwork.com/all/rss.xml",
       "title": "Anime News Network - Article",
       "home_url": "https://www.animenewsnetwork.com/",
-      "published_at": "2018-12-19T03:01:36.882",
-      "updated_at": "2018-12-19T02:14:55",
-      "db_created_at": "2018-12-19T03:01:36.882",
+      "published_at": "2018-12-19T03:01:36.882+0000",
+      "updated_at": "2018-12-19T02:14:55+0000",
+      "db_created_at": "2018-12-19T03:01:36.882+0000",
       "db_updated_at": null
     }
   },
@@ -146,9 +146,9 @@
       "feed_url": "http://www.terrorizer.com/feed/",
       "title": "Terrorizer",
       "home_url": "http://www.terrorizer.com",
-      "published_at": "2018-12-19T03:02:10.568",
-      "updated_at": "2018-06-14T14:44:44",
-      "db_created_at": "2018-12-19T03:02:10.568",
+      "published_at": "2018-12-19T03:02:10.568+0000",
+      "updated_at": "2018-06-14T14:44:44+0000",
+      "db_created_at": "2018-12-19T03:02:10.568+0000",
       "db_updated_at": null
     }
   },
@@ -159,9 +159,9 @@
       "feed_url": "http://feeds.feedburner.com/codinghorror",
       "title": "Coding Horror",
       "home_url": "https://blog.codinghorror.com/",
-      "published_at": "2018-12-19T03:01:29.238",
-      "updated_at": "2018-12-19T00:25:16",
-      "db_created_at": "2018-12-19T03:01:29.238",
+      "published_at": "2018-12-19T03:01:29.238+0000",
+      "updated_at": "2018-12-19T00:25:16+0000",
+      "db_created_at": "2018-12-19T03:01:29.238+0000",
       "db_updated_at": null
     }
   },
@@ -172,9 +172,9 @@
       "feed_url": "http://metalintheory.com/feed/",
       "title": "Metal In Theory",
       "home_url": "http://metalintheory.com",
-      "published_at": "2018-12-19T03:02:04.917",
-      "updated_at": "2018-06-17T01:34:53",
-      "db_created_at": "2018-12-19T03:02:04.917",
+      "published_at": "2018-12-19T03:02:04.917+0000",
+      "updated_at": "2018-06-17T01:34:53+0000",
+      "db_created_at": "2018-12-19T03:02:04.917+0000",
       "db_updated_at": null
     }
   },
@@ -185,9 +185,9 @@
       "feed_url": "http://feeds.arstechnica.com/arstechnica/index",
       "title": "Ars Technica",
       "home_url": "https://arstechnica.com",
-      "published_at": "2018-12-19T03:01:27.088",
-      "updated_at": "2018-12-18T23:36:02",
-      "db_created_at": "2018-12-19T03:01:27.088",
+      "published_at": "2018-12-19T03:01:27.088+0000",
+      "updated_at": "2018-12-18T23:36:02+0000",
+      "db_created_at": "2018-12-19T03:01:27.088+0000",
       "db_updated_at": null
     }
   },
@@ -198,9 +198,9 @@
       "feed_url": "http://www.misfile.com/misfileRSS.php",
       "title": "News from Misfile",
       "home_url": "http://www.misfile.com",
-      "published_at": "2018-12-18T00:00:00",
+      "published_at": "2018-12-18T00:00:00+0000",
       "updated_at": null,
-      "db_created_at": "2018-12-19T03:01:53.870",
+      "db_created_at": "2018-12-19T03:01:53.870+0000",
       "db_updated_at": null
     }
   },
@@ -211,9 +211,9 @@
       "feed_url": "http://www.theblackplanet.org/feed/",
       "title": "The Black Planet",
       "home_url": "http://www.theblackplanet.org",
-      "published_at": "2018-12-19T03:01:59.137",
-      "updated_at": "2018-12-17T15:51:25",
-      "db_created_at": "2018-12-19T03:01:59.137",
+      "published_at": "2018-12-19T03:01:59.137+0000",
+      "updated_at": "2018-12-17T15:51:25+0000",
+      "db_created_at": "2018-12-19T03:01:59.137+0000",
       "db_updated_at": null
     }
   }

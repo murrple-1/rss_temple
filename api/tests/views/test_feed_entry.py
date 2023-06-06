@@ -35,7 +35,8 @@ class FeedEntryTestCase(ViewTestCase):
 
         cls.session = models.Session.objects.create(
             user=cls.user,
-            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2),
+            expires_at=datetime.datetime.now(datetime.timezone.utc)
+            + datetime.timedelta(days=2),
         )
 
         cls.session_token = cls.session.uuid
@@ -45,7 +46,7 @@ class FeedEntryTestCase(ViewTestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )

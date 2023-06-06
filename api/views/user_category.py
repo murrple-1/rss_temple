@@ -11,7 +11,6 @@ from django.http import (
 )
 
 from api import models, query_utils
-from api.context import Context
 from api.exceptions import QueryException
 
 _OBJECT_NAME = "usercategory"
@@ -63,10 +62,6 @@ def user_categories_apply(request):
 
 
 def _user_category_get(request, uuid_):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     field_maps = None
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
@@ -80,7 +75,7 @@ def _user_category_get(request, uuid_):
     except models.UserCategory.DoesNotExist:
         return HttpResponseNotFound("user category not found")
 
-    ret_obj = query_utils.generate_return_object(field_maps, user_category, context)
+    ret_obj = query_utils.generate_return_object(field_maps, user_category, request)
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
@@ -88,10 +83,6 @@ def _user_category_get(request, uuid_):
 
 
 def _user_category_post(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     field_maps = None
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
@@ -124,7 +115,7 @@ def _user_category_post(request):
     except IntegrityError:
         return HttpResponse("user category already exists", status=409)
 
-    ret_obj = query_utils.generate_return_object(field_maps, user_category, context)
+    ret_obj = query_utils.generate_return_object(field_maps, user_category, request)
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
@@ -177,10 +168,6 @@ def _user_category_delete(request, uuid_):
 
 
 def _user_categories_query_post(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
@@ -214,7 +201,7 @@ def _user_categories_query_post(request):
     search = None
     try:
         search = [Q(user=request.user)] + query_utils.get_search(
-            context, json_, _OBJECT_NAME
+            request, json_, _OBJECT_NAME
         )
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
@@ -245,7 +232,7 @@ def _user_categories_query_post(request):
     if return_objects:
         objs = []
         for user_category in user_categories.order_by(*sort)[skip : skip + count]:
-            obj = query_utils.generate_return_object(field_maps, user_category, context)
+            obj = query_utils.generate_return_object(field_maps, user_category, request)
             objs.append(obj)
 
         ret_obj["objects"] = objs

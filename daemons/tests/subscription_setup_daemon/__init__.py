@@ -62,7 +62,7 @@ class DaemonTestCase(TestFileServerTestCase):
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -71,7 +71,7 @@ class DaemonTestCase(TestFileServerTestCase):
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )

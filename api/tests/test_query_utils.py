@@ -1,39 +1,13 @@
-import datetime
-from decimal import Decimal
-
 from django.http.request import QueryDict
 from django.test import TestCase
 
 from api import query_utils
-from api.context import Context
 from api.exceptions import QueryException
 
 
 class QueryUtilsTestCase(TestCase):
-    def test_context(self):
-        context = Context()
-
-        query_dict = QueryDict(
-            "_dtformat=%Y-%m-%d %H:%M:%S&_dformat=%Y-%m-%d&_tformat=%H:%M:%S"
-        )
-
-        context.parse_query_dict(query_dict)
-
-        utcnow = datetime.datetime.utcnow()
-
-        self.assertEqual(
-            context.format_datetime(utcnow), utcnow.strftime("%Y-%m-%d %H:%M:%S")
-        )
-        self.assertEqual(
-            context.format_date(utcnow.date()), utcnow.date().strftime("%Y-%m-%d")
-        )
-        self.assertEqual(
-            context.format_time(utcnow.time()), utcnow.time().strftime("%H:%M:%S")
-        )
-
-        d = Decimal("0.5")
-
-        self.assertAlmostEqual(context.format_decimal(d), float(d))
+    class MockRequest:
+        pass
 
     def test_serialize_content(self):
         content, content_type = query_utils.serialize_content(
@@ -287,28 +261,34 @@ class QueryUtilsTestCase(TestCase):
         )
 
     def test_get_search(self):
-        self.assertEqual(query_utils.get_search(Context(), {}, "user"), [])
+        self.assertEqual(
+            query_utils.get_search(QueryUtilsTestCase.MockRequest(), {}, "user"), []
+        )
         self.assertEqual(
             query_utils.get_search(
-                Context(),
+                QueryUtilsTestCase.MockRequest(),
                 {
                     "search": 'email:"test"',
                 },
                 "user",
             ),
-            query_utils.searchutils.to_filter_args("user", Context(), 'email:"test"'),
+            query_utils.searchutils.to_filter_args(
+                "user", QueryUtilsTestCase.MockRequest(), 'email:"test"'
+            ),
         )
 
         self.assertEqual(
             query_utils.get_search(
-                Context(),
+                QueryUtilsTestCase.MockRequest(),
                 {
                     "tsearch": 'email:"test"',
                 },
                 "user",
                 param_name="tsearch",
             ),
-            query_utils.searchutils.to_filter_args("user", Context(), 'email:"test"'),
+            query_utils.searchutils.to_filter_args(
+                "user", QueryUtilsTestCase.MockRequest(), 'email:"test"'
+            ),
         )
 
     def test_get_fields__query_dict(self):
@@ -378,7 +358,7 @@ class QueryUtilsTestCase(TestCase):
         field_maps = [
             {
                 "field_name": "uuid",
-                "accessor": lambda context, db_obj: db_obj.uuid,
+                "accessor": lambda request, db_obj: db_obj.uuid,
             }
         ]
 
@@ -388,10 +368,10 @@ class QueryUtilsTestCase(TestCase):
         db_obj = MockObject()
         db_obj.uuid = "test string"
 
-        context = Context()
-
         self.assertEqual(
-            query_utils.generate_return_object(field_maps, db_obj, context),
+            query_utils.generate_return_object(
+                field_maps, db_obj, QueryUtilsTestCase.MockRequest
+            ),
             {
                 "uuid": "test string",
             },

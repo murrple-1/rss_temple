@@ -67,7 +67,7 @@ class DaemonTestCase(TestCase):
             )
             self.assertIsNone(feed.db_updated_at)
 
-            feed.db_updated_at = datetime.datetime.utcnow()
+            feed.db_updated_at = datetime.datetime.now(datetime.timezone.utc)
 
             feed.update_backoff_until = success_update_backoff_until(feed)
 

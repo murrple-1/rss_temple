@@ -43,6 +43,7 @@ types-tabulate = "*"
 types-ujson = "*"
 types-requests = "*"
 types-html5lib = "*"
+tblib = "*"
 
 [requires]
 python_version = "3.11"

@@ -155,4 +155,6 @@ def d_entry_2_entry_tags(d_entry):
 
 
 def _time_tuple_to_datetime(t):
-    return datetime.datetime(t[0], t[1], t[2], t[3], t[4], t[5])
+    return datetime.datetime(
+        t[0], t[1], t[2], t[3], t[4], t[5], 0, datetime.timezone.utc
+    )

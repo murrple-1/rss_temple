@@ -36,7 +36,8 @@ class FeedTestCase(TestFileServerTestCase):
 
         session = models.Session.objects.create(
             user=user,
-            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2),
+            expires_at=datetime.datetime.now(datetime.timezone.utc)
+            + datetime.timedelta(days=2),
         )
 
         return user, str(session.uuid)
@@ -81,7 +82,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -118,7 +119,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -139,7 +140,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -179,7 +180,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -208,7 +209,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -232,7 +233,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -251,7 +252,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -260,7 +261,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed2.xml",
             title="Sample Feed 2",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -293,7 +294,7 @@ class FeedTestCase(TestFileServerTestCase):
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )

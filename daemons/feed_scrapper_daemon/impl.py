@@ -111,7 +111,7 @@ def scrape_feed(feed, response_text):
 
     models.FeedEntry.objects.bulk_create(new_feed_entries)
 
-    feed.db_updated_at = datetime.datetime.utcnow()
+    feed.db_updated_at = datetime.datetime.now(datetime.timezone.utc)
 
 
 def success_update_backoff_until(feed):

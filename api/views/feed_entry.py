@@ -15,7 +15,6 @@ from django.http import (
 )
 
 from api import models, query_utils
-from api.context import Context
 from api.exceptions import QueryException
 
 _OBJECT_NAME = "feedentry"
@@ -116,10 +115,6 @@ def feed_entries_favorite(request):
 
 
 def _feed_entry_get(request, uuid_):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     field_maps = None
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
@@ -133,7 +128,7 @@ def _feed_entry_get(request, uuid_):
     except models.FeedEntry.DoesNotExist:
         return HttpResponseNotFound("feed entry not found")
 
-    ret_obj = query_utils.generate_return_object(field_maps, feed_entry, context)
+    ret_obj = query_utils.generate_return_object(field_maps, feed_entry, request)
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
@@ -141,10 +136,6 @@ def _feed_entry_get(request, uuid_):
 
 
 def _feed_entries_query_post(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
@@ -177,7 +168,7 @@ def _feed_entries_query_post(request):
 
     search = None
     try:
-        search = query_utils.get_search(context, json_, _OBJECT_NAME)
+        search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -209,7 +200,7 @@ def _feed_entries_query_post(request):
     if return_objects:
         objs = []
         for feed_entry in feed_entries.order_by(*sort)[skip : skip + count]:
-            obj = query_utils.generate_return_object(field_maps, feed_entry, context)
+            obj = query_utils.generate_return_object(field_maps, feed_entry, request)
             objs.append(obj)
 
         ret_obj["objects"] = objs
@@ -223,10 +214,6 @@ def _feed_entries_query_post(request):
 
 def _feed_entries_query_stable_create_post(request):
     cache = caches["stable_query"]
-
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
 
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
@@ -248,7 +235,7 @@ def _feed_entries_query_stable_create_post(request):
 
     search = None
     try:
-        search = query_utils.get_search(context, json_, _OBJECT_NAME)
+        search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -270,10 +257,6 @@ def _feed_entries_query_stable_create_post(request):
 
 def _feed_entries_query_stable_post(request):
     cache = caches["stable_query"]
-
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
 
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
@@ -348,7 +331,7 @@ def _feed_entries_query_stable_post(request):
             for uuid_ in current_uuids:
                 feed_entry = feed_entries[uuid_]
                 obj = query_utils.generate_return_object(
-                    field_maps, feed_entry, context
+                    field_maps, feed_entry, request
                 )
                 objs.append(obj)
 
@@ -362,10 +345,6 @@ def _feed_entries_query_stable_post(request):
 
 
 def _feed_entry_read_post(request, uuid_):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     read_feed_entry_user_mapping = None
 
     with transaction.atomic():
@@ -386,7 +365,7 @@ def _feed_entry_read_post(request, uuid_):
                 )
             )
 
-    ret_obj = context.format_datetime(read_feed_entry_user_mapping.read_at)
+    ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
     content, content_type = query_utils.serialize_content(ret_obj)
     return HttpResponse(content, content_type)

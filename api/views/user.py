@@ -17,7 +17,6 @@ from django.http import (
 )
 
 from api import models, query_utils
-from api.context import Context
 from api.exceptions import QueryException
 from api.password_hasher import password_hasher
 from api.render import verify as verifyrender
@@ -75,10 +74,6 @@ def user_attributes(request):
 
 
 def _user_get(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     user = request.user
 
     field_maps = None
@@ -88,7 +83,7 @@ def _user_get(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    ret_obj = query_utils.generate_return_object(field_maps, user, context)
+    ret_obj = query_utils.generate_return_object(field_maps, user, request)
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
@@ -129,7 +124,8 @@ def _user_put(request):
             verification_token = models.VerificationToken(
                 user=user,
                 expires_at=(
-                    datetime.datetime.utcnow() + _USER_VERIFICATION_EXPIRY_INTERVAL
+                    datetime.datetime.now(datetime.timezone.utc)
+                    + _USER_VERIFICATION_EXPIRY_INTERVAL
                 ),
             )
 

@@ -36,7 +36,8 @@ class OPMLTestCase(ViewTestCase):
 
         session = models.Session.objects.create(
             user=user,
-            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2),
+            expires_at=datetime.datetime.now(datetime.timezone.utc)
+            + datetime.timedelta(days=2),
         )
 
         return str(session.uuid)

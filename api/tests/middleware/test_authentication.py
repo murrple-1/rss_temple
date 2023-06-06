@@ -21,7 +21,8 @@ class AuthenticationTestCase(TestCase):
 
             session = models.Session.objects.create(
                 user=user,
-                expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=2),
+                expires_at=datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(days=2),
             )
 
             session_token = str(session.uuid)

@@ -5,7 +5,6 @@ import uuid
 from django.test import TestCase
 
 from api import fields, models
-from api.context import Context
 
 
 class _ObjectConfig:
@@ -58,7 +57,7 @@ class FieldsTestCase(TestCase):
                 self.assertTrue(callable(field_map["accessor"]))
 
     def test_fieldconfig(self):
-        fc = fields._FieldConfig(lambda context, db_obj: "test", True)
+        fc = fields._FieldConfig(lambda request, db_obj: "test", True)
 
         self.assertEqual(fc.accessor(object(), object()), "test")
         self.assertTrue(fc.default)
@@ -75,16 +74,16 @@ class FieldsTestCase(TestCase):
 
             self.assertEqual(field_map["field_name"], oc.good_field_name)
 
-            class TestContext:
+            class TestRequest:
                 pass
 
             class TestObject:
                 def __init__(self):
                     self.uuid = uuid.uuid4()
 
-            test_context = TestContext()
+            test_request = TestRequest()
             test_obj = TestObject()
-            field_map["accessor"](test_context, test_obj)
+            field_map["accessor"](test_request, test_obj)
 
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)
@@ -152,7 +151,7 @@ class AllFieldsTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -161,7 +160,7 @@ class AllFieldsTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -198,29 +197,24 @@ class AllFieldsTestCase(TestCase):
 
                 for db_obj in db_objs:
                     for field_config in fields_dict.values():
-                        context = Context()
-                        context.request = AllFieldsTestCase.MockRequest()
-
-                        field_config.accessor(context, db_obj)
+                        field_config.accessor(AllFieldsTestCase.MockRequest(), db_obj)
 
 
 class FieldFnsTestCase(TestCase):
     def test_feedentry_isRead(self):
-        context = Context()
-
         user = models.User.objects.create(email="test_fields@test.com")
 
         class MockRequest:
             def __init__(self):
                 self.user = user
 
-        context.request = MockRequest()
+        request = MockRequest()
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.utcnow(),
+            published_at=datetime.datetime.now(datetime.timezone.utc),
             updated_at=None,
             db_updated_at=None,
         )
@@ -242,5 +236,5 @@ class FieldFnsTestCase(TestCase):
             feed_entry=feed_entry2, user=user
         )
 
-        self.assertIsNone(fields._feedentry_readAt(context, feed_entry1))
-        self.assertIsNotNone(fields._feedentry_readAt(context, feed_entry2))
+        self.assertIsNone(fields._feedentry_readAt(request, feed_entry1))
+        self.assertIsNotNone(fields._feedentry_readAt(request, feed_entry2))

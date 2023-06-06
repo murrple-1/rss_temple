@@ -16,7 +16,6 @@ from api import (
     query_utils,
     rss_requests,
 )
-from api.context import Context
 from api.exceptions import QueryException
 
 _OBJECT_NAME = "feed"
@@ -87,10 +86,6 @@ def _save_feed(url):
 
 
 def _feed_get(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     url = request.GET.get("url")
     if not url:
         return HttpResponseBadRequest("'url' missing")
@@ -115,7 +110,7 @@ def _feed_get(request):
         except QueryException as e:
             return HttpResponse(e.message, status=e.httpcode)
 
-    ret_obj = query_utils.generate_return_object(field_maps, feed, context)
+    ret_obj = query_utils.generate_return_object(field_maps, feed, request)
 
     content, content_type = query_utils.serialize_content(ret_obj)
 
@@ -123,10 +118,6 @@ def _feed_get(request):
 
 
 def _feeds_query_post(request):
-    context = Context()
-    context.parse_request(request)
-    context.parse_query_dict(request.GET)
-
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
@@ -159,7 +150,7 @@ def _feeds_query_post(request):
 
     search = None
     try:
-        search = query_utils.get_search(context, json_, _OBJECT_NAME)
+        search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
@@ -191,7 +182,7 @@ def _feeds_query_post(request):
     if return_objects:
         objs = []
         for feed in feeds.order_by(*sort)[skip : skip + count]:
-            obj = query_utils.generate_return_object(field_maps, feed, context)
+            obj = query_utils.generate_return_object(field_maps, feed, request)
             objs.append(obj)
 
         ret_obj["objects"] = objs

@@ -4,11 +4,13 @@ import uuid
 from django.test import TestCase
 
 from api import models, searches
-from api.context import Context
 from api.exceptions import QueryException
 
 
 class SearchesTestCase(TestCase):
+    class MockRequest:
+        pass
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -26,45 +28,67 @@ class SearchesTestCase(TestCase):
     def test_standard(self):
         searches.to_filter_args(
             "feed",
-            Context(),
+            SearchesTestCase.MockRequest(),
             'uuid:"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
         )
 
     def test_malformed(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("user", Context(), "")
+            searches.to_filter_args("user", SearchesTestCase.MockRequest(), "")
 
         with self.assertRaises(QueryException):
-            searches.to_filter_args("user", Context(), '((email:"test")')
+            searches.to_filter_args(
+                "user", SearchesTestCase.MockRequest(), '((email:"test")'
+            )
 
     def test_unknown_field(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("feed", Context(), 'email:"test"')
+            searches.to_filter_args(
+                "feed", SearchesTestCase.MockRequest(), 'email:"test"'
+            )
 
     def test_malformed_value(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("feed", Context(), 'uuid:"bad uuid"')
+            searches.to_filter_args(
+                "feed", SearchesTestCase.MockRequest(), 'uuid:"bad uuid"'
+            )
 
     def test_and(self):
-        searches.to_filter_args("user", Context(), 'email:"test" or email:"example"')
-        searches.to_filter_args("user", Context(), 'email:"test" OR email:"example"')
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), 'email:"test" or email:"example"'
+        )
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), 'email:"test" OR email:"example"'
+        )
 
     def test_or(self):
-        searches.to_filter_args("user", Context(), 'email:"test" and email:"example"')
-        searches.to_filter_args("user", Context(), 'email:"test" AND email:"example"')
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), 'email:"test" and email:"example"'
+        )
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), 'email:"test" AND email:"example"'
+        )
 
     def test_parenthesized(self):
         searches.to_filter_args(
-            "user", Context(), 'email:"word" or (email:"test" and email:"example")'
+            "user",
+            SearchesTestCase.MockRequest(),
+            'email:"word" or (email:"test" and email:"example")',
         )
-        searches.to_filter_args("user", Context(), 'email:"test" or (email:"example")')
-        searches.to_filter_args("user", Context(), '(email:"test")')
-        searches.to_filter_args("user", Context(), '((email:"test"))')
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), 'email:"test" or (email:"example")'
+        )
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), '(email:"test")'
+        )
+        searches.to_filter_args(
+            "user", SearchesTestCase.MockRequest(), '((email:"test"))'
+        )
 
     def test_exclude(self):
         searches.to_filter_args(
             "feed",
-            Context(),
+            SearchesTestCase.MockRequest(),
             'uuid:!"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
         )
 
@@ -99,11 +123,11 @@ class AllSearchesTestCase(TestCase):
                 "title_exact": ["test"],
                 "feedUrl": ["http://example.com/rss.xml"],
                 "homeUrl": ["http://example.com"],
-                "publishedAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "publishedAt_exact": ["2018-11-26 00:00:00"],
+                "publishedAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "publishedAt_exact": ["2018-11-26 00:00:00+0000"],
                 "publishedAt_delta": ["older_than:10h"],
-                "updatedAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "updatedAt_exact": ["2018-11-26 00:00:00"],
+                "updatedAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "updatedAt_exact": ["2018-11-26 00:00:00+0000"],
                 "updatedAt_delta": ["older_than:10h"],
                 "subscribed": ["true", "false"],
                 "customTitle": ["custom title"],
@@ -119,14 +143,14 @@ class AllSearchesTestCase(TestCase):
                 "uuid": [str(uuid.uuid4())],
                 "feedUuid": [str(uuid.uuid4())],
                 "feedUrl": ["http://example.com/rss.xml"],
-                "createdAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "createdAt_exact": ["2018-11-26 00:00:00"],
+                "createdAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "createdAt_exact": ["2018-11-26 00:00:00+0000"],
                 "createdAt_delta": ["older_than:10h"],
-                "publishedAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "publishedAt_exact": ["2018-11-26 00:00:00"],
+                "publishedAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "publishedAt_exact": ["2018-11-26 00:00:00+0000"],
                 "publishedAt_delta": ["older_than:10h"],
-                "updatedAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "updatedAt_exact": ["2018-11-26 00:00:00"],
+                "updatedAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "updatedAt_exact": ["2018-11-26 00:00:00+0000"],
                 "updatedAt_delta": ["older_than:10h"],
                 "url": ["http://example.com/entry1.html"],
                 "authorName": ["John Doe"],
@@ -136,8 +160,8 @@ class AllSearchesTestCase(TestCase):
                 "subscribed": ["true", "false"],
                 "isRead": ["true", "false"],
                 "isFavorite": ["true", "false"],
-                "readAt": ["2018-11-23 00:00:00|2018-11-26 00:00:00"],
-                "readAt_exact": ["2018-11-26 00:00:00"],
+                "readAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
+                "readAt_exact": ["2018-11-26 00:00:00+0000"],
                 "readAt_delta": ["older_than:10h"],
             },
         },
@@ -182,11 +206,9 @@ class AllSearchesTestCase(TestCase):
                 for field, test_values in trial_searches.items():
                     for test_value in test_values:
                         with self.subTest(field=field, test_value=test_value):
-                            context = Context()
-
-                            context.request = AllSearchesTestCase.MockRequest()
-
-                            q = search_fns_dict[field](context, test_value)
+                            q = search_fns_dict[field](
+                                AllSearchesTestCase.MockRequest(), test_value
+                            )
                             result = list(queryset.filter(q))
 
                             self.assertIsNotNone(result)

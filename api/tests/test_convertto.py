@@ -124,17 +124,25 @@ class ConvertToTestCase(TestCase):
         range_ = DateTimeRange.convertto("2000-01-01 00:00:00|")
 
         self.assertEqual(range_[0], datetime.datetime(2000, 1, 1, 0, 0, 0))
-        self.assertEqual(range_[1], datetime.datetime.max)
+        self.assertEqual(
+            range_[1], datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+        )
 
         range_ = DateTimeRange.convertto("|2000-01-02 23:59:59")
 
-        self.assertEqual(range_[0], datetime.datetime.min)
+        self.assertEqual(
+            range_[0], datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        )
         self.assertEqual(range_[1], datetime.datetime(2000, 1, 2, 23, 59, 59))
 
         range_ = DateTimeRange.convertto("|")
 
-        self.assertEqual(range_[0], datetime.datetime.min)
-        self.assertEqual(range_[1], datetime.datetime.max)
+        self.assertEqual(
+            range_[0], datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        )
+        self.assertEqual(
+            range_[1], datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+        )
 
         with self.assertRaises(ValueError):
             DateTimeRange.convertto("text|text")
@@ -149,49 +157,70 @@ class ConvertToTestCase(TestCase):
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10y", now=now),
-            (datetime.datetime.min, older_than_10y_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10y_end,
+            ),
         )
 
         older_than_10M_end = datetime.datetime(2000, 1, 11, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10M", now=now),
-            (datetime.datetime.min, older_than_10M_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10M_end,
+            ),
         )
 
         older_than_1w_end = datetime.datetime(2000, 11, 4, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:1w", now=now),
-            (datetime.datetime.min, older_than_1w_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_1w_end,
+            ),
         )
 
         older_than_10d_end = datetime.datetime(2000, 11, 1, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10d", now=now),
-            (datetime.datetime.min, older_than_10d_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10d_end,
+            ),
         )
 
         older_than_10h_end = datetime.datetime(2000, 11, 10, 14, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10h", now=now),
-            (datetime.datetime.min, older_than_10h_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10h_end,
+            ),
         )
 
         older_than_10m_end = datetime.datetime(2000, 11, 10, 23, 50, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10m", now=now),
-            (datetime.datetime.min, older_than_10m_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10m_end,
+            ),
         )
 
         older_than_10s_end = datetime.datetime(2000, 11, 10, 23, 59, 50, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("older_than:10s", now=now),
-            (datetime.datetime.min, older_than_10s_end),
+            (
+                datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                older_than_10s_end,
+            ),
         )
 
     def test_datetime_delta_range_earlier_than(self):
@@ -201,49 +230,70 @@ class ConvertToTestCase(TestCase):
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10y", now=now),
-            (earlier_than_10y_end, datetime.datetime.max),
+            (
+                earlier_than_10y_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_10M_end = datetime.datetime(2000, 1, 11, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10M", now=now),
-            (earlier_than_10M_end, datetime.datetime.max),
+            (
+                earlier_than_10M_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_1w_end = datetime.datetime(2000, 11, 4, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:1w", now=now),
-            (earlier_than_1w_end, datetime.datetime.max),
+            (
+                earlier_than_1w_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_10d_end = datetime.datetime(2000, 11, 1, 0, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10d", now=now),
-            (earlier_than_10d_end, datetime.datetime.max),
+            (
+                earlier_than_10d_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_10h_end = datetime.datetime(2000, 11, 10, 14, 0, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10h", now=now),
-            (earlier_than_10h_end, datetime.datetime.max),
+            (
+                earlier_than_10h_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_10m_end = datetime.datetime(2000, 11, 10, 23, 50, 0, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10m", now=now),
-            (earlier_than_10m_end, datetime.datetime.max),
+            (
+                earlier_than_10m_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
         earlier_than_10s_end = datetime.datetime(2000, 11, 10, 23, 59, 50, 0)
 
         self.assertEqual(
             DateTimeDeltaRange.convertto("earlier_than:10s", now=now),
-            (earlier_than_10s_end, datetime.datetime.max),
+            (
+                earlier_than_10s_end,
+                datetime.datetime.max.replace(tzinfo=datetime.timezone.utc),
+            ),
         )
 
     def test_date_delta_range_error(self):

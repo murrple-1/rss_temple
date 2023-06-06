@@ -54,7 +54,8 @@ def _user_from_http_request__session_token(request):
         if session:
             if session.expires_at is not None:
                 session.expires_at = (
-                    datetime.datetime.utcnow() + _SESSION_EXPIRY_INTERVAL
+                    datetime.datetime.now(datetime.timezone.utc)
+                    + _SESSION_EXPIRY_INTERVAL
                 )
                 session.save(update_fields=["expires_at"])
 

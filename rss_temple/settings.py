@@ -51,9 +51,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "api.middleware.throttle.ThrottleMiddleware",
-    "api.middleware.bodyhandler.BodyHandlerMiddleware",
     "api.middleware.profiling.ProfileMiddleware",
-    "api.middleware.cors.CORSMiddleware",  # deprecate
     "api.middleware.authentication.AuthenticationMiddleware",
 ]
 
@@ -206,11 +204,6 @@ THROTTLE_ENABLE = [
     ),
 ]
 
-CORS_ALLOW_ORIGINS = "*"
-CORS_ALLOW_METHODS = "GET,POST,PUT,DELETE,OPTIONS,HEAD"
-CORS_ALLOW_HEADERS = "Pragma,Cache-Control,Content-Type,If-Modified-Since,X-Requested-With,Authorization,X-Session-Token"
-CORS_EXPOSE_HEADERS = ""
-
 PROFILING_OUTPUT_FILE = os.environ.get("PROFILING_OUTPUT_FILE")
 
 AUTHENTICATION_DISABLE = [
@@ -234,10 +227,6 @@ MAX_COUNT = 1000
 DEFAULT_SKIP = 0
 DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
-
-DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-DEFAULT_DATE_FORMAT = "%Y-%m-%d"
-DEFAULT_TIME_FORMAT = "%H:%M:%S"
 
 SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 

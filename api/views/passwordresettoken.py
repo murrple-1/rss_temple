@@ -62,7 +62,10 @@ def _passwordresettoken_request_post(request):
 
     password_reset_token = models.PasswordResetToken(
         user=user,
-        expires_at=(datetime.datetime.utcnow() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL),
+        expires_at=(
+            datetime.datetime.now(datetime.timezone.utc)
+            + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL
+        ),
     )
 
     with transaction.atomic():

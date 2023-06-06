@@ -104,7 +104,10 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
         password_reset_token = models.PasswordResetToken.objects.create(
-            expires_at=(datetime.datetime.utcnow() + datetime.timedelta(days=2)),
+            expires_at=(
+                datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(days=2)
+            ),
             user=UserTestCase.user,
         )
 
