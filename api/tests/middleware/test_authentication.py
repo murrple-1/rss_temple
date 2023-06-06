@@ -3,6 +3,7 @@ import datetime
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.test import TestCase
+from django.utils import timezone
 
 from api import models
 from api.middleware import authentication
@@ -21,8 +22,7 @@ class AuthenticationTestCase(TestCase):
 
             session = models.Session.objects.create(
                 user=user,
-                expires_at=datetime.datetime.now(datetime.timezone.utc)
-                + datetime.timedelta(days=2),
+                expires_at=timezone.now() + datetime.timedelta(days=2),
             )
 
             session_token = str(session.uuid)

@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.test import tag
+from django.utils import timezone
 
 from api import models
 from api.tests import TestFileServerTestCase
@@ -62,7 +63,7 @@ class DaemonTestCase(TestFileServerTestCase):
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -71,7 +72,7 @@ class DaemonTestCase(TestFileServerTestCase):
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )

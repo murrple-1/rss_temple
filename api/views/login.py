@@ -1,4 +1,3 @@
-import datetime
 import logging
 import uuid
 
@@ -15,6 +14,7 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseNotAllowed,
 )
+from django.utils import timezone
 
 from api import models, query_utils
 from api.password_hasher import password_hasher
@@ -166,10 +166,7 @@ def _my_login_post(request):
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
-                expires_at=(
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + _USER_VERIFICATION_EXPIRY_INTERVAL
-                ),
+                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
         models.MyLogin.objects.create(
@@ -239,10 +236,7 @@ def _google_login_post(request):
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
-                expires_at=(
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + _USER_VERIFICATION_EXPIRY_INTERVAL
-                ),
+                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
         models.MyLogin.objects.create(
@@ -314,10 +308,7 @@ def _facebook_login_post(request):
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
-                expires_at=(
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + _USER_VERIFICATION_EXPIRY_INTERVAL
-                ),
+                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
         models.MyLogin.objects.create(
@@ -370,8 +361,7 @@ def _my_login_session_post(request):
 
     session = models.Session.objects.create(
         user=my_login.user,
-        expires_at=datetime.datetime.now(datetime.timezone.utc)
-        + _SESSION_EXPIRY_INTERVAL,
+        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
     )
 
     content, content_type = query_utils.serialize_content(str(session.uuid))
@@ -418,8 +408,7 @@ def _google_login_session_post(request):
 
     session = models.Session.objects.create(
         user=google_login.user,
-        expires_at=datetime.datetime.now(datetime.timezone.utc)
-        + _SESSION_EXPIRY_INTERVAL,
+        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
     )
 
     content, content_type = query_utils.serialize_content(str(session.uuid))
@@ -466,8 +455,7 @@ def _facebook_login_session_post(request):
 
     session = models.Session.objects.create(
         user=facebook_login.user,
-        expires_at=datetime.datetime.now(datetime.timezone.utc)
-        + _SESSION_EXPIRY_INTERVAL,
+        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
     )
 
     content, content_type = query_utils.serialize_content(str(session.uuid))

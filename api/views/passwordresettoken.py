@@ -1,5 +1,3 @@
-import datetime
-
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.db import transaction
@@ -10,6 +8,7 @@ from django.http import (
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
+from django.utils import timezone
 
 from api import models
 from api.password_hasher import password_hasher
@@ -62,10 +61,7 @@ def _passwordresettoken_request_post(request):
 
     password_reset_token = models.PasswordResetToken(
         user=user,
-        expires_at=(
-            datetime.datetime.now(datetime.timezone.utc)
-            + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL
-        ),
+        expires_at=(timezone.now() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL),
     )
 
     with transaction.atomic():

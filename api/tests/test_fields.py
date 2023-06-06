@@ -1,8 +1,8 @@
-import datetime
 import logging
 import uuid
 
 from django.test import TestCase
+from django.utils import timezone
 
 from api import fields, models
 
@@ -151,7 +151,7 @@ class AllFieldsTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -160,7 +160,7 @@ class AllFieldsTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -214,7 +214,7 @@ class FieldFnsTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )

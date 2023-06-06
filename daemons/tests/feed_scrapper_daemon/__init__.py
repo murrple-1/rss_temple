@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.test import TestCase
+from django.utils import timezone
 
 from api import models
 from daemons.feed_scrapper_daemon.impl import (
@@ -67,7 +68,7 @@ class DaemonTestCase(TestCase):
             )
             self.assertIsNone(feed.db_updated_at)
 
-            feed.db_updated_at = datetime.datetime.now(datetime.timezone.utc)
+            feed.db_updated_at = timezone.now()
 
             feed.update_backoff_until = success_update_backoff_until(feed)
 

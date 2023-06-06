@@ -3,6 +3,7 @@ import re
 import uuid
 
 from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 
 _min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 _max_dt = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
@@ -107,7 +108,7 @@ class DateTimeDeltaRange(CustomConvertTo):
 
     @staticmethod
     def convertto(search_obj, now=None):
-        now = now or datetime.datetime.now(datetime.timezone.utc)
+        now = now or timezone.now()
 
         older_than_match = _DATE_DELTA_RANGE_OLDER_THAN_REGEX.search(search_obj)
         if older_than_match:

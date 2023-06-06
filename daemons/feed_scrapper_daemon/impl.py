@@ -5,6 +5,7 @@ import sys
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
+from django.utils import timezone
 
 from api import feed_handler, models
 
@@ -111,7 +112,7 @@ def scrape_feed(feed, response_text):
 
     models.FeedEntry.objects.bulk_create(new_feed_entries)
 
-    feed.db_updated_at = datetime.datetime.now(datetime.timezone.utc)
+    feed.db_updated_at = timezone.now()
 
 
 def success_update_backoff_until(feed):

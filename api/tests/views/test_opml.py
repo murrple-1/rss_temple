@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.core.management import call_command
+from django.utils import timezone
 
 from api import models
 from api.tests.views import ViewTestCase
@@ -36,8 +37,7 @@ class OPMLTestCase(ViewTestCase):
 
         session = models.Session.objects.create(
             user=user,
-            expires_at=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=2),
+            expires_at=timezone.now() + datetime.timedelta(days=2),
         )
 
         return str(session.uuid)

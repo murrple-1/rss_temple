@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 import argon2
@@ -15,6 +14,7 @@ from django.http import (
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
+from django.utils import timezone
 
 from api import models, query_utils
 from api.exceptions import QueryException
@@ -123,10 +123,7 @@ def _user_put(request):
 
             verification_token = models.VerificationToken(
                 user=user,
-                expires_at=(
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + _USER_VERIFICATION_EXPIRY_INTERVAL
-                ),
+                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
             has_changed = True

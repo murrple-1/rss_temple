@@ -4,6 +4,7 @@ import uuid
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
+from django.utils import timezone
 
 from api import models
 from api.password_hasher import password_hasher
@@ -19,7 +20,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -28,7 +29,7 @@ class UserTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -56,7 +57,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -65,7 +66,7 @@ class UserTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -89,7 +90,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -112,7 +113,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -138,7 +139,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -163,7 +164,7 @@ class UserTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -235,8 +236,7 @@ class VerificationTokenTestCase(TestCase):
 
         verification_token = models.VerificationToken.objects.create(
             user=user,
-            expires_at=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=1),
+            expires_at=timezone.now() + datetime.timedelta(days=1),
         )
 
         self.assertIsNotNone(
@@ -259,8 +259,7 @@ class PasswordResetTokenTestCase(TestCase):
 
         password_reset_token = models.PasswordResetToken.objects.create(
             user=user,
-            expires_at=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=1),
+            expires_at=timezone.now() + datetime.timedelta(days=1),
         )
 
         self.assertIsNotNone(
@@ -278,7 +277,7 @@ class UserCategoryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -296,7 +295,7 @@ class FeedTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -318,7 +317,7 @@ class FeedTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -327,7 +326,7 @@ class FeedTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -347,7 +346,7 @@ class FeedTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -368,7 +367,7 @@ class FeedTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -400,7 +399,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -442,7 +441,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -451,7 +450,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -481,7 +480,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -513,7 +512,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -545,7 +544,7 @@ class FeedEntryTestCase(TestCase):
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
@@ -571,13 +570,13 @@ class FeedEntryTestCase(TestCase):
         self.assertIsNotNone(feed_entry2.read_mapping(user))
 
     def test_unique_feed_url_updated_at(self):
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = timezone.now()
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
-            published_at=datetime.datetime.now(datetime.timezone.utc),
+            published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )

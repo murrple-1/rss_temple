@@ -2,6 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.test import TestCase
+from django.utils import timezone
 
 from api import archived_feed_entry_util, models
 
@@ -18,7 +19,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -105,7 +106,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -192,7 +193,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -281,7 +282,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -371,7 +372,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
@@ -461,7 +462,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
-                published_at=datetime.datetime.now(datetime.timezone.utc),
+                published_at=timezone.now(),
                 updated_at=None,
                 db_updated_at=None,
             )
