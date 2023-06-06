@@ -1,4 +1,3 @@
-import datetime
 import uuid
 
 from django.conf import settings
@@ -53,10 +52,7 @@ def _user_from_http_request__session_token(request):
 
         if session:
             if session.expires_at is not None:
-                session.expires_at = (
-                    datetime.datetime.now(datetime.timezone.utc)
-                    + _SESSION_EXPIRY_INTERVAL
-                )
+                session.expires_at = timezone.now() + _SESSION_EXPIRY_INTERVAL
                 session.save(update_fields=["expires_at"])
 
             return session.user

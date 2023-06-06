@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from django.test import TestCase
+from django.utils import timezone
 
 from api import models
 from daemons.session_cleanup_daemon.impl import cleanup, logger
@@ -43,14 +44,12 @@ class DaemonTestCase(TestCase):
         self.assertEqual(models.Session.objects.filter(user=user).count(), 0)
 
         models.Session.objects.create(
-            expires_at=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=-1),
+            expires_at=timezone.now() + datetime.timedelta(days=-1),
             user=user,
         )
 
         models.Session.objects.create(
-            expires_at=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=1),
+            expires_at=timezone.now() + datetime.timedelta(days=1),
             user=user,
         )
 
