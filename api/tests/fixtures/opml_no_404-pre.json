@@ -1,0 +1,334 @@
+[
+  {
+    "model": "api.user",
+    "pk": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+    "fields": {
+      "email": "test@test.com"
+    }
+  },
+  {
+    "model": "api.mylogin",
+    "pk": "8b6dfb62-9ae1-40ac-a15b-c1639f1b7262",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "pw_hash": "$argon2i$v=19$m=512,t=2,p=2$5Wvxro9dRBwFHnVSnt4DEw$oaoYZyboOOiVLxBrGIdN2g"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "554aa28a-0c26-4268-9fde-c0d62a693187",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Anime - Manga"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "602c1b26-c0dc-47f0-ae32-6a06c7c34125",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Gaming"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "6b759776-14b0-43e5-8af3-bf5c8fc35253",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Comics"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "6e774283-4ede-46ec-8bb9-7730af348876",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Technology"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "903e0edf-af7e-4720-a90d-f25218cbf280",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Programming"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "a28cadd5-6c46-45a7-b469-99b7d0991e6a",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Music"
+    }
+  },
+  {
+    "model": "api.usercategory",
+    "pk": "c8a204e1-e0a9-49ea-b139-08d103110784",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "text": "Linux"
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentry",
+    "pk": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+    "fields": {
+      "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+      "status": 0
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "14d40246-ee5e-413b-bb4d-4fad8941333e",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.feedburner.com/AJournalOfMusicalThings",
+      "custom_feed_title": "A Journal of Musical Things",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "202d01da-c0ae-43c0-b1f0-e542331ebd16",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.theblackplanet.org/feed/",
+      "custom_feed_title": "The Black Planet",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "212b09f8-2fe6-4120-904d-c2d97427c7e9",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.misfile.com/misfileRSS.php",
+      "custom_feed_title": "News from Misfile",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "27c3f0ce-7326-4271-bdaf-1fb840c09dcd",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.catanacomics.com/rss",
+      "custom_feed_title": "CATANA COMICS",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "2f19716a-5935-4538-aa4c-0d5139d5d659",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://deadrhetoric.com/feed/",
+      "custom_feed_title": "Dead Rhetoric",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "520c666e-edda-4c93-b36d-daa98c189b0e",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.angrymetalguy.com/feed/",
+      "custom_feed_title": "Angry Metal Guy",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "52a360ce-23ca-494e-9ab5-d635ce8c80f4",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://battlehelm.com/feed/",
+      "custom_feed_title": "Battle Helm",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "61daf559-b20d-4b06-aec0-b9363c899b2a",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.pantheracomic.com/?feed=rss2",
+      "custom_feed_title": "Panthera – Manga Webcomic/Graphic Novel",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "6466bd22-59fc-4143-ba43-76f682fb4353",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://syndication.thedailywtf.com/TheDailyWtf",
+      "custom_feed_title": "The Daily WTF",
+      "user_category_text": "Programming",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "6e85c255-1512-40f6-8b73-9089df7460c2",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://xkcd.com/rss.xml",
+      "custom_feed_title": "xkcd",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "7c66bb36-6f24-419d-8df9-256277272a64",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://rss.slashdot.org/Slashdot/slashdot",
+      "custom_feed_title": "Slashdot",
+      "user_category_text": "Technology",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "821b1f48-c58e-4046-a9a6-579ea0ac4945",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.wolfire.com/WolfireGames",
+      "custom_feed_title": "Wolfire Games Blog",
+      "user_category_text": "Gaming",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "8fe01333-2723-4195-ba18-938d651a54ce",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.arstechnica.com/arstechnica/index",
+      "custom_feed_title": "Ars Technica",
+      "user_category_text": "Technology",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "9be30de8-021f-46e4-8282-00c4ac8eb68a",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "https://community.chrono.gg/c/daily-deals.rss",
+      "custom_feed_title": "Daily Deals - Chrono.gg Community",
+      "user_category_text": "Gaming",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "b4da2e34-0679-44c2-9dbd-91ee9732f68e",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://metalintheory.com/feed/",
+      "custom_feed_title": "Metal In Theory",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "d27d7fff-4995-47c5-88ac-48d3ab3fd556",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://tapastic.com/rss/series/8999",
+      "custom_feed_title": "My Pet Succubus",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "e3c9cd75-14b0-42a7-89b1-aff4f2da6259",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.feedburner.com/Explosm",
+      "custom_feed_title": "Explosm",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "e4a55453-68df-4ffe-8323-c4ec05738de7",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.feedburner.com/GamasutraFeatureArticles",
+      "custom_feed_title": "Gamasutra Feature Articles",
+      "user_category_text": "Gaming",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "ea7e1f4a-165f-461b-a22d-9acdf6e251a9",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://twokinds.keenspot.com/rss.php",
+      "custom_feed_title": "Twokinds",
+      "user_category_text": "Comics",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "ec2a16b5-20b8-4dda-83c3-0512a1fa970e",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.japanator.com/?mode=atom",
+      "custom_feed_title": "Japanator",
+      "user_category_text": "Anime - Manga",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "ed1accfa-df29-4363-ab41-513d3ac45d27",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.animenewsnetwork.com/all/rss.xml",
+      "custom_feed_title": "Anime News Network - Article",
+      "user_category_text": "Anime - Manga",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "f2ab065e-455a-4815-8632-fac103b07f19",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://www.terrorizer.com/feed/",
+      "custom_feed_title": "Terrorizer",
+      "user_category_text": "Music",
+      "is_finished": false
+    }
+  },
+  {
+    "model": "api.feedsubscriptionprogressentrydescriptor",
+    "pk": "fba09303-9dee-4d64-8628-a766ab05e424",
+    "fields": {
+      "feed_subscription_progress_entry": "99ed6a02-fb25-4b25-9478-e30903025a8f",
+      "feed_url": "http://feeds.feedburner.com/codinghorror",
+      "custom_feed_title": "Coding Horror",
+      "user_category_text": "Programming",
+      "is_finished": false
+    }
+  }
+]

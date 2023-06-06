@@ -102,4 +102,5 @@ ENV/
 
 # Custom
 db.sqlite3
-
+pyrightconfig.json
+test-results/

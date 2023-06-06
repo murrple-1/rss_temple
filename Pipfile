@@ -1,0 +1,48 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = {version = "*", extras = ["argon2"]}
+feedparser = "*"
+requests = "*"
+"argon2-cffi" = "*"
+ujson = "*"
+pyparsing = "*"
+python-dateutil = "*"
+filelock = "*"
+google-auth = "*"
+facebook-sdk = "*"
+defusedxml = "*"
+lxml = "*"
+xmlschema = "*"
+url-normalize = "*"
+django-ipware = "*"
+quick-email = "*"
+bleach = {version = ">=4.0.0,<5.0.0", extras = ["css"]}
+html5lib = "*"
+validators = "*"
+tabulate = "*"
+
+[dev-packages]
+coverage = "*"
+codecov = "*"
+Faker = "*"
+unittest-xml-reporting = "*"
+coverage-conditional-plugin = "*"
+packaging = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
+mypy = "*"
+django-stubs = "*"
+types-bleach = ">=4.0.0,<5.0.0"
+types-python-dateutil = "*"
+types-tabulate = "*"
+types-ujson = "*"
+types-requests = "*"
+types-html5lib = "*"
+
+[requires]
+python_version = "3.11"

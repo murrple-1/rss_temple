@@ -14,6 +14,6 @@ fi
 export GOOGLE_CLIENT_ID
 
 
-cd "$INITIAL_DIR/../rss_temple/" || exit
+cd "$INITIAL_DIR/../" || exit
 
 pipenv run python manage.py runserver

@@ -8,60 +8,50 @@ workflows:
 jobs:
   build:
     docker:
-      - image: cimg/base:2020.01
-    working_directory: ~/rss_temple/
+      - image: cimg/base:2022.08
     steps:
       - checkout
       - run:
           name: remove unneeded files
           command: |
             rm -r api/tests/
-          working_directory: ~/rss_temple/rss_temple/
       - run:
           name: tarball
-          command: tar -czf ../build.tar.gz *
-          working_directory: ~/rss_temple/rss_temple/
+          command: tar -czf build.tar.gz rss_temple api manage.py
       - store_artifacts:
-          path: ~/rss_temple/build.tar.gz
+          path: ~/build.tar.gz
   test:
     docker:
-      - image: circleci/python:3.6.10
+      - image: circleci/python:3.11.3
         environment:
           PIPENV_VERBOSITY: -1
-    working_directory: ~/rss_temple/
     steps:
       - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
       - restore_cache:
-          key: dependency-cache-{{ checksum "~/rss_temple/rss_temple/Pipfile.lock" }}
+          key: dependency-cache-{{ checksum "Pipfile.lock" }}
       - run:
           name: pipenv setup
           command: |
-            sudo pip install -U pip
-            sudo pip install -U pipenv
+            pip install -U pip
+            pip install -U pipenv
       - run:
           name: pipenv install
           command: pipenv sync --dev
-          working_directory: ~/rss_temple/rss_temple/
       - save_cache:
-          key: dependency-cache-{{ checksum "~/rss_temple/rss_temple/Pipfile.lock" }}
+          key: dependency-cache-{{ checksum "Pipfile.lock" }}
           paths:
             - "~/.local/share/virtualenvs/"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.6/site-packages"
+            - "~/.pyenv/"
       - run:
           name: tests
-          command: pipenv run coverage run manage.py test --exclude-tag=remote api.tests daemons.tests
-          working_directory: ~/rss_temple/rss_temple/
+          command: pipenv run coverage run manage.py test --exclude-tag=remote api.tests
           environment:
             TEST_RUNNER_TYPE: xml
             TEST_OUTPUT_VERBOSE: 2
       - store_test_results:
-          path: ~/rss_temple/rss_temple/test-results/
+          path: ~/rss_temple/test-results/
       - store_artifacts:
-          path: ~/rss_temple/rss_temple/test-results/
+          path: ~/rss_temple/test-results/
       - run:
           name: codecov
           command: pipenv run codecov -X gcov
-          working_directory: ~/rss_temple/rss_temple/
