@@ -22,7 +22,7 @@ jobs:
           path: ~/build.tar.gz
   test:
     docker:
-      - image: circleci/python:3.11.3
+      - image: cimg/python:3.11.3
         environment:
           PIPENV_VERBOSITY: -1
     steps:
