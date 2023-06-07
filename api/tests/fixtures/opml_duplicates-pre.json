@@ -4,7 +4,7 @@
     "pk": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
     "fields": {
       "email": "test@test.com",
-      "password": "$argon2i$v=19$m=512,t=2,p=2$5Wvxro9dRBwFHnVSnt4DEw$oaoYZyboOOiVLxBrGIdN2g"
+      "password": "argon2$argon2i$v=19$m=512,t=2,p=2$5Wvxro9dRBwFHnVSnt4DEw$oaoYZyboOOiVLxBrGIdN2g"
     }
   },
   {

@@ -1,12 +1,15 @@
 [
 {
     "model": "api.user",
-    "pk": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
+    "_meta": "password: 'password'",
+    "pk": "36459680-3224-4678-aa68-72e38dd2998c",
     "fields": {
-        "password": "$argon2i$v=19$m=512,t=2,p=2$5Wvxro9dRBwFHnVSnt4DEw$oaoYZyboOOiVLxBrGIdN2g",
-        "email": "test@test.com",
+        "password": "argon2$argon2id$v=19$m=102400,t=2,p=8$T002eXMzdERtVkhORlFibE5PZ21aZA$AUClAfKeEKOWUz6+W+SvZT6IjWE7So0gssum3wEoj6M",
         "is_superuser": true,
-        "is_staff": true
+        "email": "test@test.com",
+        "is_staff": true,
+        "is_active": true,
+        "attributes": {}
     }
 }
 ]
