@@ -11,7 +11,6 @@ from django.http import (
 from django.utils import timezone
 
 from api import models
-from api.password_hasher import password_hasher
 from api.render import passwordreset as passwordresetrender
 
 _PASSWORDRESETTOKEN_EXPIRY_INTERVAL = None
@@ -100,12 +99,8 @@ def _passwordresettoken_reset_post(request):
     if password_reset_token is None:
         return HttpResponseNotFound("token not valid")
 
-    my_login = models.MyLogin.objects.get(user_id=password_reset_token.user_id)
-
-    my_login.pw_hash = password_hasher().hash(password)
-
     with transaction.atomic():
-        my_login.save(update_fields=["pw_hash"])
+        password_reset_token.user.set_password(password)
 
         password_reset_token.delete()
 

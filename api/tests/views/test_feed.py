@@ -33,18 +33,15 @@ class FeedTestCase(TestFileServerTestCase):
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def generate_credentials(self):
-        user = models.User.objects.create(email="test@test.com")
+        user = models.User.objects.create_user("test@test.com", None)
 
-        session = models.Session.objects.create(
-            user=user,
-            expires_at=timezone.now() + datetime.timedelta(days=2),
-        )
+        self.client.force_login(user)
 
-        return user, str(session.uuid)
+        return user
 
     @tag("slow")
     def test_feed_get(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         response = self.client.get(
             "/api/feed",
@@ -52,31 +49,29 @@ class FeedTestCase(TestFileServerTestCase):
                 "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
                 "fields": ",".join(fields.field_list("feed")),
             },
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_feed_get_no_url(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
-        response = self.client.get("/api/feed", HTTP_X_SESSION_TOKEN=session_token_str)
+        response = self.client.get("/api/feed")
         self.assertEqual(response.status_code, 400, response.content)
 
     @tag("slow")
     def test_feed_get_non_rss_url(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         response = self.client.get(
             "/api/feed",
             {
                 "url": f"{FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
             },
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feeds_query_post(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -91,7 +86,6 @@ class FeedTestCase(TestFileServerTestCase):
             "/api/feeds/query",
             ujson.dumps({"fields": list(fields.field_list("feed"))}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -104,16 +98,15 @@ class FeedTestCase(TestFileServerTestCase):
 
     @tag("slow")
     def test_feed_subscribe_post(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         response = self.client.post(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feed_subscribe_post_duplicate(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -128,13 +121,12 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.post(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
     @tag("slow")
     def test_feed_subscribe_post_existing_custom_title(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -151,30 +143,26 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.post(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0_ns/well_formed.xml&customtitle=Custom%20Title",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_feed_subscribe_post_no_url(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
-        response = self.client.post(
-            "/api/feed/subscribe", HTTP_X_SESSION_TOKEN=session_token_str
-        )
+        response = self.client.post("/api/feed/subscribe")
         self.assertEqual(response.status_code, 400, response.content)
 
     @tag("slow")
     def test_feed_subscribe_post_non_rss_url(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         response = self.client.post(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscribe_put(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -191,7 +179,6 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.put(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -203,7 +190,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
     def test_feed_subscribe_put_no_url(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -220,14 +207,13 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.put(
             "/api/feed/subscribe?customtitle=Custom%20Title%202",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"url", response.content)
         self.assertIn(b"missing", response.content)
 
     def test_feed_subscribe_put_not_subscribed(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -240,13 +226,12 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.put(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
         self.assertIn(b"not subscribed", response.content)
 
     def test_feed_subscribe_put_renames(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed1 = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -276,19 +261,17 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.put(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
         response = self.client.put(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
         self.assertIn(b"already used", response.content)
 
     def test_feed_subscribe_delete(self):
-        user, session_token_str = self.generate_credentials()
+        user = self.generate_credentials()
 
         feed = models.Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -303,23 +286,19 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.delete(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feed_subscribe_delete_not_subscribed(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
         response = self.client.delete(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
-            HTTP_X_SESSION_TOKEN=session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feed_subscribe_delete_no_url(self):
-        user, session_token_str = self.generate_credentials()
+        self.generate_credentials()
 
-        response = self.client.delete(
-            "/api/feed/subscribe", HTTP_X_SESSION_TOKEN=session_token_str
-        )
+        response = self.client.delete("/api/feed/subscribe")
         self.assertEqual(response.status_code, 400, response.content)

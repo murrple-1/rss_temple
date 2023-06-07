@@ -3,7 +3,6 @@ import logging
 import ujson
 
 from api import models
-from api.password_hasher import password_hasher
 from api.tests.views import ViewTestCase
 
 
@@ -109,11 +108,7 @@ class LoginTestCase(ViewTestCase):
         self.assertIn(b"must be", response.content)
 
     def test_my_login_post_already_exists(self):
-        user = models.User.objects.create(email="test@test.com")
-
-        models.MyLogin.objects.create(
-            user=user, pw_hash=password_hasher().hash("mypassword")
-        )
+        models.User.objects.create_user("test@test.com", "mypassword")
 
         response = self.client.post(
             "/api/login/my",
@@ -143,13 +138,10 @@ class LoginTestCase(ViewTestCase):
             self.assertEqual(response.status_code, 204, response.content)
 
     def test_google_login_post_duplicate_login(self):
-        user1 = models.User.objects.create(email="test1@test.com")
+        user1 = models.User.objects.create_user("test1@test.com", None)
         models.GoogleLogin.objects.create(g_user_id="googleid1", user=user1)
 
-        user2 = models.User.objects.create(email="test2@test.com")
-        models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash("password1"), user=user2
-        )
+        models.User.objects.create_user("test2@test.com", "password1")
 
         with self.settings(GOOGLE_TEST_ID="googleid1"):
             response = self.client.post(
@@ -304,13 +296,10 @@ class LoginTestCase(ViewTestCase):
             self.assertEqual(response.status_code, 204, response.content)
 
     def test_facebook_login_post_duplicate_login(self):
-        user1 = models.User.objects.create(email="test1@test.com")
+        user1 = models.User.objects.create_user("test1@test.com", None)
         models.FacebookLogin.objects.create(profile_id="facebookid1", user=user1)
 
-        user2 = models.User.objects.create(email="test2@test.com")
-        models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash("password1"), user=user2
-        )
+        models.User.objects.create_user("test2@test.com", "password1")
 
         with self.settings(FACEBOOK_TEST_ID="facebookid1"):
             response = self.client.post(
@@ -450,11 +439,7 @@ class LoginTestCase(ViewTestCase):
         self.assertIn(b"must be", response.content)
 
     def test_my_login_session_post(self):
-        user = models.User.objects.create(email="test@test.com")
-
-        models.MyLogin.objects.create(
-            user=user, pw_hash=password_hasher().hash("mypassword")
-        )
+        models.User.objects.create_user("test@test.com", "mypassword")
 
         response = self.client.post(
             "/api/login/my/session",
@@ -467,9 +452,7 @@ class LoginTestCase(ViewTestCase):
             "application/json",
         )
 
-        self.assertEqual(response.status_code, 200, response.content)
-        json_ = ujson.loads(response.content)
-        self.assertIsInstance(json_, str)
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_my_login_session_post_email_missing(self):
         response = self.client.post(
@@ -548,11 +531,7 @@ class LoginTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 403, response.content)
 
     def test_my_login_session_post_bad_password(self):
-        user = models.User.objects.create(email="test@test.com")
-
-        models.MyLogin.objects.create(
-            user=user, pw_hash=password_hasher().hash("mypassword")
-        )
+        models.User.objects.create_user("test@test.com", "mypassword")
 
         response = self.client.post(
             "/api/login/my/session",
@@ -568,7 +547,7 @@ class LoginTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 403, response.content)
 
     def test_google_login_session_post(self):
-        user = models.User.objects.create(email="test@test.com")
+        user = models.User.objects.create_user("test@test.com", None)
         models.GoogleLogin.objects.create(user=user, g_user_id="googleid")
 
         with self.settings(GOOGLE_TEST_ID="googleid"):
@@ -582,9 +561,7 @@ class LoginTestCase(ViewTestCase):
                 "application/json",
             )
 
-            self.assertEqual(response.status_code, 200, response.content)
-            json_ = ujson.loads(response.content)
-            self.assertIsInstance(json_, str)
+            self.assertEqual(response.status_code, 204, response.content)
 
     def test_google_login_session_post_create(self):
         with self.settings(GOOGLE_TEST_ID="googleid"):
@@ -633,7 +610,7 @@ class LoginTestCase(ViewTestCase):
         self.assertIn(b"must be", response.content)
 
     def test_facebook_login_session_post(self):
-        user = models.User.objects.create(email="test@test.com")
+        user = models.User.objects.create_user("test@test.com", None)
         models.FacebookLogin.objects.create(user=user, profile_id="facebookid")
 
         with self.settings(FACEBOOK_TEST_ID="facebookid"):
@@ -647,9 +624,7 @@ class LoginTestCase(ViewTestCase):
                 "application/json",
             )
 
-            self.assertEqual(response.status_code, 200, response.content)
-            json_ = ujson.loads(response.content)
-            self.assertIsInstance(json_, str)
+            self.assertEqual(response.status_code, 204, response.content)
 
     def test_facebook_login_session_post_create(self):
         with self.settings(FACEBOOK_TEST_ID="facebookid"):
@@ -698,17 +673,11 @@ class LoginTestCase(ViewTestCase):
         self.assertIn(b"must be", response.content)
 
     def test_session_delete(self):
-        user = models.User.objects.create(email="test@test.com")
-
-        session = models.Session.objects.create(user=user, expires_at=None)
+        user = models.User.objects.create_user("test@test.com", None)
 
         response = self.client.delete("/api/session")
-        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.status_code, 204, response.content)
 
-        response = self.client.delete("/api/session", HTTP_X_SESSION_TOKEN="bad-uuid")
-        self.assertEqual(response.status_code, 400, response.content)
-
-        response = self.client.delete(
-            "/api/session", HTTP_X_SESSION_TOKEN=str(session.uuid)
-        )
+        self.client.force_login(user)
+        response = self.client.delete("/api/session")
         self.assertEqual(response.status_code, 204, response.content)

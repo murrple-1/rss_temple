@@ -5,7 +5,6 @@ import uuid
 from django.utils import timezone
 
 from api import models
-from api.password_hasher import password_hasher
 from api.tests.views import ViewTestCase
 
 
@@ -32,10 +31,8 @@ class UserTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
-
-        models.MyLogin.objects.create(
-            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD)
+        cls.user = models.User.objects.create_user(
+            UserTestCase.USER_EMAIL, UserTestCase.USER_PASSWORD
         )
 
     def test_passwordresettoken_request_post(self):

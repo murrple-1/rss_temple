@@ -6,7 +6,6 @@ import ujson
 from django.utils import timezone
 
 from api import fields, models
-from api.password_hasher import password_hasher
 from api.tests.views import ViewTestCase
 
 
@@ -35,29 +34,25 @@ class UserTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email=UserTestCase.USER_EMAIL)
-        models.MyLogin.objects.create(
-            user=cls.user, pw_hash=password_hasher().hash(UserTestCase.USER_PASSWORD)
+        cls.user = models.User.objects.create_user(
+            UserTestCase.USER_EMAIL, UserTestCase.USER_PASSWORD
         )
 
-        cls.session = models.Session.objects.create(
-            user=cls.user,
-            expires_at=(timezone.now() + datetime.timedelta(days=2)),
-        )
+        models.User.objects.create_user(UserTestCase.NON_UNIQUE_EMAIL, "password2")
 
-        cls.session_token = cls.session.uuid
-        cls.session_token_str = str(cls.session.uuid)
+    def setUp(self):
+        super().setUp()
 
-        user2 = models.User.objects.create(email=UserTestCase.NON_UNIQUE_EMAIL)
-        models.MyLogin.objects.create(
-            user=user2, pw_hash=password_hasher().hash("password2")
-        )
+        UserTestCase.user.refresh_from_db()
+
+        self.client.force_login(UserTestCase.user)
 
     def test_user_get(self):
+        self.client.force_login(UserTestCase.user)
+
         response = self.client.get(
             "/api/user",
             {"fields": ",".join(fields.field_list("user"))},
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -74,7 +69,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -100,7 +94,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -120,7 +113,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -133,7 +125,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -146,7 +137,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -159,7 +149,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -172,7 +161,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -185,7 +173,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -199,19 +186,19 @@ class UserTestCase(ViewTestCase):
             },
         }
 
-        old_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+        old_password_hash = UserTestCase.user.password
 
         response = self.client.put(
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-        new_pw_hash = models.MyLogin.objects.get(user=UserTestCase.user).pw_hash
+        UserTestCase.user.refresh_from_db()
+        new_password_hash = UserTestCase.user.password
 
-        self.assertNotEqual(old_pw_hash, new_pw_hash)
+        self.assertNotEqual(old_password_hash, new_password_hash)
 
     def test_user_put_my_password_typeerror(self):
         body = {
@@ -223,7 +210,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -239,7 +225,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -256,7 +241,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -272,7 +256,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -289,7 +272,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -306,7 +288,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 403, response.content)
 
@@ -318,7 +299,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -330,7 +310,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -349,7 +328,6 @@ class UserTestCase(ViewTestCase):
                 "/api/user",
                 ujson.dumps(body),
                 content_type="application/json",
-                HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
             )
             self.assertEqual(response.status_code, 204, response.content)
 
@@ -370,7 +348,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -388,7 +365,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -400,7 +376,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -412,7 +387,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -431,7 +405,6 @@ class UserTestCase(ViewTestCase):
                 "/api/user",
                 ujson.dumps(body),
                 content_type="application/json",
-                HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
             )
             self.assertEqual(response.status_code, 204, response.content)
 
@@ -454,7 +427,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -472,7 +444,6 @@ class UserTestCase(ViewTestCase):
             "/api/user",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -514,7 +485,6 @@ class UserTestCase(ViewTestCase):
             "/api/user/attributes",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -537,7 +507,6 @@ class UserTestCase(ViewTestCase):
             "/api/user/attributes",
             ujson.dumps(body),
             content_type="application/json",
-            HTTP_X_SESSION_TOKEN=UserTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 

@@ -1,9 +1,6 @@
-import datetime
 import logging
 import random
 import uuid
-
-from django.utils import timezone
 
 from api import models
 from api.tests.views import ViewTestCase
@@ -31,15 +28,12 @@ class ProgressTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email="test@test.com")
+        cls.user = models.User.objects.create_user("test@test.com", None)
 
-        cls.session = models.Session.objects.create(
-            user=cls.user,
-            expires_at=timezone.now() + datetime.timedelta(days=2),
-        )
+    def setUp(self):
+        super().setUp()
 
-        cls.session_token = cls.session.uuid
-        cls.session_token_str = str(cls.session.uuid)
+        self.client.force_login(ProgressTestCase.user)
 
     @staticmethod
     def generate_entry(desc_count=10):
@@ -71,7 +65,6 @@ class ProgressTestCase(ViewTestCase):
     def test_feed_subscription_progress_get_404(self):
         response = self.client.get(
             f"/api/feed/subscribe/progress/{uuid.uuid4()}",
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -83,7 +76,6 @@ class ProgressTestCase(ViewTestCase):
 
         response = self.client.get(
             f"/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}",
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -122,7 +114,6 @@ class ProgressTestCase(ViewTestCase):
 
         response = self.client.get(
             f"/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}",
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -157,7 +148,6 @@ class ProgressTestCase(ViewTestCase):
 
         response = self.client.get(
             f"/api/feed/subscribe/progress/{feed_subscription_progress_entry.uuid}",
-            HTTP_X_SESSION_TOKEN=ProgressTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 

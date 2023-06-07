@@ -1,4 +1,3 @@
-import datetime
 import logging
 import uuid
 
@@ -31,15 +30,12 @@ class UserCategoryTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email="test@test.com")
+        cls.user = models.User.objects.create_user("test@test.com", None)
 
-        cls.session = models.Session.objects.create(
-            user=cls.user,
-            expires_at=timezone.now() + datetime.timedelta(days=2),
-        )
+    def setUp(self):
+        super().setUp()
 
-        cls.session_token = cls.session.uuid
-        cls.session_token_str = str(cls.session.uuid)
+        self.client.force_login(UserCategoryTestCase.user)
 
     def test_usercategory_get(self):
         user_category = models.UserCategory.objects.create(
@@ -48,14 +44,12 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.get(
             f"/api/usercategory/{user_category.uuid}",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategory_get_not_found(self):
         response = self.client.get(
             f"/api/usercategory/{uuid.uuid4()}",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -68,7 +62,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -77,7 +70,6 @@ class UserCategoryTestCase(ViewTestCase):
             "/api/usercategory",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -89,7 +81,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -106,7 +97,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -123,7 +113,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -140,7 +129,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -153,7 +141,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -174,7 +161,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -185,14 +171,12 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.delete(
             f"/api/usercategory/{user_category.uuid}",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_usercategory_delete_not_found(self):
         response = self.client.delete(
             f"/api/usercategory/{uuid.uuid4()}",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -205,7 +189,6 @@ class UserCategoryTestCase(ViewTestCase):
             "/api/usercategories/query",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -247,7 +230,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -284,7 +266,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -317,7 +298,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -329,7 +309,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -341,7 +320,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -363,7 +341,6 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -375,6 +352,5 @@ class UserCategoryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=UserCategoryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)

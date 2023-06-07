@@ -141,7 +141,7 @@ class AllFieldsTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email="test_fields@test.com")
+        cls.user = models.User.objects.create_user("test_fields@test.com", None)
 
         cls.user_category = models.UserCategory.objects.create(
             user=cls.user, text="Test Category"
@@ -202,7 +202,7 @@ class AllFieldsTestCase(TestCase):
 
 class FieldFnsTestCase(TestCase):
     def test_feedentry_isRead(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         class MockRequest:
             def __init__(self):

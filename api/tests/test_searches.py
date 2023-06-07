@@ -189,7 +189,7 @@ class AllSearchesTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email="test_searches@test.com")
+        cls.user = models.User.objects.create_user("test_searches@test.com", None)
 
     def test_run(self):
         self.assertEqual(len(AllSearchesTestCase.TRIALS), len(searches._search_fns))

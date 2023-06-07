@@ -5,6 +5,7 @@ import argon2
 import ujson
 import validators
 from django.conf import settings
+from django.contrib.auth import authenticate, login, logout
 from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
@@ -17,7 +18,6 @@ from django.http import (
 from django.utils import timezone
 
 from api import models, query_utils
-from api.password_hasher import password_hasher
 from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
@@ -153,7 +153,7 @@ def _my_login_post(request):
     if type(json_["password"]) is not str:
         return HttpResponseBadRequest("'password' must be string")
 
-    if models.MyLogin.objects.filter(user__email__iexact=json_["email"]).exists():
+    if models.User.objects.filter(email__iexact=json_["email"]).exists():
         return HttpResponse("login already exists", status=409)
 
     with transaction.atomic():
@@ -162,16 +162,12 @@ def _my_login_post(request):
         try:
             user = models.User.objects.get(email__iexact=json_["email"])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=json_["email"])
+            user = models.User.objects.create_user(json_["email"], json_["password"])
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
-
-        models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(json_["password"]), user=user
-        )
 
         if verification_token is not None:
             _prepare_verify_notification(verification_token.token_str(), json_["email"])
@@ -221,7 +217,7 @@ def _google_login_post(request):
 
     if (
         models.GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
-        or models.MyLogin.objects.filter(user__email__iexact=json_["email"]).exists()
+        or models.User.objects.filter(email__iexact=json_["email"]).exists()
     ):
         return HttpResponse("login already exists", status=409)
 
@@ -232,16 +228,12 @@ def _google_login_post(request):
         try:
             user = models.User.objects.get(email__iexact=json_["email"])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=json_["email"])
+            user = models.User.objects.create_user(json_["email"], json_["password"])
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
-
-        models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(json_["password"]), user=user
-        )
 
         models.GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
 
@@ -293,7 +285,7 @@ def _facebook_login_post(request):
 
     if (
         models.FacebookLogin.objects.filter(profile_id=fb_id).exists()
-        or models.MyLogin.objects.filter(user__email__iexact=json_["email"]).exists()
+        or models.User.objects.filter(email__iexact=json_["email"]).exists()
     ):
         return HttpResponse("login already exists", status=409)
 
@@ -304,16 +296,12 @@ def _facebook_login_post(request):
         try:
             user = models.User.objects.get(email__iexact=json_["email"])
         except models.User.DoesNotExist:
-            user = models.User.objects.create(email=json_["email"])
+            user = models.User.objects.create_user(json_["email"], json_["password"])
 
             verification_token = models.VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
-
-        models.MyLogin.objects.create(
-            pw_hash=password_hasher().hash(json_["password"]), user=user
-        )
 
         models.FacebookLogin.objects.create(profile_id=fb_id, user=user)
 
@@ -348,24 +336,13 @@ def _my_login_session_post(request):
     if type(json_["password"]) is not str:
         return HttpResponseBadRequest("'password' must be string")
 
-    my_login = None
-    try:
-        my_login = models.MyLogin.objects.get(user__email__iexact=json_["email"])
-    except models.MyLogin.DoesNotExist:
+    user = authenticate(request, username=json_["email"], password=json_["password"])
+    if user is None:
         return HttpResponseForbidden()
 
-    try:
-        password_hasher().verify(my_login.pw_hash, json_["password"])
-    except argon2.exceptions.VerifyMismatchError:
-        return HttpResponseForbidden()
+    login(request, user)
 
-    session = models.Session.objects.create(
-        user=my_login.user,
-        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(str(session.uuid))
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _google_login_session_post(request):
@@ -406,13 +383,9 @@ def _google_login_session_post(request):
         content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
-    session = models.Session.objects.create(
-        user=google_login.user,
-        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
-    )
+    login(request, google_login.user)
 
-    content, content_type = query_utils.serialize_content(str(session.uuid))
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _facebook_login_session_post(request):
@@ -453,26 +426,12 @@ def _facebook_login_session_post(request):
         content, content_type = query_utils.serialize_content(ret_obj)
         return HttpResponse(content, content_type, status=422)
 
-    session = models.Session.objects.create(
-        user=facebook_login.user,
-        expires_at=timezone.now() + _SESSION_EXPIRY_INTERVAL,
-    )
+    login(request, facebook_login.user)
 
-    content, content_type = query_utils.serialize_content(str(session.uuid))
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _session_delete(request):
-    session_token = request.META.get("HTTP_X_SESSION_TOKEN")
-    if session_token is None:
-        return HttpResponseBadRequest("'X-Session-Token' header missing")
-
-    session_token_uuid = None
-    try:
-        session_token_uuid = uuid.UUID(session_token)
-    except ValueError:
-        return HttpResponseBadRequest("'X-Session-Token' header malformed")
-
-    models.Session.objects.filter(uuid=session_token_uuid).delete()
+    logout(request)
 
     return HttpResponse(status=204)

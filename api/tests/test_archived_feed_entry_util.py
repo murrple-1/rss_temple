@@ -13,7 +13,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=1,
         ):
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
@@ -100,7 +100,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=2,
         ):
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
@@ -187,7 +187,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=5,
         ):
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
@@ -276,7 +276,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
         ):
             self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
@@ -366,7 +366,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
         ):
             self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
@@ -456,7 +456,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
         ):
             self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create(email="test@test.com")
+            user = models.User.objects.create_user("test@test.com", None)
 
             feed = models.Feed.objects.create(
                 feed_url="http://example.com/rss.xml",

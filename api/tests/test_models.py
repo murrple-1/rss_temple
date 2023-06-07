@@ -7,12 +7,11 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api import models
-from api.password_hasher import password_hasher
 
 
 class UserTestCase(TestCase):
     def test_category_dict(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         user_category = models.UserCategory.objects.create(user=user, text="Category")
 
@@ -51,7 +50,7 @@ class UserTestCase(TestCase):
         self.assertIn(feed2, category_dict[None])
 
     def test_subscribed_feeds_dict(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed1 = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -84,7 +83,7 @@ class UserTestCase(TestCase):
         self.assertEqual(subscribed_feeds_dict[feed2.uuid], feed2)
 
     def test_read_feed_entry_mappings(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -107,7 +106,7 @@ class UserTestCase(TestCase):
         self.assertEqual(user.read_feed_entry_mappings().count(), 1)
 
     def test_read_feed_entry_uuids(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -133,7 +132,7 @@ class UserTestCase(TestCase):
         self.assertIn(feed_entry.uuid, uuids)
 
     def test_favorite_feed_entry_mappings(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -158,7 +157,7 @@ class UserTestCase(TestCase):
         self.assertEqual(user.favorite_feed_entry_mappings().count(), 1)
 
     def test_favorite_feed_entry_uuids(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -185,21 +184,8 @@ class UserTestCase(TestCase):
         self.assertEqual(len(uuids), 1)
         self.assertIn(feed_entry.uuid, uuids)
 
-    def test_my_login(self):
-        user = models.User.objects.create(email="test_fields@test.com")
-
-        self.assertIsNone(user.my_login())
-
-        del user._my_login
-
-        models.MyLogin.objects.create(
-            user=user, pw_hash=password_hasher().hash("mypassword")
-        )
-
-        self.assertIsNotNone(user.my_login())
-
     def test_google_login(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         self.assertIsNone(user.google_login())
 
@@ -210,7 +196,7 @@ class UserTestCase(TestCase):
         self.assertIsNotNone(user.google_login())
 
     def test_facebook_login(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         self.assertIsNone(user.facebook_login())
 
@@ -232,7 +218,7 @@ class VerificationTokenTestCase(TestCase):
 
         self.assertIsNone(models.VerificationToken.find_by_token(str(uuid.uuid4())))
 
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         verification_token = models.VerificationToken.objects.create(
             user=user,
@@ -255,7 +241,7 @@ class PasswordResetTokenTestCase(TestCase):
 
         self.assertIsNone(models.PasswordResetToken.find_by_token(str(uuid.uuid4())))
 
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         password_reset_token = models.PasswordResetToken.objects.create(
             user=user,
@@ -269,7 +255,7 @@ class PasswordResetTokenTestCase(TestCase):
 
 class UserCategoryTestCase(TestCase):
     def test_feeds(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         user_category = models.UserCategory.objects.create(user=user, text="Category")
 
@@ -309,7 +295,7 @@ class FeedTestCase(TestCase):
         self.assertTrue(hasattr(feed, "is_subscribed"))
 
     def test_user_categories(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         user_category = models.UserCategory.objects.create(user=user, text="Category")
 
@@ -361,7 +347,7 @@ class FeedTestCase(TestCase):
         self.assertEqual(feed.feed_entries().count(), 1)
 
     def test_counts(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -435,7 +421,7 @@ class FeedEntryTestCase(TestCase):
         self.assertFalse(feed_entry1 == object())
 
     def test_from_subscription(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed1 = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -474,7 +460,7 @@ class FeedEntryTestCase(TestCase):
         self.assertTrue(feed_entry2.from_subscription(user))
 
     def test_is_read(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -506,7 +492,7 @@ class FeedEntryTestCase(TestCase):
         self.assertTrue(feed_entry2.is_read(user))
 
     def test_is_favorite(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -538,7 +524,7 @@ class FeedEntryTestCase(TestCase):
         self.assertTrue(feed_entry2.is_favorite(user))
 
     def test_read_mapping(self):
-        user = models.User.objects.create(email="test_fields@test.com")
+        user = models.User.objects.create_user("test_fields@test.com", None)
 
         feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",

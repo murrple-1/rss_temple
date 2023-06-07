@@ -32,15 +32,7 @@ class FeedEntryTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create(email="test@test.com")
-
-        cls.session = models.Session.objects.create(
-            user=cls.user,
-            expires_at=timezone.now() + datetime.timedelta(days=2),
-        )
-
-        cls.session_token = cls.session.uuid
-        cls.session_token_str = str(cls.session.uuid)
+        cls.user = models.User.objects.create_user("test@test.com", None)
 
         cls.feed = models.Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -50,6 +42,11 @@ class FeedEntryTestCase(ViewTestCase):
             updated_at=None,
             db_updated_at=None,
         )
+
+    def setUp(self):
+        super().setUp()
+
+        self.client.force_login(FeedEntryTestCase.user)
 
     def test_feedentry_get(self):
         feed_entry = models.FeedEntry.objects.create(
@@ -66,14 +63,12 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.get(
             f"/api/feedentry/{feed_entry.uuid}",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_feedentry_get_not_found(self):
         response = self.client.get(
             f"/api/feedentry/{uuid.uuid4()}",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -94,7 +89,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/query",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -113,7 +107,6 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             f"/api/feedentry/{feed_entry.uuid}/read",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -129,7 +122,6 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentry_read_post_not_found(self):
         response = self.client.post(
             f"/api/feedentry/{uuid.uuid4()}/read",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -153,7 +145,6 @@ class FeedEntryTestCase(ViewTestCase):
         with transaction.atomic():
             response = self.client.post(
                 f"/api/feedentry/{feed_entry.uuid}/read",
-                HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
             )
             self.assertEqual(response.status_code, 200, response.content)
 
@@ -182,7 +173,6 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.delete(
             f"/api/feedentry/{feed_entry.uuid}/read",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -225,7 +215,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -246,7 +235,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -268,7 +256,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -284,7 +271,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/read",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -293,7 +279,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/read",
             ujson.dumps([]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -306,7 +291,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -319,7 +303,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -332,7 +315,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -345,7 +327,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -358,7 +339,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -371,7 +351,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -400,7 +379,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -441,7 +419,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/read",
             ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -456,7 +433,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/read",
             ujson.dumps([]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -465,7 +441,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/read",
             ujson.dumps([0]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -484,7 +459,6 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             f"/api/feedentry/{feed_entry.uuid}/favorite",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -497,7 +471,6 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentry_favorite_post_not_found(self):
         response = self.client.post(
             f"/api/feedentry/{uuid.uuid4()}/favorite",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -520,7 +493,6 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             f"/api/feedentry/{feed_entry.uuid}/favorite",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -543,7 +515,6 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.delete(
             f"/api/feedentry/{feed_entry.uuid}/favorite",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -582,7 +553,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -598,7 +568,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -607,7 +576,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([0]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -616,7 +584,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([str(uuid.uuid4())]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -641,7 +608,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([str(feed_entry.uuid)]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -682,7 +648,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -697,7 +662,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -706,7 +670,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/favorite",
             ujson.dumps([0]),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -715,7 +678,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/query/stable/create",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -739,7 +701,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/query/stable/create",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -754,7 +715,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
 
         self.assertEqual(response.status_code, 200, response.content)
@@ -769,7 +729,6 @@ class FeedEntryTestCase(ViewTestCase):
             "/api/feedentries/query/stable",
             ujson.dumps({}),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -784,7 +743,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -799,7 +757,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -814,7 +771,6 @@ class FeedEntryTestCase(ViewTestCase):
                 }
             ),
             "application/json",
-            HTTP_X_SESSION_TOKEN=FeedEntryTestCase.session_token_str,
         )
         self.assertEqual(response.status_code, 200, response.content)
 

@@ -1,9 +1,7 @@
-import logging
-
-import argon2
 import ujson
 import validators
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
@@ -18,12 +16,8 @@ from django.utils import timezone
 
 from api import models, query_utils
 from api.exceptions import QueryException
-from api.password_hasher import password_hasher
 from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
-
-_logger = logging.getLogger("rss_temple")
-
 
 _OBJECT_NAME = "user"
 
@@ -128,13 +122,10 @@ def _user_put(request):
 
             has_changed = True
 
-    my_login = None
     if "my" in json_:
         my_json = json_["my"]
         if type(my_json) is not dict:
             return HttpResponseBadRequest("'my' must be object")
-
-        my_login = user.my_login()
 
         if "password" in my_json:
             password_json = my_json["password"]
@@ -153,12 +144,10 @@ def _user_put(request):
             if type(password_json["new"]) is not str:
                 return HttpResponseBadRequest("'new' must be string")
 
-            try:
-                password_hasher().verify(my_login.pw_hash, password_json["old"])
-            except argon2.exceptions.VerifyMismatchError:
+            if not check_password(password_json["old"], user.password):
                 return HttpResponseForbidden()
 
-            my_login.pw_hash = password_hasher().hash(password_json["new"])
+            user.set_password(password_json["new"])
 
             has_changed = True
 
@@ -229,9 +218,6 @@ def _user_put(request):
     if has_changed:
         with transaction.atomic():
             user.save()
-
-            if my_login is not None:
-                my_login.save()
 
             if google_login_db_fn is not None:
                 google_login_db_fn()

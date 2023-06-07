@@ -29,7 +29,7 @@ class DaemonTestCase(TestFileServerTestCase):
         logger().setLevel(cls.old_logger_level)
 
     def generate_credentials(self):
-        return models.User.objects.create(email="test@test.com")
+        return models.User.objects.create_user("test@test.com", None)
 
     def test_get_first_entry(self):
         user = self.generate_credentials()

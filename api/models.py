@@ -1,17 +1,50 @@
 import uuid
 
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Now
 from django.db.models.query_utils import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
-class User(models.Model):
+class UserManager(BaseUserManager):
+    def create_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError(_("The Email must be set"))
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError(_("Superuser must have is_staff=True."))
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError(_("Superuser must have is_superuser=True."))
+
+        return self.create_user(email, password, **extra_fields)
+
+
+class User(AbstractBaseUser, PermissionsMixin):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    email = models.CharField(max_length=64, unique=True)
+    email = models.EmailField(unique=True)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     attributes = models.JSONField(null=False, default=dict)
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
 
     def category_dict(self):
         category_dict = getattr(self, "_category_dict", None)
@@ -113,15 +146,6 @@ class User(models.Model):
 
         return favorite_feed_entry_uuids
 
-    def my_login(self):
-        if not hasattr(self, "_my_login"):
-            try:
-                self._my_login = MyLogin.objects.get(user=self)
-            except MyLogin.DoesNotExist:
-                self._my_login = None
-
-        return self._my_login
-
     def google_login(self):
         if not hasattr(self, "_google_login"):
             try:
@@ -149,22 +173,12 @@ class Login(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
-class MyLogin(Login):
-    pw_hash = models.CharField(max_length=96)
-
-
 class GoogleLogin(Login):
     g_user_id = models.CharField(max_length=96)
 
 
 class FacebookLogin(Login):
     profile_id = models.CharField(max_length=96)
-
-
-class Session(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    expires_at = models.DateTimeField(null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class VerificationToken(models.Model):

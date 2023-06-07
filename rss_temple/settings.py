@@ -52,7 +52,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "api.middleware.throttle.ThrottleMiddleware",
     "api.middleware.profiling.ProfileMiddleware",
-    "api.middleware.authentication.AuthenticationMiddleware",
 ]
 
 ROOT_URLCONF = "rss_temple.urls"
@@ -104,6 +103,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+]
+
+AUTH_USER_MODEL = "api.User"
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
 
@@ -205,20 +214,6 @@ THROTTLE_ENABLE = [
 ]
 
 PROFILING_OUTPUT_FILE = os.environ.get("PROFILING_OUTPUT_FILE")
-
-AUTHENTICATION_DISABLE = [
-    (r"^/api/login/my/?$", ["POST"]),
-    (r"^/api/login/google/?$", ["POST"]),
-    (r"^/api/login/facebook/?$", ["POST"]),
-    (r"^/api/login/my/session/?$", ["POST"]),
-    (r"^/api/login/google/session/?$", ["POST"]),
-    (r"^/api/login/facebook/session/?$", ["POST"]),
-    (r"^/api/session/?$", ["DELETE"]),
-    (r"^/api/passwordresettoken/request/?$", ["POST"]),
-    (r"^/api/passwordresettoken/reset/?$", ["POST"]),
-    (r"^/api/passwordresettoken/reset/?$", ["POST"]),
-    (r"^/api/user/verify/?$", ["POST"]),
-]
 
 REALM = "RSS Temple"
 
