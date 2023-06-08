@@ -1,6 +1,7 @@
 import logging
+import traceback
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 from tabulate import tabulate
 
@@ -58,7 +59,11 @@ class Command(BaseCommand):
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
             except ValueError:  # pragma: no cover
-                self.stderr.write(self.style.ERROR(f"unable to parse d_entry {index}"))
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"unable to parse d_entry {index}\n{traceback.format_exc()}"
+                    )
+                )
                 continue
 
             feed_entry.feed = feed

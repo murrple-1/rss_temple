@@ -1,11 +1,12 @@
-import logging
 import re
 import smtplib
+from io import StringIO
+from unittest.mock import patch
 
 from django.test import TestCase
 
 from api import models
-from daemons.notify_daemon.impl import logger, render
+from api.management.commands.notifydaemon import Command
 
 
 def _mock_send_email(*args, **kwargs):
@@ -20,19 +21,25 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logger().getEffectiveLevel()
+        cls.command = Command()
+        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
+        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
 
-        logger().setLevel(logging.CRITICAL)
+    def setUp(self):
+        super().setUp()
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
+        self.stdout_patcher.start()
+        self.stderr_patcher.start()
 
-        logger().setLevel(cls.old_logger_level)
+    def tearDown(self):
+        super().tearDown()
+
+        self.stdout_patcher.stop()
+        self.stderr_patcher.stop()
 
     def test_render_empty(self):
         self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 0)
-        render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
 
     def test_render_regular(self):
         email_entry = models.NotifyEmailQueueEntry.objects.create(
@@ -55,7 +62,8 @@ class DaemonTestCase(TestCase):
         )
 
         self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 1)
-        render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+
         self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 0)
 
     def test_render_smtpdisconnected(self):
@@ -71,19 +79,11 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise smtplib.SMTPServerDisconnected()
 
-        with self.assertLogs(logger(), logging.ERROR) as cm:
-            render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        stderr_value = self.command.stderr.getvalue()
 
-            self.assertGreaterEqual(
-                len(
-                    [
-                        line
-                        for line in cm.output
-                        if re.search(r"SMTP server disconnected", line)
-                    ]
-                ),
-                1,
-            )
+        matches = re.findall(r"SMTP server disconnected", stderr_value)
+        self.assertGreaterEqual(len(matches), 1, stderr_value)
 
     def test_render_generalerror(self):
         email_entry = models.NotifyEmailQueueEntry.objects.create(
@@ -98,19 +98,11 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise Exception()
 
-        with self.assertLogs(logger(), logging.ERROR) as cm:
-            render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
+        stderr_value = self.command.stderr.getvalue()
 
-            self.assertGreaterEqual(
-                len(
-                    [
-                        line
-                        for line in cm.output
-                        if re.search(r"error sending email notification", line)
-                    ]
-                ),
-                1,
-            )
+        matches = re.findall(r"error sending email notification", stderr_value)
+        self.assertGreaterEqual(len(matches), 1, stderr_value)
 
     def test_render_countwarning(self):
         email_entry1 = models.NotifyEmailQueueEntry.objects.create(
@@ -134,18 +126,10 @@ class DaemonTestCase(TestCase):
         def _mock_send_email(*args, **kwargs):
             raise Exception()
 
-        with self.assertLogs(logger(), logging.WARNING) as cm:
-            render(_mock_send_email, 1)
+        self.command._render(_mock_send_email, 1)
+        stderr_value = self.command.stderr.getvalue()
 
-            self.assertGreaterEqual(
-                len(
-                    [
-                        line
-                        for line in cm.output
-                        if re.search(
-                            r"still more email queue entries than expected", line
-                        )
-                    ]
-                ),
-                1,
-            )
+        matches = re.findall(
+            r"still more email queue entries than expected", stderr_value
+        )
+        self.assertGreaterEqual(len(matches), 1, stderr_value)

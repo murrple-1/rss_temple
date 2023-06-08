@@ -1,7 +1,6 @@
 [coverage:run]
 include =
     api/*
-    daemons/*
 plugins =
 	coverage_conditional_plugin
 omit =

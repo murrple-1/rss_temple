@@ -1,16 +1,12 @@
-import datetime
-import logging
+from io import StringIO
+from unittest.mock import patch
 
 from django.test import tag
 from django.utils import timezone
 
 from api import models
+from api.management.commands.subscriptionsetupdaemon import Command
 from api.tests import TestFileServerTestCase
-from daemons.subscription_setup_daemon.impl import (
-    do_subscription,
-    get_first_entry,
-    logger,
-)
 
 
 class DaemonTestCase(TestFileServerTestCase):
@@ -18,15 +14,21 @@ class DaemonTestCase(TestFileServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logger().getEffectiveLevel()
+        cls.command = Command()
+        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
+        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
 
-        logger().setLevel(logging.CRITICAL)
+    def setUp(self):
+        super().setUp()
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
+        self.stdout_patcher.start()
+        self.stderr_patcher.start()
 
-        logger().setLevel(cls.old_logger_level)
+    def tearDown(self):
+        super().tearDown()
+
+        self.stdout_patcher.stop()
+        self.stderr_patcher.stop()
 
     def generate_credentials(self):
         return models.User.objects.create_user("test@test.com", None)
@@ -34,7 +36,7 @@ class DaemonTestCase(TestFileServerTestCase):
     def test_get_first_entry(self):
         user = self.generate_credentials()
 
-        feed_subscription_progress_entry = get_first_entry()
+        feed_subscription_progress_entry = self.command._get_first_entry()
 
         self.assertIsNone(feed_subscription_progress_entry)
 
@@ -47,9 +49,10 @@ class DaemonTestCase(TestFileServerTestCase):
             models.FeedSubscriptionProgressEntry.NOT_STARTED,
         )
 
-        feed_subscription_progress_entry = get_first_entry()
+        feed_subscription_progress_entry = self.command._get_first_entry()
 
         self.assertIsNotNone(feed_subscription_progress_entry)
+        assert feed_subscription_progress_entry is not None
         self.assertEqual(
             feed_subscription_progress_entry.status,
             models.FeedSubscriptionProgressEntry.STARTED,
@@ -129,14 +132,15 @@ class DaemonTestCase(TestFileServerTestCase):
 
                     count += 1
 
-        feed_subscription_progress_entry = get_first_entry()
+        feed_subscription_progress_entry = self.command._get_first_entry()
 
+        assert feed_subscription_progress_entry is not None
         self.assertEqual(
             feed_subscription_progress_entry.status,
             models.FeedSubscriptionProgressEntry.STARTED,
         )
 
-        do_subscription(feed_subscription_progress_entry)
+        self.command._do_subscription(feed_subscription_progress_entry)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,

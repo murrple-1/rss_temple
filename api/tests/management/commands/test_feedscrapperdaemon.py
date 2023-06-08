@@ -1,16 +1,13 @@
 import datetime
 import logging
+from io import StringIO
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
 
 from api import models
-from daemons.feed_scrapper_daemon.impl import (
-    error_update_backoff_until,
-    logger,
-    scrape_feed,
-    success_update_backoff_until,
-)
+from api.management.commands.feedscrapperdaemon import Command
 
 
 class DaemonTestCase(TestCase):
@@ -18,17 +15,30 @@ class DaemonTestCase(TestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_daemon_logger_level = logger().getEffectiveLevel()
         cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
 
-        logger().setLevel(logging.CRITICAL)
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+
+        cls.command = Command()
+        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
+        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
+
+    def setUp(self):
+        super().setUp()
+
+        self.stdout_patcher.start()
+        self.stderr_patcher.start()
+
+    def tearDown(self):
+        super().tearDown()
+
+        self.stdout_patcher.stop()
+        self.stderr_patcher.stop()
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logger().setLevel(cls.old_daemon_logger_level)
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
 
     def test_scrape_feed(self):
@@ -42,13 +52,13 @@ class DaemonTestCase(TestCase):
         with open("api/tests/test_files/atom_1.0/well_formed.xml", "r") as f:
             text = f.read()
 
-        scrape_feed(feed, text)
+        self.command._scrape_feed(feed, text)
 
         feed_count = models.Feed.objects.count()
         feed_entry_count = models.FeedEntry.objects.count()
 
         # do it twice to make sure duplicate entries aren't added
-        scrape_feed(feed, text)
+        self.command._scrape_feed(feed, text)
 
         self.assertEqual(feed_count, models.Feed.objects.count())
         self.assertEqual(feed_entry_count, models.FeedEntry.objects.count())
@@ -70,7 +80,7 @@ class DaemonTestCase(TestCase):
 
             feed.db_updated_at = timezone.now()
 
-            feed.update_backoff_until = success_update_backoff_until(feed)
+            feed.update_backoff_until = self.command._success_update_backoff_until(feed)
 
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
@@ -95,21 +105,21 @@ class DaemonTestCase(TestCase):
 
             feed.update_backoff_until = feed.db_created_at
 
-            feed.update_backoff_until = error_update_backoff_until(feed)
+            feed.update_backoff_until = self.command._error_update_backoff_until(feed)
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
                 (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(),
                 delta=1,
             )
 
-            feed.update_backoff_until = error_update_backoff_until(feed)
+            feed.update_backoff_until = self.command._error_update_backoff_until(feed)
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
                 (feed.db_created_at + datetime.timedelta(seconds=120)).timestamp(),
                 delta=1,
             )
 
-            feed.update_backoff_until = error_update_backoff_until(feed)
+            feed.update_backoff_until = self.command._error_update_backoff_until(feed)
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
                 (feed.db_created_at + datetime.timedelta(seconds=230)).timestamp(),
