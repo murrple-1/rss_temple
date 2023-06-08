@@ -11,7 +11,7 @@ from api.exceptions import QueryException
 
 
 class Command(BaseCommand):
-    help = "Daemon to send periodically web-scrape the various feeds and update our DB"
+    help = "Daemon to send process subscriptions asynchronously"
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         try:
