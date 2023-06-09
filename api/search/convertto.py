@@ -11,25 +11,25 @@ _max_dt = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
 class CustomConvertTo:
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         raise RuntimeError("Abstract Method")
 
 
 class Bool(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         return search_obj.lower() == "true"
 
 
 class Int(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         return int(search_obj)
 
 
 class IntList(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         if search_obj.strip() == "":
             return []
 
@@ -38,31 +38,31 @@ class IntList(CustomConvertTo):
 
 class IntRange(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         parts = search_obj.split("|")
         return (int(parts[0]), int(parts[1]))
 
 
 class FloatRange(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         parts = search_obj.split("|")
         return (float(parts[0]), float(parts[1]))
 
 
 class DateTime(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         return datetime.datetime.fromisoformat(search_obj)
 
 
 class DateTimeRange(CustomConvertTo):
     @staticmethod
-    def _to_datetime(part):
+    def _to_datetime(part: str):
         return datetime.datetime.fromisoformat(part)
 
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         parts = search_obj.split("|")
 
         start_datetime = DateTimeRange._to_datetime(parts[0]) if parts[0] else _min_dt
@@ -72,13 +72,13 @@ class DateTimeRange(CustomConvertTo):
 
 class Uuid(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         return uuid.UUID(search_obj)
 
 
 class UuidList(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj):
+    def convertto(search_obj: str):
         return [uuid.UUID(uuid_str) for uuid_str in search_obj.split(",")]
 
 
@@ -88,7 +88,7 @@ _DATE_DELTA_RANGE_EARLIER_THAN_REGEX = re.compile(r"^earlier_than:(\d+)([yMwdhms
 
 class DateTimeDeltaRange(CustomConvertTo):
     @staticmethod
-    def _diff(type_, number):
+    def _diff(type_: str, number: int):
         if type_ == "y":
             return relativedelta(years=-number)
         elif type_ == "M":
@@ -107,7 +107,7 @@ class DateTimeDeltaRange(CustomConvertTo):
         raise RuntimeError("unknown type_")  # pragma: no cover
 
     @staticmethod
-    def convertto(search_obj, now=None):
+    def convertto(search_obj: str, now: datetime.datetime | None = None):
         now = now or timezone.now()
 
         older_than_match = _DATE_DELTA_RANGE_OLDER_THAN_REGEX.search(search_obj)

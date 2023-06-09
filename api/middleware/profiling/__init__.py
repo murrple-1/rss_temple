@@ -1,14 +1,16 @@
 import os
+from typing import Any, Callable
 
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
+from django.http import HttpRequest, HttpResponse
 
-_OUTPUT_FILE = None
+_OUTPUT_FILE: str | None
 
 
 @receiver(setting_changed)
-def _load_global_settings(*args, **kwargs):
+def _load_global_settings(*args: Any, **kwargs: Any):
     global _OUTPUT_FILE
 
     _OUTPUT_FILE = settings.PROFILING_OUTPUT_FILE
@@ -18,10 +20,10 @@ _load_global_settings()
 
 
 class ProfileMiddleware:
-    def __init__(self, get_response):
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest):
         if (
             _OUTPUT_FILE is not None
             and settings.DEBUG

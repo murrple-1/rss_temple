@@ -1,14 +1,18 @@
 import html
 import re
+from typing import Any
 from urllib.parse import urlparse
 
 import bleach
+import bleach.html5lib_shim
+import bleach.sanitizer
 import html5lib
 from html5lib.filters.base import Filter as HTML5LibFilter
+from html5lib.treewalkers.base import TreeWalker
 
 
 class TagRemovalFilter(HTML5LibFilter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.tag = kwargs.pop("tag")
         super().__init__(*args, **kwargs)
 
@@ -25,12 +29,12 @@ class TagRemovalFilter(HTML5LibFilter):
 
 
 class ScriptRemovalFiler(TagRemovalFilter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, tag="script", **kwargs)
 
 
 class StyleRemovalFiler(TagRemovalFilter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, tag="style", **kwargs)
 
 
@@ -50,7 +54,7 @@ class HTTPSOnlyImgFilter(HTML5LibFilter):
 class EmptyAnchorFilter(HTML5LibFilter):
     def __iter__(self):
         tag_depth = 0
-        seen_tokens = []
+        seen_tokens: list[dict[str, Any]] = []
         for token in super().__iter__():
             if token["type"] == "StartTag" and token["name"] == "a":
                 tag_depth += 1
@@ -116,10 +120,10 @@ class BadIFrameFilter(HTML5LibFilter):
                 yield token
 
 
-_my_bleach_filter_kwargs_ = None
+_my_bleach_filter_kwargs_: dict[str, Any] | None = None
 
 
-def _html_sanitizer_stream(source):
+def _html_sanitizer_stream(source: TreeWalker):
     global _my_bleach_filter_kwargs_
     if _my_bleach_filter_kwargs_ is None:
         tags = set(bleach.sanitizer.ALLOWED_TAGS)
@@ -163,11 +167,11 @@ def _html_sanitizer_stream(source):
 _is_html_regex = re.compile(r"<\/?[a-z][\s\S]*>", re.IGNORECASE)
 
 
-def is_html(text):
+def is_html(text: str):
     return _is_html_regex.search(text) is not None
 
 
-def sanitize(text):
+def sanitize(text: str):
     if is_html(text):
         return sanitize_html(text)
     else:
@@ -177,12 +181,12 @@ def sanitize(text):
 _html_serializer = html5lib.serializer.HTMLSerializer(resolve_entities=False)
 
 
-def sanitize_html(text):
+def sanitize_html(text: str):
     dom = html5lib.parse(text, treebuilder="lxml")
     walker = html5lib.getTreeWalker("lxml")
     stream = _html_sanitizer_stream(walker(dom))
     return _html_serializer.render(stream)
 
 
-def sanitize_plain(text):
+def sanitize_plain(text: str):
     return "<br>".join(html.escape(text).splitlines())

@@ -2,10 +2,10 @@ import os
 
 import xmlschema
 
-_schema = None
+_schema: xmlschema.XMLSchema | None = None
 
 
-def schema():
+def schema() -> xmlschema.XMLSchema:
     global _schema
 
     if _schema is None:

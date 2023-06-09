@@ -1,5 +1,10 @@
+from typing import Any, Callable, TypedDict
+
+from django.http import HttpRequest
+
+
 class _FieldConfig:
-    def __init__(self, accessor, default):
+    def __init__(self, accessor: Callable[[HttpRequest, Any], Any], default: bool):
         if not callable(accessor):
             raise TypeError("accessor must be callable")
 
@@ -10,7 +15,7 @@ class _FieldConfig:
         self.default = default
 
 
-def _feedentry_readAt(request, db_obj):
+def _feedentry_readAt(request: HttpRequest, db_obj: Any):
     read_mapping = db_obj.read_mapping(request.user)
     if read_mapping is not None:
         return read_mapping.read_at.isoformat()
@@ -18,7 +23,7 @@ def _feedentry_readAt(request, db_obj):
         return None
 
 
-_field_configs = {
+_field_configs: dict[str, dict[str, _FieldConfig]] = {
     "user": {
         "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
         "email": _FieldConfig(lambda request, db_obj: db_obj.email, False),
@@ -117,13 +122,18 @@ _field_configs = {
 }
 
 
-def get_default_field_maps(object_name):
+class FieldMap(TypedDict):
+    field_name: str
+    accessor: Callable[[HttpRequest, Any], Any]
+
+
+def get_default_field_maps(object_name: str):
     object_field_configs = _field_configs[object_name]
-    default_field_maps = []
+    default_field_maps: list[FieldMap] = []
 
     for field_name, field_config in object_field_configs.items():
         if field_config.default:
-            default_field_map = {
+            default_field_map: FieldMap = {
                 "field_name": field_name,
                 "accessor": field_config.accessor,
             }
@@ -133,7 +143,7 @@ def get_default_field_maps(object_name):
     return default_field_maps
 
 
-def get_all_field_maps(object_name):
+def get_all_field_maps(object_name: str):
     object_field_configs = _field_configs[object_name]
     all_field_maps = []
 
@@ -148,7 +158,7 @@ def get_all_field_maps(object_name):
     return all_field_maps
 
 
-def to_field_map(object_name, field_name):
+def to_field_map(object_name: str, field_name: str):
     object_field_configs = _field_configs[object_name]
 
     for _field_name, field_config in object_field_configs.items():
@@ -160,5 +170,5 @@ def to_field_map(object_name, field_name):
     return None
 
 
-def field_list(object_name):
+def field_list(object_name: str):
     return _field_configs[object_name].keys()

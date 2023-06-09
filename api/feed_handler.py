@@ -1,6 +1,7 @@
 import datetime
 import logging
 import pprint
+from typing import Any
 
 import feedparser
 import validators
@@ -9,10 +10,10 @@ from api import content_sanitize
 from api.exceptions import QueryException
 from api.models import Feed, FeedEntry
 
-_logger = None
+_logger: logging.Logger | None = None
 
 
-def logger():  # pragma: no cover
+def logger() -> logging.Logger:  # pragma: no cover
     global _logger
     if _logger is None:
         _logger = logging.getLogger("rss_temple")
@@ -20,7 +21,7 @@ def logger():  # pragma: no cover
     return _logger
 
 
-def text_2_d(text):
+def text_2_d(text: str):
     d = feedparser.parse(text, sanitize_html=False)
 
     logger().info("feed info: %s", pprint.pformat(d))
@@ -31,7 +32,7 @@ def text_2_d(text):
     return d
 
 
-def d_feed_2_feed(d_feed, url):
+def d_feed_2_feed(d_feed, url: str):
     feed = Feed(
         feed_url=url, title=d_feed.get("title", url), home_url=d_feed.get("link")
     )
@@ -155,7 +156,7 @@ def d_entry_2_entry_tags(d_entry):
     return entry_tags
 
 
-def _time_tuple_to_datetime(t):
+def _time_tuple_to_datetime(t: tuple[int, int, int, int, int, int]):
     return datetime.datetime(
         t[0], t[1], t[2], t[3], t[4], t[5], 0, datetime.timezone.utc
     )

@@ -10,10 +10,10 @@ from pyparsing import (
     alphas,
 )
 
-_parser = None
+_parser: Forward | None = None
 
 
-def parser():
+def parser() -> Forward:
     global _parser
 
     if not _parser:
@@ -43,7 +43,9 @@ def parser():
             ZeroOrMore((and_operator | or_operator) + where_expression)
         ).setResultsName("WhereExpressionExtension")
 
-        where_expression << (where_clause + where_expression_extension)
+        where_expression = where_expression << (
+            where_clause + where_expression_extension
+        )
 
         _parser = where_expression
 
