@@ -4,8 +4,13 @@ from django.db import connection
 from django.db.models import Q
 from pyparsing import ParseException
 
-from api import models
 from api.exceptions import QueryException
+from api.models import (
+    FavoriteFeedEntryUserMapping,
+    Feed,
+    ReadFeedEntryUserMapping,
+    SubscribedFeedUserMapping,
+)
 from api.search.convertto import (
     Bool,
     DateTime,
@@ -20,10 +25,10 @@ _logger = logging.getLogger("rss_temple")
 
 def _feedentry_subscribed(request, search_obj):
     q = Q(
-        feed__in=models.Feed.objects.filter(
-            uuid__in=models.SubscribedFeedUserMapping.objects.filter(
-                user=request.user
-            ).values("feed_id")
+        feed__in=Feed.objects.filter(
+            uuid__in=SubscribedFeedUserMapping.objects.filter(user=request.user).values(
+                "feed_id"
+            )
         )
     )
 
@@ -35,9 +40,9 @@ def _feedentry_subscribed(request, search_obj):
 
 def _feedentry_is_read(request, search_obj):
     q = Q(
-        uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
-            user=request.user
-        ).values("feed_entry_id")
+        uuid__in=ReadFeedEntryUserMapping.objects.filter(user=request.user).values(
+            "feed_entry_id"
+        )
     )
 
     if not Bool.convertto(search_obj):
@@ -48,9 +53,9 @@ def _feedentry_is_read(request, search_obj):
 
 def _feedentry_is_favorite(request, search_obj):
     q = Q(
-        uuid__in=models.FavoriteFeedEntryUserMapping.objects.filter(
-            user=request.user
-        ).values("feed_entry_id")
+        uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=request.user).values(
+            "feed_entry_id"
+        )
     )
 
     if not Bool.convertto(search_obj):
@@ -153,18 +158,18 @@ _search_fns = {
         "isRead": _feedentry_is_read,
         "isFavorite": _feedentry_is_favorite,
         "readAt": lambda request, search_obj: Q(
-            uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
+            uuid__in=ReadFeedEntryUserMapping.objects.filter(
                 user=request.user,
                 read_at__range=DateTimeRange.convertto(search_obj),
             )
         ),
         "readAt_exact": lambda request, search_obj: Q(
-            uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
+            uuid__in=ReadFeedEntryUserMapping.objects.filter(
                 user=request.user, read_at=DateTime.convertto(search_obj)
             )
         ),
         "readAt_delta": lambda request, search_obj: Q(
-            uuid__in=models.ReadFeedEntryUserMapping.objects.filter(
+            uuid__in=ReadFeedEntryUserMapping.objects.filter(
                 user=request.user,
                 read_at__range=DateTimeDeltaRange.convertto(search_obj),
             )

@@ -4,7 +4,16 @@ import uuid
 from django.test import TestCase
 from django.utils import timezone
 
-from api import fields, models
+from api import fields
+from api.models import (
+    Feed,
+    FeedEntry,
+    FeedUserCategoryMapping,
+    ReadFeedEntryUserMapping,
+    SubscribedFeedUserMapping,
+    User,
+    UserCategory,
+)
 
 
 class _ObjectConfig:
@@ -141,13 +150,13 @@ class AllFieldsTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test_fields@test.com", None)
+        cls.user = User.objects.create_user("test_fields@test.com", None)
 
-        cls.user_category = models.UserCategory.objects.create(
+        cls.user_category = UserCategory.objects.create(
             user=cls.user, text="Test Category"
         )
 
-        cls.feed_with_category = models.Feed.objects.create(
+        cls.feed_with_category = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
@@ -156,7 +165,7 @@ class AllFieldsTestCase(TestCase):
             db_updated_at=None,
         )
 
-        cls.feed_without_category = models.Feed.objects.create(
+        cls.feed_without_category = Feed.objects.create(
             feed_url="http://example2.com/rss.xml",
             title="Sample Feed 2",
             home_url="http://example2.com",
@@ -165,24 +174,24 @@ class AllFieldsTestCase(TestCase):
             db_updated_at=None,
         )
 
-        cls.feed_entry = models.FeedEntry.objects.create(
+        cls.feed_entry = FeedEntry.objects.create(
             feed=cls.feed_with_category,
             url="http://example.com/entry1.html",
             content="<b>Some HTML Content</b>",
             author_name="John Doe",
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_with_category,
             user=cls.user,
             custom_feed_title="Custom Title 1",
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=cls.feed_without_category, user=cls.user, custom_feed_title=None
         )
 
-        models.FeedUserCategoryMapping.objects.create(
+        FeedUserCategoryMapping.objects.create(
             feed=cls.feed_with_category, user_category=cls.user_category
         )
 
@@ -202,7 +211,7 @@ class AllFieldsTestCase(TestCase):
 
 class FieldFnsTestCase(TestCase):
     def test_feedentry_isRead(self):
-        user = models.User.objects.create_user("test_fields@test.com", None)
+        user = User.objects.create_user("test_fields@test.com", None)
 
         class MockRequest:
             def __init__(self):
@@ -210,7 +219,7 @@ class FieldFnsTestCase(TestCase):
 
         request = MockRequest()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
@@ -219,22 +228,20 @@ class FieldFnsTestCase(TestCase):
             db_updated_at=None,
         )
 
-        feed_entry1 = models.FeedEntry.objects.create(
+        feed_entry1 = FeedEntry.objects.create(
             feed=feed,
             url="http://example.com/entry1.html",
             content="<b>Some HTML Content</b>",
             author_name="John Doe",
         )
-        feed_entry2 = models.FeedEntry.objects.create(
+        feed_entry2 = FeedEntry.objects.create(
             feed=feed,
             url="http://example.com/entry2.html",
             content="<b>Some HTML Content</b>",
             author_name="John Doe",
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
-            feed_entry=feed_entry2, user=user
-        )
+        ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
 
         self.assertIsNone(fields._feedentry_readAt(request, feed_entry1))
         self.assertIsNotNone(fields._feedentry_readAt(request, feed_entry2))

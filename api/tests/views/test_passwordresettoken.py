@@ -4,7 +4,7 @@ import uuid
 
 from django.utils import timezone
 
-from api import models
+from api.models import PasswordResetToken, User
 from api.tests.views import ViewTestCase
 
 
@@ -31,7 +31,7 @@ class UserTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user(
+        cls.user = User.objects.create_user(
             UserTestCase.USER_EMAIL, UserTestCase.USER_PASSWORD
         )
 
@@ -102,7 +102,7 @@ class UserTestCase(ViewTestCase):
         response = self.client.post("/api/passwordresettoken/reset", params)
         self.assertEqual(response.status_code, 404, response.content)
 
-        password_reset_token = models.PasswordResetToken.objects.create(
+        password_reset_token = PasswordResetToken.objects.create(
             expires_at=(timezone.now() + datetime.timedelta(days=2)),
             user=UserTestCase.user,
         )

@@ -6,8 +6,17 @@ import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from api import feed_handler, models, rss_requests
+from api import feed_handler, rss_requests
 from api.exceptions import QueryException
+from api.models import (
+    Feed,
+    FeedEntry,
+    FeedSubscriptionProgressEntry,
+    FeedSubscriptionProgressEntryDescriptor,
+    FeedUserCategoryMapping,
+    SubscribedFeedUserMapping,
+    UserCategory,
+)
 
 
 class Command(BaseCommand):
@@ -38,8 +47,8 @@ class Command(BaseCommand):
     def _get_first_entry(self):
         with transaction.atomic():
             feed_subscription_progress_entry = (
-                models.FeedSubscriptionProgressEntry.objects.filter(
-                    status=models.FeedSubscriptionProgressEntry.NOT_STARTED
+                FeedSubscriptionProgressEntry.objects.filter(
+                    status=FeedSubscriptionProgressEntry.NOT_STARTED
                 )
                 .select_for_update(skip_locked=True)
                 .first()
@@ -47,7 +56,7 @@ class Command(BaseCommand):
 
             if feed_subscription_progress_entry is not None:
                 feed_subscription_progress_entry.status = (
-                    models.FeedSubscriptionProgressEntry.STARTED
+                    FeedSubscriptionProgressEntry.STARTED
                 )
                 feed_subscription_progress_entry.save()
 
@@ -60,28 +69,28 @@ class Command(BaseCommand):
         feeds = {}
         subscriptions = set()
         custom_titles = set()
-        for mapping in models.SubscribedFeedUserMapping.objects.select_related(
-            "feed"
-        ).filter(user_id=feed_subscription_progress_entry.user_id):
+        for mapping in SubscribedFeedUserMapping.objects.select_related("feed").filter(
+            user_id=feed_subscription_progress_entry.user_id
+        ):
             subscriptions.add(mapping.feed.feed_url)
             if mapping.custom_feed_title is not None:
                 custom_titles.add(mapping.custom_feed_title)
 
         user_categories = {}
         user_category_mapping_dict = {}
-        for user_category in models.UserCategory.objects.filter(
+        for user_category in UserCategory.objects.filter(
             user_id=feed_subscription_progress_entry.user_id
         ):
             user_categories[user_category.text] = user_category
             user_category_mapping_dict[user_category.text] = set(
-                models.FeedUserCategoryMapping.objects.filter(
+                FeedUserCategoryMapping.objects.filter(
                     user_category=user_category
                 ).values_list("feed__feed_url")
             )
 
         for (
             feed_subscription_progress_entry_descriptor
-        ) in models.FeedSubscriptionProgressEntryDescriptor.objects.filter(
+        ) in FeedSubscriptionProgressEntryDescriptor.objects.filter(
             feed_subscription_progress_entry=feed_subscription_progress_entry,
             is_finished=False,
         ):
@@ -90,8 +99,8 @@ class Command(BaseCommand):
             feed = feeds.get(feed_url)
             if feed is None:
                 try:
-                    feed = models.Feed.objects.get(feed_url=feed_url)
-                except models.Feed.DoesNotExist:
+                    feed = Feed.objects.get(feed_url=feed_url)
+                except Feed.DoesNotExist:
                     try:
                         feed = self._generate_feed(feed_url)
                     except (requests.exceptions.RequestException, QueryException):
@@ -114,7 +123,7 @@ class Command(BaseCommand):
                     if custom_title is not None and feed.title == custom_title:
                         custom_title = None
 
-                    models.SubscribedFeedUserMapping.objects.create(
+                    SubscribedFeedUserMapping.objects.create(
                         feed=feed,
                         user_id=feed_subscription_progress_entry.user_id,
                         custom_feed_title=custom_title,
@@ -136,7 +145,7 @@ class Command(BaseCommand):
                     user_category = user_categories.get(user_category_text)
 
                     if user_category is None:
-                        user_category = models.UserCategory.objects.create(
+                        user_category = UserCategory.objects.create(
                             user_id=feed_subscription_progress_entry.user_id,
                             text=user_category_text,
                         )
@@ -155,7 +164,7 @@ class Command(BaseCommand):
                         ] = user_category_feeds
 
                     if feed_url not in user_category_feeds:
-                        models.FeedUserCategoryMapping.objects.create(
+                        FeedUserCategoryMapping.objects.create(
                             feed=feed, user_category=user_category
                         )
 
@@ -164,9 +173,7 @@ class Command(BaseCommand):
             feed_subscription_progress_entry_descriptor.is_finished = True
             feed_subscription_progress_entry_descriptor.save()
 
-        feed_subscription_progress_entry.status = (
-            models.FeedSubscriptionProgressEntry.FINISHED
-        )
+        feed_subscription_progress_entry.status = FeedSubscriptionProgressEntry.FINISHED
         feed_subscription_progress_entry.save()
 
     def _generate_feed(
@@ -191,6 +198,6 @@ class Command(BaseCommand):
             feed_entry.feed = feed
             feed_entries.append(feed_entry)
 
-        models.FeedEntry.objects.bulk_create(feed_entries)
+        FeedEntry.objects.bulk_create(feed_entries)
 
         return feed

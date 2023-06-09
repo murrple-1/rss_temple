@@ -2,8 +2,9 @@ import logging
 
 from django.test import TestCase
 
-from api import feed_handler, models
+from api import feed_handler
 from api.exceptions import QueryException
+from api.models import FeedEntry
 
 
 class FeedHandlerTestCase(TestCase):
@@ -71,7 +72,7 @@ class FeedHandlerTestCase(TestCase):
             d = feed_handler.text_2_d(text)
 
             feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
-            self.assertIsInstance(feed_entry, models.FeedEntry)
+            self.assertIsInstance(feed_entry, FeedEntry)
 
     def test_d_feed_2_feed_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
@@ -113,7 +114,7 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
-        self.assertIsInstance(feed_entry, models.FeedEntry)
+        self.assertIsInstance(feed_entry, FeedEntry)
 
     def test_d_feed_2_feed_entry_no_title(self):
         text = None

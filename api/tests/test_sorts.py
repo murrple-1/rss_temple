@@ -1,8 +1,9 @@
 from django.db.models import F
 from django.test import TestCase
 
-from api import models, sorts
+from api import sorts
 from api.exceptions import QueryException
+from api.models import Feed, FeedEntry, User, UserCategory
 
 
 class SortsTestCase(TestCase):
@@ -131,20 +132,20 @@ class SortsTestCase(TestCase):
 class AllSortsTestCase(TestCase):
     TRIALS = {
         "user": {
-            "get_queryset": lambda: models.User.objects,
+            "get_queryset": lambda: User.objects,
         },
         "usercategory": {
-            "get_queryset": lambda: models.UserCategory.objects,
+            "get_queryset": lambda: UserCategory.objects,
         },
         "feed": {
-            "get_queryset": lambda: models.Feed.annotate_search_vectors(
-                models.Feed.annotate_subscription_data(
-                    models.Feed.objects.all(), AllSortsTestCase.user
+            "get_queryset": lambda: Feed.annotate_search_vectors(
+                Feed.annotate_subscription_data(
+                    Feed.objects.all(), AllSortsTestCase.user
                 )
             ),
         },
         "feedentry": {
-            "get_queryset": lambda: models.FeedEntry.objects,
+            "get_queryset": lambda: FeedEntry.objects,
         },
     }
 
@@ -152,7 +153,7 @@ class AllSortsTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test_searches@test.com", None)
+        cls.user = User.objects.create_user("test_searches@test.com", None)
 
     def test_run(self):
         self.assertEqual(len(AllSortsTestCase.TRIALS), len(sorts._sort_configs))

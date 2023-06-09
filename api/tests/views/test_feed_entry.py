@@ -1,4 +1,3 @@
-import datetime
 import logging
 import uuid
 
@@ -6,7 +5,13 @@ import ujson
 from django.db import transaction
 from django.utils import timezone
 
-from api import models
+from api.models import (
+    FavoriteFeedEntryUserMapping,
+    Feed,
+    FeedEntry,
+    ReadFeedEntryUserMapping,
+    User,
+)
 from api.tests.views import ViewTestCase
 
 
@@ -32,9 +37,9 @@ class FeedEntryTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test@test.com", None)
+        cls.user = User.objects.create_user("test@test.com", None)
 
-        cls.feed = models.Feed.objects.create(
+        cls.feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
@@ -49,7 +54,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.client.force_login(FeedEntryTestCase.user)
 
     def test_feedentry_get(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -73,7 +78,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentries_query_post(self):
-        models.FeedEntry.objects.create(
+        FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -93,7 +98,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_feedentry_read_post(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -114,7 +119,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertIsInstance(json_, str)
 
         self.assertTrue(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()
         )
@@ -126,7 +131,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentry_read_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -138,7 +143,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
+        ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
 
@@ -149,13 +154,13 @@ class FeedEntryTestCase(ViewTestCase):
             self.assertEqual(response.status_code, 200, response.content)
 
         self.assertTrue(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()
         )
 
     def test_feedentry_read_delete(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -167,7 +172,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
+        ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
 
@@ -177,13 +182,13 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()
         )
 
     def test_feedentries_read_post(self):
-        feed_entry1 = models.FeedEntry.objects.create(
+        feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -195,7 +200,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        feed_entry2 = models.FeedEntry.objects.create(
+        feed_entry2 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -219,13 +224,13 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).count(),
             2,
         )
 
-        models.ReadFeedEntryUserMapping.objects.all().delete()
+        ReadFeedEntryUserMapping.objects.all().delete()
 
         response = self.client.post(
             "/api/feedentries/read",
@@ -239,13 +244,13 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).count(),
             2,
         )
 
-        models.ReadFeedEntryUserMapping.objects.all().delete()
+        ReadFeedEntryUserMapping.objects.all().delete()
 
         response = self.client.post(
             "/api/feedentries/read",
@@ -260,7 +265,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).count(),
             2,
@@ -355,7 +360,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -367,7 +372,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
+        ReadFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user
         )
 
@@ -383,7 +388,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_read_delete(self):
-        feed_entry1 = models.FeedEntry.objects.create(
+        feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -395,7 +400,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        feed_entry2 = models.FeedEntry.objects.create(
+        feed_entry2 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -407,11 +412,11 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
+        ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry1
         )
 
-        models.ReadFeedEntryUserMapping.objects.create(
+        ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry2
         )
 
@@ -423,7 +428,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            models.ReadFeedEntryUserMapping.objects.filter(
+            ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).exists()
         )
@@ -445,7 +450,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentry_favorite_post(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -463,7 +468,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertTrue(
-            models.FavoriteFeedEntryUserMapping.objects.filter(
+            FavoriteFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()
         )
@@ -475,7 +480,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentry_favorite_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -487,7 +492,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.FavoriteFeedEntryUserMapping.objects.create(
+        FavoriteFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user
         )
 
@@ -497,7 +502,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentry_favorite_delete(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -509,7 +514,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.FavoriteFeedEntryUserMapping.objects.create(
+        FavoriteFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
 
@@ -519,13 +524,13 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            models.FavoriteFeedEntryUserMapping.objects.filter(
+            FavoriteFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()
         )
 
     def test_feedentries_favorite_post(self):
-        feed_entry1 = models.FeedEntry.objects.create(
+        feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -537,7 +542,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        feed_entry2 = models.FeedEntry.objects.create(
+        feed_entry2 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -557,7 +562,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.FavoriteFeedEntryUserMapping.objects.filter(
+            FavoriteFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).count(),
             2,
@@ -588,7 +593,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_feedentries_favorite_post_duplicate(self):
-        feed_entry = models.FeedEntry.objects.create(
+        feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -600,7 +605,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.FavoriteFeedEntryUserMapping.objects.create(
+        FavoriteFeedEntryUserMapping.objects.create(
             feed_entry=feed_entry, user=FeedEntryTestCase.user
         )
 
@@ -612,7 +617,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_delete(self):
-        feed_entry1 = models.FeedEntry.objects.create(
+        feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -624,7 +629,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        feed_entry2 = models.FeedEntry.objects.create(
+        feed_entry2 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,
@@ -636,11 +641,11 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        models.FavoriteFeedEntryUserMapping.objects.create(
+        FavoriteFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry1
         )
 
-        models.FavoriteFeedEntryUserMapping.objects.create(
+        FavoriteFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry2
         )
 
@@ -652,7 +657,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            models.FavoriteFeedEntryUserMapping.objects.filter(
+            FavoriteFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).exists()
         )
@@ -685,7 +690,7 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertIsInstance(json_, str)
 
     def test_feedentries_query_stable_post(self):
-        models.FeedEntry.objects.create(
+        FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
             created_at=None,

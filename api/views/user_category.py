@@ -10,8 +10,9 @@ from django.http import (
     HttpResponseNotFound,
 )
 
-from api import models, query_utils
+from api import query_utils
 from api.exceptions import QueryException
+from api.models import Feed, FeedUserCategoryMapping, UserCategory
 
 _OBJECT_NAME = "usercategory"
 
@@ -71,8 +72,8 @@ def _user_category_get(request, uuid_):
 
     user_category = None
     try:
-        user_category = models.UserCategory.objects.get(uuid=uuid_, user=request.user)
-    except models.UserCategory.DoesNotExist:
+        user_category = UserCategory.objects.get(uuid=uuid_, user=request.user)
+    except UserCategory.DoesNotExist:
         return HttpResponseNotFound("user category not found")
 
     ret_obj = query_utils.generate_return_object(field_maps, user_category, request)
@@ -108,7 +109,7 @@ def _user_category_post(request):
     if type(json_["text"]) is not str:
         return HttpResponseBadRequest("'text' must be string")
 
-    user_category = models.UserCategory(user=request.user, text=json_["text"])
+    user_category = UserCategory(user=request.user, text=json_["text"])
 
     try:
         user_category.save()
@@ -131,8 +132,8 @@ def _user_category_put(request, uuid_):
 
     user_category = None
     try:
-        user_category = models.UserCategory.objects.get(uuid=uuid_, user=request.user)
-    except models.UserCategory.DoesNotExist:
+        user_category = UserCategory.objects.get(uuid=uuid_, user=request.user)
+    except UserCategory.DoesNotExist:
         return HttpResponseNotFound("user category not found")
 
     has_changed = False
@@ -157,9 +158,7 @@ def _user_category_put(request, uuid_):
 
 
 def _user_category_delete(request, uuid_):
-    count, _ = models.UserCategory.objects.filter(
-        uuid=uuid_, user=request.user
-    ).delete()
+    count, _ = UserCategory.objects.filter(uuid=uuid_, user=request.user).delete()
 
     if count < 1:
         return HttpResponseNotFound("user category not found")
@@ -225,7 +224,7 @@ def _user_categories_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    user_categories = models.UserCategory.objects.filter(*search)
+    user_categories = UserCategory.objects.filter(*search)
 
     ret_obj = {}
 
@@ -281,8 +280,7 @@ def _user_categories_apply_put(request):
         mappings[feed_uuid_] = user_category_uuids
 
     feeds = dict(
-        (feed.uuid, feed)
-        for feed in models.Feed.objects.filter(uuid__in=all_feed_uuids)
+        (feed.uuid, feed) for feed in Feed.objects.filter(uuid__in=all_feed_uuids)
     )
 
     if len(feeds) < len(all_feed_uuids):
@@ -290,7 +288,7 @@ def _user_categories_apply_put(request):
 
     user_categories = {
         user_category.uuid: user_category
-        for user_category in models.UserCategory.objects.filter(
+        for user_category in UserCategory.objects.filter(
             uuid__in=all_user_category_uuids, user=request.user
         )
     }
@@ -302,15 +300,15 @@ def _user_categories_apply_put(request):
 
     for feed_uuid, user_category_uuids in mappings.items():
         for user_category_uuid in user_category_uuids:
-            feed_user_category_mapping = models.FeedUserCategoryMapping(
+            feed_user_category_mapping = FeedUserCategoryMapping(
                 user_category=user_categories[user_category_uuid], feed=feeds[feed_uuid]
             )
             feed_user_category_mappings.append(feed_user_category_mapping)
 
     with transaction.atomic():
-        models.FeedUserCategoryMapping.objects.filter(
+        FeedUserCategoryMapping.objects.filter(
             feed_id__in=feeds.keys(), user_category_id__in=user_categories.keys()
         ).delete()
-        models.FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
+        FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
 
     return HttpResponse(status=204)

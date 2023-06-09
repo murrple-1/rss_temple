@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from api import models
 from api.management.commands.notifydaemon import Command
+from api.models import NotifyEmailQueueEntry, NotifyEmailQueueEntryRecipient
 
 
 def _mock_send_email(*args, **kwargs):
@@ -38,40 +38,40 @@ class DaemonTestCase(TestCase):
         self.stderr_patcher.stop()
 
     def test_render_empty(self):
-        self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 0)
+        self.assertEqual(NotifyEmailQueueEntry.objects.count(), 0)
         self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
 
     def test_render_regular(self):
-        email_entry = models.NotifyEmailQueueEntry.objects.create(
+        email_entry = NotifyEmailQueueEntry.objects.create(
             subject="Subject", plain_text="Some Text", html_text="<b>Some Text</b>"
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email="to@test.com",
             entry=email_entry,
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_CC,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_CC,
             email="cc@test.com",
             entry=email_entry,
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_BCC,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_BCC,
             email="bcc@test.com",
             entry=email_entry,
         )
 
-        self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 1)
+        self.assertEqual(NotifyEmailQueueEntry.objects.count(), 1)
         self.command._render(_mock_send_email, COUNT_WARNING_THRESHOLD)
 
-        self.assertEqual(models.NotifyEmailQueueEntry.objects.count(), 0)
+        self.assertEqual(NotifyEmailQueueEntry.objects.count(), 0)
 
     def test_render_smtpdisconnected(self):
-        email_entry = models.NotifyEmailQueueEntry.objects.create(
+        email_entry = NotifyEmailQueueEntry.objects.create(
             subject="Subject", plain_text="Some Text", html_text="<b>Some Text</b>"
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email="to@test.com",
             entry=email_entry,
         )
@@ -86,11 +86,11 @@ class DaemonTestCase(TestCase):
         self.assertGreaterEqual(len(matches), 1, stderr_value)
 
     def test_render_generalerror(self):
-        email_entry = models.NotifyEmailQueueEntry.objects.create(
+        email_entry = NotifyEmailQueueEntry.objects.create(
             subject="Subject", plain_text="Some Text", html_text="<b>Some Text</b>"
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email="to@test.com",
             entry=email_entry,
         )
@@ -105,20 +105,20 @@ class DaemonTestCase(TestCase):
         self.assertGreaterEqual(len(matches), 1, stderr_value)
 
     def test_render_countwarning(self):
-        email_entry1 = models.NotifyEmailQueueEntry.objects.create(
+        email_entry1 = NotifyEmailQueueEntry.objects.create(
             subject="Subject1", plain_text="Some Text1", html_text="<b>Some Text1</b>"
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email="to@test.com",
             entry=email_entry1,
         )
 
-        email_entry2 = models.NotifyEmailQueueEntry.objects.create(
+        email_entry2 = NotifyEmailQueueEntry.objects.create(
             subject="Subject2", plain_text="Some Text2", html_text="<b>Some Text2</b>"
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email="to@test.com",
             entry=email_entry2,
         )

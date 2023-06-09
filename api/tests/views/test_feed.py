@@ -1,11 +1,11 @@
-import datetime
 import logging
 
 import ujson
 from django.test import modify_settings, tag
 from django.utils import timezone
 
-from api import fields, models
+from api import fields
+from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
 
 
@@ -33,7 +33,7 @@ class FeedTestCase(TestFileServerTestCase):
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def generate_credentials(self):
-        user = models.User.objects.create_user("test@test.com", None)
+        user = User.objects.create_user("test@test.com", None)
 
         self.client.force_login(user)
 
@@ -73,7 +73,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feeds_query_post(self):
         self.generate_credentials()
 
-        models.Feed.objects.create(
+        Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -108,7 +108,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_post_duplicate(self):
         user = self.generate_credentials()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -117,7 +117,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+        SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
 
         response = self.client.post(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
@@ -128,7 +128,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_post_existing_custom_title(self):
         user = self.generate_credentials()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -137,7 +137,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=feed, user=user, custom_feed_title="Custom Title"
         )
 
@@ -164,7 +164,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_put(self):
         user = self.generate_credentials()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -173,7 +173,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=feed, user=user, custom_feed_title="Custom Title"
         )
 
@@ -183,7 +183,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.SubscribedFeedUserMapping.objects.filter(
+            SubscribedFeedUserMapping.objects.filter(
                 feed=feed, user=user, custom_feed_title="Custom Title 2"
             ).count(),
             1,
@@ -192,7 +192,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_put_no_url(self):
         user = self.generate_credentials()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -201,7 +201,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=feed, user=user, custom_feed_title="Custom Title"
         )
 
@@ -215,7 +215,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_put_not_subscribed(self):
         self.generate_credentials()
 
-        models.Feed.objects.create(
+        Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -233,7 +233,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_put_renames(self):
         user = self.generate_credentials()
 
-        feed1 = models.Feed.objects.create(
+        feed1 = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -242,7 +242,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        feed2 = models.Feed.objects.create(
+        feed2 = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed2.xml",
             title="Sample Feed 2",
             home_url=FeedTestCase.live_server_url,
@@ -251,11 +251,11 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=feed1, user=user, custom_feed_title="Custom Title"
         )
 
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             feed=feed2, user=user, custom_feed_title="Custom Title 2"
         )
 
@@ -273,7 +273,7 @@ class FeedTestCase(TestFileServerTestCase):
     def test_feed_subscribe_delete(self):
         user = self.generate_credentials()
 
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url=f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
             title="Sample Feed",
             home_url=FeedTestCase.live_server_url,
@@ -282,7 +282,7 @@ class FeedTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+        SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
 
         response = self.client.delete(
             f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",

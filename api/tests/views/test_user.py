@@ -5,7 +5,8 @@ import uuid
 import ujson
 from django.utils import timezone
 
-from api import fields, models
+from api import fields
+from api.models import FacebookLogin, GoogleLogin, User, VerificationToken
 from api.tests.views import ViewTestCase
 
 
@@ -34,11 +35,11 @@ class UserTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user(
+        cls.user = User.objects.create_user(
             UserTestCase.USER_EMAIL, UserTestCase.USER_PASSWORD
         )
 
-        models.User.objects.create_user(UserTestCase.NON_UNIQUE_EMAIL, "password2")
+        User.objects.create_user(UserTestCase.NON_UNIQUE_EMAIL, "password2")
 
     def setUp(self):
         super().setUp()
@@ -73,13 +74,13 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.User.objects.filter(
+            User.objects.filter(
                 uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL
             ).count(),
             0,
         )
         self.assertEqual(
-            models.User.objects.filter(
+            User.objects.filter(
                 uuid=UserTestCase.user.uuid, email=UserTestCase.UNIQUE_EMAIL
             ).count(),
             1,
@@ -98,7 +99,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.User.objects.filter(
+            User.objects.filter(
                 uuid=UserTestCase.user.uuid, email=UserTestCase.USER_EMAIL
             ).count(),
             1,
@@ -314,9 +315,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_google_create(self):
-        self.assertEqual(
-            models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0
-        )
+        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
 
         body = {
             "google": {
@@ -331,15 +330,11 @@ class UserTestCase(ViewTestCase):
             )
             self.assertEqual(response.status_code, 204, response.content)
 
-        self.assertEqual(
-            models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1
-        )
+        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
 
     def test_user_put_google_delete(self):
-        models.GoogleLogin.objects.create(user=UserTestCase.user, g_user_id="googleid")
-        self.assertEqual(
-            models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1
-        )
+        GoogleLogin.objects.create(user=UserTestCase.user, g_user_id="googleid")
+        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
 
         body = {
             "google": None,
@@ -351,9 +346,7 @@ class UserTestCase(ViewTestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-        self.assertEqual(
-            models.GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0
-        )
+        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
 
     def test_user_put_google_token_typeerror(self):
         body = {
@@ -392,7 +385,7 @@ class UserTestCase(ViewTestCase):
 
     def test_user_put_facebook_create(self):
         self.assertEqual(
-            models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
+            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
         )
 
         body = {
@@ -409,15 +402,13 @@ class UserTestCase(ViewTestCase):
             self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
+            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
         )
 
     def test_user_put_facebook_delete(self):
-        models.FacebookLogin.objects.create(
-            user=UserTestCase.user, profile_id="facebookid"
-        )
+        FacebookLogin.objects.create(user=UserTestCase.user, profile_id="facebookid")
         self.assertEqual(
-            models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
+            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
         )
 
         body = {
@@ -431,7 +422,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            models.FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
+            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
         )
 
     def test_user_put_facebook_token_typeerror(self):
@@ -448,7 +439,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_verify_post(self):
-        verification_token = models.VerificationToken.objects.create(
+        verification_token = VerificationToken.objects.create(
             expires_at=(timezone.now() + datetime.timedelta(days=2)),
             user=UserTestCase.user,
         )

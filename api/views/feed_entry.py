@@ -14,8 +14,9 @@ from django.http import (
     HttpResponseNotFound,
 )
 
-from api import models, query_utils
+from api import query_utils
 from api.exceptions import QueryException
+from api.models import FavoriteFeedEntryUserMapping, FeedEntry, ReadFeedEntryUserMapping
 
 _OBJECT_NAME = "feedentry"
 
@@ -124,8 +125,8 @@ def _feed_entry_get(request, uuid_):
 
     feed_entry = None
     try:
-        feed_entry = models.FeedEntry.objects.get(uuid=uuid_)
-    except models.FeedEntry.DoesNotExist:
+        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+    except FeedEntry.DoesNotExist:
         return HttpResponseNotFound("feed entry not found")
 
     ret_obj = query_utils.generate_return_object(field_maps, feed_entry, request)
@@ -191,9 +192,9 @@ def _feed_entries_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feed_entries = models.FeedEntry.annotate_search_vectors(
-        models.FeedEntry.objects.all()
-    ).filter(*search)
+    feed_entries = FeedEntry.annotate_search_vectors(FeedEntry.objects.all()).filter(
+        *search
+    )
 
     ret_obj = {}
 
@@ -244,7 +245,7 @@ def _feed_entries_query_stable_create_post(request):
     cache.set(
         token,
         list(
-            models.FeedEntry.annotate_search_vectors(models.FeedEntry.objects.all())
+            FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
             .filter(*search)
             .order_by(*sort)
             .values_list("uuid", flat=True)
@@ -323,7 +324,7 @@ def _feed_entries_query_stable_post(request):
 
         feed_entries = {
             feed_entry.uuid: feed_entry
-            for feed_entry in models.FeedEntry.objects.filter(uuid__in=current_uuids)
+            for feed_entry in FeedEntry.objects.filter(uuid__in=current_uuids)
         }
 
         objs = []
@@ -350,19 +351,17 @@ def _feed_entry_read_post(request, uuid_):
     with transaction.atomic():
         feed_entry = None
         try:
-            feed_entry = models.FeedEntry.objects.get(uuid=uuid_)
-        except models.FeedEntry.DoesNotExist:
+            feed_entry = FeedEntry.objects.get(uuid=uuid_)
+        except FeedEntry.DoesNotExist:
             return HttpResponseNotFound("feed entry not found")
 
         try:
-            read_feed_entry_user_mapping = models.ReadFeedEntryUserMapping.objects.get(
+            read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.get(
                 feed_entry=feed_entry, user=request.user
             )
-        except models.ReadFeedEntryUserMapping.DoesNotExist:
-            read_feed_entry_user_mapping = (
-                models.ReadFeedEntryUserMapping.objects.create(
-                    feed_entry=feed_entry, user=request.user
-                )
+        except ReadFeedEntryUserMapping.DoesNotExist:
+            read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.create(
+                feed_entry=feed_entry, user=request.user
             )
 
     ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
@@ -372,7 +371,7 @@ def _feed_entry_read_post(request, uuid_):
 
 
 def _feed_entry_read_delete(request, uuid_):
-    models.ReadFeedEntryUserMapping.objects.filter(
+    ReadFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user
     ).delete()
 
@@ -437,17 +436,15 @@ def _feed_entries_read_post(request):
 
     batch_size = 768
     objs = (
-        models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
-        for feed_entry in models.FeedEntry.objects.filter(q).iterator()
+        ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
+        for feed_entry in FeedEntry.objects.filter(q).iterator()
     )
     with transaction.atomic():
         while True:
             batch = list(itertools.islice(objs, batch_size))
             if not batch:
                 break
-            models.ReadFeedEntryUserMapping.objects.bulk_create(
-                batch, ignore_conflicts=True
-            )
+            ReadFeedEntryUserMapping.objects.bulk_create(batch, ignore_conflicts=True)
 
     return HttpResponse(status=204)
 
@@ -474,7 +471,7 @@ def _feed_entries_read_delete(request):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest("uuid malformed")
 
-    models.ReadFeedEntryUserMapping.objects.filter(
+    ReadFeedEntryUserMapping.objects.filter(
         feed_entry_id__in=_ids, user=request.user
     ).delete()
 
@@ -484,11 +481,11 @@ def _feed_entries_read_delete(request):
 def _feed_entry_favorite_post(request, uuid_):
     feed_entry = None
     try:
-        feed_entry = models.FeedEntry.objects.get(uuid=uuid_)
-    except models.FeedEntry.DoesNotExist:
+        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+    except FeedEntry.DoesNotExist:
         return HttpResponseNotFound("feed entry not found")
 
-    favorite_feed_entry_user_mapping = models.FavoriteFeedEntryUserMapping(
+    favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
         feed_entry=feed_entry, user=request.user
     )
 
@@ -501,7 +498,7 @@ def _feed_entry_favorite_post(request, uuid_):
 
 
 def _feed_entry_favorite_delete(request, uuid_):
-    models.FavoriteFeedEntryUserMapping.objects.filter(
+    FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user
     ).delete()
 
@@ -530,13 +527,13 @@ def _feed_entries_favorite_post(request):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest("uuid malformed")
 
-    feed_entries = list(models.FeedEntry.objects.filter(uuid__in=_ids))
+    feed_entries = list(FeedEntry.objects.filter(uuid__in=_ids))
 
     if len(feed_entries) != len(_ids):
         return HttpResponseNotFound("feed entry not found")
 
     for feed_entry in feed_entries:
-        favorite_feed_entry_user_mapping = models.FavoriteFeedEntryUserMapping(
+        favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
             feed_entry=feed_entry, user=request.user
         )
 
@@ -570,7 +567,7 @@ def _feed_entries_favorite_delete(request):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest("uuid malformed")
 
-    models.FavoriteFeedEntryUserMapping.objects.filter(
+    FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id__in=_ids, user=request.user
     ).delete()
 

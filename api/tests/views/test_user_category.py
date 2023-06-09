@@ -4,7 +4,7 @@ import uuid
 import ujson
 from django.utils import timezone
 
-from api import models
+from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
 from api.tests.views import ViewTestCase
 
 
@@ -30,7 +30,7 @@ class UserCategoryTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test@test.com", None)
+        cls.user = User.objects.create_user("test@test.com", None)
 
     def setUp(self):
         super().setUp()
@@ -38,7 +38,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.client.force_login(UserCategoryTestCase.user)
 
     def test_usercategory_get(self):
-        user_category = models.UserCategory.objects.create(
+        user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -85,7 +85,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategory_post_already_exists(self):
-        models.UserCategory.objects.create(
+        UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -101,7 +101,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_usercategory_put(self):
-        user_category = models.UserCategory.objects.create(
+        user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -117,7 +117,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_usercategory_put_malformed(self):
-        user_category = models.UserCategory.objects.create(
+        user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -145,11 +145,11 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_usercategory_put_already_exists(self):
-        models.UserCategory.objects.create(
+        UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Already Exists Text"
         )
 
-        user_category = models.UserCategory.objects.create(
+        user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -165,7 +165,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_usercategory_delete(self):
-        user_category = models.UserCategory.objects.create(
+        user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -181,7 +181,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_usercategories_query_post(self):
-        models.UserCategory.objects.create(
+        UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -193,7 +193,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategories_apply_put(self):
-        feed1 = models.Feed.objects.create(
+        feed1 = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",
@@ -202,7 +202,7 @@ class UserCategoryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        feed2 = models.Feed.objects.create(
+        feed2 = Feed.objects.create(
             feed_url="http://example.com/rss2.xml",
             title="Sample Feed",
             home_url="http://example.com",
@@ -211,10 +211,10 @@ class UserCategoryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        user_category1 = models.UserCategory.objects.create(
+        user_category1 = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category 1"
         )
-        user_category2 = models.UserCategory.objects.create(
+        user_category2 = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category 2"
         )
 
@@ -234,22 +234,22 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category1, feed=feed1
             )
         )
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category1, feed=feed2
             )
         )
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category2, feed=feed2
             )
         )
 
-        models.FeedUserCategoryMapping.objects.filter(
+        FeedUserCategoryMapping.objects.filter(
             user_category__in=[user_category1, user_category2], feed__in=[feed1, feed2]
         ).delete()
 
@@ -270,23 +270,23 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category1, feed=feed1
             )
         )
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category1, feed=feed2
             )
         )
         self.assertIsNotNone(
-            models.FeedUserCategoryMapping.objects.get(
+            FeedUserCategoryMapping.objects.get(
                 user_category=user_category2, feed=feed2
             )
         )
 
     def test_usercategories_apply_put_malformed(self):
-        models.UserCategory.objects.create(
+        UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
 
@@ -324,7 +324,7 @@ class UserCategoryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategories_apply_put_not_found(self):
-        feed = models.Feed.objects.create(
+        feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
             home_url="http://example.com",

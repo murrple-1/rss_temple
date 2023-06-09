@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
 
-from api import models
+from api.models import FeedEntry, ReadFeedEntryUserMapping
 
 _USER_UNREAD_GRACE_INTERVAL = None
 _USER_UNREAD_GRACE_MIN_COUNT = None
@@ -28,7 +28,7 @@ def mark_archived_entries(read_mappings_generator, batch_size=768):
         if len(batch) < 1:
             break
 
-        models.ReadFeedEntryUserMapping.objects.bulk_create(
+        ReadFeedEntryUserMapping.objects.bulk_create(
             batch, batch_size=batch_size, ignore_conflicts=True
         )
 
@@ -38,18 +38,14 @@ def read_mapping_generator_fn(feed, user):
 
     feed_entries = None
     if (
-        models.FeedEntry.objects.filter(
-            feed=feed, published_at__gte=grace_start
-        ).count()
+        FeedEntry.objects.filter(feed=feed, published_at__gte=grace_start).count()
         > _USER_UNREAD_GRACE_MIN_COUNT
     ):
-        feed_entries = models.FeedEntry.objects.filter(
-            feed=feed, published_at__lt=grace_start
-        )
+        feed_entries = FeedEntry.objects.filter(feed=feed, published_at__lt=grace_start)
     else:
-        feed_entries = models.FeedEntry.objects.filter(feed=feed).order_by(
-            "published_at"
-        )[_USER_UNREAD_GRACE_MIN_COUNT:]
+        feed_entries = FeedEntry.objects.filter(feed=feed).order_by("published_at")[
+            _USER_UNREAD_GRACE_MIN_COUNT:
+        ]
 
     for feed_entry in feed_entries.iterator():
-        yield models.ReadFeedEntryUserMapping(feed_entry=feed_entry, user=user)
+        yield ReadFeedEntryUserMapping(feed_entry=feed_entry, user=user)

@@ -2,7 +2,11 @@ import uuid
 
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseNotFound
 
-from api import models, query_utils
+from api import query_utils
+from api.models import (
+    FeedSubscriptionProgressEntry,
+    FeedSubscriptionProgressEntryDescriptor,
+)
 
 
 def feed_subscription_progress(request, uuid_):
@@ -20,16 +24,14 @@ def feed_subscription_progress(request, uuid_):
 def _feed_subscription_progress_get(request, uuid_):
     feed_subscription_progress_entry = None
     try:
-        feed_subscription_progress_entry = (
-            models.FeedSubscriptionProgressEntry.objects.get(
-                uuid=uuid_, user=request.user
-            )
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.get(
+            uuid=uuid_, user=request.user
         )
-    except models.FeedSubscriptionProgressEntry.DoesNotExist:
+    except FeedSubscriptionProgressEntry.DoesNotExist:
         return HttpResponseNotFound("progress not found")
 
     progress_statuses = list(
-        models.FeedSubscriptionProgressEntryDescriptor.objects.filter(
+        FeedSubscriptionProgressEntryDescriptor.objects.filter(
             feed_subscription_progress_entry=feed_subscription_progress_entry
         ).values_list("is_finished", flat=True)
     )
@@ -44,12 +46,11 @@ def _feed_subscription_progress_get(request, uuid_):
     }
     if (
         feed_subscription_progress_entry.status
-        == models.FeedSubscriptionProgressEntry.NOT_STARTED
+        == FeedSubscriptionProgressEntry.NOT_STARTED
     ):
         ret_obj["state"] = "notstarted"
     elif (
-        feed_subscription_progress_entry.status
-        == models.FeedSubscriptionProgressEntry.STARTED
+        feed_subscription_progress_entry.status == FeedSubscriptionProgressEntry.STARTED
     ):
         ret_obj["state"] = "started"
     else:

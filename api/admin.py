@@ -1,11 +1,19 @@
 from django.contrib import admin
 
-from api import models
+from api.models import (
+    Feed,
+    FeedEntry,
+    NotifyEmailQueueEntry,
+    PasswordResetToken,
+    User,
+    UserCategory,
+    VerificationToken,
+)
 
-admin.site.register(models.User)
-admin.site.register(models.VerificationToken)
-admin.site.register(models.PasswordResetToken)
-admin.site.register(models.UserCategory)
-admin.site.register(models.Feed)
-admin.site.register(models.FeedEntry)
-admin.site.register(models.NotifyEmailQueueEntry)
+admin.site.register(User)
+admin.site.register(VerificationToken)
+admin.site.register(PasswordResetToken)
+admin.site.register(UserCategory)
+admin.site.register(Feed)
+admin.site.register(FeedEntry)
+admin.site.register(NotifyEmailQueueEntry)

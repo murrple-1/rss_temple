@@ -2,7 +2,11 @@ import logging
 import random
 import uuid
 
-from api import models
+from api.models import (
+    FeedSubscriptionProgressEntry,
+    FeedSubscriptionProgressEntryDescriptor,
+    User,
+)
 from api.tests.views import ViewTestCase
 
 
@@ -28,7 +32,7 @@ class ProgressTestCase(ViewTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test@test.com", None)
+        cls.user = User.objects.create_user("test@test.com", None)
 
     def setUp(self):
         super().setUp()
@@ -37,17 +41,15 @@ class ProgressTestCase(ViewTestCase):
 
     @staticmethod
     def generate_entry(desc_count=10):
-        feed_subscription_progress_entry = (
-            models.FeedSubscriptionProgressEntry.objects.create(
-                user=ProgressTestCase.user
-            )
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.create(
+            user=ProgressTestCase.user
         )
 
         feed_subscription_progress_entry_descriptors = []
 
         for step in range(desc_count):
             feed_subscription_progress_entry_descriptor = (
-                models.FeedSubscriptionProgressEntryDescriptor.objects.create(
+                FeedSubscriptionProgressEntryDescriptor.objects.create(
                     feed_subscription_progress_entry=feed_subscription_progress_entry,
                     feed_url=f"http://localhost:8080/rss_2.0/well_formed.xml?_={step}",
                 )
@@ -91,9 +93,7 @@ class ProgressTestCase(ViewTestCase):
             feed_subscription_progress_entry_descriptors,
         ) = ProgressTestCase.generate_entry()
 
-        feed_subscription_progress_entry.status = (
-            models.FeedSubscriptionProgressEntry.STARTED
-        )
+        feed_subscription_progress_entry.status = FeedSubscriptionProgressEntry.STARTED
         feed_subscription_progress_entry.save()
 
         feed_subscription_progress_entry_descriptor = (
@@ -135,9 +135,7 @@ class ProgressTestCase(ViewTestCase):
             feed_subscription_progress_entry_descriptors,
         ) = ProgressTestCase.generate_entry()
 
-        feed_subscription_progress_entry.status = (
-            models.FeedSubscriptionProgressEntry.FINISHED
-        )
+        feed_subscription_progress_entry.status = FeedSubscriptionProgressEntry.FINISHED
         feed_subscription_progress_entry.save()
 
         for (

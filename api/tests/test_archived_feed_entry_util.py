@@ -4,7 +4,8 @@ from django.conf import settings
 from django.test import TestCase
 from django.utils import timezone
 
-from api import archived_feed_entry_util, models
+from api import archived_feed_entry_util
+from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
 
 
 class ArchivedFeedEntryUtilTestCase(TestCase):
@@ -13,9 +14,9 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=1,
         ):
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -24,7 +25,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -36,7 +37,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -48,7 +49,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -60,7 +61,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -72,7 +73,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -100,9 +101,9 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=2,
         ):
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -111,7 +112,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -123,7 +124,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -135,7 +136,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -147,7 +148,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -159,7 +160,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -187,9 +188,9 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=5,
         ):
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -198,7 +199,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -210,7 +211,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -222,7 +223,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -234,7 +235,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -246,7 +247,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -274,11 +275,11 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=1,
         ):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -287,7 +288,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -299,7 +300,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -311,7 +312,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -323,7 +324,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -335,7 +336,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -357,18 +358,18 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 archived_feed_entry_util.read_mapping_generator_fn(feed, user)
             )
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 2)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 2)
 
     def test_mark_archived_entries_equalmincount(self):
         with self.settings(
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=2,
         ):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -377,7 +378,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -389,7 +390,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -401,7 +402,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -413,7 +414,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -425,7 +426,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -447,18 +448,18 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 archived_feed_entry_util.read_mapping_generator_fn(feed, user)
             )
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 2)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 2)
 
     def test_mark_archived_entries_lessthanmincount(self):
         with self.settings(
             USER_UNREAD_GRACE_INTERVAL=datetime.timedelta(days=-7),
             USER_UNREAD_GRACE_MIN_COUNT=5,
         ):
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 0)
 
-            user = models.User.objects.create_user("test@test.com", None)
+            user = User.objects.create_user("test@test.com", None)
 
-            feed = models.Feed.objects.create(
+            feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Sample Feed",
                 home_url="http://example.com",
@@ -467,7 +468,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry1 = models.FeedEntry(
+            feed_entry1 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -479,7 +480,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry2 = models.FeedEntry(
+            feed_entry2 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -491,7 +492,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry3 = models.FeedEntry(
+            feed_entry3 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -503,7 +504,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            feed_entry4 = models.FeedEntry(
+            feed_entry4 = FeedEntry(
                 id=None,
                 feed=feed,
                 created_at=None,
@@ -515,7 +516,7 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 db_updated_at=None,
             )
 
-            models.FeedEntry.objects.bulk_create(
+            FeedEntry.objects.bulk_create(
                 [feed_entry1, feed_entry2, feed_entry3, feed_entry4]
             )
 
@@ -537,4 +538,4 @@ class ArchivedFeedEntryUtilTestCase(TestCase):
                 archived_feed_entry_util.read_mapping_generator_fn(feed, user)
             )
 
-            self.assertEqual(models.ReadFeedEntryUserMapping.objects.all().count(), 0)
+            self.assertEqual(ReadFeedEntryUserMapping.objects.all().count(), 0)

@@ -1,6 +1,7 @@
 from django.http import HttpResponse, HttpResponseNotAllowed
 
-from api import models, query_utils
+from api import query_utils
+from api.models import Feed, FeedEntry
 
 
 def explore(request):
@@ -101,14 +102,14 @@ def _explore_get(request):
         for feed_lookup in section_lookup["feeds"]:
             feed = None
             try:
-                feed = models.Feed.annotate_subscription_data(
-                    models.Feed.objects.all(), request.user
+                feed = Feed.annotate_subscription_data(
+                    Feed.objects.all(), request.user
                 ).get(feed_url=feed_lookup["feed_url"])
-            except models.Feed.DoesNotExist:
+            except Feed.DoesNotExist:
                 continue
 
             some_feed_entries = list(
-                models.FeedEntry.objects.filter(feed=feed, title__isnull=False)
+                FeedEntry.objects.filter(feed=feed, title__isnull=False)
                 .order_by("published_at")
                 .values_list("title", flat=True)[:5]
             )

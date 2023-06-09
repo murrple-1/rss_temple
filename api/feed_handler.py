@@ -5,8 +5,9 @@ import pprint
 import feedparser
 import validators
 
-from api import content_sanitize, models
+from api import content_sanitize
 from api.exceptions import QueryException
+from api.models import Feed, FeedEntry
 
 _logger = None
 
@@ -31,7 +32,7 @@ def text_2_d(text):
 
 
 def d_feed_2_feed(d_feed, url):
-    feed = models.Feed(
+    feed = Feed(
         feed_url=url, title=d_feed.get("title", url), home_url=d_feed.get("link")
     )
 
@@ -54,7 +55,7 @@ def d_feed_2_feed(d_feed, url):
 
 
 def d_entry_2_feed_entry(d_entry):
-    feed_entry = models.FeedEntry(id=d_entry.get("id"))
+    feed_entry = FeedEntry(id=d_entry.get("id"))
 
     if "created_parsed" in d_entry:
         time_tuple = d_entry.created_parsed

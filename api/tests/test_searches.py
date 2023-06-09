@@ -3,8 +3,9 @@ import uuid
 
 from django.test import TestCase
 
-from api import models, searches
+from api import searches
 from api.exceptions import QueryException
+from api.models import Feed, FeedEntry, User, UserCategory
 
 
 class SearchesTestCase(TestCase):
@@ -96,7 +97,7 @@ class SearchesTestCase(TestCase):
 class AllSearchesTestCase(TestCase):
     TRIALS = {
         "user": {
-            "get_queryset": lambda: models.User.objects,
+            "get_queryset": lambda: User.objects,
             "searches": {
                 "uuid": [str(uuid.uuid4())],
                 "email": ["test@test.com"],
@@ -104,7 +105,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         "usercategory": {
-            "get_queryset": lambda: models.UserCategory.objects,
+            "get_queryset": lambda: UserCategory.objects,
             "searches": {
                 "uuid": [str(uuid.uuid4())],
                 "text": ["test"],
@@ -112,9 +113,9 @@ class AllSearchesTestCase(TestCase):
             },
         },
         "feed": {
-            "get_queryset": lambda: models.Feed.annotate_search_vectors(
-                models.Feed.annotate_subscription_data(
-                    models.Feed.objects.all(), AllSearchesTestCase.user
+            "get_queryset": lambda: Feed.annotate_search_vectors(
+                Feed.annotate_subscription_data(
+                    Feed.objects.all(), AllSearchesTestCase.user
                 )
             ),
             "searches": {
@@ -138,7 +139,7 @@ class AllSearchesTestCase(TestCase):
             },
         },
         "feedentry": {
-            "get_queryset": lambda: models.FeedEntry.objects,
+            "get_queryset": lambda: FeedEntry.objects,
             "searches": {
                 "uuid": [str(uuid.uuid4())],
                 "feedUuid": [str(uuid.uuid4())],
@@ -189,7 +190,7 @@ class AllSearchesTestCase(TestCase):
     def setUpTestData(cls):
         super().setUpTestData()
 
-        cls.user = models.User.objects.create_user("test_searches@test.com", None)
+        cls.user = User.objects.create_user("test_searches@test.com", None)
 
     def test_run(self):
         self.assertEqual(len(AllSearchesTestCase.TRIALS), len(searches._search_fns))

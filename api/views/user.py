@@ -14,8 +14,16 @@ from django.http import (
 )
 from django.utils import timezone
 
-from api import models, query_utils
+from api import query_utils
 from api.exceptions import QueryException
+from api.models import (
+    FacebookLogin,
+    GoogleLogin,
+    NotifyEmailQueueEntry,
+    NotifyEmailQueueEntryRecipient,
+    User,
+    VerificationToken,
+)
 from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
@@ -110,12 +118,12 @@ def _user_put(request):
             return HttpResponseBadRequest("'email' malformed")  # pragma: no cover
 
         if user.email != json_["email"]:
-            if models.User.objects.filter(email=json_["email"]).exists():
+            if User.objects.filter(email=json_["email"]).exists():
                 return HttpResponse("email already in use", status=409)
 
             user.email = json_["email"]
 
-            verification_token = models.VerificationToken(
+            verification_token = VerificationToken(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
@@ -163,9 +171,9 @@ def _user_put(request):
         elif type(google_json) is dict:
             google_login = None
             try:
-                google_login = models.GoogleLogin.objects.get(user=user)
-            except models.GoogleLogin.DoesNotExist:
-                google_login = models.GoogleLogin(user=user)
+                google_login = GoogleLogin.objects.get(user=user)
+            except GoogleLogin.DoesNotExist:
+                google_login = GoogleLogin(user=user)
 
             def google_login_db_fn():
                 return _google_login_save(google_login)
@@ -195,9 +203,9 @@ def _user_put(request):
         elif type(facebook_json) is dict:
             facebook_login = None
             try:
-                facebook_login = models.FacebookLogin.objects.get(user=user)
-            except models.FacebookLogin.DoesNotExist:
-                facebook_login = models.FacebookLogin(user=user)
+                facebook_login = FacebookLogin.objects.get(user=user)
+            except FacebookLogin.DoesNotExist:
+                facebook_login = FacebookLogin(user=user)
 
             def facebook_login_db_fn():
                 return _facebook_login_save(facebook_login)
@@ -226,7 +234,7 @@ def _user_put(request):
                 facebook_login_db_fn()
 
             if verification_token is not None:
-                models.VerificationToken.objects.filter(user=user).delete()
+                VerificationToken.objects.filter(user=user).delete()
                 verification_token.save()
 
                 token_str = verification_token.token_str()
@@ -235,11 +243,11 @@ def _user_put(request):
                 plain_text = verifyrender.plain_text(token_str)
                 html_text = verifyrender.html_text(token_str)
 
-                email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+                email_queue_entry = NotifyEmailQueueEntry.objects.create(
                     subject=subject, plain_text=plain_text, html_text=html_text
                 )
-                models.NotifyEmailQueueEntryRecipient.objects.create(
-                    type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+                NotifyEmailQueueEntryRecipient.objects.create(
+                    type=NotifyEmailQueueEntryRecipient.TYPE_TO,
                     email=json_["email"],
                     entry=email_queue_entry,
                 )
@@ -252,7 +260,7 @@ def _google_login_save(google_login):
 
 
 def _google_login_delete(user):
-    models.GoogleLogin.objects.filter(user=user).delete()
+    GoogleLogin.objects.filter(user=user).delete()
 
 
 def _facebook_login_save(facebook_login):
@@ -260,7 +268,7 @@ def _facebook_login_save(facebook_login):
 
 
 def _facebook_login_delete(user):
-    models.FacebookLogin.objects.filter(user=user).delete()
+    FacebookLogin.objects.filter(user=user).delete()
 
 
 def _user_verify_post(request):
@@ -269,7 +277,7 @@ def _user_verify_post(request):
     if token is None:
         return HttpResponseBadRequest("'token' missing")
 
-    verification_token = models.VerificationToken.find_by_token(token)
+    verification_token = VerificationToken.find_by_token(token)
 
     if verification_token is None:
         return HttpResponseNotFound("token not found")

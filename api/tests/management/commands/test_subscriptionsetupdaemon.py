@@ -4,8 +4,15 @@ from unittest.mock import patch
 from django.test import tag
 from django.utils import timezone
 
-from api import models
 from api.management.commands.subscriptionsetupdaemon import Command
+from api.models import (
+    Feed,
+    FeedSubscriptionProgressEntry,
+    FeedSubscriptionProgressEntryDescriptor,
+    SubscribedFeedUserMapping,
+    User,
+    UserCategory,
+)
 from api.tests import TestFileServerTestCase
 
 
@@ -31,7 +38,7 @@ class DaemonTestCase(TestFileServerTestCase):
         self.stderr_patcher.stop()
 
     def generate_credentials(self):
-        return models.User.objects.create_user("test@test.com", None)
+        return User.objects.create_user("test@test.com", None)
 
     def test_get_first_entry(self):
         user = self.generate_credentials()
@@ -40,13 +47,13 @@ class DaemonTestCase(TestFileServerTestCase):
 
         self.assertIsNone(feed_subscription_progress_entry)
 
-        feed_subscription_progress_entry = (
-            models.FeedSubscriptionProgressEntry.objects.create(user=user)
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.create(
+            user=user
         )
 
         self.assertEqual(
             feed_subscription_progress_entry.status,
-            models.FeedSubscriptionProgressEntry.NOT_STARTED,
+            FeedSubscriptionProgressEntry.NOT_STARTED,
         )
 
         feed_subscription_progress_entry = self.command._get_first_entry()
@@ -55,14 +62,14 @@ class DaemonTestCase(TestFileServerTestCase):
         assert feed_subscription_progress_entry is not None
         self.assertEqual(
             feed_subscription_progress_entry.status,
-            models.FeedSubscriptionProgressEntry.STARTED,
+            FeedSubscriptionProgressEntry.STARTED,
         )
 
     @tag("slow")
     def test_do_subscription(self):
         user = self.generate_credentials()
 
-        feed1 = models.Feed.objects.create(
+        feed1 = Feed.objects.create(
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
@@ -71,7 +78,7 @@ class DaemonTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        feed2 = models.Feed.objects.create(
+        feed2 = Feed.objects.create(
             feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title",
             title="Sample Feed",
             home_url=DaemonTestCase.live_server_url,
@@ -80,20 +87,20 @@ class DaemonTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        models.SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
+        SubscribedFeedUserMapping.objects.create(
             feed=feed2, user=user, custom_feed_title="Old Custom Title"
         )
 
-        models.UserCategory.objects.create(user=user, text="Old User Category")
+        UserCategory.objects.create(user=user, text="Old User Category")
 
-        feed_subscription_progress_entry = (
-            models.FeedSubscriptionProgressEntry.objects.create(user=user)
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.create(
+            user=user
         )
 
         self.assertEqual(
             feed_subscription_progress_entry.status,
-            models.FeedSubscriptionProgressEntry.NOT_STARTED,
+            FeedSubscriptionProgressEntry.NOT_STARTED,
         )
 
         count = 0
@@ -116,7 +123,7 @@ class DaemonTestCase(TestFileServerTestCase):
                     "New User Category",
                     "New User Category {s}",
                 ]:
-                    feed_subscription_progress_entry_descriptor = models.FeedSubscriptionProgressEntryDescriptor.objects.create(
+                    feed_subscription_progress_entry_descriptor = FeedSubscriptionProgressEntryDescriptor.objects.create(
                         feed_subscription_progress_entry=feed_subscription_progress_entry,
                         feed_url=feed_url.format(s=count),
                         custom_feed_title=None
@@ -137,12 +144,12 @@ class DaemonTestCase(TestFileServerTestCase):
         assert feed_subscription_progress_entry is not None
         self.assertEqual(
             feed_subscription_progress_entry.status,
-            models.FeedSubscriptionProgressEntry.STARTED,
+            FeedSubscriptionProgressEntry.STARTED,
         )
 
         self.command._do_subscription(feed_subscription_progress_entry)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,
-            models.FeedSubscriptionProgressEntry.FINISHED,
+            FeedSubscriptionProgressEntry.FINISHED,
         )

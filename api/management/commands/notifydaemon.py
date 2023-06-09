@@ -3,15 +3,27 @@ import getpass
 import smtplib
 import time
 import traceback
-from typing import Any
+from typing import Any, Protocol
 
-import filelock
 import validators
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
 from quick_email import send_email
 
-from api import models
+from api.models import NotifyEmailQueueEntry, NotifyEmailQueueEntryRecipient
+
+
+class _SendEmailCallable(Protocol):
+    def __call__(
+        self,
+        subject: str,
+        plain_text: str | None = None,
+        html_text: str | None = None,
+        send_to: list[str] | None = None,
+        send_cc: list[str] | None = None,
+        send_bcc: list[str] | None = None,
+    ) -> None:
+        ...
 
 
 class Command(BaseCommand):
@@ -38,33 +50,25 @@ class Command(BaseCommand):
         else:
             smtp_password = None
 
-        lock = filelock.FileLock("notify_daemon.lock")
         try:
-            with lock.acquire(timeout=1):
-                while True:
-                    self.stderr.write(self.style.NOTICE("render loop started"))
-                    self._render(
-                        functools.partial(
-                            self._send_email,
-                            options["smtp_host"],
-                            options["smtp_port"],
-                            options["smtp_sender"],
-                            user=options["smtp_user"],
-                            password=smtp_password,
-                            require_starttls=options["smtp_is_tls"],
-                            timeout=options["smtp_timeout"],
-                        ),
-                        options["count_warning_threshold"],
-                    )
-                    self.stderr.write(self.style.NOTICE("render loop complete"))
-
-                    time.sleep(options["sleep_seconds"])
-        except filelock.Timeout:
-            self.stderr.write(
-                self.style.WARNING(
-                    "only 1 process allowed at a time - lock file already held"
+            while True:
+                self.stderr.write(self.style.NOTICE("render loop started"))
+                self._render(
+                    functools.partial(
+                        self._send_email,
+                        options["smtp_host"],
+                        options["smtp_port"],
+                        options["smtp_sender"],
+                        user=options["smtp_user"],
+                        password=smtp_password,
+                        require_starttls=options["smtp_is_tls"],
+                        timeout=options["smtp_timeout"],
+                    ),
+                    options["count_warning_threshold"],
                 )
-            )
+                self.stderr.write(self.style.NOTICE("render loop complete"))
+
+                time.sleep(options["sleep_seconds"])
         except Exception:
             self.stderr.write(
                 self.style.ERROR(
@@ -105,12 +109,12 @@ class Command(BaseCommand):
             require_starttls=require_starttls,
         )
 
-    def _render(self, send_email_fn, count_warning_threshold):
+    def _render(self, send_email_fn: _SendEmailCallable, count_warning_threshold: int):
         entry_count = 0
         with transaction.atomic():
             for (
                 notify_email_queue_entry
-            ) in models.NotifyEmailQueueEntry.objects.select_for_update(
+            ) in NotifyEmailQueueEntry.objects.select_for_update(
                 skip_locked=True
             ).all():
                 try:
@@ -118,25 +122,19 @@ class Command(BaseCommand):
                     send_cc = []
                     send_bcc = []
 
-                    for (
-                        recipient
-                    ) in models.NotifyEmailQueueEntryRecipient.objects.filter(
+                    for recipient in NotifyEmailQueueEntryRecipient.objects.filter(
                         entry=notify_email_queue_entry
                     ):
                         if validators.email(recipient.email):
-                            if (
-                                recipient.type
-                                == models.NotifyEmailQueueEntryRecipient.TYPE_TO
-                            ):
+                            if recipient.type == NotifyEmailQueueEntryRecipient.TYPE_TO:
                                 send_to.append(recipient.email)
                             elif (
-                                recipient.type
-                                == models.NotifyEmailQueueEntryRecipient.TYPE_CC
+                                recipient.type == NotifyEmailQueueEntryRecipient.TYPE_CC
                             ):
                                 send_cc.append(recipient.email)
                             elif (
                                 recipient.type
-                                == models.NotifyEmailQueueEntryRecipient.TYPE_BCC
+                                == NotifyEmailQueueEntryRecipient.TYPE_BCC
                             ):
                                 send_bcc.append(recipient.email)
 
@@ -177,7 +175,7 @@ class Command(BaseCommand):
         else:
             self.stderr.write(self.style.NOTICE("no notify queue entries found"))
 
-        email_count = models.NotifyEmailQueueEntry.objects.count()
+        email_count = NotifyEmailQueueEntry.objects.count()
         if email_count >= count_warning_threshold:
             self.stderr.write(
                 self.style.WARNING(

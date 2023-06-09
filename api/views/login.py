@@ -17,7 +17,15 @@ from django.http import (
 )
 from django.utils import timezone
 
-from api import models, query_utils
+from api import query_utils
+from api.models import (
+    FacebookLogin,
+    GoogleLogin,
+    NotifyEmailQueueEntry,
+    NotifyEmailQueueEntryRecipient,
+    User,
+    VerificationToken,
+)
 from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
@@ -115,11 +123,11 @@ def _prepare_verify_notification(token_str, email):
     plain_text = verifyrender.plain_text(token_str)
     html_text = verifyrender.html_text(token_str)
 
-    email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+    email_queue_entry = NotifyEmailQueueEntry.objects.create(
         subject=subject, plain_text=plain_text, html_text=html_text
     )
-    models.NotifyEmailQueueEntryRecipient.objects.create(
-        type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+    NotifyEmailQueueEntryRecipient.objects.create(
+        type=NotifyEmailQueueEntryRecipient.TYPE_TO,
         email=email,
         entry=email_queue_entry,
     )
@@ -153,18 +161,18 @@ def _my_login_post(request):
     if type(json_["password"]) is not str:
         return HttpResponseBadRequest("'password' must be string")
 
-    if models.User.objects.filter(email__iexact=json_["email"]).exists():
+    if User.objects.filter(email__iexact=json_["email"]).exists():
         return HttpResponse("login already exists", status=409)
 
     with transaction.atomic():
         user = None
         verification_token = None
         try:
-            user = models.User.objects.get(email__iexact=json_["email"])
-        except models.User.DoesNotExist:
-            user = models.User.objects.create_user(json_["email"], json_["password"])
+            user = User.objects.get(email__iexact=json_["email"])
+        except User.DoesNotExist:
+            user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = models.VerificationToken.objects.create(
+            verification_token = VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
@@ -216,8 +224,8 @@ def _google_login_post(request):
         return HttpResponseBadRequest("bad Google token")
 
     if (
-        models.GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
-        or models.User.objects.filter(email__iexact=json_["email"]).exists()
+        GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
+        or User.objects.filter(email__iexact=json_["email"]).exists()
     ):
         return HttpResponse("login already exists", status=409)
 
@@ -226,16 +234,16 @@ def _google_login_post(request):
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email__iexact=json_["email"])
-        except models.User.DoesNotExist:
-            user = models.User.objects.create_user(json_["email"], json_["password"])
+            user = User.objects.get(email__iexact=json_["email"])
+        except User.DoesNotExist:
+            user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = models.VerificationToken.objects.create(
+            verification_token = VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
-        models.GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
+        GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
 
         if verification_token is not None:
             _prepare_verify_notification(verification_token.token_str(), json_["email"])
@@ -284,8 +292,8 @@ def _facebook_login_post(request):
         return HttpResponseBadRequest("bad Facebook token")
 
     if (
-        models.FacebookLogin.objects.filter(profile_id=fb_id).exists()
-        or models.User.objects.filter(email__iexact=json_["email"]).exists()
+        FacebookLogin.objects.filter(profile_id=fb_id).exists()
+        or User.objects.filter(email__iexact=json_["email"]).exists()
     ):
         return HttpResponse("login already exists", status=409)
 
@@ -294,16 +302,16 @@ def _facebook_login_post(request):
     with transaction.atomic():
         user = None
         try:
-            user = models.User.objects.get(email__iexact=json_["email"])
-        except models.User.DoesNotExist:
-            user = models.User.objects.create_user(json_["email"], json_["password"])
+            user = User.objects.get(email__iexact=json_["email"])
+        except User.DoesNotExist:
+            user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = models.VerificationToken.objects.create(
+            verification_token = VerificationToken.objects.create(
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
 
-        models.FacebookLogin.objects.create(profile_id=fb_id, user=user)
+        FacebookLogin.objects.create(profile_id=fb_id, user=user)
 
         if verification_token is not None:
             _prepare_verify_notification(verification_token.token_str(), json_["email"])
@@ -373,8 +381,8 @@ def _google_login_session_post(request):
 
     google_login = None
     try:
-        google_login = models.GoogleLogin.objects.get(g_user_id=g_user_id)
-    except models.GoogleLogin.DoesNotExist:
+        google_login = GoogleLogin.objects.get(g_user_id=g_user_id)
+    except GoogleLogin.DoesNotExist:
         ret_obj = {
             "token": json_["token"],
             "email": g_email,
@@ -416,8 +424,8 @@ def _facebook_login_session_post(request):
 
     facebook_login = None
     try:
-        facebook_login = models.FacebookLogin.objects.get(profile_id=fb_id)
-    except models.FacebookLogin.DoesNotExist:
+        facebook_login = FacebookLogin.objects.get(profile_id=fb_id)
+    except FacebookLogin.DoesNotExist:
         ret_obj = {
             "token": json_["token"],
             "email": fb_email,

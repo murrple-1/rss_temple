@@ -10,7 +10,12 @@ from django.http import (
 )
 from django.utils import timezone
 
-from api import models
+from api.models import (
+    NotifyEmailQueueEntry,
+    NotifyEmailQueueEntryRecipient,
+    PasswordResetToken,
+    User,
+)
 from api.render import passwordreset as passwordresetrender
 
 _PASSWORDRESETTOKEN_EXPIRY_INTERVAL = None
@@ -54,17 +59,17 @@ def _passwordresettoken_request_post(request):
 
     user = None
     try:
-        user = models.User.objects.get(email__iexact=email)
-    except models.User.DoesNotExist:
+        user = User.objects.get(email__iexact=email)
+    except User.DoesNotExist:
         return HttpResponse(status=204)
 
-    password_reset_token = models.PasswordResetToken(
+    password_reset_token = PasswordResetToken(
         user=user,
         expires_at=(timezone.now() + _PASSWORDRESETTOKEN_EXPIRY_INTERVAL),
     )
 
     with transaction.atomic():
-        models.PasswordResetToken.objects.filter(user=user).delete()
+        PasswordResetToken.objects.filter(user=user).delete()
         password_reset_token.save()
 
         token_str = password_reset_token.token_str()
@@ -73,11 +78,11 @@ def _passwordresettoken_request_post(request):
         plain_text = passwordresetrender.plain_text(token_str)
         html_text = passwordresetrender.html_text(token_str)
 
-        email_queue_entry = models.NotifyEmailQueueEntry.objects.create(
+        email_queue_entry = NotifyEmailQueueEntry.objects.create(
             subject=subject, plain_text=plain_text, html_text=html_text
         )
-        models.NotifyEmailQueueEntryRecipient.objects.create(
-            type=models.NotifyEmailQueueEntryRecipient.TYPE_TO,
+        NotifyEmailQueueEntryRecipient.objects.create(
+            type=NotifyEmailQueueEntryRecipient.TYPE_TO,
             email=email,
             entry=email_queue_entry,
         )
@@ -94,7 +99,7 @@ def _passwordresettoken_reset_post(request):
     if password is None:
         return HttpResponseBadRequest("'password' missing")
 
-    password_reset_token = models.PasswordResetToken.find_by_token(token)
+    password_reset_token = PasswordResetToken.find_by_token(token)
 
     if password_reset_token is None:
         return HttpResponseNotFound("token not valid")

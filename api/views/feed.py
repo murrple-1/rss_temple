@@ -9,14 +9,9 @@ from django.http import (
 )
 from url_normalize import url_normalize
 
-from api import (
-    archived_feed_entry_util,
-    feed_handler,
-    models,
-    query_utils,
-    rss_requests,
-)
+from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
 from api.exceptions import QueryException
+from api.models import Feed, FeedEntry, SubscribedFeedUserMapping
 
 _OBJECT_NAME = "feed"
 
@@ -80,7 +75,7 @@ def _save_feed(url):
             feed_entry.feed = feed
             feed_entries.append(feed_entry)
 
-        models.FeedEntry.objects.bulk_create(feed_entries)
+        FeedEntry.objects.bulk_create(feed_entries)
 
         return feed
 
@@ -101,10 +96,10 @@ def _feed_get(request):
 
     feed = None
     try:
-        feed = models.Feed.annotate_subscription_data(
-            models.Feed.objects.all(), request.user
-        ).get(feed_url=url)
-    except models.Feed.DoesNotExist:
+        feed = Feed.annotate_subscription_data(Feed.objects.all(), request.user).get(
+            feed_url=url
+        )
+    except Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
         except QueryException as e:
@@ -173,8 +168,8 @@ def _feeds_query_post(request):
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feeds = models.Feed.annotate_search_vectors(
-        models.Feed.annotate_subscription_data(models.Feed.objects.all(), request.user)
+    feeds = Feed.annotate_search_vectors(
+        Feed.annotate_subscription_data(Feed.objects.all(), request.user)
     ).filter(*search)
 
     ret_obj = {}
@@ -205,8 +200,8 @@ def _feed_subscribe_post(request):
 
     feed = None
     try:
-        feed = models.Feed.objects.get(feed_url=url)
-    except models.Feed.DoesNotExist:
+        feed = Feed.objects.get(feed_url=url)
+    except Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
         except QueryException as e:
@@ -215,7 +210,7 @@ def _feed_subscribe_post(request):
     custom_title = request.GET.get("customtitle")
 
     existing_subscription_list = list(
-        models.SubscribedFeedUserMapping.objects.filter(user=user).values_list(
+        SubscribedFeedUserMapping.objects.filter(user=user).values_list(
             "feed__feed_url", "custom_feed_title"
         )
     )
@@ -236,7 +231,7 @@ def _feed_subscribe_post(request):
     )
 
     with transaction.atomic():
-        models.SubscribedFeedUserMapping.objects.create(
+        SubscribedFeedUserMapping.objects.create(
             user=user, feed=feed, custom_feed_title=custom_title
         )
 
@@ -258,17 +253,15 @@ def _feed_subscribe_put(request):
 
     subscribed_feed_mapping = None
     try:
-        subscribed_feed_mapping = models.SubscribedFeedUserMapping.objects.get(
+        subscribed_feed_mapping = SubscribedFeedUserMapping.objects.get(
             user=user, feed__feed_url=url
         )
-    except models.SubscribedFeedUserMapping.DoesNotExist:
+    except SubscribedFeedUserMapping.DoesNotExist:
         return HttpResponseNotFound("not subscribed")
 
     if custom_title is not None:
         if (
-            models.SubscribedFeedUserMapping.objects.exclude(
-                uuid=subscribed_feed_mapping.uuid
-            )
+            SubscribedFeedUserMapping.objects.exclude(uuid=subscribed_feed_mapping.uuid)
             .filter(user=user, custom_feed_title=custom_title)
             .exists()
         ):
@@ -287,7 +280,7 @@ def _feed_subscribe_delete(request):
 
     url = url_normalize(url)
 
-    count, _ = models.SubscribedFeedUserMapping.objects.filter(
+    count, _ = SubscribedFeedUserMapping.objects.filter(
         user=request.user, feed__feed_url=url
     ).delete()
 

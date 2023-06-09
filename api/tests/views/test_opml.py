@@ -2,7 +2,7 @@ import logging
 
 from django.core.management import call_command
 
-from api import models
+from api.models import SubscribedFeedUserMapping, User
 from api.tests.views import ViewTestCase
 
 
@@ -30,7 +30,7 @@ class OPMLTestCase(ViewTestCase):
         call_command("loaddata", fixture_path, verbosity=0)
 
     def _login(self):
-        user = models.User.objects.get(email="test@test.com")
+        user = User.objects.get(email="test@test.com")
 
         self.client.force_login(user)
 
@@ -140,9 +140,9 @@ class OPMLTestCase(ViewTestCase):
     def test_opml_post_quick_subscribe(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_no_404-post.json")
 
-        user = models.User.objects.get(email="test@test.com")
+        user = User.objects.get(email="test@test.com")
 
-        models.SubscribedFeedUserMapping.objects.filter(user=user).first().delete()
+        SubscribedFeedUserMapping.objects.filter(user=user).first().delete()
 
         self._login()
 

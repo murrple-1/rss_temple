@@ -1,17 +1,19 @@
 import logging
 import traceback
+from typing import Any
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
 from tabulate import tabulate
 
-from api import feed_handler, models, rss_requests
+from api import feed_handler, rss_requests
+from api.models import FeedEntry
 
 
 class Command(BaseCommand):
     help = "Tool to query real RSS feeds, and potentially force them into the DB"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser):
         parser.add_argument("feed_url")
         parser.add_argument("-s", "--save", action="store_true")
         parser.add_argument("-f", "--print-feed", action="store_true")
@@ -42,7 +44,7 @@ class Command(BaseCommand):
         # monkey-patch the feed_handler logging
         feed_handler.logger = logger
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any):
         self._monkey_patch_feed_handler_logging()
 
         response = rss_requests.get(options["feed_url"])
@@ -138,4 +140,4 @@ class Command(BaseCommand):
             with transaction.atomic():
                 feed.save()
 
-                models.FeedEntry.objects.bulk_create(feed_entries)
+                FeedEntry.objects.bulk_create(feed_entries)
