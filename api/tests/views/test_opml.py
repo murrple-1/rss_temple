@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from django.core.management import call_command
 
@@ -7,6 +8,9 @@ from api.tests.views import ViewTestCase
 
 
 class OPMLTestCase(ViewTestCase):
+    old_app_logger_level: ClassVar[int]
+    old_django_logger_level: ClassVar[int]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

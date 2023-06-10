@@ -105,7 +105,7 @@ def d_entry_2_feed_entry(d_entry):
 
     feed_entry.url = url
 
-    content = None
+    content: str | None = None
 
     if content is None:
         if "content" in d_entry:

@@ -1,4 +1,6 @@
 import uuid
+from collections import defaultdict
+from typing import Collection
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -47,9 +49,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     def category_dict(self):
-        category_dict = getattr(self, "_category_dict", None)
+        category_dict: dict[uuid.UUID | None, list[Feed]] | None = getattr(
+            self, "_category_dict", None
+        )
         if category_dict is None:
-            category_dict = {}
+            category_dict = defaultdict(list)
 
             for (
                 subscribed_feed_user_mapping
@@ -62,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                     ).filter(feed=subscribed_feed_user_mapping.feed)
                 )
 
-                keys = None
+                keys: Collection[uuid.UUID | None]
                 if len(feed_user_category_mappings) > 0:
                     keys = frozenset(
                         feed_user_category_mapping.user_category.uuid
@@ -76,9 +80,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                 feed.custom_title = subscribed_feed_user_mapping.custom_feed_title
 
                 for key in keys:
-                    if key not in category_dict:
-                        category_dict[key] = []
-
                     category_dict[key].append(feed)
 
             self._category_dict = category_dict
@@ -191,7 +192,7 @@ class VerificationToken(models.Model):
 
     @staticmethod
     def find_by_token(token):
-        _uuid = None
+        _uuid: uuid.UUID
         try:
             _uuid = uuid.UUID(token)
         except (ValueError, TypeError):
@@ -213,7 +214,7 @@ class PasswordResetToken(models.Model):
 
     @staticmethod
     def find_by_token(token):
-        _uuid = None
+        _uuid: uuid.UUID
         try:
             _uuid = uuid.UUID(token)
         except (ValueError, TypeError):

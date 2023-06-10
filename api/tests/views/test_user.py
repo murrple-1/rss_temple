@@ -1,6 +1,7 @@
 import datetime
 import logging
 import uuid
+from typing import ClassVar
 
 import ujson
 from django.utils import timezone
@@ -16,6 +17,9 @@ class UserTestCase(ViewTestCase):
     UNIQUE_EMAIL = "unique@test.com"
 
     USER_PASSWORD = "password"
+
+    old_django_logger_level: ClassVar[int]
+    user: ClassVar[User]
 
     @classmethod
     def setUpClass(cls):

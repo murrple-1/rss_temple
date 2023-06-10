@@ -45,7 +45,9 @@ class ProgressTestCase(ViewTestCase):
             user=ProgressTestCase.user
         )
 
-        feed_subscription_progress_entry_descriptors = []
+        feed_subscription_progress_entry_descriptors: list[
+            FeedSubscriptionProgressEntryDescriptor
+        ] = []
 
         for step in range(desc_count):
             feed_subscription_progress_entry_descriptor = (

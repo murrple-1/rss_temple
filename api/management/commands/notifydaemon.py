@@ -118,9 +118,9 @@ class Command(BaseCommand):
                 skip_locked=True
             ).all():
                 try:
-                    send_to = []
-                    send_cc = []
-                    send_bcc = []
+                    send_to: list[str] = []
+                    send_cc: list[str] = []
+                    send_bcc: list[str] = []
 
                     for recipient in NotifyEmailQueueEntryRecipient.objects.filter(
                         entry=notify_email_queue_entry

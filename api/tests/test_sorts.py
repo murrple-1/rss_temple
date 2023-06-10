@@ -93,29 +93,6 @@ class SortsTestCase(TestCase):
         with self.assertRaises(QueryException):
             sorts.to_sort_list("feed", "bad sort string", True)
 
-    def test_default_descriptor_errors(self):
-        with self.assertRaises(TypeError):
-            sorts._DefaultDescriptor(None, "DESC")
-
-        with self.assertRaises(ValueError):
-            sorts._DefaultDescriptor(0, None)
-
-        with self.assertRaises(ValueError):
-            sorts._DefaultDescriptor(0, "BAD")
-
-    def test_sort_config_errors(self):
-        with self.assertRaises(TypeError):
-            sorts._SortConfig(None, None)
-
-        with self.assertRaises(ValueError):
-            sorts._SortConfig([], None)
-
-        with self.assertRaises(TypeError):
-            sorts._SortConfig([None], None)
-
-        with self.assertRaises(TypeError):
-            sorts._SortConfig([lambda dir_: F("testfield").asc()], object())
-
     def test_bad_sort_list(self):
         with self.assertRaises(QueryException):
             sorts.sort_list_to_order_by_args(

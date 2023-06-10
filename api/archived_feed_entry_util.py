@@ -3,6 +3,7 @@ from typing import Any, Generator
 
 from django.conf import settings
 from django.core.signals import setting_changed
+from django.db.models import QuerySet
 from django.dispatch import receiver
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
@@ -40,7 +41,7 @@ def mark_archived_entries(
 def read_mapping_generator_fn(feed: Feed, user: User):
     grace_start = user.created_at + _USER_UNREAD_GRACE_INTERVAL
 
-    feed_entries = None
+    feed_entries: QuerySet[FeedEntry]
     if (
         FeedEntry.objects.filter(feed=feed, published_at__gte=grace_start).count()
         > _USER_UNREAD_GRACE_MIN_COUNT

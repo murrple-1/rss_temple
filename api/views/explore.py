@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.http import HttpResponse, HttpResponseNotAllowed
 
 from api import query_utils
@@ -96,9 +98,9 @@ def _explore_get(request):
         },
     ]
 
-    ret_obj = []
+    ret_obj: list[dict[str, Any]] = []
     for section_lookup in section_lookups:
-        feed_objs = []
+        feed_objs: list[dict[str, Any]] = []
         for feed_lookup in section_lookup["feeds"]:
             feed = None
             try:

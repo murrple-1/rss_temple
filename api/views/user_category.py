@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 import ujson
 from django.db import IntegrityError, transaction
@@ -226,10 +227,10 @@ def _user_categories_query_post(request):
 
     user_categories = UserCategory.objects.filter(*search)
 
-    ret_obj = {}
+    ret_obj: dict[str, Any] = {}
 
     if return_objects:
-        objs = []
+        objs: list[dict[str, Any]] = []
         for user_category in user_categories.order_by(*sort)[skip : skip + count]:
             obj = query_utils.generate_return_object(field_maps, user_category, request)
             objs.append(obj)
@@ -253,10 +254,10 @@ def _user_categories_apply_put(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    all_feed_uuids = set()
-    all_user_category_uuids = set()
+    all_feed_uuids: set[uuid.UUID] = set()
+    all_user_category_uuids: set[uuid.UUID] = set()
 
-    mappings = {}
+    mappings: dict[uuid.UUID, frozenset[uuid.UUID]] = {}
 
     for feed_uuid, user_category_uuids in json_.items():
         feed_uuid_ = None
@@ -296,7 +297,7 @@ def _user_categories_apply_put(request):
     if len(user_categories) < len(all_user_category_uuids):
         return HttpResponseNotFound("user category not found")
 
-    feed_user_category_mappings = []
+    feed_user_category_mappings: list[FeedUserCategoryMapping] = []
 
     for feed_uuid, user_category_uuids in mappings.items():
         for user_category_uuid in user_category_uuids:

@@ -1,7 +1,7 @@
 import html
 import re
-from typing import Any
-from urllib.parse import urlparse
+from typing import Any, Callable
+from urllib.parse import ParseResult, urlparse
 
 import bleach
 import bleach.html5lib_shim
@@ -81,7 +81,7 @@ class EmptyAnchorFilter(HTML5LibFilter):
                     yield token
 
 
-_bad_iframe_url_fns = [
+_bad_iframe_url_fns: list[Callable[[ParseResult], bool]] = [
     lambda url: url.netloc == "slashdot.org",
 ]
 
@@ -97,7 +97,7 @@ class BadIFrameFilter(HTML5LibFilter):
                 if token["type"] == "StartTag" and token["name"] == "iframe":
                     data = token["data"]
                     if (None, "src") in data:
-                        src_url = None
+                        src_url: ParseResult
                         try:
                             src_url = urlparse(data[(None, "src")])
                         except ValueError:

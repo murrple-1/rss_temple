@@ -1,6 +1,7 @@
 import datetime
 import logging
 from io import StringIO
+from typing import ClassVar
 from unittest.mock import patch
 
 from django.conf import settings
@@ -12,6 +13,9 @@ from api.models import Feed, FeedEntry
 
 
 class DaemonTestCase(TestCase):
+    old_app_logger_level: ClassVar[int]
+    command: ClassVar[Command]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

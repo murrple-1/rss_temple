@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.db import transaction
@@ -18,7 +20,7 @@ from api.models import (
 )
 from api.render import passwordreset as passwordresetrender
 
-_PASSWORDRESETTOKEN_EXPIRY_INTERVAL = None
+_PASSWORDRESETTOKEN_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
@@ -57,7 +59,7 @@ def _passwordresettoken_request_post(request):
     if email is None:
         return HttpResponseBadRequest("'email' missing")
 
-    user = None
+    user: User
     try:
         user = User.objects.get(email__iexact=email)
     except User.DoesNotExist:

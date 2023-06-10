@@ -1,7 +1,10 @@
+from typing import Any
+
 import requests
 import ujson
 from django.db import transaction
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
@@ -16,7 +19,7 @@ from api.models import Feed, FeedEntry, SubscribedFeedUserMapping
 _OBJECT_NAME = "feed"
 
 
-def feed(request):
+def feed(request: HttpRequest):
     permitted_methods = {"GET"}
 
     if request.method not in permitted_methods:
@@ -64,7 +67,7 @@ def _save_feed(url):
         feed.with_subscription_data()
         feed.save()
 
-        feed_entries = []
+        feed_entries: list[FeedEntry] = []
         for d_entry in d.get("entries", []):
             feed_entry = None
             try:
@@ -172,10 +175,10 @@ def _feeds_query_post(request):
         Feed.annotate_subscription_data(Feed.objects.all(), request.user)
     ).filter(*search)
 
-    ret_obj = {}
+    ret_obj: dict[str, Any] = {}
 
     if return_objects:
-        objs = []
+        objs: list[dict[str, Any]] = []
         for feed in feeds.order_by(*sort)[skip : skip + count]:
             obj = query_utils.generate_return_object(field_maps, feed, request)
             objs.append(obj)

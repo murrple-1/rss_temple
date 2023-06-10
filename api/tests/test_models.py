@@ -53,7 +53,7 @@ class UserTestCase(TestCase):
 
         category_dict = user.category_dict()
 
-        self.assertIs(type(category_dict), dict)
+        self.assertIsInstance(category_dict, dict)
         self.assertEqual(len(category_dict), 2)
         self.assertIn(None, category_dict)
         self.assertIn(user_category.uuid, category_dict)

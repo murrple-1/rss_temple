@@ -71,12 +71,6 @@ class FieldsTestCase(TestCase):
         self.assertEqual(fc.accessor(object(), object()), "test")
         self.assertTrue(fc.default)
 
-        with self.assertRaises(TypeError):
-            fields._FieldConfig(None, None)
-
-        with self.assertRaises(TypeError):
-            fields._FieldConfig(lambda: None, None)
-
     def test_to_field_map(self):
         for oc in _object_configs:
             field_map = fields.to_field_map(oc.object_name, oc.good_field_name)

@@ -1,6 +1,7 @@
 import itertools
 import re
 import uuid
+from typing import Any
 
 import ujson
 from django.core.cache import caches
@@ -196,10 +197,10 @@ def _feed_entries_query_post(request):
         *search
     )
 
-    ret_obj = {}
+    ret_obj: dict[str, Any] = {}
 
     if return_objects:
-        objs = []
+        objs: list[dict[str, Any]] = []
         for feed_entry in feed_entries.order_by(*sort)[skip : skip + count]:
             obj = query_utils.generate_return_object(field_maps, feed_entry, request)
             objs.append(obj)
@@ -317,7 +318,7 @@ def _feed_entries_query_stable_post(request):
     cache.touch(token)
     uuids = cache.get(token, [])
 
-    ret_obj = {}
+    ret_obj: dict[str, Any] = {}
 
     if return_objects:
         current_uuids = uuids[skip : skip + count]
@@ -327,7 +328,7 @@ def _feed_entries_query_stable_post(request):
             for feed_entry in FeedEntry.objects.filter(uuid__in=current_uuids)
         }
 
-        objs = []
+        objs: list[dict[str, Any]] = []
         if len(current_uuids) == len(feed_entries):
             for uuid_ in current_uuids:
                 feed_entry = feed_entries[uuid_]

@@ -5,12 +5,6 @@ from django.http import HttpRequest
 
 class _FieldConfig:
     def __init__(self, accessor: Callable[[HttpRequest, Any], Any], default: bool):
-        if not callable(accessor):
-            raise TypeError("accessor must be callable")
-
-        if type(default) is not bool:
-            raise TypeError("default must be bool")
-
         self.accessor = accessor
         self.default = default
 
@@ -145,10 +139,10 @@ def get_default_field_maps(object_name: str):
 
 def get_all_field_maps(object_name: str):
     object_field_configs = _field_configs[object_name]
-    all_field_maps = []
+    all_field_maps: list[FieldMap] = []
 
     for field_name, field_config in object_field_configs.items():
-        field_map = {
+        field_map: FieldMap = {
             "field_name": field_name,
             "accessor": field_config.accessor,
         }
@@ -158,7 +152,7 @@ def get_all_field_maps(object_name: str):
     return all_field_maps
 
 
-def to_field_map(object_name: str, field_name: str):
+def to_field_map(object_name: str, field_name: str) -> FieldMap | None:
     object_field_configs = _field_configs[object_name]
 
     for _field_name, field_config in object_field_configs.items():

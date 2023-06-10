@@ -66,9 +66,9 @@ class Command(BaseCommand):
         self,
         feed_subscription_progress_entry,
     ):  # pragma: testing-subscription-setup-daemon-do-subscription
-        feeds = {}
-        subscriptions = set()
-        custom_titles = set()
+        feeds: dict[str, Feed] = {}
+        subscriptions: set[str] = set()
+        custom_titles: set[str] = set()
         for mapping in SubscribedFeedUserMapping.objects.select_related("feed").filter(
             user_id=feed_subscription_progress_entry.user_id
         ):
@@ -76,8 +76,8 @@ class Command(BaseCommand):
             if mapping.custom_feed_title is not None:
                 custom_titles.add(mapping.custom_feed_title)
 
-        user_categories = {}
-        user_category_mapping_dict = {}
+        user_categories: dict[str, UserCategory] = {}
+        user_category_mapping_dict: dict[str, set[str]] = {}
         for user_category in UserCategory.objects.filter(
             user_id=feed_subscription_progress_entry.user_id
         ):
@@ -113,7 +113,7 @@ class Command(BaseCommand):
 
             if feed is not None:
                 if feed_url not in subscriptions:
-                    custom_title = (
+                    custom_title: str | None = (
                         feed_subscription_progress_entry_descriptor.custom_feed_title
                     )
 
@@ -186,10 +186,10 @@ class Command(BaseCommand):
         feed = feed_handler.d_feed_2_feed(d.feed, url)
         feed.save()
 
-        feed_entries = []
+        feed_entries: list[FeedEntry] = []
 
         for d_entry in d.get("entries", []):
-            feed_entry = None
+            feed_entry: FeedEntry
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
             except ValueError:

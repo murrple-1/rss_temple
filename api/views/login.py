@@ -1,4 +1,4 @@
-import logging
+import datetime
 
 import ujson
 import validators
@@ -27,20 +27,14 @@ from api.models import (
 from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
-_logger = logging.getLogger("rss_temple")
-
-
-_USER_VERIFICATION_EXPIRY_INTERVAL = None
-_SESSION_EXPIRY_INTERVAL = None
+_USER_VERIFICATION_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
     global _USER_VERIFICATION_EXPIRY_INTERVAL
-    global _SESSION_EXPIRY_INTERVAL
 
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
-    _SESSION_EXPIRY_INTERVAL = settings.SESSION_EXPIRY_INTERVAL
 
 
 _load_global_settings()
@@ -163,8 +157,8 @@ def _my_login_post(request):
         return HttpResponse("login already exists", status=409)
 
     with transaction.atomic():
-        user = None
-        verification_token = None
+        user: User
+        verification_token: VerificationToken | None
         try:
             user = User.objects.get(email__iexact=json_["email"])
         except User.DoesNotExist:
@@ -174,6 +168,8 @@ def _my_login_post(request):
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
+        else:
+            verification_token = None
 
         if verification_token is not None:
             _prepare_verify_notification(verification_token.token_str(), json_["email"])
@@ -215,7 +211,7 @@ def _google_login_post(request):
     if type(json_["token"]) is not str:
         return HttpResponseBadRequest("'token' must be string")
 
-    g_user_id = None
+    g_user_id: str
     try:
         g_user_id = google.get_id(json_["token"])
     except ValueError:  # pragma: no cover
@@ -227,10 +223,10 @@ def _google_login_post(request):
     ):
         return HttpResponse("login already exists", status=409)
 
-    verification_token = None
+    verification_token: VerificationToken | None
 
     with transaction.atomic():
-        user = None
+        user: User
         try:
             user = User.objects.get(email__iexact=json_["email"])
         except User.DoesNotExist:
@@ -240,6 +236,8 @@ def _google_login_post(request):
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
+        else:
+            verification_token = None
 
         GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
 
@@ -283,7 +281,7 @@ def _facebook_login_post(request):
     if type(json_["token"]) is not str:
         return HttpResponseBadRequest("'token' must be string")
 
-    fb_id = None
+    fb_id: str
     try:
         fb_id = facebook.get_id(json_["token"])
     except ValueError:  # pragma: no cover
@@ -295,10 +293,9 @@ def _facebook_login_post(request):
     ):
         return HttpResponse("login already exists", status=409)
 
-    verification_token = None
-
     with transaction.atomic():
-        user = None
+        user: User
+        verification_token: VerificationToken | None
         try:
             user = User.objects.get(email__iexact=json_["email"])
         except User.DoesNotExist:
@@ -308,6 +305,8 @@ def _facebook_login_post(request):
                 user=user,
                 expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
             )
+        else:
+            verification_token = None
 
         FacebookLogin.objects.create(profile_id=fb_id, user=user)
 
@@ -370,14 +369,14 @@ def _google_login_session_post(request):
     if type(json_["token"]) is not str:
         return HttpResponseBadRequest("'token' must be string")
 
-    g_user_id = None
-    g_email = None
+    g_user_id: str
+    g_email: str | None
     try:
         g_user_id, g_email = google.get_id_and_email(json_["token"])
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest("bad Google token")
 
-    google_login = None
+    google_login: GoogleLogin
     try:
         google_login = GoogleLogin.objects.get(g_user_id=g_user_id)
     except GoogleLogin.DoesNotExist:
@@ -413,14 +412,14 @@ def _facebook_login_session_post(request):
     if type(json_["token"]) is not str:
         return HttpResponseBadRequest("'token' must be string")
 
-    fb_id = None
-    fb_email = None
+    fb_id: str
+    fb_email: str | None
     try:
         fb_id, fb_email = facebook.get_id_and_email(json_["token"])
     except ValueError:  # pragma: no cover
         return HttpResponseBadRequest("bad Facebook token")
 
-    facebook_login = None
+    facebook_login: FacebookLogin
     try:
         facebook_login = FacebookLogin.objects.get(profile_id=fb_id)
     except FacebookLogin.DoesNotExist:

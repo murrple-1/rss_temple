@@ -1,8 +1,10 @@
 import logging
+from typing import Callable, cast
 
 from django.db import connection
 from django.db.models import Q
-from pyparsing import ParseException
+from django.http import HttpRequest
+from pyparsing import ParseException, ParseResults
 
 from api.exceptions import QueryException
 from api.models import (
@@ -23,7 +25,7 @@ from api.search.parser import parser
 _logger = logging.getLogger("rss_temple")
 
 
-def _feedentry_subscribed(request, search_obj):
+def _feedentry_subscribed(request: HttpRequest, search_obj: str):
     q = Q(
         feed__in=Feed.objects.filter(
             uuid__in=SubscribedFeedUserMapping.objects.filter(user=request.user).values(
@@ -38,7 +40,7 @@ def _feedentry_subscribed(request, search_obj):
     return q
 
 
-def _feedentry_is_read(request, search_obj):
+def _feedentry_is_read(request: HttpRequest, search_obj: str):
     q = Q(
         uuid__in=ReadFeedEntryUserMapping.objects.filter(user=request.user).values(
             "feed_entry_id"
@@ -51,7 +53,7 @@ def _feedentry_is_read(request, search_obj):
     return q
 
 
-def _feedentry_is_favorite(request, search_obj):
+def _feedentry_is_favorite(request: HttpRequest, search_obj: str):
     q = Q(
         uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=request.user).values(
             "feed_entry_id"
@@ -64,7 +66,7 @@ def _feedentry_is_favorite(request, search_obj):
     return q
 
 
-_search_fns = {
+_search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
     "user": {
         "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
         "email": lambda request, search_obj: Q(email__icontains=search_obj),
@@ -199,8 +201,8 @@ else:
     )
 
 
-def to_filter_args(object_name, request, search):
-    parse_results = None
+def to_filter_args(object_name: str, request: HttpRequest, search: str):
+    parse_results: ParseResults
     try:
         parse_results = parser().parseString(search, True)
     except ParseException as e:
@@ -212,7 +214,9 @@ def to_filter_args(object_name, request, search):
     return [_handle_parse_result(request, parse_results, object_search_fns)]
 
 
-def _handle_parse_result(request, parse_results, object_search_fns):
+def _handle_parse_result(
+    request: HttpRequest, parse_results: ParseResults, object_search_fns
+):
     if "WhereClause" in parse_results and "WhereExpressionExtension" in parse_results:
         where_clause = parse_results["WhereClause"]
         where_expression_extension = parse_results["WhereExpressionExtension"]
@@ -232,21 +236,23 @@ def _handle_parse_result(request, parse_results, object_search_fns):
             return _handle_parse_result(request, where_clause, object_search_fns)
     elif "NamedExpression" in parse_results:
         named_expression = parse_results["NamedExpression"]
-        field_name = named_expression["IdentifierTerm"]
+        field_name = cast(str, named_expression["IdentifierTerm"])
         # if search_obj is "" (empty string), 'StringTerm' will not exist, so default it
-        search_obj = (
-            named_expression["StringTerm"] if "StringTerm" in named_expression else ""
+        search_obj = cast(
+            str,
+            named_expression["StringTerm"] if "StringTerm" in named_expression else "",
         )
 
         return _q(request, field_name, search_obj, object_search_fns)
     elif "ExcludeNamedExpression" in parse_results:
         exclude_named_expression = parse_results["ExcludeNamedExpression"]
-        field_name = exclude_named_expression["IdentifierTerm"]
+        field_name = cast(str, exclude_named_expression["IdentifierTerm"])
         # if search_obj is "" (empty string), 'StringTerm' will not exist, so default it
-        search_obj = (
+        search_obj = cast(
+            str,
             exclude_named_expression["StringTerm"]
             if "StringTerm" in exclude_named_expression
-            else ""
+            else "",
         )
 
         return ~_q(request, field_name, search_obj, object_search_fns)
@@ -258,7 +264,12 @@ def _handle_parse_result(request, parse_results, object_search_fns):
         )
 
 
-def _q(request, field_name, search_obj, object_search_fns):
+def _q(
+    request: HttpRequest,
+    field_name: str,
+    search_obj: str,
+    object_search_fns: dict[str, Callable[[HttpRequest, str], Q]],
+):
     for _field_name, object_search_fn in object_search_fns.items():
         if field_name.lower() == _field_name.lower():
             try:

@@ -18,11 +18,11 @@ def _load_global_settings(*args: Any, **kwargs: Any):
 _load_global_settings()
 
 
-def get_id(token: str):
+def get_id(token: str) -> str:
     if _FACEBOOK_TEST_ID is None:  # pragma: testing-facebook
         graph = facebook.GraphAPI(token)
 
-        profile = None
+        profile: dict[str, Any]
         try:
             profile = graph.get_object("me", fields="id")
         except facebook.GraphAPIError as e:
@@ -33,11 +33,11 @@ def get_id(token: str):
         return _FACEBOOK_TEST_ID
 
 
-def get_id_and_email(token: str):
+def get_id_and_email(token: str) -> tuple[str, str | None]:
     if _FACEBOOK_TEST_ID is None:  # pragma: testing-facebook
         graph = facebook.GraphAPI(token)
 
-        profile = None
+        profile: dict[str, Any]
         try:
             profile = graph.get_object("me", fields="id,email")
         except facebook.GraphAPIError as e:

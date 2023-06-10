@@ -1,9 +1,17 @@
+from collections import defaultdict
+from typing import cast
+
+import lxml.etree as lxml_etree
 import xmlschema
 from defusedxml.ElementTree import ParseError as defused_ParseError
 from defusedxml.ElementTree import fromstring as defused_fromstring
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed
-from lxml import etree as lxml_etree
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotAllowed,
+)
 from url_normalize import url_normalize
 
 from api import archived_feed_entry_util
@@ -19,7 +27,7 @@ from api.models import (
 )
 
 
-def opml(request):
+def opml(request: HttpRequest):
     permitted_methods = {"GET", "POST"}
 
     if request.method not in permitted_methods:
@@ -88,7 +96,7 @@ def _opml_post(request):
     except xmlschema.XMLSchemaException:
         return HttpResponseBadRequest("OPML not valid")
 
-    outline_dict = {}
+    outline_dict: dict[str, set[tuple[str, str]]] = {}
 
     for outer_outline_element in opml_element.findall("./body/outline"):
         outer_outline_name = outer_outline_element.attrib["title"]
@@ -98,7 +106,7 @@ def _opml_post(request):
 
         for outline_element in outer_outline_element.findall("./outline"):
             outline_name = outline_element.attrib["title"]
-            outline_xml_url = url_normalize(outline_element.attrib["xmlUrl"])
+            outline_xml_url = cast(str, url_normalize(outline_element.attrib["xmlUrl"]))
 
             outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
 
@@ -113,26 +121,20 @@ def _opml_post(request):
         for user_category in UserCategory.objects.filter(user=request.user)
     }
 
-    existing_category_mappings = {}
+    existing_category_mappings: dict[str, set[str]] = defaultdict(set)
     for feed_user_category_mapping in FeedUserCategoryMapping.objects.select_related(
         "feed", "user_category"
     ).filter(user_category__user=request.user):
-        if (
-            feed_user_category_mapping.user_category.text
-            not in existing_category_mappings
-        ):
-            existing_category_mappings[
-                feed_user_category_mapping.user_category.text
-            ] = set()
-
         existing_category_mappings[feed_user_category_mapping.user_category.text].add(
             feed_user_category_mapping.feed.feed_url
         )
 
-    feeds_dict = {}
+    feeds_dict: dict[str, Feed | None] = {}
 
-    feed_subscription_progress_entry = None
-    feed_subscription_progress_entry_descriptors = []
+    feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None = None
+    feed_subscription_progress_entry_descriptors: list[
+        FeedSubscriptionProgressEntryDescriptor
+    ] = []
 
     for outer_outline_name, outline_set in outline_dict.items():
         for outline_name, outline_xml_url in outline_set:
@@ -159,9 +161,9 @@ def _opml_post(request):
 
                     feeds_dict[outline_xml_url] = None
 
-    user_categories = []
-    subscribed_feed_user_mappings = []
-    feed_user_category_mappings = []
+    user_categories: list[UserCategory] = []
+    subscribed_feed_user_mappings: list[SubscribedFeedUserMapping] = []
+    feed_user_category_mappings: list[FeedUserCategoryMapping] = []
 
     for outer_outline_name, outline_set in outline_dict.items():
         user_category = existing_categories.get(outer_outline_name)

@@ -108,7 +108,7 @@ def get_sort(
     param_name="sort",
     disable_default_sort_param_name="disableDefaultSort",
 ):
-    sort = None
+    sort: str | None
     if param_name in json_:
         sort = json_[param_name]
 
@@ -117,6 +117,8 @@ def get_sort(
                 raise QueryException(
                     "'{0}' must be null or string", 400
                 )  # pragma: no cover
+    else:
+        sort = None
 
     default_sort_enabled = True
     if disable_default_sort_param_name in json_:
@@ -194,7 +196,7 @@ def get_field_maps(fields: list[str], object_name: str, param_name="fields"):
 def generate_return_object(
     field_maps: list[fieldutils.FieldMap], db_obj: Any, request: HttpRequest
 ):
-    return_obj = {}
+    return_obj: dict[str, Any] = {}
     for field_map in field_maps:
         field_name = field_map["field_name"]
         return_obj[field_name] = field_map["accessor"](request, db_obj)

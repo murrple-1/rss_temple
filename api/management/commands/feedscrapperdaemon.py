@@ -26,13 +26,13 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         if options["feed_url"] or options["feed_uuid"]:
-            feed = None
+            feed: Feed
             if options["feed_url"]:
                 feed = Feed.objects.get(feed_url=options["feed_url"])
             elif options["feed_uuid"]:
                 feed = Feed.objects.get(uuid=uuid.UUID(options["feed_uuid"]))
             else:
-                raise RuntimeError
+                raise RuntimeError  # TODO this is just a placeholder
 
             response = rss_requests.get(feed.feed_url)
             response.raise_for_status()
@@ -105,16 +105,16 @@ class Command(BaseCommand):
     def _scrape_feed(self, feed: Feed, response_text: str):
         d = feed_handler.text_2_d(response_text)
 
-        new_feed_entries = []
+        new_feed_entries: list[FeedEntry] = []
 
         for d_entry in d.get("entries", []):
-            feed_entry = None
+            feed_entry: FeedEntry
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
             except ValueError:  # pragma: no cover
                 continue
 
-            old_feed_entry = None
+            old_feed_entry: FeedEntry | None
             old_feed_entry_get_kwargs = {
                 "feed": feed,
                 "url": feed_entry.url,
@@ -127,7 +127,7 @@ class Command(BaseCommand):
             try:
                 old_feed_entry = FeedEntry.objects.get(**old_feed_entry_get_kwargs)
             except FeedEntry.DoesNotExist:
-                pass
+                old_feed_entry = None
 
             if old_feed_entry is not None:
                 old_feed_entry.id = feed_entry.id

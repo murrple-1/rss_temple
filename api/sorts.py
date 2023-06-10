@@ -1,50 +1,38 @@
 import re
+from typing import Callable, Literal, TypedDict, cast
 
-from django.db.models import F
+from django.db.models import F, OrderBy
 
 from api.exceptions import QueryException
 
 
 class _DefaultDescriptor:
-    def __init__(self, sort_key, direction):
-        if type(sort_key) is not int:
-            raise TypeError("sort_key must be int")
+    direction: Literal["ASC", "DESC"]
 
-        if direction not in ["ASC", "DESC"]:
-            raise ValueError("direction not recognized")
-
+    def __init__(self, sort_key: int, direction: Literal["ASC", "DESC"]):
         self.sort_key = sort_key
         self.direction = direction
 
 
 class _SortConfig:
-    def __init__(self, field_accessor_fns, default_descriptor):
-        if type(field_accessor_fns) is not list:
-            raise TypeError("field_accessor_fns must be list")
-
+    def __init__(
+        self,
+        field_accessor_fns: list[Callable[[str], OrderBy]],
+        default_descriptor: _DefaultDescriptor | None,
+    ):
         if len(field_accessor_fns) < 1:
             raise ValueError("field_accessor_fns must not be empty")
-
-        for field_accessor_fn in field_accessor_fns:
-            if not callable(field_accessor_fn):
-                raise TypeError("field_accessor_fns element must be callable")
-
-        if (
-            default_descriptor is not None
-            and type(default_descriptor) is not _DefaultDescriptor
-        ):
-            raise TypeError("default_descriptor must be None or _DefaultDescriptor")
 
         self.field_accessor_fns = field_accessor_fns
         self.default_descriptor = default_descriptor
 
 
-def _standard_sort(field_name):
+def _standard_sort(field_name: str):
     f = F(field_name)
     return lambda dir_: f.desc() if dir_.upper() == "DESC" else f.asc()
 
 
-_sort_configs = {
+_sort_configs: dict[str, dict[str, _SortConfig]] = {
     "user": {
         "uuid": _SortConfig([_standard_sort("uuid")], _DefaultDescriptor(0, "ASC")),
         "email": _SortConfig([_standard_sort("email")], None),
@@ -78,8 +66,13 @@ _sort_configs = {
 __sort_regex = re.compile(r"^([A-Z0-9_]+):(ASC|DESC)$", re.IGNORECASE)
 
 
-def to_sort_list(object_name, sort, default_sort_enabled):
-    sort_list = []
+class _SortConfigDict(TypedDict):
+    field_name: str
+    direction: Literal["ASC", "DESC"]
+
+
+def to_sort_list(object_name: str, sort: str | None, default_sort_enabled: bool):
+    sort_list: list[_SortConfigDict] = []
 
     if sort:
         sort_parts = sort.split(",")
@@ -87,7 +80,7 @@ def to_sort_list(object_name, sort, default_sort_enabled):
             match = __sort_regex.search(sort_part)
             if match:
                 field_name = match.group(1)
-                direction = match.group(2)
+                direction = cast(Literal["ASC", "DESC"], match.group(2))
 
                 sort_list.append(
                     {
@@ -110,10 +103,10 @@ def to_sort_list(object_name, sort, default_sort_enabled):
     return sort_list
 
 
-def _to_default_sort_list(object_name):
+def _to_default_sort_list(object_name: str) -> list[_SortConfigDict]:
     object_sort_configs = _sort_configs[object_name]
 
-    field_name_dict = {}
+    field_name_dict: dict[int, list[_SortConfigDict]] = {}
     for field_name, object_sort_config in object_sort_configs.items():
         if object_sort_config.default_descriptor is not None:
             if object_sort_config.default_descriptor.sort_key not in field_name_dict:
@@ -126,15 +119,15 @@ def _to_default_sort_list(object_name):
                 }
             )
 
-    sort_list = []
+    sort_list: list[_SortConfigDict] = []
     for sort_key in sorted(field_name_dict.keys()):
         sort_list.extend(field_name_dict[sort_key])
 
     return sort_list
 
 
-def sort_list_to_order_by_args(object_name, sort_list):
-    db_sort_list = []
+def sort_list_to_order_by_args(object_name: str, sort_list: list[_SortConfigDict]):
+    db_sort_list: list[OrderBy] = []
     for sort_desc in sort_list:
         field_name = sort_desc["field_name"]
         direction = sort_desc["direction"]
@@ -150,7 +143,7 @@ def sort_list_to_order_by_args(object_name, sort_list):
     return db_sort_list
 
 
-def _to_db_sort_field_accessor_fns(object_name, field_name):
+def _to_db_sort_field_accessor_fns(object_name: str, field_name: str):
     field_name = field_name.lower()
 
     object_sort_configs = _sort_configs[object_name]

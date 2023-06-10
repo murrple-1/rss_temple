@@ -21,7 +21,7 @@ class Command(BaseCommand):
         parser.add_argument("-c", "--with-content", action="store_true")
 
     def _monkey_patch_feed_handler_logging(self):
-        _logger = None
+        _logger: logging.Logger | None = None
 
         def logger():  # pragma: no cover
             nonlocal _logger
@@ -54,10 +54,10 @@ class Command(BaseCommand):
 
         feed = feed_handler.d_feed_2_feed(d.feed, options["feed_url"])
 
-        feed_entries = []
+        feed_entries: list[FeedEntry] = []
 
         for index, d_entry in enumerate(d.get("entries", [])):
-            feed_entry = None
+            feed_entry: FeedEntry
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
             except ValueError:  # pragma: no cover
@@ -98,7 +98,7 @@ class Command(BaseCommand):
             )
 
         if options["print_entries"]:
-            table = []
+            table: list[list[Any]] = []
             for feed_entry in feed_entries:
                 row = [
                     feed_entry.uuid,

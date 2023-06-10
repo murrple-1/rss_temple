@@ -1,7 +1,6 @@
 import shutil
 
-from django.http.request import HttpRequest
-from django.http.response import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.test import TestCase
 
 from api.middleware import profiling
