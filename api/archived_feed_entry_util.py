@@ -1,3 +1,4 @@
+import datetime
 import itertools
 from typing import Any, Generator
 
@@ -8,7 +9,7 @@ from django.dispatch import receiver
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
 
-_USER_UNREAD_GRACE_INTERVAL: int
+_USER_UNREAD_GRACE_INTERVAL: datetime.timedelta
 _USER_UNREAD_GRACE_MIN_COUNT: int
 
 

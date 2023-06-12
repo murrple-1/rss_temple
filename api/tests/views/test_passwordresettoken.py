@@ -1,6 +1,7 @@
 import datetime
 import logging
 import uuid
+from typing import ClassVar
 
 from django.utils import timezone
 
@@ -8,10 +9,13 @@ from api.models import PasswordResetToken, User
 from api.tests.views import ViewTestCase
 
 
-class UserTestCase(ViewTestCase):
+class PasswordResetTokenTestCase(ViewTestCase):
     USER_EMAIL = "test@test.com"
 
     USER_PASSWORD = "password"
+
+    old_django_logger_level: ClassVar[int]
+    user: ClassVar[User]
 
     @classmethod
     def setUpClass(cls):
@@ -32,7 +36,8 @@ class UserTestCase(ViewTestCase):
         super().setUpTestData()
 
         cls.user = User.objects.create_user(
-            UserTestCase.USER_EMAIL, UserTestCase.USER_PASSWORD
+            PasswordResetTokenTestCase.USER_EMAIL,
+            PasswordResetTokenTestCase.USER_PASSWORD,
         )
 
     def test_passwordresettoken_request_post(self):
@@ -62,7 +67,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         params = {
-            "email": UserTestCase.USER_EMAIL,
+            "email": PasswordResetTokenTestCase.USER_EMAIL,
         }
         response = self.client.post("/api/passwordresettoken/request", params)
         self.assertEqual(response.status_code, 204, response.content)
@@ -104,7 +109,7 @@ class UserTestCase(ViewTestCase):
 
         password_reset_token = PasswordResetToken.objects.create(
             expires_at=(timezone.now() + datetime.timedelta(days=2)),
-            user=UserTestCase.user,
+            user=PasswordResetTokenTestCase.user,
         )
 
         params = {

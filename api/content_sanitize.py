@@ -4,9 +4,9 @@ from typing import Any, Callable
 from urllib.parse import ParseResult, urlparse
 
 import bleach
-import bleach.html5lib_shim
 import bleach.sanitizer
 import html5lib
+from bleach.html5lib_shim import SanitizerFilter as HTML5ShimFilter
 from html5lib.filters.base import Filter as HTML5LibFilter
 from html5lib.treewalkers.base import TreeWalker
 
@@ -152,7 +152,7 @@ def _html_sanitizer_stream(source: TreeWalker):
             "allowed_svg_properties": [],
         }
 
-    filtered = ScriptRemovalFiler(source=source)
+    filtered: HTML5LibFilter | HTML5ShimFilter = ScriptRemovalFiler(source=source)
     filtered = StyleRemovalFiler(source=filtered)
     filtered = HTTPSOnlyImgFilter(source=filtered)
     filtered = EmptyAnchorFilter(source=filtered)

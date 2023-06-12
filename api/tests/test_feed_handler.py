@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from django.test import TestCase
 
@@ -8,6 +9,8 @@ from api.models import FeedEntry
 
 
 class FeedHandlerTestCase(TestCase):
+    old_logger_level: ClassVar[int]
+
     FEED_TYPES = [
         "atom_0.3",
         "atom_1.0",

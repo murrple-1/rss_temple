@@ -1,5 +1,6 @@
 import logging
 import uuid
+from typing import ClassVar
 
 import ujson
 from django.utils import timezone
@@ -9,6 +10,10 @@ from api.tests.views import ViewTestCase
 
 
 class UserCategoryTestCase(ViewTestCase):
+    old_app_logger_level: ClassVar[int]
+    old_django_logger_level: ClassVar[int]
+    user: ClassVar[User]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

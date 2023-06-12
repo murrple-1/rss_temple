@@ -1,6 +1,7 @@
 import datetime
+from unittest.mock import Mock
 
-from django.http.response import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.test import TestCase
 
 from api.middleware import throttle
@@ -10,15 +11,12 @@ class ThrottleTestCase(TestCase):
     def test_middleware(self):
         middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
 
-        class MockHttpRequest:
-            def __init__(self):
-                self.META = {
-                    "REMOTE_ADDR": "192.168.0.1",
-                }
-                self.path_info = "/"
-                self.method = "GET"
-
-        request = MockHttpRequest()
+        request = Mock(HttpRequest)
+        request.META = {
+            "REMOTE_ADDR": "192.168.0.1",
+        }
+        request.path_info = "/"
+        request.method = "GET"
 
         with self.settings(THROTTLE_ENABLE=[("test", [], 30, 60)]):
             response = middleware(request)
@@ -27,15 +25,12 @@ class ThrottleTestCase(TestCase):
     def test_enable_none(self):
         middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
 
-        class MockHttpRequest:
-            def __init__(self):
-                self.META = {
-                    "REMOTE_ADDR": "192.168.0.1",
-                }
-                self.path_info = "/"
-                self.method = "GET"
-
-        request = MockHttpRequest()
+        request = Mock(HttpRequest)
+        request.META = {
+            "REMOTE_ADDR": "192.168.0.1",
+        }
+        request.path_info = "/"
+        request.method = "GET"
 
         with self.settings(THROTTLE_ENABLE=None):
             response = middleware(request)
@@ -44,15 +39,12 @@ class ThrottleTestCase(TestCase):
     def test_interval_types(self):
         middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
 
-        class MockHttpRequest:
-            def __init__(self):
-                self.META = {
-                    "REMOTE_ADDR": "192.168.0.1",
-                }
-                self.path_info = "/"
-                self.method = "GET"
-
-        request = MockHttpRequest()
+        request = Mock(HttpRequest)
+        request.META = {
+            "REMOTE_ADDR": "192.168.0.1",
+        }
+        request.path_info = "/"
+        request.method = "GET"
 
         with self.settings(THROTTLE_ENABLE=[("test", [], 30, 60)]):
             response = middleware(request)
@@ -67,13 +59,10 @@ class ThrottleTestCase(TestCase):
     def test_no_ip(self):
         middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
 
-        class MockHttpRequest:
-            def __init__(self):
-                self.META = {}
-                self.path_info = "/"
-                self.method = "GET"
-
-        request = MockHttpRequest()
+        request = Mock(HttpRequest)
+        request.META = {}
+        request.path_info = "/"
+        request.method = "GET"
 
         with self.settings(THROTTLE_ENABLE=[("test", [], 30, 60)]):
             response = middleware(request)
@@ -82,15 +71,12 @@ class ThrottleTestCase(TestCase):
     def test_throttling(self):
         middleware = throttle.ThrottleMiddleware(lambda request: HttpResponse())
 
-        class MockHttpRequest:
-            def __init__(self):
-                self.META = {
-                    "REMOTE_ADDR": "192.168.0.1",
-                }
-                self.path_info = "/"
-                self.method = "GET"
-
-        request = MockHttpRequest()
+        request = Mock(HttpRequest)
+        request.META = {
+            "REMOTE_ADDR": "192.168.0.1",
+        }
+        request.path_info = "/"
+        request.method = "GET"
 
         with self.settings(
             THROTTLE_ENABLE=[("test", [(r"^/$", "GET")], 1, 60)],

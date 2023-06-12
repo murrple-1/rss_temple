@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import ujson
 from django.test import modify_settings, tag
@@ -15,6 +16,9 @@ from api.tests import TestFileServerTestCase
     }
 )
 class FeedTestCase(TestFileServerTestCase):
+    old_app_logger_level: ClassVar[int]
+    old_django_logger_level: ClassVar[int]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

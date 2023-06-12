@@ -24,7 +24,7 @@ class Command(BaseCommand):
         parser.add_argument("--feed-url")
         parser.add_argument("--feed-uuid")
 
-    def handle(self, *args: Any, **options: Any) -> str | None:
+    def handle(self, *args: Any, **options: Any) -> None:
         if options["feed_url"] or options["feed_uuid"]:
             feed: Feed
             if options["feed_url"]:

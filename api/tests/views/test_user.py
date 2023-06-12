@@ -1,7 +1,7 @@
 import datetime
 import logging
 import uuid
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import ujson
 from django.utils import timezone
@@ -158,7 +158,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 409, response.content)
 
     def test_user_put_my(self):
-        body = {
+        body: dict[str, Any] = {
             "my": {},
         }
 
@@ -297,7 +297,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 403, response.content)
 
     def test_user_put_google(self):
-        body = {
+        body: dict[str, Any] = {
             "google": {},
         }
         response = self.client.put(
@@ -353,7 +353,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
 
     def test_user_put_google_token_typeerror(self):
-        body = {
+        body: dict[str, Any] = {
             "google": {
                 "token": None,
             },

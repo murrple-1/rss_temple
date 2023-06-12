@@ -1,7 +1,7 @@
 import datetime
 import logging
 from io import StringIO
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
 
 from django.conf import settings
@@ -11,10 +11,15 @@ from django.utils import timezone
 from api.management.commands.feedscrapperdaemon import Command
 from api.models import Feed, FeedEntry
 
+if TYPE_CHECKING:
+    from unittest.mock import _Mock, _patch
+
 
 class DaemonTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     command: ClassVar[Command]
+    stdout_patcher: ClassVar["_patch[_Mock]"]
+    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):

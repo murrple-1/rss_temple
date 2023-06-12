@@ -1,12 +1,16 @@
 import re
 import smtplib
 from io import StringIO
+from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
 
 from django.test import TestCase
 
 from api.management.commands.notifydaemon import Command
 from api.models import NotifyEmailQueueEntry, NotifyEmailQueueEntryRecipient
+
+if TYPE_CHECKING:
+    from unittest.mock import _Mock, _patch
 
 
 def _mock_send_email(*args, **kwargs):
@@ -17,6 +21,10 @@ COUNT_WARNING_THRESHOLD = 10
 
 
 class DaemonTestCase(TestCase):
+    command: ClassVar[Command]
+    stdout_patcher: ClassVar["_patch[_Mock]"]
+    stderr_patcher: ClassVar["_patch[_Mock]"]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

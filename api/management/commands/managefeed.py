@@ -72,6 +72,7 @@ class Command(BaseCommand):
 
             feed_entries.append(feed_entry)
 
+        table: list[list[Any]]
         if options["print_feed"]:
             table = [
                 [
@@ -98,7 +99,7 @@ class Command(BaseCommand):
             )
 
         if options["print_entries"]:
-            table: list[list[Any]] = []
+            table = []
             for feed_entry in feed_entries:
                 row = [
                     feed_entry.uuid,

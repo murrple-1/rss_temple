@@ -146,7 +146,11 @@ class OPMLTestCase(ViewTestCase):
 
         user = User.objects.get(email="test@test.com")
 
-        SubscribedFeedUserMapping.objects.filter(user=user).first().delete()
+        subscribed_feed_user_mapping = SubscribedFeedUserMapping.objects.filter(
+            user=user
+        ).first()
+        assert subscribed_feed_user_mapping is not None
+        subscribed_feed_user_mapping.delete()
 
         self._login()
 

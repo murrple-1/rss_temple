@@ -43,6 +43,7 @@ types-ujson = "*"
 types-requests = "*"
 types-html5lib = "*"
 tblib = "*"
+lxml-stubs = "*"
 
 [requires]
 python_version = "3.11"

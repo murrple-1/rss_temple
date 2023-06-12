@@ -1,14 +1,15 @@
+from unittest.mock import Mock
+
+from django.http import HttpRequest
 from django.http.request import QueryDict
 from django.test import TestCase
 
 from api import query_utils
 from api.exceptions import QueryException
+from api.fields import FieldMap
 
 
 class QueryUtilsTestCase(TestCase):
-    class MockRequest:
-        pass
-
     def test_serialize_content(self):
         content, content_type = query_utils.serialize_content(
             {"test1": 1, "test2": True}
@@ -261,25 +262,23 @@ class QueryUtilsTestCase(TestCase):
         )
 
     def test_get_search(self):
-        self.assertEqual(
-            query_utils.get_search(QueryUtilsTestCase.MockRequest(), {}, "user"), []
-        )
+        self.assertEqual(query_utils.get_search(Mock(HttpRequest), {}, "user"), [])
         self.assertEqual(
             query_utils.get_search(
-                QueryUtilsTestCase.MockRequest(),
+                Mock(HttpRequest),
                 {
                     "search": 'email:"test"',
                 },
                 "user",
             ),
             query_utils.searchutils.to_filter_args(
-                "user", QueryUtilsTestCase.MockRequest(), 'email:"test"'
+                "user", Mock(HttpRequest), 'email:"test"'
             ),
         )
 
         self.assertEqual(
             query_utils.get_search(
-                QueryUtilsTestCase.MockRequest(),
+                Mock(HttpRequest),
                 {
                     "tsearch": 'email:"test"',
                 },
@@ -287,19 +286,19 @@ class QueryUtilsTestCase(TestCase):
                 param_name="tsearch",
             ),
             query_utils.searchutils.to_filter_args(
-                "user", QueryUtilsTestCase.MockRequest(), 'email:"test"'
+                "user", Mock(HttpRequest), 'email:"test"'
             ),
         )
 
     def test_get_fields__query_dict(self):
-        self.assertEqual(query_utils.get_fields__query_dict(QueryDict("")), [])
+        self.assertEqual(query_utils.get_fields__query_dict(QueryDict("", True)), [])
         self.assertEqual(
-            query_utils.get_fields__query_dict(QueryDict("fields=uuid,name")),
+            query_utils.get_fields__query_dict(QueryDict("fields=uuid,name", True)),
             ["uuid", "name"],
         )
         self.assertEqual(
             query_utils.get_fields__query_dict(
-                QueryDict("tfields=uuid,name"), param_name="tfields"
+                QueryDict("tfields=uuid,name", True), param_name="tfields"
             ),
             ["uuid", "name"],
         )
@@ -355,23 +354,18 @@ class QueryUtilsTestCase(TestCase):
         )
 
     def test_generate_return_object(self):
-        field_maps = [
+        field_maps: list[FieldMap] = [
             {
                 "field_name": "uuid",
                 "accessor": lambda request, db_obj: db_obj.uuid,
             }
         ]
 
-        class MockObject:
-            pass
-
-        db_obj = MockObject()
+        db_obj = Mock()
         db_obj.uuid = "test string"
 
         self.assertEqual(
-            query_utils.generate_return_object(
-                field_maps, db_obj, QueryUtilsTestCase.MockRequest
-            ),
+            query_utils.generate_return_object(field_maps, db_obj, Mock(HttpRequest)),
             {
                 "uuid": "test string",
             },

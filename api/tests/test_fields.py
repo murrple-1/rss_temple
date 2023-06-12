@@ -1,6 +1,9 @@
 import logging
 import uuid
+from typing import Any, Callable, ClassVar
+from unittest.mock import Mock
 
+from django.http import HttpRequest
 from django.test import TestCase
 from django.utils import timezone
 
@@ -68,31 +71,36 @@ class FieldsTestCase(TestCase):
     def test_fieldconfig(self):
         fc = fields._FieldConfig(lambda request, db_obj: "test", True)
 
-        self.assertEqual(fc.accessor(object(), object()), "test")
+        self.assertEqual(fc.accessor(Mock(HttpRequest), object()), "test")
         self.assertTrue(fc.default)
 
     def test_to_field_map(self):
         for oc in _object_configs:
             field_map = fields.to_field_map(oc.object_name, oc.good_field_name)
 
-            self.assertEqual(field_map["field_name"], oc.good_field_name)
+            assert field_map is not None
 
-            class TestRequest:
-                pass
+            self.assertEqual(field_map["field_name"], oc.good_field_name)
 
             class TestObject:
                 def __init__(self):
                     self.uuid = uuid.uuid4()
 
-            test_request = TestRequest()
-            test_obj = TestObject()
-            field_map["accessor"](test_request, test_obj)
+            field_map["accessor"](Mock(HttpRequest), TestObject())
 
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)
 
 
 class AllFieldsTestCase(TestCase):
+    old_logger_level: ClassVar[int]
+    TRIALS: ClassVar[dict[str, Callable[[], list[Any]]]]
+    user: ClassVar[User]
+    user_category: ClassVar[UserCategory]
+    feed_with_category: ClassVar[Feed]
+    feed_without_category: ClassVar[Feed]
+    feed_entry: ClassVar[FeedEntry]
+
     @classmethod
     def generate_users(cls):
         return [cls.user]
@@ -115,8 +123,9 @@ class AllFieldsTestCase(TestCase):
     def generate_feedentries(cls):
         return [cls.feed_entry]
 
-    class MockRequest:
+    class MockRequest(Mock):
         def __init__(self):
+            super().__init__(HttpRequest)
             self.user = AllFieldsTestCase.user
 
     @classmethod
@@ -207,8 +216,9 @@ class FieldFnsTestCase(TestCase):
     def test_feedentry_isRead(self):
         user = User.objects.create_user("test_fields@test.com", None)
 
-        class MockRequest:
+        class MockRequest(Mock):
             def __init__(self):
+                super().__init__(HttpRequest)
                 self.user = user
 
         request = MockRequest()

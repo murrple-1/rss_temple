@@ -264,7 +264,7 @@ class Feed(models.Model):
     update_backoff_until = models.DateTimeField(default=timezone.now)
 
     @staticmethod
-    def annotate_search_vectors(qs):
+    def annotate_search_vectors(qs: models.QuerySet["Feed"]):
         if connection.vendor == "postgresql":  # pragma: no cover
             from django.contrib.postgres.search import SearchVectorField
 
@@ -277,7 +277,7 @@ class Feed(models.Model):
         return qs
 
     @staticmethod
-    def annotate_subscription_data(qs, user):
+    def annotate_subscription_data(qs: models.QuerySet["Feed"], user: User):
         subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
             user=user, feed_id=models.OuterRef("uuid")
         )

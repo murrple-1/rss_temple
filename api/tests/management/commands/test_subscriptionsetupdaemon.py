@@ -1,4 +1,5 @@
 from io import StringIO
+from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
 
 from django.test import tag
@@ -15,8 +16,15 @@ from api.models import (
 )
 from api.tests import TestFileServerTestCase
 
+if TYPE_CHECKING:
+    from unittest.mock import _Mock, _patch
+
 
 class DaemonTestCase(TestFileServerTestCase):
+    command: ClassVar[Command]
+    stdout_patcher: ClassVar["_patch[_Mock]"]
+    stderr_patcher: ClassVar["_patch[_Mock]"]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

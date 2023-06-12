@@ -1,4 +1,7 @@
-from django.db.models import F
+from typing import Callable, ClassVar, TypedDict
+
+from django.db.models import F, QuerySet
+from django.db.models.manager import BaseManager
 from django.test import TestCase
 
 from api import sorts
@@ -107,7 +110,12 @@ class SortsTestCase(TestCase):
 
 
 class AllSortsTestCase(TestCase):
-    TRIALS = {
+    user: ClassVar[User]
+
+    class _Trial(TypedDict):
+        get_queryset: Callable[[], BaseManager | QuerySet]
+
+    TRIALS: dict[str, _Trial] = {
         "user": {
             "get_queryset": lambda: User.objects,
         },

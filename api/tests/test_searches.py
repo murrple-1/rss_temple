@@ -1,6 +1,11 @@
 import logging
 import uuid
+from typing import Any, Callable, ClassVar, TypedDict
+from unittest.mock import Mock
 
+from django.db.models import QuerySet
+from django.db.models.manager import BaseManager
+from django.http import HttpRequest
 from django.test import TestCase
 
 from api import searches
@@ -9,8 +14,7 @@ from api.models import Feed, FeedEntry, User, UserCategory
 
 
 class SearchesTestCase(TestCase):
-    class MockRequest:
-        pass
+    old_logger_level: ClassVar[int]
 
     @classmethod
     def setUpClass(cls):
@@ -29,73 +33,70 @@ class SearchesTestCase(TestCase):
     def test_standard(self):
         searches.to_filter_args(
             "feed",
-            SearchesTestCase.MockRequest(),
+            Mock(HttpRequest),
             'uuid:"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
         )
 
     def test_malformed(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("user", SearchesTestCase.MockRequest(), "")
+            searches.to_filter_args("user", Mock(HttpRequest), "")
 
         with self.assertRaises(QueryException):
-            searches.to_filter_args(
-                "user", SearchesTestCase.MockRequest(), '((email:"test")'
-            )
+            searches.to_filter_args("user", Mock(HttpRequest), '((email:"test")')
 
     def test_unknown_field(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args(
-                "feed", SearchesTestCase.MockRequest(), 'email:"test"'
-            )
+            searches.to_filter_args("feed", Mock(HttpRequest), 'email:"test"')
 
     def test_malformed_value(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args(
-                "feed", SearchesTestCase.MockRequest(), 'uuid:"bad uuid"'
-            )
+            searches.to_filter_args("feed", Mock(HttpRequest), 'uuid:"bad uuid"')
 
     def test_and(self):
         searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), 'email:"test" or email:"example"'
+            "user", Mock(HttpRequest), 'email:"test" or email:"example"'
         )
         searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), 'email:"test" OR email:"example"'
+            "user", Mock(HttpRequest), 'email:"test" OR email:"example"'
         )
 
     def test_or(self):
         searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), 'email:"test" and email:"example"'
+            "user", Mock(HttpRequest), 'email:"test" and email:"example"'
         )
         searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), 'email:"test" AND email:"example"'
+            "user", Mock(HttpRequest), 'email:"test" AND email:"example"'
         )
 
     def test_parenthesized(self):
         searches.to_filter_args(
             "user",
-            SearchesTestCase.MockRequest(),
+            Mock(HttpRequest),
             'email:"word" or (email:"test" and email:"example")',
         )
         searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), 'email:"test" or (email:"example")'
+            "user", Mock(HttpRequest), 'email:"test" or (email:"example")'
         )
-        searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), '(email:"test")'
-        )
-        searches.to_filter_args(
-            "user", SearchesTestCase.MockRequest(), '((email:"test"))'
-        )
+        searches.to_filter_args("user", Mock(HttpRequest), '(email:"test")')
+        searches.to_filter_args("user", Mock(HttpRequest), '((email:"test"))')
 
     def test_exclude(self):
         searches.to_filter_args(
             "feed",
-            SearchesTestCase.MockRequest(),
+            Mock(HttpRequest),
             'uuid:!"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
         )
 
 
 class AllSearchesTestCase(TestCase):
-    TRIALS = {
+    old_logger_level: ClassVar[int]
+    user: ClassVar[User]
+
+    class _Trial(TypedDict):
+        get_queryset: Callable[[], BaseManager | QuerySet[Any]]
+        searches: dict[str, list[Any]]
+
+    TRIALS: dict[str, _Trial] = {
         "user": {
             "get_queryset": lambda: User.objects,
             "searches": {
@@ -168,8 +169,9 @@ class AllSearchesTestCase(TestCase):
         },
     }
 
-    class MockRequest:
+    class MockRequest(Mock):
         def __init__(self):
+            super().__init__(HttpRequest)
             self.user = AllSearchesTestCase.user
 
     @classmethod
@@ -208,7 +210,8 @@ class AllSearchesTestCase(TestCase):
                     for test_value in test_values:
                         with self.subTest(field=field, test_value=test_value):
                             q = search_fns_dict[field](
-                                AllSearchesTestCase.MockRequest(), test_value
+                                AllSearchesTestCase.MockRequest(),
+                                test_value,
                             )
                             result = list(queryset.filter(q))
 

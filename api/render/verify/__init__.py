@@ -20,7 +20,7 @@ _load_global_settings()
 
 
 def plain_text(verify_token):
-    context = {
+    context: dict[str, Any] = {
         "verify_url": _VERIFY_URL_FORMAT.format(verify_token=verify_token),
     }
 
@@ -28,7 +28,7 @@ def plain_text(verify_token):
 
 
 def html_text(verify_token):
-    context = {
+    context: dict[str, Any] = {
         "verify_url": _VERIFY_URL_FORMAT.format(verify_token=verify_token),
     }
 
@@ -36,6 +36,6 @@ def html_text(verify_token):
 
 
 def subject():
-    context = {}
+    context: dict[str, Any] = {}
 
     return render.to_text("verify/templates/subject.txt", context)

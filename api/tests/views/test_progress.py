@@ -1,6 +1,7 @@
 import logging
 import random
 import uuid
+from typing import ClassVar
 
 from api.models import (
     FeedSubscriptionProgressEntry,
@@ -11,6 +12,10 @@ from api.tests.views import ViewTestCase
 
 
 class ProgressTestCase(ViewTestCase):
+    old_app_logger_level: ClassVar[int]
+    old_django_logger_level: ClassVar[int]
+    user: ClassVar[User]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

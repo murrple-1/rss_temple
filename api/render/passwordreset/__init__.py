@@ -1,8 +1,10 @@
+from typing import Any
+
 from api import render
 
 
 def plain_text(password_reset_token: str):
-    context = {
+    context: dict[str, Any] = {
         "password_reset_token": password_reset_token,
     }
 
@@ -10,7 +12,7 @@ def plain_text(password_reset_token: str):
 
 
 def html_text(password_reset_token: str):
-    context = {
+    context: dict[str, Any] = {
         "password_reset_token": password_reset_token,
     }
 
@@ -18,6 +20,6 @@ def html_text(password_reset_token: str):
 
 
 def subject():
-    context = {}
+    context: dict[str, Any] = {}
 
     return render.to_text("passwordreset/templates/subject.txt", context)

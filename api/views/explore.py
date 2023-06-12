@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, TypedDict
 
 from django.http import HttpResponse, HttpResponseNotAllowed
 
@@ -18,7 +18,16 @@ def explore(request):
 
 def _explore_get(request):
     # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
-    section_lookups = [
+
+    class FeedDesc(TypedDict):
+        feed_url: str
+        image_src: str | None
+
+    class Section(TypedDict):
+        tag: str
+        feeds: list[FeedDesc]
+
+    section_lookups: list[Section] = [
         {
             "tag": "Gaming",
             "feeds": [
@@ -102,7 +111,7 @@ def _explore_get(request):
     for section_lookup in section_lookups:
         feed_objs: list[dict[str, Any]] = []
         for feed_lookup in section_lookup["feeds"]:
-            feed = None
+            feed: Feed
             try:
                 feed = Feed.annotate_subscription_data(
                     Feed.objects.all(), request.user
