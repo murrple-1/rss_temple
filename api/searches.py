@@ -12,6 +12,7 @@ from api.models import (
     Feed,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
+    User,
 )
 from api.search.convertto import (
     Bool,
@@ -28,9 +29,9 @@ _logger = logging.getLogger("rss_temple")
 def _feedentry_subscribed(request: HttpRequest, search_obj: str):
     q = Q(
         feed__in=Feed.objects.filter(
-            uuid__in=SubscribedFeedUserMapping.objects.filter(user=request.user).values(
-                "feed_id"
-            )
+            uuid__in=SubscribedFeedUserMapping.objects.filter(
+                user=cast(User, request.user)
+            ).values("feed_id")
         )
     )
 
@@ -42,9 +43,9 @@ def _feedentry_subscribed(request: HttpRequest, search_obj: str):
 
 def _feedentry_is_read(request: HttpRequest, search_obj: str):
     q = Q(
-        uuid__in=ReadFeedEntryUserMapping.objects.filter(user=request.user).values(
-            "feed_entry_id"
-        )
+        uuid__in=ReadFeedEntryUserMapping.objects.filter(
+            user=cast(User, request.user)
+        ).values("feed_entry_id")
     )
 
     if not Bool.convertto(search_obj):
@@ -55,9 +56,9 @@ def _feedentry_is_read(request: HttpRequest, search_obj: str):
 
 def _feedentry_is_favorite(request: HttpRequest, search_obj: str):
     q = Q(
-        uuid__in=FavoriteFeedEntryUserMapping.objects.filter(user=request.user).values(
-            "feed_entry_id"
-        )
+        uuid__in=FavoriteFeedEntryUserMapping.objects.filter(
+            user=cast(User, request.user)
+        ).values("feed_entry_id")
     )
 
     if not Bool.convertto(search_obj):
@@ -161,18 +162,18 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "isFavorite": _feedentry_is_favorite,
         "readAt": lambda request, search_obj: Q(
             uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                user=request.user,
+                user=cast(User, request.user),
                 read_at__range=DateTimeRange.convertto(search_obj),
             )
         ),
         "readAt_exact": lambda request, search_obj: Q(
             uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                user=request.user, read_at=DateTime.convertto(search_obj)
+                user=cast(User, request.user), read_at=DateTime.convertto(search_obj)
             )
         ),
         "readAt_delta": lambda request, search_obj: Q(
             uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                user=request.user,
+                user=cast(User, request.user),
                 read_at__range=DateTimeDeltaRange.convertto(search_obj),
             )
         ),
@@ -216,7 +217,7 @@ def to_filter_args(object_name: str, request: HttpRequest, search: str):
 
 def _handle_parse_result(
     request: HttpRequest, parse_results: ParseResults, object_search_fns
-):
+) -> Q:
     if "WhereClause" in parse_results and "WhereExpressionExtension" in parse_results:
         where_clause = parse_results["WhereClause"]
         where_expression_extension = parse_results["WhereExpressionExtension"]
@@ -262,6 +263,8 @@ def _handle_parse_result(
                 request, parse_results["ParenthesizedExpression"], object_search_fns
             )
         )
+    else:
+        raise ValueError("unknown parse_result")
 
 
 def _q(

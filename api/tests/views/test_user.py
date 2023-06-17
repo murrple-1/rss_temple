@@ -366,7 +366,7 @@ class UserTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_put_facebook(self):
-        body = {
+        body: dict[str, Any] = {
             "facebook": {},
         }
         response = self.client.put(

@@ -58,7 +58,7 @@ class DaemonTestCase(TestCase):
             home_url="http://example.com",
         )
 
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed.xml", "r") as f:
             text = f.read()
 

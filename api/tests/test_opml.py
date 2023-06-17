@@ -11,7 +11,7 @@ class OPMLTestCase(TestCase):
         self.assertIsNotNone(opml.schema())
 
     def test_schema_success(self):
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-mix.xml") as f:
             text = f.read()
 
@@ -20,7 +20,7 @@ class OPMLTestCase(TestCase):
         opml.schema().validate(element)
 
     def test_schema_failed(self):
-        text = None
+        text: str
         with open("api/tests/test_files/opml/invalid_opml.xml") as f:
             text = f.read()
 

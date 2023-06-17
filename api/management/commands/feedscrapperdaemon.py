@@ -2,7 +2,7 @@ import datetime
 import time
 import traceback
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import requests
 from django.conf import settings
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                         for feed in (
                             Feed.objects.select_for_update(skip_locked=True)
                             .filter(update_backoff_until__lte=Now())
-                            .order_by("update_backoff_until")[: args.count]
+                            .order_by("update_backoff_until")[: cast(int, args.count)]
                         ):
                             count += 1
 
@@ -62,7 +62,7 @@ class Command(BaseCommand):
                                 feed.update_backoff_until = (
                                     self._success_update_backoff_until(
                                         feed, settings.SUCCESS_BACKOFF_SECONDS
-                                    ),
+                                    )
                                 )
                                 feed.save(
                                     update_fields=[
@@ -153,12 +153,15 @@ class Command(BaseCommand):
 
         feed.db_updated_at = timezone.now()
 
-    def _success_update_backoff_until(self, feed: Feed, success_backoff_seconds: int):
+    def _success_update_backoff_until(
+        self, feed: Feed, success_backoff_seconds: int
+    ) -> datetime.datetime:
+        assert feed.db_updated_at is not None
         return feed.db_updated_at + datetime.timedelta(seconds=success_backoff_seconds)
 
     def _error_update_backoff_until(
         self, feed: Feed, min_error_backoff_seconds: int, max_error_backoff_seconds: int
-    ):
+    ) -> datetime.datetime:
         last_written_at = feed.db_updated_at or feed.db_created_at
 
         backoff_delta_seconds = (

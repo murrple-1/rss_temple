@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import ujson
 
@@ -7,6 +8,8 @@ from api.tests.views import ViewTestCase
 
 
 class LoginTestCase(ViewTestCase):
+    old_django_logger_level: ClassVar[int]
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

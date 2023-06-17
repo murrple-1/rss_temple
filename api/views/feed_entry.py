@@ -6,9 +6,10 @@ from typing import Any
 import ujson
 from django.core.cache import caches
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import OrderBy, Q
 from django.db.utils import IntegrityError
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
@@ -17,13 +18,14 @@ from django.http import (
 
 from api import query_utils
 from api.exceptions import QueryException
+from api.fields import FieldMap
 from api.models import FavoriteFeedEntryUserMapping, FeedEntry, ReadFeedEntryUserMapping
 
 _OBJECT_NAME = "feedentry"
 
 
-def feed_entry(request, uuid_):
-    uuid_ = uuid.UUID(uuid_)
+def feed_entry(request: HttpRequest, uuid_: str):
+    uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"GET"}
 
@@ -31,10 +33,10 @@ def feed_entry(request, uuid_):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == "GET":
-        return _feed_entry_get(request, uuid_)
+        return _feed_entry_get(request, uuid__)
 
 
-def feed_entries_query(request):
+def feed_entries_query(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -44,7 +46,7 @@ def feed_entries_query(request):
         return _feed_entries_query_post(request)
 
 
-def feed_entries_query_stable_create(request):
+def feed_entries_query_stable_create(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -54,7 +56,7 @@ def feed_entries_query_stable_create(request):
         return _feed_entries_query_stable_create_post(request)
 
 
-def feed_entries_query_stable(request):
+def feed_entries_query_stable(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -64,8 +66,8 @@ def feed_entries_query_stable(request):
         return _feed_entries_query_stable_post(request)
 
 
-def feed_entry_read(request, uuid_):
-    uuid_ = uuid.UUID(uuid_)
+def feed_entry_read(request: HttpRequest, uuid_: str):
+    uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"POST", "DELETE"}
 
@@ -73,12 +75,12 @@ def feed_entry_read(request, uuid_):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == "POST":
-        return _feed_entry_read_post(request, uuid_)
+        return _feed_entry_read_post(request, uuid__)
     elif request.method == "DELETE":
-        return _feed_entry_read_delete(request, uuid_)
+        return _feed_entry_read_delete(request, uuid__)
 
 
-def feed_entries_read(request):
+def feed_entries_read(request: HttpRequest):
     permitted_methods = {"POST", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -90,8 +92,8 @@ def feed_entries_read(request):
         return _feed_entries_read_delete(request)
 
 
-def feed_entry_favorite(request, uuid_):
-    uuid_ = uuid.UUID(uuid_)
+def feed_entry_favorite(request: HttpRequest, uuid_: str):
+    uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"POST", "DELETE"}
 
@@ -99,12 +101,12 @@ def feed_entry_favorite(request, uuid_):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == "POST":
-        return _feed_entry_favorite_post(request, uuid_)
+        return _feed_entry_favorite_post(request, uuid__)
     elif request.method == "DELETE":
-        return _feed_entry_favorite_delete(request, uuid_)
+        return _feed_entry_favorite_delete(request, uuid__)
 
 
-def feed_entries_favorite(request):
+def feed_entries_favorite(request: HttpRequest):
     permitted_methods = {"POST", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -116,15 +118,15 @@ def feed_entries_favorite(request):
         return _feed_entries_favorite_delete(request)
 
 
-def _feed_entry_get(request, uuid_):
-    field_maps = None
+def _feed_entry_get(request: HttpRequest, uuid_: str):
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feed_entry = None
+    feed_entry: FeedEntry
     try:
         feed_entry = FeedEntry.objects.get(uuid=uuid_)
     except FeedEntry.DoesNotExist:
@@ -137,11 +139,11 @@ def _feed_entry_get(request, uuid_):
     return HttpResponse(content, content_type)
 
 
-def _feed_entries_query_post(request):
+def _feed_entries_query_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -150,44 +152,46 @@ def _feed_entries_query_post(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    count = None
+    assert isinstance(json_, dict)
+
+    count: int
     try:
         count = query_utils.get_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    skip = None
+    skip: int
     try:
         skip = query_utils.get_skip(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    sort = None
+    sort: list[OrderBy]
     try:
         sort = query_utils.get_sort(json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    search = None
+    search: list[Q]
     try:
         search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    field_maps = None
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__json(json_)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_objects = None
+    return_objects: bool
     try:
         return_objects = query_utils.get_return_objects(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_total_count = None
+    return_total_count: bool
     try:
         return_total_count = query_utils.get_return_total_count(json_)
     except QueryException as e:  # pragma: no cover
@@ -214,13 +218,13 @@ def _feed_entries_query_post(request):
     return HttpResponse(content, content_type)
 
 
-def _feed_entries_query_stable_create_post(request):
+def _feed_entries_query_stable_create_post(request: HttpRequest):
     cache = caches["stable_query"]
 
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -229,13 +233,15 @@ def _feed_entries_query_stable_create_post(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    sort = None
+    assert isinstance(json_, dict)
+
+    sort: list[OrderBy]
     try:
         sort = query_utils.get_sort(json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    search = None
+    search: list[Q]
     try:
         search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
@@ -257,13 +263,13 @@ def _feed_entries_query_stable_create_post(request):
     return HttpResponse(content, content_type)
 
 
-def _feed_entries_query_stable_post(request):
+def _feed_entries_query_stable_post(request: HttpRequest):
     cache = caches["stable_query"]
 
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -272,7 +278,9 @@ def _feed_entries_query_stable_post(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    token = None
+    assert isinstance(json_, dict)
+
+    token: str
     try:
         token = json_["token"]
     except KeyError:
@@ -284,32 +292,32 @@ def _feed_entries_query_stable_post(request):
     if re.search(r"^feedentry-\d+$", token) is None:
         return HttpResponseBadRequest("'token' malformed")
 
-    count = None
+    count: int
     try:
         count = query_utils.get_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    skip = None
+    skip: int
     try:
         skip = query_utils.get_skip(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    field_maps = None
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__json(json_)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_objects = None
+    return_objects: bool
     try:
         return_objects = query_utils.get_return_objects(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_total_count = None
+    return_total_count: bool
     try:
         return_total_count = query_utils.get_return_total_count(json_)
     except QueryException as e:  # pragma: no cover
@@ -346,11 +354,11 @@ def _feed_entries_query_stable_post(request):
     return HttpResponse(content, content_type)
 
 
-def _feed_entry_read_post(request, uuid_):
-    read_feed_entry_user_mapping = None
+def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
+    read_feed_entry_user_mapping: ReadFeedEntryUserMapping
 
     with transaction.atomic():
-        feed_entry = None
+        feed_entry: FeedEntry
         try:
             feed_entry = FeedEntry.objects.get(uuid=uuid_)
         except FeedEntry.DoesNotExist:
@@ -371,7 +379,7 @@ def _feed_entry_read_post(request, uuid_):
     return HttpResponse(content, content_type)
 
 
-def _feed_entry_read_delete(request, uuid_):
+def _feed_entry_read_delete(request: HttpRequest, uuid_: uuid.UUID):
     ReadFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user
     ).delete()
@@ -379,11 +387,11 @@ def _feed_entry_read_delete(request, uuid_):
     return HttpResponse(status=204)
 
 
-def _feed_entries_read_post(request):
+def _feed_entries_read_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -392,7 +400,9 @@ def _feed_entries_read_post(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be array")  # pragma: no cover
 
-    q = None
+    assert isinstance(json_, dict)
+
+    q: Q | None = None
 
     if "feedUuids" in json_:
         if type(json_["feedUuids"]) is not list:
@@ -450,11 +460,11 @@ def _feed_entries_read_post(request):
     return HttpResponse(status=204)
 
 
-def _feed_entries_read_delete(request):
+def _feed_entries_read_delete(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -463,10 +473,12 @@ def _feed_entries_read_delete(request):
     if type(json_) is not list:
         return HttpResponseBadRequest("JSON body must be array")  # pragma: no cover
 
+    assert isinstance(json_, list)
+
     if len(json_) < 1:
         return HttpResponse(status=204)
 
-    _ids = None
+    _ids: frozenset[uuid.UUID]
     try:
         _ids = frozenset(uuid.UUID(uuid_) for uuid_ in json_)
     except (ValueError, TypeError, AttributeError):
@@ -479,8 +491,8 @@ def _feed_entries_read_delete(request):
     return HttpResponse(status=204)
 
 
-def _feed_entry_favorite_post(request, uuid_):
-    feed_entry = None
+def _feed_entry_favorite_post(request: HttpRequest, uuid_: uuid.UUID):
+    feed_entry: FeedEntry
     try:
         feed_entry = FeedEntry.objects.get(uuid=uuid_)
     except FeedEntry.DoesNotExist:
@@ -498,7 +510,7 @@ def _feed_entry_favorite_post(request, uuid_):
     return HttpResponse(status=204)
 
 
-def _feed_entry_favorite_delete(request, uuid_):
+def _feed_entry_favorite_delete(request: HttpRequest, uuid_: uuid.UUID):
     FavoriteFeedEntryUserMapping.objects.filter(
         feed_entry_id=uuid_, user=request.user
     ).delete()
@@ -506,11 +518,11 @@ def _feed_entry_favorite_delete(request, uuid_):
     return HttpResponse(status=204)
 
 
-def _feed_entries_favorite_post(request):
+def _feed_entries_favorite_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -519,10 +531,12 @@ def _feed_entries_favorite_post(request):
     if type(json_) is not list:
         return HttpResponseBadRequest("JSON body must be array")  # pragma: no cover
 
+    assert isinstance(json_, list)
+
     if len(json_) < 1:
         return HttpResponse(status=204)
 
-    _ids = None
+    _ids: frozenset[uuid.UUID]
     try:
         _ids = frozenset(uuid.UUID(uuid_) for uuid_ in json_)
     except (ValueError, TypeError, AttributeError):
@@ -546,11 +560,11 @@ def _feed_entries_favorite_post(request):
     return HttpResponse(status=204)
 
 
-def _feed_entries_favorite_delete(request):
+def _feed_entries_favorite_delete(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -559,10 +573,12 @@ def _feed_entries_favorite_delete(request):
     if type(json_) is not list:
         return HttpResponseBadRequest("JSON body must be array")  # pragma: no cover
 
+    assert isinstance(json_, list)
+
     if len(json_) < 1:
         return HttpResponse(status=204)
 
-    _ids = None
+    _ids: frozenset[uuid.UUID]
     try:
         _ids = frozenset(uuid.UUID(uuid_) for uuid_ in json_)
     except (ValueError, TypeError, AttributeError):

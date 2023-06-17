@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 import ujson
 import validators
@@ -8,6 +9,7 @@ from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
@@ -40,7 +42,7 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def my_login(request):
+def my_login(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -50,7 +52,7 @@ def my_login(request):
         return _my_login_post(request)
 
 
-def google_login(request):  # pragma: no cover
+def google_login(request: HttpRequest):  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -60,7 +62,7 @@ def google_login(request):  # pragma: no cover
         return _google_login_post(request)
 
 
-def facebook_login(request):  # pragma: no cover
+def facebook_login(request: HttpRequest):  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -70,7 +72,7 @@ def facebook_login(request):  # pragma: no cover
         return _facebook_login_post(request)
 
 
-def my_login_session(request):
+def my_login_session(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -80,7 +82,7 @@ def my_login_session(request):
         return _my_login_session_post(request)
 
 
-def google_login_session(request):  # pragma: no cover
+def google_login_session(request: HttpRequest):  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -90,7 +92,7 @@ def google_login_session(request):  # pragma: no cover
         return _google_login_session_post(request)
 
 
-def facebook_login_session(request):  # pragma: no cover
+def facebook_login_session(request: HttpRequest):  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -100,7 +102,7 @@ def facebook_login_session(request):  # pragma: no cover
         return _facebook_login_session_post(request)
 
 
-def session(request):
+def session(request: HttpRequest):
     permitted_methods = {"DELETE"}
 
     if request.method not in permitted_methods:
@@ -110,7 +112,7 @@ def session(request):
         return _session_delete(request)
 
 
-def _prepare_verify_notification(token_str, email):
+def _prepare_verify_notification(token_str: str, email: str):
     subject = verifyrender.subject()
     plain_text = verifyrender.plain_text(token_str)
     html_text = verifyrender.html_text(token_str)
@@ -125,11 +127,11 @@ def _prepare_verify_notification(token_str, email):
     )
 
 
-def _my_login_post(request):
+def _my_login_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -137,6 +139,8 @@ def _my_login_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "email" not in json_:
         return HttpResponseBadRequest("'email' missing")
@@ -177,11 +181,11 @@ def _my_login_post(request):
     return HttpResponse(status=204)
 
 
-def _google_login_post(request):
+def _google_login_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -189,6 +193,8 @@ def _google_login_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "email" not in json_:
         return HttpResponseBadRequest("'email' missing")
@@ -247,11 +253,11 @@ def _google_login_post(request):
     return HttpResponse(status=204)
 
 
-def _facebook_login_post(request):
+def _facebook_login_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -259,6 +265,8 @@ def _facebook_login_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "email" not in json_:
         return HttpResponseBadRequest("'email' missing")
@@ -316,11 +324,11 @@ def _facebook_login_post(request):
     return HttpResponse(status=204)
 
 
-def _my_login_session_post(request):
+def _my_login_session_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -328,6 +336,8 @@ def _my_login_session_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "email" not in json_:
         return HttpResponseBadRequest("'email' missing")
@@ -350,11 +360,11 @@ def _my_login_session_post(request):
     return HttpResponse(status=204)
 
 
-def _google_login_session_post(request):
+def _google_login_session_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -362,6 +372,8 @@ def _google_login_session_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "token" not in json_:
         return HttpResponseBadRequest("'token' missing")
@@ -393,11 +405,11 @@ def _google_login_session_post(request):
     return HttpResponse(status=204)
 
 
-def _facebook_login_session_post(request):
+def _facebook_login_session_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -405,6 +417,8 @@ def _facebook_login_session_post(request):
 
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+
+    assert isinstance(json_, dict)
 
     if "token" not in json_:
         return HttpResponseBadRequest("'token' missing")
@@ -436,7 +450,7 @@ def _facebook_login_session_post(request):
     return HttpResponse(status=204)
 
 
-def _session_delete(request):
+def _session_delete(request: HttpRequest):
     logout(request)
 
     return HttpResponse(status=204)

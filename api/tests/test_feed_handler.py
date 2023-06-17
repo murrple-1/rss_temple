@@ -35,7 +35,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_well_formed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
                 text = f.read()
 
@@ -43,7 +43,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_malformed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/malformed.xml", "r") as f:
                 text = f.read()
 
@@ -52,7 +52,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
                 text = f.read()
 
@@ -68,7 +68,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed_entry(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
                 text = f.read()
 
@@ -79,7 +79,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_feed_2_feed_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
                 text = f.read()
 
@@ -95,7 +95,7 @@ class FeedHandlerTestCase(TestCase):
 
     def test_d_entry_2_entry_tags(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text = None
+            text: str
             with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
                 text = f.read()
 
@@ -110,7 +110,7 @@ class FeedHandlerTestCase(TestCase):
                 self.assertIs(type(entry_tag), str)
 
     def test_d_feed_2_feed_entry_plaintext(self):
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed_text.xml", "r") as f:
             text = f.read()
 
@@ -120,7 +120,7 @@ class FeedHandlerTestCase(TestCase):
         self.assertIsInstance(feed_entry, FeedEntry)
 
     def test_d_feed_2_feed_entry_no_title(self):
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed_no_title.xml", "r") as f:
             text = f.read()
 
@@ -130,7 +130,7 @@ class FeedHandlerTestCase(TestCase):
             feed_handler.d_entry_2_feed_entry(d.entries[0])
 
     def test_d_feed_2_feed_entry_no_url(self):
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed_no_url.xml", "r") as f:
             text = f.read()
 
@@ -140,7 +140,7 @@ class FeedHandlerTestCase(TestCase):
             feed_handler.d_entry_2_feed_entry(d.entries[0])
 
     def test_d_feed_2_feed_entry_url_is_id(self):
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed_url_is_id.xml", "r") as f:
             text = f.read()
 
@@ -150,7 +150,7 @@ class FeedHandlerTestCase(TestCase):
             feed_handler.d_entry_2_feed_entry(d.entries[0])
 
     def test_d_feed_2_feed_entry_no_content(self):
-        text = None
+        text: str
         with open("api/tests/test_files/atom_1.0/well_formed_no_content.xml", "r") as f:
             text = f.read()
 

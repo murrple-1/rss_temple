@@ -1,6 +1,6 @@
 import time
 import traceback
-from typing import Any
+from typing import Any, Iterable, cast
 
 import requests
 from django.core.management.base import BaseCommand
@@ -83,9 +83,12 @@ class Command(BaseCommand):
         ):
             user_categories[user_category.text] = user_category
             user_category_mapping_dict[user_category.text] = set(
-                FeedUserCategoryMapping.objects.filter(
-                    user_category=user_category
-                ).values_list("feed__feed_url")
+                cast(
+                    Iterable[str],
+                    FeedUserCategoryMapping.objects.filter(
+                        user_category=user_category
+                    ).values_list("feed__feed_url"),
+                )
             )
 
         for (
@@ -109,7 +112,7 @@ class Command(BaseCommand):
                         )
                         continue
 
-                feeds[feed_url] = feed
+                feeds[feed_url] = cast(Feed, feed)
 
             if feed is not None:
                 if feed_url not in subscriptions:
@@ -142,15 +145,15 @@ class Command(BaseCommand):
                         feed_subscription_progress_entry_descriptor.user_category_text
                     )
 
-                    user_category = user_categories.get(user_category_text)
+                    user_category_ = user_categories.get(user_category_text)
 
-                    if user_category is None:
-                        user_category = UserCategory.objects.create(
+                    if user_category_ is None:
+                        user_category_ = UserCategory.objects.create(
                             user_id=feed_subscription_progress_entry.user_id,
                             text=user_category_text,
                         )
 
-                        user_categories[user_category_text] = user_category
+                        user_categories[user_category_text] = user_category_
 
                     user_category_feeds = user_category_mapping_dict.get(
                         user_category_text
@@ -165,7 +168,7 @@ class Command(BaseCommand):
 
                     if feed_url not in user_category_feeds:
                         FeedUserCategoryMapping.objects.create(
-                            feed=feed, user_category=user_category
+                            feed=feed, user_category=user_category_
                         )
 
                         user_category_feeds.add(feed_url)

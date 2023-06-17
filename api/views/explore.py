@@ -1,12 +1,12 @@
 from typing import Any, TypedDict
 
-from django.http import HttpResponse, HttpResponseNotAllowed
+from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
 
 from api import query_utils
 from api.models import Feed, FeedEntry
 
 
-def explore(request):
+def explore(request: HttpRequest):
     permitted_methods = {"GET"}
 
     if request.method not in permitted_methods:
@@ -16,7 +16,7 @@ def explore(request):
         return _explore_get(request)
 
 
-def _explore_get(request):
+def _explore_get(request: HttpRequest):
     # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
 
     class FeedDesc(TypedDict):

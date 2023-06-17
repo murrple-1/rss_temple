@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import cast
+from xml.etree.ElementTree import Element
 
 import lxml.etree as lxml_etree
 import xmlschema
@@ -23,6 +24,7 @@ from api.models import (
     FeedSubscriptionProgressEntryDescriptor,
     FeedUserCategoryMapping,
     SubscribedFeedUserMapping,
+    User,
     UserCategory,
 )
 
@@ -39,7 +41,7 @@ def opml(request: HttpRequest):
         return _opml_post(request)
 
 
-def _opml_get(request):
+def _opml_get(request: HttpRequest):
     user_category_text_dict = dict(
         user_category_tuple
         for user_category_tuple in UserCategory.objects.filter(
@@ -81,11 +83,11 @@ def _opml_get(request):
     return HttpResponse(lxml_etree.tostring(opml_element), "text/xml")
 
 
-def _opml_post(request):
+def _opml_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    opml_element = None
+    opml_element: Element
     try:
         opml_element = defused_fromstring(request.body)
     except defused_ParseError:
@@ -212,7 +214,7 @@ def _opml_post(request):
             if feed is not None:
                 archived_feed_entry_util.mark_archived_entries(
                     archived_feed_entry_util.read_mapping_generator_fn(
-                        feed, request.user
+                        feed, cast(User, request.user)
                     )
                 )
 

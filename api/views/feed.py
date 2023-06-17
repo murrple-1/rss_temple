@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, cast
 
 import requests
 import ujson
 from django.db import transaction
+from django.db.models import OrderBy, Q
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -14,6 +15,7 @@ from url_normalize import url_normalize
 
 from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
 from api.exceptions import QueryException
+from api.fields import FieldMap
 from api.models import Feed, FeedEntry, SubscribedFeedUserMapping
 
 _OBJECT_NAME = "feed"
@@ -29,7 +31,7 @@ def feed(request: HttpRequest):
         return _feed_get(request)
 
 
-def feeds_query(request):
+def feeds_query(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -39,7 +41,7 @@ def feeds_query(request):
         return _feeds_query_post(request)
 
 
-def feed_subscribe(request):
+def feed_subscribe(request: HttpRequest):
     permitted_methods = {"POST", "PUT", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -53,8 +55,8 @@ def feed_subscribe(request):
         return _feed_subscribe_delete(request)
 
 
-def _save_feed(url):
-    response = None
+def _save_feed(url: str):
+    response: requests.Response
     try:
         response = rss_requests.get(url)
         response.raise_for_status()
@@ -69,7 +71,7 @@ def _save_feed(url):
 
         feed_entries: list[FeedEntry] = []
         for d_entry in d.get("entries", []):
-            feed_entry = None
+            feed_entry: FeedEntry
             try:
                 feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
             except ValueError:  # pragma: no cover
@@ -83,21 +85,21 @@ def _save_feed(url):
         return feed
 
 
-def _feed_get(request):
-    url = request.GET.get("url")
+def _feed_get(request: HttpRequest):
+    url: str | None = request.GET.get("url")
     if not url:
         return HttpResponseBadRequest("'url' missing")
 
-    url = url_normalize(url)
+    url = cast(str, url_normalize(url))
 
-    field_maps = None
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    feed = None
+    feed: Feed
     try:
         feed = Feed.annotate_subscription_data(Feed.objects.all(), request.user).get(
             feed_url=url
@@ -115,11 +117,11 @@ def _feed_get(request):
     return HttpResponse(content, content_type)
 
 
-def _feeds_query_post(request):
+def _feeds_query_post(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -128,44 +130,46 @@ def _feeds_query_post(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    count = None
+    assert isinstance(json_, dict)
+
+    count: int
     try:
         count = query_utils.get_count(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    skip = None
+    skip: int
     try:
         skip = query_utils.get_skip(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    sort = None
+    sort: list[OrderBy]
     try:
         sort = query_utils.get_sort(json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    search = None
+    search: list[Q]
     try:
         search = query_utils.get_search(request, json_, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    field_maps = None
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__json(json_)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_objects = None
+    return_objects: bool
     try:
         return_objects = query_utils.get_return_objects(json_)
     except QueryException as e:  # pragma: no cover
         return HttpResponse(e.message, status=e.httpcode)
 
-    return_total_count = None
+    return_total_count: bool
     try:
         return_total_count = query_utils.get_return_total_count(json_)
     except QueryException as e:  # pragma: no cover
@@ -192,16 +196,16 @@ def _feeds_query_post(request):
     return HttpResponse(content, content_type)
 
 
-def _feed_subscribe_post(request):
+def _feed_subscribe_post(request: HttpRequest):
     user = request.user
 
-    url = request.GET.get("url")
+    url: str | None = request.GET.get("url")
     if not url:
         return HttpResponseBadRequest("'url' missing")
 
-    url = url_normalize(url)
+    url = cast(str, url_normalize(url))
 
-    feed = None
+    feed: Feed
     try:
         feed = Feed.objects.get(feed_url=url)
     except Feed.DoesNotExist:
@@ -243,7 +247,7 @@ def _feed_subscribe_post(request):
     return HttpResponse(status=204)
 
 
-def _feed_subscribe_put(request):
+def _feed_subscribe_put(request: HttpRequest):
     user = request.user
 
     url = request.GET.get("url")
@@ -254,7 +258,7 @@ def _feed_subscribe_put(request):
 
     custom_title = request.GET.get("customtitle")
 
-    subscribed_feed_mapping = None
+    subscribed_feed_mapping: SubscribedFeedUserMapping
     try:
         subscribed_feed_mapping = SubscribedFeedUserMapping.objects.get(
             user=user, feed__feed_url=url
@@ -276,7 +280,7 @@ def _feed_subscribe_put(request):
     return HttpResponse(status=204)
 
 
-def _feed_subscribe_delete(request):
+def _feed_subscribe_delete(request: HttpRequest):
     url = request.GET.get("url")
     if not url:
         return HttpResponseBadRequest("'url' missing")

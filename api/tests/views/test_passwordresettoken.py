@@ -1,7 +1,7 @@
 import datetime
 import logging
 import uuid
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from django.utils import timezone
 
@@ -44,7 +44,7 @@ class PasswordResetTokenTestCase(ViewTestCase):
         response = self.client.post("/api/passwordresettoken/request")
         self.assertEqual(response.status_code, 400, response.content)
 
-        params = {}
+        params: dict[str, Any] = {}
         response = self.client.post("/api/passwordresettoken/request", params)
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -76,7 +76,7 @@ class PasswordResetTokenTestCase(ViewTestCase):
         response = self.client.post("/api/passwordresettoken/reset")
         self.assertEqual(response.status_code, 400, response.content)
 
-        params = {}
+        params: dict[str, Any] = {}
         response = self.client.post("/api/passwordresettoken/reset", params)
         self.assertEqual(response.status_code, 400, response.content)
 

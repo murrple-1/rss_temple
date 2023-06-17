@@ -50,7 +50,7 @@ class OPMLTestCase(ViewTestCase):
         OPMLTestCase._reset_db("api/fixtures/default.json")
 
         self._login()
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-mix.xml", "r") as f:
             text = f.read()
 
@@ -66,7 +66,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/invalid_xml.xml", "r") as f:
             text = f.read()
 
@@ -82,7 +82,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/invalid_opml.xml", "r") as f:
             text = f.read()
 
@@ -98,7 +98,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-mix.xml", "r") as f:
             text = f.read()
 
@@ -114,7 +114,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-duplicates.xml", "r") as f:
             text = f.read()
 
@@ -130,7 +130,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-no-404.xml", "r") as f:
             text = f.read()
 
@@ -154,7 +154,7 @@ class OPMLTestCase(ViewTestCase):
 
         self._login()
 
-        text = None
+        text: str
         with open("api/tests/test_files/opml/opml-no-404.xml", "r") as f:
             text = f.read()
 

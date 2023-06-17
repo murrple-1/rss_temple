@@ -5,6 +5,7 @@ from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
@@ -33,7 +34,7 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def passwordresettoken_request(request):
+def passwordresettoken_request(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -43,7 +44,7 @@ def passwordresettoken_request(request):
         return _passwordresettoken_request_post(request)
 
 
-def passwordresettoken_reset(request):
+def passwordresettoken_reset(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -53,7 +54,7 @@ def passwordresettoken_reset(request):
         return _passwordresettoken_reset_post(request)
 
 
-def _passwordresettoken_request_post(request):
+def _passwordresettoken_request_post(request: HttpRequest):
     email = request.POST.get("email")
 
     if email is None:
@@ -92,7 +93,7 @@ def _passwordresettoken_request_post(request):
     return HttpResponse(status=204)
 
 
-def _passwordresettoken_reset_post(request):
+def _passwordresettoken_reset_post(request: HttpRequest):
     token = request.POST.get("token")
     if token is None:
         return HttpResponseBadRequest("'token' missing")

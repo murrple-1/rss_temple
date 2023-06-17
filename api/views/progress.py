@@ -1,6 +1,12 @@
 import uuid
+from typing import Any
 
-from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseNotFound
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+)
 
 from api import query_utils
 from api.models import (
@@ -9,8 +15,8 @@ from api.models import (
 )
 
 
-def feed_subscription_progress(request, uuid_):
-    uuid_ = uuid.UUID(uuid_)
+def feed_subscription_progress(request: HttpRequest, uuid_: str):
+    uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"GET"}
 
@@ -18,11 +24,11 @@ def feed_subscription_progress(request, uuid_):
         return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == "GET":
-        return _feed_subscription_progress_get(request, uuid_)
+        return _feed_subscription_progress_get(request, uuid__)
 
 
-def _feed_subscription_progress_get(request, uuid_):
-    feed_subscription_progress_entry = None
+def _feed_subscription_progress_get(request: HttpRequest, uuid_: uuid.UUID):
+    feed_subscription_progress_entry: FeedSubscriptionProgressEntry
     try:
         feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.get(
             uuid=uuid_, user=request.user
@@ -40,7 +46,7 @@ def _feed_subscription_progress_get(request, uuid_):
 
     finished_count = sum(1 for is_finished in progress_statuses if is_finished)
 
-    ret_obj = {
+    ret_obj: dict[str, Any] = {
         "totalCount": total_count,
         "finishedCount": finished_count,
     }

@@ -2,6 +2,7 @@ import uuid
 from collections import defaultdict
 from typing import Collection
 
+from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
@@ -47,6 +48,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    _google_login: "GoogleLogin | None"
+    _facebook_login: "FacebookLogin | None"
 
     def category_dict(self):
         category_dict: dict[uuid.UUID | None, list[Feed]] | None = getattr(
@@ -171,7 +175,7 @@ class Login(models.Model):
         abstract = True
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
 class GoogleLogin(Login):
@@ -185,7 +189,7 @@ class FacebookLogin(Login):
 class VerificationToken(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField()
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def token_str(self):
         return str(self.uuid)
@@ -207,7 +211,7 @@ class VerificationToken(models.Model):
 class PasswordResetToken(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField()
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def token_str(self):
         return str(self.uuid)
@@ -231,7 +235,7 @@ class UserCategory(models.Model):
         unique_together = (("user", "text"),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     text = models.TextField()
 
     def feeds(self):
@@ -355,7 +359,7 @@ class SubscribedFeedUserMapping(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     custom_feed_title = models.TextField(null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
 class FeedUserCategoryMapping(models.Model):
@@ -461,7 +465,7 @@ class ReadFeedEntryUserMapping(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     read_at = models.DateTimeField(default=timezone.now)
 
 
@@ -471,7 +475,7 @@ class FavoriteFeedEntryUserMapping(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
 class FeedSubscriptionProgressEntry(models.Model):
@@ -480,7 +484,7 @@ class FeedSubscriptionProgressEntry(models.Model):
     FINISHED = 2
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.IntegerField(
         default=NOT_STARTED,
         choices=[

@@ -1,3 +1,6 @@
+import datetime
+from typing import Any, Callable, cast
+
 import ujson
 import validators
 from django.conf import settings
@@ -6,6 +9,7 @@ from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
@@ -16,6 +20,7 @@ from django.utils import timezone
 
 from api import query_utils
 from api.exceptions import QueryException
+from api.fields import FieldMap
 from api.models import (
     FacebookLogin,
     GoogleLogin,
@@ -30,7 +35,7 @@ from api.third_party_login import facebook, google
 _OBJECT_NAME = "user"
 
 
-_USER_VERIFICATION_EXPIRY_INTERVAL = None
+_USER_VERIFICATION_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
@@ -43,7 +48,7 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def user(request):
+def user(request: HttpRequest):
     permitted_methods = {"GET", "PUT"}
 
     if request.method not in permitted_methods:
@@ -55,7 +60,7 @@ def user(request):
         return _user_put(request)
 
 
-def user_verify(request):
+def user_verify(request: HttpRequest):
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -65,7 +70,7 @@ def user_verify(request):
         return _user_verify_post(request)
 
 
-def user_attributes(request):
+def user_attributes(request: HttpRequest):
     permitted_methods = {"PUT"}
 
     if request.method not in permitted_methods:
@@ -75,10 +80,10 @@ def user_attributes(request):
         return _user_attributes_put(request)
 
 
-def _user_get(request):
+def _user_get(request: HttpRequest):
     user = request.user
 
-    field_maps = None
+    field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
@@ -92,11 +97,11 @@ def _user_get(request):
     return HttpResponse(content, content_type)
 
 
-def _user_put(request):
+def _user_put(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -105,11 +110,13 @@ def _user_put(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    user = request.user
+    assert isinstance(json_, dict)
+
+    user = cast(User, request.user)
 
     has_changed = False
 
-    verification_token = None
+    verification_token: VerificationToken | None = None
     if "email" in json_:
         if type(json_["email"]) is not str:
             return HttpResponseBadRequest("'email' must be string")
@@ -159,24 +166,21 @@ def _user_put(request):
 
             has_changed = True
 
-    google_login_db_fn = None
+    google_login_db_fn: Callable[[], None] | None = None
     if "google" in json_:
         google_json = json_["google"]
         if google_json is None:
-
-            def google_login_db_fn():
-                return _google_login_delete(user)
+            google_login_db_fn = lambda: _google_login_delete(user)
 
             has_changed = True
         elif type(google_json) is dict:
-            google_login = None
+            google_login: GoogleLogin
             try:
                 google_login = GoogleLogin.objects.get(user=user)
             except GoogleLogin.DoesNotExist:
                 google_login = GoogleLogin(user=user)
 
-            def google_login_db_fn():
-                return _google_login_save(google_login)
+            google_login_db_fn = lambda: _google_login_save(google_login)
 
             if "token" in google_json:
                 if type(google_json["token"]) is not str:
@@ -191,24 +195,21 @@ def _user_put(request):
         else:
             return HttpResponseBadRequest("'google' must be object or null")
 
-    facebook_login_db_fn = None
+    facebook_login_db_fn: Callable[[], None] | None = None
     if "facebook" in json_:
         facebook_json = json_["facebook"]
         if facebook_json is None:
-
-            def facebook_login_db_fn():
-                return _facebook_login_delete(user)
+            facebook_login_db_fn = lambda: _facebook_login_delete(user)
 
             has_changed = True
         elif type(facebook_json) is dict:
-            facebook_login = None
+            facebook_login: FacebookLogin
             try:
                 facebook_login = FacebookLogin.objects.get(user=user)
             except FacebookLogin.DoesNotExist:
                 facebook_login = FacebookLogin(user=user)
 
-            def facebook_login_db_fn():
-                return _facebook_login_save(facebook_login)
+            facebook_login_db_fn = lambda: _facebook_login_save(facebook_login)
 
             if "token" in facebook_json:
                 if type(facebook_json["token"]) is not str:
@@ -255,23 +256,23 @@ def _user_put(request):
     return HttpResponse(status=204)
 
 
-def _google_login_save(google_login):
+def _google_login_save(google_login: GoogleLogin):
     google_login.save()
 
 
-def _google_login_delete(user):
+def _google_login_delete(user: User):
     GoogleLogin.objects.filter(user=user).delete()
 
 
-def _facebook_login_save(facebook_login):
+def _facebook_login_save(facebook_login: FacebookLogin):
     facebook_login.save()
 
 
-def _facebook_login_delete(user):
+def _facebook_login_delete(user: User):
     FacebookLogin.objects.filter(user=user).delete()
 
 
-def _user_verify_post(request):
+def _user_verify_post(request: HttpRequest):
     token = request.POST.get("token")
 
     if token is None:
@@ -287,11 +288,11 @@ def _user_verify_post(request):
     return HttpResponse(status=204)
 
 
-def _user_attributes_put(request):
+def _user_attributes_put(request: HttpRequest):
     if not request.body:
         return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
 
-    json_ = None
+    json_: Any
     try:
         json_ = ujson.loads(request.body)
     except ValueError:  # pragma: no cover
@@ -300,7 +301,9 @@ def _user_attributes_put(request):
     if type(json_) is not dict:
         return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
 
-    user = request.user
+    assert isinstance(json_, dict)
+
+    user = cast(User, request.user)
 
     user.attributes.update(json_)
 
