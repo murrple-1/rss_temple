@@ -45,11 +45,11 @@ def _opml_get(request: HttpRequest):
     user_category_text_dict = dict(
         user_category_tuple
         for user_category_tuple in UserCategory.objects.filter(
-            user=request.user
+            user=cast(User, request.user)
         ).values_list("uuid", "text")
     )
 
-    category_dict = request.user.category_dict()
+    category_dict = cast(User, request.user).category_dict()
 
     opml_element = lxml_etree.Element("opml", version="1.0")
     head_element = lxml_etree.SubElement(opml_element, "head")
@@ -113,20 +113,20 @@ def _opml_post(request: HttpRequest):
             outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
 
     existing_subscriptions = set(
-        SubscribedFeedUserMapping.objects.filter(user=request.user).values_list(
-            "feed__feed_url", flat=True
-        )
+        SubscribedFeedUserMapping.objects.filter(
+            user=cast(User, request.user)
+        ).values_list("feed__feed_url", flat=True)
     )
 
     existing_categories = {
         user_category.text: user_category
-        for user_category in UserCategory.objects.filter(user=request.user)
+        for user_category in UserCategory.objects.filter(user=cast(User, request.user))
     }
 
     existing_category_mappings: dict[str, set[str]] = defaultdict(set)
     for feed_user_category_mapping in FeedUserCategoryMapping.objects.select_related(
         "feed", "user_category"
-    ).filter(user_category__user=request.user):
+    ).filter(user_category__user=cast(User, request.user)):
         existing_category_mappings[feed_user_category_mapping.user_category.text].add(
             feed_user_category_mapping.feed.feed_url
         )
@@ -148,7 +148,7 @@ def _opml_post(request: HttpRequest):
                 except Feed.DoesNotExist:
                     if feed_subscription_progress_entry is None:
                         feed_subscription_progress_entry = (
-                            FeedSubscriptionProgressEntry(user=request.user)
+                            FeedSubscriptionProgressEntry(user=cast(User, request.user))
                         )
 
                     feed_subscription_progress_entry_descriptor = FeedSubscriptionProgressEntryDescriptor(
@@ -170,7 +170,9 @@ def _opml_post(request: HttpRequest):
     for outer_outline_name, outline_set in outline_dict.items():
         user_category = existing_categories.get(outer_outline_name)
         if user_category is None:
-            user_category = UserCategory(user=request.user, text=outer_outline_name)
+            user_category = UserCategory(
+                user=cast(User, request.user), text=outer_outline_name
+            )
             user_categories.append(user_category)
             existing_categories[user_category.text] = user_category
 
@@ -191,7 +193,9 @@ def _opml_post(request: HttpRequest):
 
                 if outline_xml_url not in existing_subscriptions:
                     subscribed_feed_user_mapping = SubscribedFeedUserMapping(
-                        feed=feed, user=request.user, custom_feed_title=custom_title
+                        feed=feed,
+                        user=cast(User, request.user),
+                        custom_feed_title=custom_title,
                     )
                     subscribed_feed_user_mappings.append(subscribed_feed_user_mapping)
                     existing_subscriptions.add(outline_xml_url)

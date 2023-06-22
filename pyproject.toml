@@ -6,3 +6,16 @@ plugins = ["mypy_django_plugin.main"]
 
 [tool.django-stubs]
 django_settings_module = "rss_temple.settings"
+
+[[tool.mypy.overrides]]
+module = [
+    "feedparser",
+    "validators",
+    "google.*",
+    "ipware",
+    "facebook",
+    "quick_email",
+    "defusedxml.*",
+    "url_normalize"
+]
+ignore_missing_imports = true

@@ -1,7 +1,7 @@
 import itertools
 import re
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import ujson
 from django.core.cache import caches
@@ -19,7 +19,12 @@ from django.http import (
 from api import query_utils
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import FavoriteFeedEntryUserMapping, FeedEntry, ReadFeedEntryUserMapping
+from api.models import (
+    FavoriteFeedEntryUserMapping,
+    FeedEntry,
+    ReadFeedEntryUserMapping,
+    User,
+)
 
 _OBJECT_NAME = "feedentry"
 
@@ -118,7 +123,7 @@ def feed_entries_favorite(request: HttpRequest):
         return _feed_entries_favorite_delete(request)
 
 
-def _feed_entry_get(request: HttpRequest, uuid_: str):
+def _feed_entry_get(request: HttpRequest, uuid_: uuid.UUID):
     field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__query_dict(request.GET)
@@ -366,11 +371,11 @@ def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
 
         try:
             read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.get(
-                feed_entry=feed_entry, user=request.user
+                feed_entry=feed_entry, user=cast(User, request.user)
             )
         except ReadFeedEntryUserMapping.DoesNotExist:
             read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.create(
-                feed_entry=feed_entry, user=request.user
+                feed_entry=feed_entry, user=cast(User, request.user)
             )
 
     ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
@@ -381,7 +386,7 @@ def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
 
 def _feed_entry_read_delete(request: HttpRequest, uuid_: uuid.UUID):
     ReadFeedEntryUserMapping.objects.filter(
-        feed_entry_id=uuid_, user=request.user
+        feed_entry_id=uuid_, user=cast(User, request.user)
     ).delete()
 
     return HttpResponse(status=204)
@@ -447,7 +452,7 @@ def _feed_entries_read_post(request: HttpRequest):
 
     batch_size = 768
     objs = (
-        ReadFeedEntryUserMapping(feed_entry=feed_entry, user=request.user)
+        ReadFeedEntryUserMapping(feed_entry=feed_entry, user=cast(User, request.user))
         for feed_entry in FeedEntry.objects.filter(q).iterator()
     )
     with transaction.atomic():
@@ -485,7 +490,7 @@ def _feed_entries_read_delete(request: HttpRequest):
         return HttpResponseBadRequest("uuid malformed")
 
     ReadFeedEntryUserMapping.objects.filter(
-        feed_entry_id__in=_ids, user=request.user
+        feed_entry_id__in=_ids, user=cast(User, request.user)
     ).delete()
 
     return HttpResponse(status=204)
@@ -499,7 +504,7 @@ def _feed_entry_favorite_post(request: HttpRequest, uuid_: uuid.UUID):
         return HttpResponseNotFound("feed entry not found")
 
     favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
-        feed_entry=feed_entry, user=request.user
+        feed_entry=feed_entry, user=cast(User, request.user)
     )
 
     try:
@@ -512,7 +517,7 @@ def _feed_entry_favorite_post(request: HttpRequest, uuid_: uuid.UUID):
 
 def _feed_entry_favorite_delete(request: HttpRequest, uuid_: uuid.UUID):
     FavoriteFeedEntryUserMapping.objects.filter(
-        feed_entry_id=uuid_, user=request.user
+        feed_entry_id=uuid_, user=cast(User, request.user)
     ).delete()
 
     return HttpResponse(status=204)
@@ -549,7 +554,7 @@ def _feed_entries_favorite_post(request: HttpRequest):
 
     for feed_entry in feed_entries:
         favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
-            feed_entry=feed_entry, user=request.user
+            feed_entry=feed_entry, user=cast(User, request.user)
         )
 
         try:
@@ -585,7 +590,7 @@ def _feed_entries_favorite_delete(request: HttpRequest):
         return HttpResponseBadRequest("uuid malformed")
 
     FavoriteFeedEntryUserMapping.objects.filter(
-        feed_entry_id__in=_ids, user=request.user
+        feed_entry_id__in=_ids, user=cast(User, request.user)
     ).delete()
 
     return HttpResponse(status=204)

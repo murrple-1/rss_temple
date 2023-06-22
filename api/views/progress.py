@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from django.http import (
     HttpRequest,
@@ -12,6 +12,7 @@ from api import query_utils
 from api.models import (
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
+    User,
 )
 
 
@@ -31,7 +32,7 @@ def _feed_subscription_progress_get(request: HttpRequest, uuid_: uuid.UUID):
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry
     try:
         feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.get(
-            uuid=uuid_, user=request.user
+            uuid=uuid_, user=cast(User, request.user)
         )
     except FeedSubscriptionProgressEntry.DoesNotExist:
         return HttpResponseNotFound("progress not found")

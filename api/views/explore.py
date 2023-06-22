@@ -1,9 +1,9 @@
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
 
 from api import query_utils
-from api.models import Feed, FeedEntry
+from api.models import Feed, FeedEntry, User
 
 
 def explore(request: HttpRequest):
@@ -114,7 +114,7 @@ def _explore_get(request: HttpRequest):
             feed: Feed
             try:
                 feed = Feed.annotate_subscription_data(
-                    Feed.objects.all(), request.user
+                    Feed.objects.all(), cast(User, request.user)
                 ).get(feed_url=feed_lookup["feed_url"])
             except Feed.DoesNotExist:
                 continue

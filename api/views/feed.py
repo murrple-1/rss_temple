@@ -16,7 +16,7 @@ from url_normalize import url_normalize
 from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import Feed, FeedEntry, SubscribedFeedUserMapping
+from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
 
 _OBJECT_NAME = "feed"
 
@@ -101,9 +101,9 @@ def _feed_get(request: HttpRequest):
 
     feed: Feed
     try:
-        feed = Feed.annotate_subscription_data(Feed.objects.all(), request.user).get(
-            feed_url=url
-        )
+        feed = Feed.annotate_subscription_data(
+            Feed.objects.all(), cast(User, request.user)
+        ).get(feed_url=url)
     except Feed.DoesNotExist:
         try:
             feed = _save_feed(url)
@@ -176,7 +176,7 @@ def _feeds_query_post(request: HttpRequest):
         return HttpResponse(e.message, status=e.httpcode)
 
     feeds = Feed.annotate_search_vectors(
-        Feed.annotate_subscription_data(Feed.objects.all(), request.user)
+        Feed.annotate_subscription_data(Feed.objects.all(), cast(User, request.user))
     ).filter(*search)
 
     ret_obj: dict[str, Any] = {}
@@ -197,7 +197,7 @@ def _feeds_query_post(request: HttpRequest):
 
 
 def _feed_subscribe_post(request: HttpRequest):
-    user = request.user
+    user = cast(User, request.user)
 
     url: str | None = request.GET.get("url")
     if not url:
@@ -248,7 +248,7 @@ def _feed_subscribe_post(request: HttpRequest):
 
 
 def _feed_subscribe_put(request: HttpRequest):
-    user = request.user
+    user = cast(User, request.user)
 
     url = request.GET.get("url")
     if not url:
@@ -288,7 +288,7 @@ def _feed_subscribe_delete(request: HttpRequest):
     url = url_normalize(url)
 
     count, _ = SubscribedFeedUserMapping.objects.filter(
-        user=request.user, feed__feed_url=url
+        user=cast(User, request.user), feed__feed_url=url
     ).delete()
 
     if count < 1:

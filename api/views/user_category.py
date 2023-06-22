@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import ujson
 from django.db import IntegrityError, transaction
@@ -15,7 +15,7 @@ from django.http import (
 from api import query_utils
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import Feed, FeedUserCategoryMapping, UserCategory
+from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
 
 _OBJECT_NAME = "usercategory"
 
@@ -75,7 +75,9 @@ def _user_category_get(request: HttpRequest, uuid_: uuid.UUID):
 
     user_category: UserCategory
     try:
-        user_category = UserCategory.objects.get(uuid=uuid_, user=request.user)
+        user_category = UserCategory.objects.get(
+            uuid=uuid_, user=cast(User, request.user)
+        )
     except UserCategory.DoesNotExist:
         return HttpResponseNotFound("user category not found")
 
@@ -114,7 +116,7 @@ def _user_category_post(request: HttpRequest):
     if type(json_["text"]) is not str:
         return HttpResponseBadRequest("'text' must be string")
 
-    user_category = UserCategory(user=request.user, text=json_["text"])
+    user_category = UserCategory(user=cast(User, request.user), text=json_["text"])
 
     try:
         user_category.save()
@@ -142,7 +144,9 @@ def _user_category_put(request: HttpRequest, uuid_: uuid.UUID):
 
     user_category: UserCategory
     try:
-        user_category = UserCategory.objects.get(uuid=uuid_, user=request.user)
+        user_category = UserCategory.objects.get(
+            uuid=uuid_, user=cast(User, request.user)
+        )
     except UserCategory.DoesNotExist:
         return HttpResponseNotFound("user category not found")
 
@@ -165,7 +169,9 @@ def _user_category_put(request: HttpRequest, uuid_: uuid.UUID):
 
 
 def _user_category_delete(request: HttpRequest, uuid_: uuid.UUID):
-    count, _ = UserCategory.objects.filter(uuid=uuid_, user=request.user).delete()
+    count, _ = UserCategory.objects.filter(
+        uuid=uuid_, user=cast(User, request.user)
+    ).delete()
 
     if count < 1:
         return HttpResponseNotFound("user category not found")
@@ -208,7 +214,7 @@ def _user_categories_query_post(request: HttpRequest):
 
     search: list[Q]
     try:
-        search = [Q(user=request.user)] + query_utils.get_search(
+        search = [Q(user=cast(User, request.user))] + query_utils.get_search(
             request, json_, _OBJECT_NAME
         )
     except QueryException as e:  # pragma: no cover
@@ -300,7 +306,7 @@ def _user_categories_apply_put(request: HttpRequest):
     user_categories = {
         user_category.uuid: user_category
         for user_category in UserCategory.objects.filter(
-            uuid__in=all_user_category_uuids, user=request.user
+            uuid__in=all_user_category_uuids, user=cast(User, request.user)
         )
     }
 
