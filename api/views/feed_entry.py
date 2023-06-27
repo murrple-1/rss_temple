@@ -12,11 +12,13 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import (
@@ -29,7 +31,8 @@ from api.models import (
 _OBJECT_NAME = "feedentry"
 
 
-def feed_entry(request: HttpRequest, uuid_: str):
+@requires_authenticated_user()
+def feed_entry(request: HttpRequest, uuid_: str) -> HttpResponseBase:
     uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"GET"}
@@ -39,9 +42,12 @@ def feed_entry(request: HttpRequest, uuid_: str):
 
     if request.method == "GET":
         return _feed_entry_get(request, uuid__)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entries_query(request: HttpRequest):
+@requires_authenticated_user()
+def feed_entries_query(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -49,9 +55,12 @@ def feed_entries_query(request: HttpRequest):
 
     if request.method == "POST":
         return _feed_entries_query_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entries_query_stable_create(request: HttpRequest):
+@requires_authenticated_user()
+def feed_entries_query_stable_create(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -59,9 +68,12 @@ def feed_entries_query_stable_create(request: HttpRequest):
 
     if request.method == "POST":
         return _feed_entries_query_stable_create_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entries_query_stable(request: HttpRequest):
+@requires_authenticated_user()
+def feed_entries_query_stable(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -69,9 +81,12 @@ def feed_entries_query_stable(request: HttpRequest):
 
     if request.method == "POST":
         return _feed_entries_query_stable_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entry_read(request: HttpRequest, uuid_: str):
+@requires_authenticated_user()
+def feed_entry_read(request: HttpRequest, uuid_: str) -> HttpResponseBase:
     uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"POST", "DELETE"}
@@ -83,9 +98,12 @@ def feed_entry_read(request: HttpRequest, uuid_: str):
         return _feed_entry_read_post(request, uuid__)
     elif request.method == "DELETE":
         return _feed_entry_read_delete(request, uuid__)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entries_read(request: HttpRequest):
+@requires_authenticated_user()
+def feed_entries_read(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -95,9 +113,12 @@ def feed_entries_read(request: HttpRequest):
         return _feed_entries_read_post(request)
     elif request.method == "DELETE":
         return _feed_entries_read_delete(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entry_favorite(request: HttpRequest, uuid_: str):
+@requires_authenticated_user()
+def feed_entry_favorite(request: HttpRequest, uuid_: str) -> HttpResponseBase:
     uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"POST", "DELETE"}
@@ -109,9 +130,12 @@ def feed_entry_favorite(request: HttpRequest, uuid_: str):
         return _feed_entry_favorite_post(request, uuid__)
     elif request.method == "DELETE":
         return _feed_entry_favorite_delete(request, uuid__)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_entries_favorite(request: HttpRequest):
+@requires_authenticated_user()
+def feed_entries_favorite(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -121,6 +145,8 @@ def feed_entries_favorite(request: HttpRequest):
         return _feed_entries_favorite_post(request)
     elif request.method == "DELETE":
         return _feed_entries_favorite_delete(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _feed_entry_get(request: HttpRequest, uuid_: uuid.UUID):

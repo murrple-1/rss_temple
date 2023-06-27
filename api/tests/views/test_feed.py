@@ -2,26 +2,26 @@ import logging
 from typing import ClassVar
 
 import ujson
-from django.test import modify_settings, tag
+from django.test import tag
 from django.utils import timezone
+from throttle import zones
 
 from api import fields
 from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
 
 
-@modify_settings(
-    MIDDLEWARE={
-        "remove": ["api.middleware.throttle.ThrottleMiddleware"],
-    }
-)
 class FeedTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
+    old_throttle_enabled: ClassVar[bool]
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        cls.old_throttle_enabled = zones.THROTTLE_ENABLED
+        zones.THROTTLE_ENABLED = False
 
         cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
@@ -32,6 +32,8 @@ class FeedTestCase(TestFileServerTestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
+
+        zones.THROTTLE_ENABLED = cls.old_throttle_enabled
 
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)

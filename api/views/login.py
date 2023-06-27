@@ -1,5 +1,6 @@
 import datetime
-from typing import Any
+import uuid
+from typing import Any, cast
 
 import ujson
 import validators
@@ -12,13 +13,16 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseForbidden,
     HttpResponseNotAllowed,
 )
 from django.utils import timezone
+from throttle.decorators import throttle
 
 from api import query_utils
 from api.models import (
+    APISession,
     FacebookLogin,
     GoogleLogin,
     NotifyEmailQueueEntry,
@@ -30,19 +34,23 @@ from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
 _USER_VERIFICATION_EXPIRY_INTERVAL: datetime.timedelta
+_API_SESSION_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
     global _USER_VERIFICATION_EXPIRY_INTERVAL
+    global _API_SESSION_EXPIRY_INTERVAL
 
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
+    _API_SESSION_EXPIRY_INTERVAL = settings.API_SESSION_EXPIRY_INTERVAL
 
 
 _load_global_settings()
 
 
-def my_login(request: HttpRequest):
+@throttle(zone="default")
+def my_login(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -50,9 +58,12 @@ def my_login(request: HttpRequest):
 
     if request.method == "POST":
         return _my_login_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def google_login(request: HttpRequest):  # pragma: no cover
+@throttle(zone="default")
+def google_login(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -60,9 +71,12 @@ def google_login(request: HttpRequest):  # pragma: no cover
 
     if request.method == "POST":
         return _google_login_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def facebook_login(request: HttpRequest):  # pragma: no cover
+@throttle(zone="default")
+def facebook_login(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -70,9 +84,12 @@ def facebook_login(request: HttpRequest):  # pragma: no cover
 
     if request.method == "POST":
         return _facebook_login_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def my_login_session(request: HttpRequest):
+@throttle(zone="default")
+def my_login_session(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -80,9 +97,12 @@ def my_login_session(request: HttpRequest):
 
     if request.method == "POST":
         return _my_login_session_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def google_login_session(request: HttpRequest):  # pragma: no cover
+@throttle(zone="default")
+def google_login_session(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -90,9 +110,14 @@ def google_login_session(request: HttpRequest):  # pragma: no cover
 
     if request.method == "POST":
         return _google_login_session_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def facebook_login_session(request: HttpRequest):  # pragma: no cover
+@throttle(zone="default")
+def facebook_login_session(
+    request: HttpRequest,
+) -> HttpResponseBase:  # pragma: no cover
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -100,9 +125,12 @@ def facebook_login_session(request: HttpRequest):  # pragma: no cover
 
     if request.method == "POST":
         return _facebook_login_session_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def session(request: HttpRequest):
+@throttle(zone="default")
+def session(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"DELETE"}
 
     if request.method not in permitted_methods:
@@ -110,6 +138,8 @@ def session(request: HttpRequest):
 
     if request.method == "DELETE":
         return _session_delete(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _prepare_verify_notification(token_str: str, email: str):
@@ -161,22 +191,14 @@ def _my_login_post(request: HttpRequest):
         return HttpResponse("login already exists", status=409)
 
     with transaction.atomic():
-        user: User
-        verification_token: VerificationToken | None
-        try:
-            user = User.objects.get(email__iexact=json_["email"])
-        except User.DoesNotExist:
-            user = User.objects.create_user(json_["email"], json_["password"])
+        user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = VerificationToken.objects.create(
-                user=user,
-                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
-            )
-        else:
-            verification_token = None
+        verification_token = VerificationToken.objects.create(
+            user=user,
+            expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
+        )
 
-        if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_["email"])
+        _prepare_verify_notification(verification_token.token_str(), json_["email"])
 
     return HttpResponse(status=204)
 
@@ -232,23 +254,16 @@ def _google_login_post(request: HttpRequest):
     verification_token: VerificationToken | None
 
     with transaction.atomic():
-        user: User
-        try:
-            user = User.objects.get(email__iexact=json_["email"])
-        except User.DoesNotExist:
-            user = User.objects.create_user(json_["email"], json_["password"])
+        user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = VerificationToken.objects.create(
-                user=user,
-                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
-            )
-        else:
-            verification_token = None
+        verification_token = VerificationToken.objects.create(
+            user=user,
+            expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
+        )
 
         GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
 
-        if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_["email"])
+        _prepare_verify_notification(verification_token.token_str(), json_["email"])
 
     return HttpResponse(status=204)
 
@@ -302,24 +317,16 @@ def _facebook_login_post(request: HttpRequest):
         return HttpResponse("login already exists", status=409)
 
     with transaction.atomic():
-        user: User
-        verification_token: VerificationToken | None
-        try:
-            user = User.objects.get(email__iexact=json_["email"])
-        except User.DoesNotExist:
-            user = User.objects.create_user(json_["email"], json_["password"])
+        user = User.objects.create_user(json_["email"], json_["password"])
 
-            verification_token = VerificationToken.objects.create(
-                user=user,
-                expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
-            )
-        else:
-            verification_token = None
+        verification_token = VerificationToken.objects.create(
+            user=user,
+            expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
+        )
 
         FacebookLogin.objects.create(profile_id=fb_id, user=user)
 
-        if verification_token is not None:
-            _prepare_verify_notification(verification_token.token_str(), json_["email"])
+        _prepare_verify_notification(verification_token.token_str(), json_["email"])
 
     return HttpResponse(status=204)
 
@@ -357,7 +364,13 @@ def _my_login_session_post(request: HttpRequest):
 
     login(request, user)
 
-    return HttpResponse(status=204)
+    session = APISession.objects.create(
+        user=cast(User, user),
+        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
+    )
+
+    content, content_type = query_utils.serialize_content(session.id_str())
+    return HttpResponse(content, content_type)
 
 
 def _google_login_session_post(request: HttpRequest):
@@ -402,7 +415,13 @@ def _google_login_session_post(request: HttpRequest):
 
     login(request, google_login.user)
 
-    return HttpResponse(status=204)
+    session = APISession.objects.create(
+        user=google_login.user,
+        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
+    )
+
+    content, content_type = query_utils.serialize_content(session.id_str())
+    return HttpResponse(content, content_type)
 
 
 def _facebook_login_session_post(request: HttpRequest):
@@ -447,10 +466,25 @@ def _facebook_login_session_post(request: HttpRequest):
 
     login(request, facebook_login.user)
 
-    return HttpResponse(status=204)
+    session = APISession.objects.create(
+        user=facebook_login.user,
+        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
+    )
+
+    content, content_type = query_utils.serialize_content(session.id_str())
+    return HttpResponse(content, content_type)
 
 
 def _session_delete(request: HttpRequest):
     logout(request)
+
+    if session_id := request.META.get("HTTP_X_SESSION_ID"):
+        session_uuid: uuid.UUID
+        try:
+            session_uuid = uuid.UUID(session_id)
+        except ValueError:
+            return HttpResponse(status=204)
+
+        APISession.objects.filter(uuid=session_uuid).delete()
 
     return HttpResponse(status=204)

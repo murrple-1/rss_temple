@@ -8,11 +8,13 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
@@ -20,7 +22,8 @@ from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
 _OBJECT_NAME = "usercategory"
 
 
-def user_category(request: HttpRequest, uuid_: str):
+@requires_authenticated_user()
+def user_category(request: HttpRequest, uuid_: str) -> HttpResponseBase:
     if uuid_ is not None:
         uuid__ = uuid.UUID(uuid_)
 
@@ -35,6 +38,8 @@ def user_category(request: HttpRequest, uuid_: str):
             return _user_category_put(request, uuid__)
         elif request.method == "DELETE":
             return _user_category_delete(request, uuid__)
+        else:  # pragma: no cover
+            raise ValueError
     else:
         permitted_methods = {"POST"}
 
@@ -43,9 +48,12 @@ def user_category(request: HttpRequest, uuid_: str):
 
         if request.method == "POST":
             return _user_category_post(request)
+        else:  # pragma: no cover
+            raise ValueError
 
 
-def user_categories_query(request: HttpRequest):
+@requires_authenticated_user()
+def user_categories_query(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -53,9 +61,12 @@ def user_categories_query(request: HttpRequest):
 
     if request.method == "POST":
         return _user_categories_query_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def user_categories_apply(request: HttpRequest):
+@requires_authenticated_user()
+def user_categories_apply(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"PUT"}
 
     if request.method not in permitted_methods:
@@ -63,6 +74,8 @@ def user_categories_apply(request: HttpRequest):
 
     if request.method == "PUT":
         return _user_categories_apply_put(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _user_category_get(request: HttpRequest, uuid_: uuid.UUID):

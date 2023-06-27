@@ -20,9 +20,6 @@ class _SortConfig:
         field_accessor_fns: list[Callable[[str], OrderBy]],
         default_descriptor: _DefaultDescriptor | None,
     ):
-        if len(field_accessor_fns) < 1:
-            raise ValueError("field_accessor_fns must not be empty")
-
         self.field_accessor_fns = field_accessor_fns
         self.default_descriptor = default_descriptor
 

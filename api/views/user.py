@@ -12,13 +12,16 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 from django.utils import timezone
+from throttle.decorators import throttle
 
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import (
@@ -48,7 +51,8 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def user(request: HttpRequest):
+@requires_authenticated_user()
+def user(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"GET", "PUT"}
 
     if request.method not in permitted_methods:
@@ -58,9 +62,12 @@ def user(request: HttpRequest):
         return _user_get(request)
     elif request.method == "PUT":
         return _user_put(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def user_verify(request: HttpRequest):
+@throttle(zone="default")
+def user_verify(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -68,9 +75,12 @@ def user_verify(request: HttpRequest):
 
     if request.method == "POST":
         return _user_verify_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def user_attributes(request: HttpRequest):
+@requires_authenticated_user()
+def user_attributes(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"PUT"}
 
     if request.method not in permitted_methods:
@@ -78,6 +88,8 @@ def user_attributes(request: HttpRequest):
 
     if request.method == "PUT":
         return _user_attributes_put(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _user_get(request: HttpRequest):

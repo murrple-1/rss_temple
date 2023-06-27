@@ -8,12 +8,14 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 from url_normalize import url_normalize
 
 from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
+from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
@@ -21,7 +23,8 @@ from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
 _OBJECT_NAME = "feed"
 
 
-def feed(request: HttpRequest):
+@requires_authenticated_user()
+def feed(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"GET"}
 
     if request.method not in permitted_methods:
@@ -29,9 +32,12 @@ def feed(request: HttpRequest):
 
     if request.method == "GET":
         return _feed_get(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feeds_query(request: HttpRequest):
+@requires_authenticated_user()
+def feeds_query(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -39,9 +45,12 @@ def feeds_query(request: HttpRequest):
 
     if request.method == "POST":
         return _feeds_query_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def feed_subscribe(request: HttpRequest):
+@requires_authenticated_user()
+def feed_subscribe(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST", "PUT", "DELETE"}
 
     if request.method not in permitted_methods:
@@ -53,6 +62,8 @@ def feed_subscribe(request: HttpRequest):
         return _feed_subscribe_put(request)
     elif request.method == "DELETE":
         return _feed_subscribe_delete(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _save_feed(url: str):

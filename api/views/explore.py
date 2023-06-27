@@ -1,12 +1,19 @@
 from typing import Any, TypedDict, cast
 
-from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBase,
+    HttpResponseNotAllowed,
+)
 
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.models import Feed, FeedEntry, User
 
 
-def explore(request: HttpRequest):
+@requires_authenticated_user()
+def explore(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"GET"}
 
     if request.method not in permitted_methods:
@@ -14,6 +21,8 @@ def explore(request: HttpRequest):
 
     if request.method == "GET":
         return _explore_get(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _explore_get(request: HttpRequest):

@@ -4,11 +4,13 @@ from typing import Any, cast
 from django.http import (
     HttpRequest,
     HttpResponse,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.models import (
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
@@ -16,7 +18,8 @@ from api.models import (
 )
 
 
-def feed_subscription_progress(request: HttpRequest, uuid_: str):
+@requires_authenticated_user()
+def feed_subscription_progress(request: HttpRequest, uuid_: str) -> HttpResponseBase:
     uuid__ = uuid.UUID(uuid_)
 
     permitted_methods = {"GET"}
@@ -26,6 +29,8 @@ def feed_subscription_progress(request: HttpRequest, uuid_: str):
 
     if request.method == "GET":
         return _feed_subscription_progress_get(request, uuid__)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _feed_subscription_progress_get(request: HttpRequest, uuid_: uuid.UUID):

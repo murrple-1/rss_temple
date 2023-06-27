@@ -8,10 +8,12 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     HttpResponseNotFound,
 )
 from django.utils import timezone
+from throttle.decorators import throttle
 
 from api.models import (
     NotifyEmailQueueEntry,
@@ -34,7 +36,8 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-def passwordresettoken_request(request: HttpRequest):
+@throttle(zone="default")
+def passwordresettoken_request(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -42,9 +45,12 @@ def passwordresettoken_request(request: HttpRequest):
 
     if request.method == "POST":
         return _passwordresettoken_request_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
-def passwordresettoken_reset(request: HttpRequest):
+@throttle(zone="default")
+def passwordresettoken_reset(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"POST"}
 
     if request.method not in permitted_methods:
@@ -52,6 +58,8 @@ def passwordresettoken_reset(request: HttpRequest):
 
     if request.method == "POST":
         return _passwordresettoken_reset_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _passwordresettoken_request_post(request: HttpRequest):

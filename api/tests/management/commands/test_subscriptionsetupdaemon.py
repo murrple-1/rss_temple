@@ -1,3 +1,4 @@
+import logging
 from io import StringIO
 from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
@@ -21,6 +22,9 @@ if TYPE_CHECKING:
 
 
 class DaemonTestCase(TestFileServerTestCase):
+    old_app_logger_level: ClassVar[int]
+    old_django_logger_level: ClassVar[int]
+
     command: ClassVar[Command]
     stdout_patcher: ClassVar["_patch[_Mock]"]
     stderr_patcher: ClassVar["_patch[_Mock]"]
@@ -29,9 +33,22 @@ class DaemonTestCase(TestFileServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
+        cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
+
+        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+        logging.getLogger("django").setLevel(logging.CRITICAL)
+
         cls.command = Command()
         cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
         cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
+        logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def setUp(self):
         super().setUp()

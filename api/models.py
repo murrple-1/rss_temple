@@ -170,6 +170,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self._facebook_login
 
 
+class APISession(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    expires_at = models.DateTimeField(null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def id_str(self) -> str:
+        return str(self.uuid)
+
+
 class Login(models.Model):
     class Meta:
         abstract = True

@@ -3,6 +3,7 @@ profile = "black"
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main"]
+check_untyped_defs = true
 
 [tool.django-stubs]
 django_settings_module = "rss_temple.settings"
@@ -16,6 +17,7 @@ module = [
     "facebook",
     "quick_email",
     "defusedxml.*",
-    "url_normalize"
+    "url_normalize",
+    "throttle.*",
 ]
 ignore_missing_imports = true

@@ -14,6 +14,8 @@ import datetime
 import os
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,19 +41,20 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "api.middleware.session_id_header_auth.SessionIDHeaderAuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "api.middleware.throttle.ThrottleMiddleware",
-    "api.middleware.profiling.ProfileMiddleware",
+    "django_cprofile_middleware.middleware.ProfilerMiddleware",
 ]
 
 ROOT_URLCONF = "rss_temple.urls"
@@ -179,6 +182,25 @@ CACHES = {
     },
 }
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "X-Session-ID",
+)
+
+THROTTLE_ZONES = {
+    "default": {
+        "VARY": "throttle.zones.RemoteIP",
+        "ALGORITHM": "fixed-bucket",
+        "BUCKET_INTERVAL": 15 * 60,
+        "BUCKET_CAPACITY": 50,
+    },
+}
+
+# Where to store request counts.
+THROTTLE_BACKEND = "throttle.backends.cache.CacheBackend"
+
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
     pass
@@ -192,29 +214,6 @@ elif _test_runner_type == "timed":
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
-THROTTLE_ENABLE = [
-    (
-        "authentications",
-        [
-            (r"^/api/login/my/?$", ["POST"]),
-            (r"^/api/login/google/?$", ["POST"]),
-            (r"^/api/login/facebook/?$", ["POST"]),
-            (r"^/api/login/my/session/?$", ["POST"]),
-            (r"^/api/login/google/session/?$", ["POST"]),
-            (r"^/api/login/facebook/session/?$", ["POST"]),
-            (r"^/api/session/?$", ["DELETE"]),
-            (r"^/api/passwordresettoken/request/?$", ["POST"]),
-            (r"^/api/passwordresettoken/reset/?$", ["POST"]),
-            (r"^/api/passwordresettoken/reset/?$", ["POST"]),
-            (r"^/api/user/verify/?$", ["POST"]),
-        ],
-        30,
-        60,
-    ),
-]
-
-PROFILING_OUTPUT_FILE = os.environ.get("PROFILING_OUTPUT_FILE")
-
 REALM = "RSS Temple"
 
 DEFAULT_COUNT = 50
@@ -222,6 +221,8 @@ MAX_COUNT = 1000
 DEFAULT_SKIP = 0
 DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
+
+API_SESSION_EXPIRY_INTERVAL = datetime.timedelta(days=1)
 
 GOOGLE_CLIENT_ID = os.environ["GOOGLE_CLIENT_ID"]
 

@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import (
+    APISession,
     FacebookLogin,
     FavoriteFeedEntryUserMapping,
     Feed,
@@ -23,6 +24,21 @@ from api.models import (
 
 
 class UserTestCase(TestCase):
+    def test_create_user(self):
+        with self.assertRaises(ValueError):
+            User.objects.create_user("", "password")
+
+    def test_create_superuser(self):
+        User.objects.create_superuser("test@test.com", "password")
+
+        with self.assertRaises(ValueError):
+            User.objects.create_superuser("test1@test.com", "password", is_staff=False)
+
+        with self.assertRaises(ValueError):
+            User.objects.create_superuser(
+                "test2@test.com", "password", is_superuser=False
+            )
+
     def test_category_dict(self):
         user = User.objects.create_user("test_fields@test.com", None)
 
@@ -212,6 +228,13 @@ class UserTestCase(TestCase):
         FacebookLogin.objects.create(user=user, profile_id="facebookid")
 
         self.assertIsNotNone(user.facebook_login())
+
+
+class APISessionTestCase(TestCase):
+    def test_id_str(self):
+        api_session = APISession()
+
+        self.assertIs(type(api_session.id_str()), str)
 
 
 class VerificationTokenTestCase(TestCase):

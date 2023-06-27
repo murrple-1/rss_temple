@@ -23,6 +23,9 @@ bleach = {version = ">=4.0.0,<5.0.0", extras = ["css"]}
 html5lib = "*"
 validators = "*"
 tabulate = "*"
+django-cors-headers = "*"
+django-throttle-requests = "*"
+django-cprofile-middleware = "*"
 
 [dev-packages]
 coverage = "*"

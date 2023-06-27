@@ -223,20 +223,26 @@ def _handle_parse_result(
         where_expression_extension = parse_results["WhereExpressionExtension"]
         if "AndOperator" in where_expression_extension:
             return _handle_parse_result(
-                request, where_clause, object_search_fns
+                request, cast(ParseResults, where_clause), object_search_fns
             ) & _handle_parse_result(
-                request, where_expression_extension, object_search_fns
+                request,
+                cast(ParseResults, where_expression_extension),
+                object_search_fns,
             )
         elif "OrOperator" in where_expression_extension:
             return _handle_parse_result(
-                request, where_clause, object_search_fns
+                request, cast(ParseResults, where_clause), object_search_fns
             ) | _handle_parse_result(
-                request, where_expression_extension, object_search_fns
+                request,
+                cast(ParseResults, where_expression_extension),
+                object_search_fns,
             )
         else:
-            return _handle_parse_result(request, where_clause, object_search_fns)
+            return _handle_parse_result(
+                request, cast(ParseResults, where_clause), object_search_fns
+            )
     elif "NamedExpression" in parse_results:
-        named_expression = parse_results["NamedExpression"]
+        named_expression = cast(ParseResults, parse_results["NamedExpression"])
         field_name = cast(str, named_expression["IdentifierTerm"])
         # if search_obj is "" (empty string), 'StringTerm' will not exist, so default it
         search_obj = cast(
@@ -246,7 +252,9 @@ def _handle_parse_result(
 
         return _q(request, field_name, search_obj, object_search_fns)
     elif "ExcludeNamedExpression" in parse_results:
-        exclude_named_expression = parse_results["ExcludeNamedExpression"]
+        exclude_named_expression = cast(
+            ParseResults, parse_results["ExcludeNamedExpression"]
+        )
         field_name = cast(str, exclude_named_expression["IdentifierTerm"])
         # if search_obj is "" (empty string), 'StringTerm' will not exist, so default it
         search_obj = cast(
@@ -260,10 +268,12 @@ def _handle_parse_result(
     elif "ParenthesizedExpression" in parse_results:
         return Q(
             _handle_parse_result(
-                request, parse_results["ParenthesizedExpression"], object_search_fns
+                request,
+                cast(ParseResults, parse_results["ParenthesizedExpression"]),
+                object_search_fns,
             )
         )
-    else:
+    else:  # pragma: no cover
         raise ValueError("unknown parse_result")
 
 

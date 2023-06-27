@@ -11,6 +11,7 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseBase,
     HttpResponseNotAllowed,
 )
 from url_normalize import url_normalize
@@ -18,6 +19,7 @@ from url_normalize import url_normalize
 from api import archived_feed_entry_util
 from api import opml as opml_util
 from api import query_utils
+from api.decorators import requires_authenticated_user
 from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
@@ -29,7 +31,8 @@ from api.models import (
 )
 
 
-def opml(request: HttpRequest):
+@requires_authenticated_user()
+def opml(request: HttpRequest) -> HttpResponseBase:
     permitted_methods = {"GET", "POST"}
 
     if request.method not in permitted_methods:
@@ -39,6 +42,8 @@ def opml(request: HttpRequest):
         return _opml_get(request)
     elif request.method == "POST":
         return _opml_post(request)
+    else:  # pragma: no cover
+        raise ValueError
 
 
 def _opml_get(request: HttpRequest):
