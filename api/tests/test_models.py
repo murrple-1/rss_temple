@@ -9,10 +9,8 @@ from django.utils import timezone
 from api.models import (
     APISession,
     FacebookLogin,
-    FavoriteFeedEntryUserMapping,
     Feed,
     FeedEntry,
-    FeedUserCategoryMapping,
     GoogleLogin,
     PasswordResetToken,
     ReadFeedEntryUserMapping,
@@ -65,7 +63,7 @@ class UserTestCase(TestCase):
         SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
         SubscribedFeedUserMapping.objects.create(feed=feed2, user=user)
 
-        FeedUserCategoryMapping.objects.create(feed=feed1, user_category=user_category)
+        user_category.feeds.add(feed1)
 
         category_dict = user.category_dict()
 
@@ -75,88 +73,6 @@ class UserTestCase(TestCase):
         self.assertIn(user_category.uuid, category_dict)
         self.assertIn(feed1, category_dict[user_category.uuid])
         self.assertIn(feed2, category_dict[None])
-
-    def test_subscribed_feeds_dict(self):
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        feed1 = Feed.objects.create(
-            feed_url="http://example.com/rss.xml",
-            title="Sample Feed",
-            home_url="http://example.com",
-            published_at=timezone.now(),
-            updated_at=None,
-            db_updated_at=None,
-        )
-
-        feed2 = Feed.objects.create(
-            feed_url="http://example2.com/rss.xml",
-            title="Sample Feed 2",
-            home_url="http://example2.com",
-            published_at=timezone.now(),
-            updated_at=None,
-            db_updated_at=None,
-        )
-
-        SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
-        SubscribedFeedUserMapping.objects.create(feed=feed2, user=user)
-
-        subscribed_feeds_dict = user.subscribed_feeds_dict()
-
-        self.assertIs(type(subscribed_feeds_dict), dict)
-        self.assertEqual(len(subscribed_feeds_dict), 2)
-        self.assertIn(feed1.uuid, subscribed_feeds_dict)
-        self.assertIn(feed2.uuid, subscribed_feeds_dict)
-        self.assertEqual(subscribed_feeds_dict[feed1.uuid], feed1)
-        self.assertEqual(subscribed_feeds_dict[feed2.uuid], feed2)
-
-    def test_read_feed_entry_mappings(self):
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        feed = Feed.objects.create(
-            feed_url="http://example.com/rss.xml",
-            title="Sample Feed",
-            home_url="http://example.com",
-            published_at=timezone.now(),
-            updated_at=None,
-            db_updated_at=None,
-        )
-
-        feed_entry = FeedEntry.objects.create(
-            feed=feed,
-            url="http://example.com/entry1.html",
-            content="<b>Some HTML Content</b>",
-            author_name="John Doe",
-        )
-
-        ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry, user=user)
-
-        self.assertEqual(user.read_feed_entry_mappings().count(), 1)
-
-    def test_read_feed_entry_uuids(self):
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        feed = Feed.objects.create(
-            feed_url="http://example.com/rss.xml",
-            title="Sample Feed",
-            home_url="http://example.com",
-            published_at=timezone.now(),
-            updated_at=None,
-            db_updated_at=None,
-        )
-
-        feed_entry = FeedEntry.objects.create(
-            feed=feed,
-            url="http://example.com/entry1.html",
-            content="<b>Some HTML Content</b>",
-            author_name="John Doe",
-        )
-
-        ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry, user=user)
-
-        uuids = user.read_feed_entry_uuids()
-
-        self.assertEqual(len(uuids), 1)
-        self.assertIn(feed_entry.uuid, uuids)
 
     def test_favorite_feed_entry_mappings(self):
         user = User.objects.create_user("test_fields@test.com", None)
@@ -177,9 +93,9 @@ class UserTestCase(TestCase):
             author_name="John Doe",
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(feed_entry=feed_entry, user=user)
+        user.favorite_feed_entries.add(feed_entry)
 
-        self.assertEqual(user.favorite_feed_entry_mappings().count(), 1)
+        self.assertEqual(user.favorite_feed_entries.count(), 1)
 
     def test_favorite_feed_entry_uuids(self):
         user = User.objects.create_user("test_fields@test.com", None)
@@ -200,9 +116,9 @@ class UserTestCase(TestCase):
             author_name="John Doe",
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(feed_entry=feed_entry, user=user)
+        user.favorite_feed_entries.add(feed_entry)
 
-        uuids = user.favorite_feed_entry_uuids()
+        uuids = list(user.favorite_feed_entries.values_list("uuid", flat=True))
 
         self.assertEqual(len(uuids), 1)
         self.assertIn(feed_entry.uuid, uuids)
@@ -298,9 +214,9 @@ class UserCategoryTestCase(TestCase):
             db_updated_at=None,
         )
 
-        FeedUserCategoryMapping.objects.create(feed=feed, user_category=user_category)
+        user_category.feeds.add(feed)
 
-        self.assertEqual(user_category.feeds().count(), 1)
+        self.assertEqual(user_category.feeds.count(), 1)
 
 
 class FeedTestCase(TestCase):
@@ -348,10 +264,10 @@ class FeedTestCase(TestCase):
         SubscribedFeedUserMapping.objects.create(feed=feed1, user=user)
         SubscribedFeedUserMapping.objects.create(feed=feed2, user=user)
 
-        FeedUserCategoryMapping.objects.create(feed=feed1, user_category=user_category)
+        user_category.feeds.add(feed1)
 
-        self.assertEqual(feed1.user_categories(user).count(), 1)
-        self.assertEqual(feed2.user_categories(user).count(), 0)
+        self.assertEqual(user_category.feeds.filter(uuid=feed1.uuid).count(), 1)
+        self.assertEqual(user_category.feeds.filter(uuid=feed2.uuid).count(), 0)
 
     def test_feed_entries(self):
         feed = Feed.objects.create(
@@ -370,7 +286,7 @@ class FeedTestCase(TestCase):
             author_name="John Doe",
         )
 
-        self.assertEqual(feed.feed_entries().count(), 1)
+        self.assertEqual(feed.feed_entries.count(), 1)
 
     def test_counts(self):
         user = User.objects.create_user("test_fields@test.com", None)
@@ -538,7 +454,7 @@ class FeedEntryTestCase(TestCase):
             author_name="John Doe",
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
+        user.favorite_feed_entries.add(feed_entry2)
 
         self.assertFalse(feed_entry1.is_favorite(user))
         self.assertTrue(feed_entry2.is_favorite(user))
@@ -570,8 +486,8 @@ class FeedEntryTestCase(TestCase):
 
         ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
 
-        self.assertIsNone(feed_entry1.read_mapping(user))
-        self.assertIsNotNone(feed_entry2.read_mapping(user))
+        self.assertIsNone(feed_entry1.read_user_set.filter(uuid=user.uuid).first())
+        self.assertIsNotNone(feed_entry2.read_user_set.filter(uuid=user.uuid).first())
 
     def test_unique_feed_url_updated_at(self):
         now = timezone.now()

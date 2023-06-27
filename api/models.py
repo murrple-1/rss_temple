@@ -1,5 +1,6 @@
 import uuid
 from collections import defaultdict
+from functools import cached_property
 from typing import Collection
 
 from django.conf import settings
@@ -43,6 +44,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     attributes = models.JSONField(null=False, default=dict)
+    subscribed_feeds = models.ManyToManyField(
+        "Feed", through="SubscribedFeedUserMapping", related_name="subscribed_user_set"
+    )
+    read_feed_entries = models.ManyToManyField(
+        "FeedEntry", through="ReadFeedEntryUserMapping", related_name="read_user_set"
+    )
+    favorite_feed_entries = models.ManyToManyField(
+        "FeedEntry", related_name="favorite_user_set"
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -64,18 +74,15 @@ class User(AbstractBaseUser, PermissionsMixin):
             ) in SubscribedFeedUserMapping.objects.select_related("feed").filter(
                 user=self
             ):
-                feed_user_category_mappings = list(
-                    FeedUserCategoryMapping.objects.select_related(
-                        "user_category"
-                    ).filter(feed=subscribed_feed_user_mapping.feed)
+                user_category_uuids = frozenset(
+                    subscribed_feed_user_mapping.feed.user_categories.values_list(
+                        "uuid", flat=True
+                    )
                 )
 
                 keys: Collection[uuid.UUID | None]
-                if len(feed_user_category_mappings) > 0:
-                    keys = frozenset(
-                        feed_user_category_mapping.user_category.uuid
-                        for feed_user_category_mapping in feed_user_category_mappings
-                    )
+                if len(user_category_uuids) > 0:
+                    keys = user_category_uuids
                 else:
                     keys = [None]
 
@@ -90,66 +97,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return category_dict
 
-    def subscribed_feeds_dict(self):
-        subscribed_feeds_dict = getattr(self, "_subscribed_feeds_dict", None)
-        if subscribed_feeds_dict is None:
-            subscribed_feeds_dict = {
-                mapping.feed.uuid: mapping.feed
-                for mapping in SubscribedFeedUserMapping.objects.select_related(
-                    "feed"
-                ).filter(user=self)
-            }
-            self._subscribed_feeds_dict = subscribed_feeds_dict
+    @cached_property
+    def subscribed_feed_uuids(self):
+        return frozenset(self.subscribed_feeds.values_list("uuid", flat=True))
 
-        return subscribed_feeds_dict
-
-    def read_feed_entry_mappings(self):
-        read_feed_entry_mappings = getattr(self, "_read_feed_entry_mappings", None)
-        if read_feed_entry_mappings is None:
-            read_feed_entry_mappings = ReadFeedEntryUserMapping.objects.filter(
-                user=self
-            )
-            self._read_feed_entry_mappings = read_feed_entry_mappings
-
-        return read_feed_entry_mappings
-
+    @cached_property
     def read_feed_entry_uuids(self):
-        read_feed_entry_uuids = getattr(self, "_read_feed_entry_uuids", None)
-        if read_feed_entry_uuids is None:
-            read_feed_entry_uuids = frozenset(
-                _uuid
-                for _uuid in self.read_feed_entry_mappings().values_list(
-                    "feed_entry_id", flat=True
-                )
-            )
-            self._read_feed_entry_uuids = read_feed_entry_uuids
+        return frozenset(self.read_feed_entries.values_list("uuid", flat=True))
 
-        return read_feed_entry_uuids
-
-    def favorite_feed_entry_mappings(self):
-        favorite_feed_entry_mappings = getattr(
-            self, "_favorite_feed_entry_mappings", None
-        )
-        if favorite_feed_entry_mappings is None:
-            favorite_feed_entry_mappings = FavoriteFeedEntryUserMapping.objects.filter(
-                user=self
-            )
-            self._favorite_feed_entry_mappings = favorite_feed_entry_mappings
-
-        return favorite_feed_entry_mappings
-
+    @cached_property
     def favorite_feed_entry_uuids(self):
-        favorite_feed_entry_uuids = getattr(self, "_favorite_feed_entry_uuids", None)
-        if favorite_feed_entry_uuids is None:
-            favorite_feed_entry_uuids = frozenset(
-                _uuid
-                for _uuid in self.favorite_feed_entry_mappings().values_list(
-                    "feed_entry_id", flat=True
-                )
-            )
-            self._favorite_feed_entry_uuids = favorite_feed_entry_uuids
-
-        return favorite_feed_entry_uuids
+        return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
 
     def google_login(self):
         if not hasattr(self, "_google_login"):
@@ -173,7 +131,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 class APISession(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField(null=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="api_sessions"
+    )
 
     def id_str(self) -> str:
         return str(self.uuid)
@@ -244,20 +204,17 @@ class UserCategory(models.Model):
         unique_together = (("user", "text"),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_categories",
+    )
     text = models.TextField()
+    feeds = models.ManyToManyField("Feed", related_name="user_categories")
 
-    def feeds(self):
-        feeds = getattr(self, "_feeds", None)
-        if feeds is None:
-            feeds = Feed.objects.filter(
-                uuid__in=FeedUserCategoryMapping.objects.filter(
-                    user_category=self
-                ).values_list("feed_id", flat=True)
-            )
-            self._feeds = feeds
-
-        return feeds
+    @cached_property
+    def feed_uuids(self):
+        return self.feeds.values_list("uuid", flat=True)
 
 
 class Feed(models.Model):
@@ -305,35 +262,9 @@ class Feed(models.Model):
         self.custom_title = None
         self.is_subscribed = False
 
-    def user_categories(self, user):
-        if not hasattr(self, "_user_categories"):
-            category_dict = user.category_dict()
-
-            user_category_uuids = set()
-
-            for uuid_, feeds in category_dict.items():
-                feed_uuids = frozenset(feed.uuid for feed in feeds)
-
-                if self.uuid in feed_uuids:
-                    user_category_uuids.add(uuid_)
-
-            self._user_categories = UserCategory.objects.filter(
-                uuid__in=user_category_uuids
-            )
-
-        return self._user_categories
-
-    def feed_entries(self):
-        feed_entries = getattr(self, "_feed_entries", None)
-        if feed_entries is None:
-            feed_entries = FeedEntry.objects.filter(feed=self)
-            self._feed_entries = feed_entries
-
-        return feed_entries
-
     @staticmethod
     def _generate_counts(feed, user):
-        total_feed_entry_count = feed.feed_entries().count()
+        total_feed_entry_count = feed.feed_entries.count()
         read_count = ReadFeedEntryUserMapping.objects.filter(
             feed_entry__feed=feed, user=user
         ).count()
@@ -371,15 +302,6 @@ class SubscribedFeedUserMapping(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
-class FeedUserCategoryMapping(models.Model):
-    class Meta:
-        unique_together = (("feed", "user_category"),)
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
-    user_category = models.ForeignKey(UserCategory, on_delete=models.CASCADE)
-
-
 class FeedEntry(models.Model):
     class Meta:
         indexes = [
@@ -401,7 +323,9 @@ class FeedEntry(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     id = models.TextField(null=True)
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    feed = models.ForeignKey(
+        Feed, on_delete=models.CASCADE, related_name="feed_entries"
+    )
     created_at = models.DateTimeField(null=True)
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
@@ -431,9 +355,7 @@ class FeedEntry(models.Model):
     def from_subscription(self, user):
         from_subscription = getattr(self, "_from_subscription", None)
         if from_subscription is None:
-            from_subscription = self.feed_id in (
-                f.uuid for f in user.subscribed_feeds_dict().values()
-            )
+            from_subscription = self.feed_id in user.subscribed_feed_uuids
             self._from_subscription = from_subscription
 
         return from_subscription
@@ -441,7 +363,7 @@ class FeedEntry(models.Model):
     def is_read(self, user):
         is_read = getattr(self, "_is_read", None)
         if is_read is None:
-            is_read = self.uuid in user.read_feed_entry_uuids()
+            is_read = self.uuid in user.read_feed_entry_uuids
             self._is_read = is_read
 
         return is_read
@@ -449,23 +371,10 @@ class FeedEntry(models.Model):
     def is_favorite(self, user):
         is_favorite = getattr(self, "_is_favorite", None)
         if is_favorite is None:
-            is_favorite = self.uuid in user.favorite_feed_entry_uuids()
+            is_favorite = self.uuid in user.favorite_feed_entry_uuids
             self._is_favorite = is_favorite
 
         return is_favorite
-
-    def read_mapping(self, user):
-        if not hasattr(self, "_read_mapping"):
-            self._read_mapping = next(
-                (
-                    rfe
-                    for rfe in user.read_feed_entry_mappings()
-                    if rfe.feed_entry_id == self.uuid
-                ),
-                None,
-            )
-
-        return self._read_mapping
 
 
 class ReadFeedEntryUserMapping(models.Model):
@@ -476,15 +385,6 @@ class ReadFeedEntryUserMapping(models.Model):
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     read_at = models.DateTimeField(default=timezone.now)
-
-
-class FavoriteFeedEntryUserMapping(models.Model):
-    class Meta:
-        unique_together = ("feed_entry", "user")
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
 class FeedSubscriptionProgressEntry(models.Model):

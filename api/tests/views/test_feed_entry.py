@@ -6,13 +6,7 @@ import ujson
 from django.db import transaction
 from django.utils import timezone
 
-from api.models import (
-    FavoriteFeedEntryUserMapping,
-    Feed,
-    FeedEntry,
-    ReadFeedEntryUserMapping,
-    User,
-)
+from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
 from api.tests.views import ViewTestCase
 
 
@@ -474,8 +468,8 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertTrue(
-            FavoriteFeedEntryUserMapping.objects.filter(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry
+            FeedEntryTestCase.user.favorite_feed_entries.filter(
+                uuid=feed_entry.uuid
             ).exists()
         )
 
@@ -498,9 +492,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(
-            feed_entry=feed_entry, user=FeedEntryTestCase.user
-        )
+        FeedEntryTestCase.user.favorite_feed_entries.add(feed_entry)
 
         response = self.client.post(
             f"/api/feedentry/{feed_entry.uuid}/favorite",
@@ -520,9 +512,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(
-            user=FeedEntryTestCase.user, feed_entry=feed_entry
-        )
+        FeedEntryTestCase.user.favorite_feed_entries.add(feed_entry)
 
         response = self.client.delete(
             f"/api/feedentry/{feed_entry.uuid}/favorite",
@@ -530,10 +520,18 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            FavoriteFeedEntryUserMapping.objects.filter(
-                user=FeedEntryTestCase.user, feed_entry=feed_entry
+            FeedEntryTestCase.user.favorite_feed_entries.filter(
+                id=feed_entry.uuid
             ).exists()
         )
+
+    def test_feedentry_favorite_delete_not_exist(self):
+        uuid_ = uuid.UUID(int=0)
+
+        response = self.client.delete(
+            f"/api/feedentry/{uuid_}/favorite",
+        )
+        self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_post(self):
         feed_entry1 = FeedEntry.objects.create(
@@ -568,8 +566,8 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertEqual(
-            FavoriteFeedEntryUserMapping.objects.filter(
-                user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
+            FeedEntryTestCase.user.favorite_feed_entries.filter(
+                uuid__in=[feed_entry1.uuid, feed_entry2.uuid]
             ).count(),
             2,
         )
@@ -611,9 +609,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(
-            feed_entry=feed_entry, user=FeedEntryTestCase.user
-        )
+        FeedEntryTestCase.user.favorite_feed_entries.add(feed_entry)
 
         response = self.client.post(
             "/api/feedentries/favorite",
@@ -647,13 +643,7 @@ class FeedEntryTestCase(ViewTestCase):
             db_updated_at=None,
         )
 
-        FavoriteFeedEntryUserMapping.objects.create(
-            user=FeedEntryTestCase.user, feed_entry=feed_entry1
-        )
-
-        FavoriteFeedEntryUserMapping.objects.create(
-            user=FeedEntryTestCase.user, feed_entry=feed_entry2
-        )
+        FeedEntryTestCase.user.favorite_feed_entries.add(feed_entry1, feed_entry2)
 
         response = self.client.delete(
             "/api/feedentries/favorite",
@@ -663,8 +653,8 @@ class FeedEntryTestCase(ViewTestCase):
         self.assertEqual(response.status_code, 204, response.content)
 
         self.assertFalse(
-            FavoriteFeedEntryUserMapping.objects.filter(
-                user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
+            FeedEntryTestCase.user.favorite_feed_entries.filter(
+                id__in=[feed_entry1.uuid, feed_entry2.uuid]
             ).exists()
         )
 

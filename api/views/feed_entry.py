@@ -7,7 +7,6 @@ import ujson
 from django.core.cache import caches
 from django.db import transaction
 from django.db.models import OrderBy, Q
-from django.db.utils import IntegrityError
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -21,12 +20,7 @@ from api import query_utils
 from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import (
-    FavoriteFeedEntryUserMapping,
-    FeedEntry,
-    ReadFeedEntryUserMapping,
-    User,
-)
+from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 
 _OBJECT_NAME = "feedentry"
 
@@ -387,7 +381,6 @@ def _feed_entries_query_stable_post(request: HttpRequest):
 
 def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
     read_feed_entry_user_mapping: ReadFeedEntryUserMapping
-
     with transaction.atomic():
         feed_entry: FeedEntry
         try:
@@ -395,14 +388,12 @@ def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
         except FeedEntry.DoesNotExist:
             return HttpResponseNotFound("feed entry not found")
 
-        try:
-            read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.get(
-                feed_entry=feed_entry, user=cast(User, request.user)
-            )
-        except ReadFeedEntryUserMapping.DoesNotExist:
-            read_feed_entry_user_mapping = ReadFeedEntryUserMapping.objects.create(
-                feed_entry=feed_entry, user=cast(User, request.user)
-            )
+        (
+            read_feed_entry_user_mapping,
+            _,
+        ) = ReadFeedEntryUserMapping.objects.get_or_create(
+            feed_entry=feed_entry, user=cast(User, request.user)
+        )
 
     ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
@@ -411,10 +402,7 @@ def _feed_entry_read_post(request: HttpRequest, uuid_: uuid.UUID):
 
 
 def _feed_entry_read_delete(request: HttpRequest, uuid_: uuid.UUID):
-    ReadFeedEntryUserMapping.objects.filter(
-        feed_entry_id=uuid_, user=cast(User, request.user)
-    ).delete()
-
+    cast(User, request.user).read_feed_entries.clear()
     return HttpResponse(status=204)
 
 
@@ -515,9 +503,7 @@ def _feed_entries_read_delete(request: HttpRequest):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest("uuid malformed")
 
-    ReadFeedEntryUserMapping.objects.filter(
-        feed_entry_id__in=_ids, user=cast(User, request.user)
-    ).delete()
+    cast(User, request.user).read_feed_entries.filter(uuid__in=_ids).delete()
 
     return HttpResponse(status=204)
 
@@ -529,22 +515,19 @@ def _feed_entry_favorite_post(request: HttpRequest, uuid_: uuid.UUID):
     except FeedEntry.DoesNotExist:
         return HttpResponseNotFound("feed entry not found")
 
-    favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
-        feed_entry=feed_entry, user=cast(User, request.user)
-    )
-
-    try:
-        favorite_feed_entry_user_mapping.save()
-    except IntegrityError:
-        pass
+    cast(User, request.user).favorite_feed_entries.add(feed_entry)
 
     return HttpResponse(status=204)
 
 
 def _feed_entry_favorite_delete(request: HttpRequest, uuid_: uuid.UUID):
-    FavoriteFeedEntryUserMapping.objects.filter(
-        feed_entry_id=uuid_, user=cast(User, request.user)
-    ).delete()
+    feed_entry: FeedEntry
+    try:
+        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+    except FeedEntry.DoesNotExist:
+        return HttpResponse(status=204)
+
+    cast(User, request.user).favorite_feed_entries.remove(feed_entry)
 
     return HttpResponse(status=204)
 
@@ -579,14 +562,7 @@ def _feed_entries_favorite_post(request: HttpRequest):
         return HttpResponseNotFound("feed entry not found")
 
     for feed_entry in feed_entries:
-        favorite_feed_entry_user_mapping = FavoriteFeedEntryUserMapping(
-            feed_entry=feed_entry, user=cast(User, request.user)
-        )
-
-        try:
-            favorite_feed_entry_user_mapping.save()
-        except IntegrityError:
-            pass
+        cast(User, request.user).favorite_feed_entries.add(feed_entry)
 
     return HttpResponse(status=204)
 
@@ -615,8 +591,6 @@ def _feed_entries_favorite_delete(request: HttpRequest):
     except (ValueError, TypeError, AttributeError):
         return HttpResponseBadRequest("uuid malformed")
 
-    FavoriteFeedEntryUserMapping.objects.filter(
-        feed_entry_id__in=_ids, user=cast(User, request.user)
-    ).delete()
+    cast(User, request.user).favorite_feed_entries.filter(uuid__in=_ids).delete()
 
     return HttpResponse(status=204)

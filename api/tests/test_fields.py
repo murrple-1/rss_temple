@@ -11,7 +11,6 @@ from api import fields
 from api.models import (
     Feed,
     FeedEntry,
-    FeedUserCategoryMapping,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
     User,
@@ -194,9 +193,7 @@ class AllFieldsTestCase(TestCase):
             feed=cls.feed_without_category, user=cls.user, custom_feed_title=None
         )
 
-        FeedUserCategoryMapping.objects.create(
-            feed=cls.feed_with_category, user_category=cls.user_category
-        )
+        cls.user_category.feeds.add(cls.feed_with_category)
 
     def test_run(self):
         self.assertEqual(len(AllFieldsTestCase.TRIALS), len(fields._field_configs))

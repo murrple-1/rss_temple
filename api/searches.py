@@ -7,13 +7,7 @@ from django.http import HttpRequest
 from pyparsing import ParseException, ParseResults
 
 from api.exceptions import QueryException
-from api.models import (
-    FavoriteFeedEntryUserMapping,
-    Feed,
-    ReadFeedEntryUserMapping,
-    SubscribedFeedUserMapping,
-    User,
-)
+from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
 from api.search.convertto import (
     Bool,
     DateTime,
@@ -42,11 +36,7 @@ def _feedentry_subscribed(request: HttpRequest, search_obj: str):
 
 
 def _feedentry_is_read(request: HttpRequest, search_obj: str):
-    q = Q(
-        uuid__in=ReadFeedEntryUserMapping.objects.filter(
-            user=cast(User, request.user)
-        ).values("feed_entry_id")
-    )
+    q = Q(uuid__in=cast(User, request.user).read_feed_entries.values("uuid"))
 
     if not Bool.convertto(search_obj):
         q = ~q
@@ -55,11 +45,7 @@ def _feedentry_is_read(request: HttpRequest, search_obj: str):
 
 
 def _feedentry_is_favorite(request: HttpRequest, search_obj: str):
-    q = Q(
-        uuid__in=FavoriteFeedEntryUserMapping.objects.filter(
-            user=cast(User, request.user)
-        ).values("feed_entry_id")
-    )
+    q = Q(uuid__in=cast(User, request.user).favorite_feed_entries.values("uuid"))
 
     if not Bool.convertto(search_obj):
         q = ~q

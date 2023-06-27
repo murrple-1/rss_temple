@@ -13,7 +13,6 @@ from api.models import (
     FeedEntry,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
-    FeedUserCategoryMapping,
     SubscribedFeedUserMapping,
     UserCategory,
 )
@@ -85,9 +84,7 @@ class Command(BaseCommand):
             user_category_mapping_dict[user_category.text] = set(
                 cast(
                     Iterable[str],
-                    FeedUserCategoryMapping.objects.filter(
-                        user_category=user_category
-                    ).values_list("feed__feed_url"),
+                    user_category.feeds.values_list("feed_url", flat=True),
                 )
             )
 
@@ -167,9 +164,7 @@ class Command(BaseCommand):
                         ] = user_category_feeds
 
                     if feed_url not in user_category_feeds:
-                        FeedUserCategoryMapping.objects.create(
-                            feed=feed, user_category=user_category_
-                        )
+                        user_category_.feeds.add(feed)
 
                         user_category_feeds.add(feed_url)
 

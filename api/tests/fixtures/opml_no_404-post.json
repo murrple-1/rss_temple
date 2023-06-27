@@ -12,7 +12,11 @@
     "pk": "554aa28a-0c26-4268-9fde-c0d62a693187",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Anime - Manga"
+      "text": "Anime - Manga",
+      "feeds": [
+        "63428453-8af4-4b3f-a06e-2c4e1d344590",
+        "74e85c6e-a4cf-45f5-995d-2776ef5f627a"
+      ]
     }
   },
   {
@@ -20,7 +24,12 @@
     "pk": "602c1b26-c0dc-47f0-ae32-6a06c7c34125",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Gaming"
+      "text": "Gaming",
+      "feeds": [
+        "f01328bb-5a67-43bd-9a46-ccfffbabd30c",
+        "c06ee1c8-3dab-4e94-ac65-2c952cbec83d",
+        "4e038d3b-6f86-49e6-94a1-8be5ffc822e9"
+      ]
     }
   },
   {
@@ -28,7 +37,16 @@
     "pk": "6b759776-14b0-43e5-8af3-bf5c8fc35253",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Comics"
+      "text": "Comics",
+      "feeds": [
+        "14b58992-e233-4c2d-88c9-097f576127c1",
+        "2d45a6e3-4aad-4e68-8e0f-876a08682c82",
+        "73ce11ec-a89b-43a9-aaf3-b4b24ffe1347",
+        "f7b7140b-f36e-477d-82b3-d8bfa0f1f5ab",
+        "394e600e-40d3-47e7-9c6a-9048bb6e889f",
+        "90111b99-0d31-413c-aa4f-fd031258929f",
+        "48e3c080-c565-49d0-8c65-c2131328aad4"
+      ]
     }
   },
   {
@@ -36,7 +54,11 @@
     "pk": "6e774283-4ede-46ec-8bb9-7730af348876",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Technology"
+      "text": "Technology",
+      "feeds": [
+        "ec1c217d-1754-4885-9d94-6c3f22ddee99",
+        "ecb20cf2-fe3c-42b8-ab40-4becc8909804"
+      ]
     }
   },
   {
@@ -44,7 +66,11 @@
     "pk": "903e0edf-af7e-4720-a90d-f25218cbf280",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Programming"
+      "text": "Programming",
+      "feeds": [
+        "c496ef85-8da4-47aa-beda-22820cb527ae",
+        "51af3350-f7e3-4f7c-b811-83618a2becbf"
+      ]
     }
   },
   {
@@ -52,7 +78,16 @@
     "pk": "a28cadd5-6c46-45a7-b469-99b7d0991e6a",
     "fields": {
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b",
-      "text": "Music"
+      "text": "Music",
+      "feeds": [
+        "1a007999-d369-4442-bf34-1932a21ad3b6",
+        "707547b3-e8f6-450d-9470-83f8fb1d5f06",
+        "72c083ef-b5ab-4cae-801d-714baf58e606",
+        "7eccbad9-3e61-4f84-80f4-765b15ad6af0",
+        "c9b3faca-e9cb-41fd-b3d3-269932b9ff5b",
+        "6121e2e1-105c-4baf-84fb-e0fbab22edd9",
+        "fb317282-998a-422e-889e-5753a2c125ed"
+      ]
     }
   },
   {
@@ -567,190 +602,6 @@
       "feed": "394e600e-40d3-47e7-9c6a-9048bb6e889f",
       "custom_feed_title": null,
       "user": "a12cd175-f9a5-42c2-8b9d-8324ae9b082b"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "03c08031-06c3-4b67-95e8-51d97fd910c2",
-    "fields": {
-      "feed": "c496ef85-8da4-47aa-beda-22820cb527ae",
-      "user_category": "903e0edf-af7e-4720-a90d-f25218cbf280"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "06f68094-ebd9-4c71-99a3-d1175ba454f5",
-    "fields": {
-      "feed": "f01328bb-5a67-43bd-9a46-ccfffbabd30c",
-      "user_category": "602c1b26-c0dc-47f0-ae32-6a06c7c34125"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "1fa19b84-c059-48e8-b033-b3ea4250e7b6",
-    "fields": {
-      "feed": "14b58992-e233-4c2d-88c9-097f576127c1",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "2e0b7b06-82a7-4c70-b3bd-e8a2678702e1",
-    "fields": {
-      "feed": "2d45a6e3-4aad-4e68-8e0f-876a08682c82",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "3217b023-9e4b-41f3-8429-732d3856b20f",
-    "fields": {
-      "feed": "ec1c217d-1754-4885-9d94-6c3f22ddee99",
-      "user_category": "6e774283-4ede-46ec-8bb9-7730af348876"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "357b85e3-eec1-4db0-b5ea-fc867723f1ec",
-    "fields": {
-      "feed": "c06ee1c8-3dab-4e94-ac65-2c952cbec83d",
-      "user_category": "602c1b26-c0dc-47f0-ae32-6a06c7c34125"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "390507a2-4d53-4b82-8faa-66fc2e41beee",
-    "fields": {
-      "feed": "73ce11ec-a89b-43a9-aaf3-b4b24ffe1347",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "41021a9d-2c87-40b4-b6c6-07594cf840dc",
-    "fields": {
-      "feed": "f7b7140b-f36e-477d-82b3-d8bfa0f1f5ab",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "45cda814-d6ab-4951-9e1a-2669afcec0fa",
-    "fields": {
-      "feed": "51af3350-f7e3-4f7c-b811-83618a2becbf",
-      "user_category": "903e0edf-af7e-4720-a90d-f25218cbf280"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "4a3c527c-8483-4c3b-9ba8-33fb372fedce",
-    "fields": {
-      "feed": "394e600e-40d3-47e7-9c6a-9048bb6e889f",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "4d1f73de-a888-4cbb-bca6-c6551df7219f",
-    "fields": {
-      "feed": "1a007999-d369-4442-bf34-1932a21ad3b6",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "5879a710-2a04-47a2-ae2b-b39328c3b990",
-    "fields": {
-      "feed": "90111b99-0d31-413c-aa4f-fd031258929f",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "748530a7-dfab-45aa-aa05-5d56b62e5817",
-    "fields": {
-      "feed": "63428453-8af4-4b3f-a06e-2c4e1d344590",
-      "user_category": "554aa28a-0c26-4268-9fde-c0d62a693187"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "7db0a187-e6b8-4561-866a-dede3e84bd20",
-    "fields": {
-      "feed": "48e3c080-c565-49d0-8c65-c2131328aad4",
-      "user_category": "6b759776-14b0-43e5-8af3-bf5c8fc35253"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "99a079c8-e3d1-4321-bfb5-42bcec6dae33",
-    "fields": {
-      "feed": "707547b3-e8f6-450d-9470-83f8fb1d5f06",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "a4cf0a0f-d183-4197-90f6-d99782799ee6",
-    "fields": {
-      "feed": "72c083ef-b5ab-4cae-801d-714baf58e606",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "a87e3bb6-0cff-4a87-86a9-9b2ff3612770",
-    "fields": {
-      "feed": "7eccbad9-3e61-4f84-80f4-765b15ad6af0",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "adb256a8-d517-4e66-bea6-e3c1e7e37231",
-    "fields": {
-      "feed": "ecb20cf2-fe3c-42b8-ab40-4becc8909804",
-      "user_category": "6e774283-4ede-46ec-8bb9-7730af348876"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "c02b910c-3756-4075-bae0-4c1efcf344a9",
-    "fields": {
-      "feed": "c9b3faca-e9cb-41fd-b3d3-269932b9ff5b",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "c299d730-b438-4395-8bed-eebf87766b8c",
-    "fields": {
-      "feed": "6121e2e1-105c-4baf-84fb-e0fbab22edd9",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "c7f36639-3c00-4026-ba6f-a21a91c3dfc1",
-    "fields": {
-      "feed": "fb317282-998a-422e-889e-5753a2c125ed",
-      "user_category": "a28cadd5-6c46-45a7-b469-99b7d0991e6a"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "df048460-3899-4525-95d1-3f6feec8cba3",
-    "fields": {
-      "feed": "74e85c6e-a4cf-45f5-995d-2776ef5f627a",
-      "user_category": "554aa28a-0c26-4268-9fde-c0d62a693187"
-    }
-  },
-  {
-    "model": "api.feedusercategorymapping",
-    "pk": "e3e6d307-3d6f-4d48-a097-fb578b60c135",
-    "fields": {
-      "feed": "4e038d3b-6f86-49e6-94a1-8be5ffc822e9",
-      "user_category": "602c1b26-c0dc-47f0-ae32-6a06c7c34125"
     }
   },
   {

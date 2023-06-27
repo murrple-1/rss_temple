@@ -1,6 +1,8 @@
-from typing import Any, Callable, TypedDict
+from typing import Any, Callable, TypedDict, cast
 
 from django.http import HttpRequest
+
+from api.models import ReadFeedEntryUserMapping, User
 
 
 class _FieldConfig:
@@ -10,10 +12,12 @@ class _FieldConfig:
 
 
 def _feedentry_readAt(request: HttpRequest, db_obj: Any):
-    read_mapping = db_obj.read_mapping(request.user)
-    if read_mapping is not None:
+    try:
+        read_mapping = ReadFeedEntryUserMapping.objects.get(
+            user=cast(User, request.user), feed_entry=db_obj
+        )
         return read_mapping.read_at.isoformat()
-    else:
+    except ReadFeedEntryUserMapping.DoesNotExist:
         return None
 
 
@@ -22,9 +26,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
         "email": _FieldConfig(lambda request, db_obj: db_obj.email, False),
         "subscribedFeedUuids": _FieldConfig(
-            lambda request, db_obj: [
-                str(key) for key in db_obj.subscribed_feeds_dict().keys()
-            ],
+            lambda request, db_obj: [str(key) for key in db_obj.subscribed_feed_uuids],
             False,
         ),
         "attributes": _FieldConfig(lambda request, db_obj: db_obj.attributes, False),
@@ -39,7 +41,8 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
         "text": _FieldConfig(lambda request, db_obj: db_obj.text, True),
         "feedUuids": _FieldConfig(
-            lambda request, db_obj: [str(feed.uuid) for feed in db_obj.feeds()], False
+            lambda request, db_obj: [str(uuid_) for uuid_ in db_obj.feed_uuids],
+            False,
         ),
     },
     "feed": {
@@ -66,8 +69,10 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "userCategoryUuids": _FieldConfig(
             lambda request, db_obj: [
-                str(user_category.uuid)
-                for user_category in db_obj.user_categories(request.user)
+                str(uuid_)
+                for uuid_ in db_obj.user_categories.filter(
+                    user=request.user
+                ).values_list("uuid", flat=True)
             ],
             False,
         ),

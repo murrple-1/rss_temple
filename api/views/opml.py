@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict
 from typing import cast
 from xml.etree.ElementTree import Element
@@ -24,7 +25,6 @@ from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
-    FeedUserCategoryMapping,
     SubscribedFeedUserMapping,
     User,
     UserCategory,
@@ -128,13 +128,15 @@ def _opml_post(request: HttpRequest):
         for user_category in UserCategory.objects.filter(user=cast(User, request.user))
     }
 
+    user_category: UserCategory | None
+    feed: Feed | None
+
     existing_category_mappings: dict[str, set[str]] = defaultdict(set)
-    for feed_user_category_mapping in FeedUserCategoryMapping.objects.select_related(
-        "feed", "user_category"
-    ).filter(user_category__user=cast(User, request.user)):
-        existing_category_mappings[feed_user_category_mapping.user_category.text].add(
-            feed_user_category_mapping.feed.feed_url
-        )
+    for user_category in cast(User, request.user).user_categories.all():
+        for feed in user_category.feeds.all():
+            assert feed is not None
+            assert user_category is not None
+            existing_category_mappings[user_category.text].add(feed.feed_url)
 
     feeds_dict: dict[str, Feed | None] = {}
 
@@ -170,7 +172,7 @@ def _opml_post(request: HttpRequest):
 
     user_categories: list[UserCategory] = []
     subscribed_feed_user_mappings: list[SubscribedFeedUserMapping] = []
-    feed_user_category_mappings: list[FeedUserCategoryMapping] = []
+    feed_url_user_categories: dict[str, list[UserCategory]] = defaultdict(list)
 
     for outer_outline_name, outline_set in outline_dict.items():
         user_category = existing_categories.get(outer_outline_name)
@@ -206,10 +208,7 @@ def _opml_post(request: HttpRequest):
                     existing_subscriptions.add(outline_xml_url)
 
                 if outline_xml_url not in existing_category_mapping_set:
-                    feed_user_category_mapping = FeedUserCategoryMapping(
-                        feed=feed, user_category=user_category
-                    )
-                    feed_user_category_mappings.append(feed_user_category_mapping)
+                    feed_url_user_categories[feed.feed_url].append(user_category)
                     existing_category_mapping_set.add(outline_xml_url)
 
     with transaction.atomic():
@@ -217,7 +216,11 @@ def _opml_post(request: HttpRequest):
             user_category.save()
 
         SubscribedFeedUserMapping.objects.bulk_create(subscribed_feed_user_mappings)
-        FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
+        for feed_url, user_categories in feed_url_user_categories.items():
+            feed = feeds_dict[feed_url]
+            assert feed is not None
+
+            feed.user_categories.add(*user_categories)
 
         for feed in feeds_dict.values():
             if feed is not None:

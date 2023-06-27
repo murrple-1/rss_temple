@@ -5,7 +5,7 @@ from typing import ClassVar
 import ujson
 from django.utils import timezone
 
-from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
+from api.models import Feed, User, UserCategory
 from api.tests.views import ViewTestCase
 
 
@@ -238,25 +238,12 @@ class UserCategoryTestCase(ViewTestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category1, feed=feed1
-            )
-        )
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category1, feed=feed2
-            )
-        )
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category2, feed=feed2
-            )
-        )
+        self.assertIsNotNone(user_category1.feeds.get(uuid=feed1.uuid))
+        self.assertIsNotNone(user_category2.feeds.get(uuid=feed2.uuid))
+        self.assertIsNotNone(user_category2.feeds.get(uuid=feed2.uuid))
 
-        FeedUserCategoryMapping.objects.filter(
-            user_category__in=[user_category1, user_category2], feed__in=[feed1, feed2]
-        ).delete()
+        user_category1.feeds.remove(feed1, feed2)
+        user_category2.feeds.remove(feed1, feed2)
 
         response = self.client.put(
             "/api/usercategories/apply",
@@ -274,21 +261,9 @@ class UserCategoryTestCase(ViewTestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category1, feed=feed1
-            )
-        )
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category1, feed=feed2
-            )
-        )
-        self.assertIsNotNone(
-            FeedUserCategoryMapping.objects.get(
-                user_category=user_category2, feed=feed2
-            )
-        )
+        self.assertIsNotNone(user_category1.feeds.get(uuid=feed1.uuid))
+        self.assertIsNotNone(user_category1.feeds.get(uuid=feed2.uuid))
+        self.assertIsNotNone(user_category2.feeds.get(uuid=feed2.uuid))
 
     def test_usercategories_apply_put_malformed(self):
         UserCategory.objects.create(

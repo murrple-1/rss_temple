@@ -17,7 +17,7 @@ from api import query_utils
 from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import Feed, FeedUserCategoryMapping, User, UserCategory
+from api.models import Feed, User, UserCategory
 
 _OBJECT_NAME = "usercategory"
 
@@ -309,9 +309,7 @@ def _user_categories_apply_put(request: HttpRequest):
 
         mappings[feed_uuid_] = user_category_uuids
 
-    feeds = dict(
-        (feed.uuid, feed) for feed in Feed.objects.filter(uuid__in=all_feed_uuids)
-    )
+    feeds = {feed.uuid: feed for feed in Feed.objects.filter(uuid__in=all_feed_uuids)}
 
     if len(feeds) < len(all_feed_uuids):
         return HttpResponseNotFound("feed not found")
@@ -326,19 +324,16 @@ def _user_categories_apply_put(request: HttpRequest):
     if len(user_categories) < len(all_user_category_uuids):
         return HttpResponseNotFound("user category not found")
 
-    feed_user_category_mappings: list[FeedUserCategoryMapping] = []
-
-    for feed_uuid, user_category_uuids in mappings.items():
-        for user_category_uuid in user_category_uuids:
-            feed_user_category_mapping = FeedUserCategoryMapping(
-                user_category=user_categories[user_category_uuid], feed=feeds[feed_uuid]
-            )
-            feed_user_category_mappings.append(feed_user_category_mapping)
-
     with transaction.atomic():
-        FeedUserCategoryMapping.objects.filter(
-            feed_id__in=feeds.keys(), user_category_id__in=user_categories.keys()
-        ).delete()
-        FeedUserCategoryMapping.objects.bulk_create(feed_user_category_mappings)
+        for feed_uuid, user_category_uuids in mappings.items():
+            feed = feeds[feed_uuid]
+            feed.user_categories.clear()
+
+            feed.user_categories.add(
+                *(
+                    user_categories[user_category_uuid]
+                    for user_category_uuid in user_category_uuids
+                )
+            )
 
     return HttpResponse(status=204)
