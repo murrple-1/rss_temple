@@ -3,7 +3,7 @@ from typing import ClassVar
 
 import ujson
 
-from api.models import FacebookLogin, GoogleLogin, User
+from api.models import APISession, FacebookLogin, GoogleLogin, User
 from api.tests.views import ViewTestCase
 
 
@@ -455,7 +455,9 @@ class LoginTestCase(ViewTestCase):
             "application/json",
         )
 
-        self.assertEqual(response.status_code, 204, response.content)
+        self.assertEqual(response.status_code, 200, response.content)
+        json_ = ujson.loads(response.content)
+        self.assertIsInstance(json_, str)
 
     def test_my_login_session_post_email_missing(self):
         response = self.client.post(
@@ -564,7 +566,9 @@ class LoginTestCase(ViewTestCase):
                 "application/json",
             )
 
-            self.assertEqual(response.status_code, 204, response.content)
+            self.assertEqual(response.status_code, 200, response.content)
+            json_ = ujson.loads(response.content)
+            self.assertIsInstance(json_, str)
 
     def test_google_login_session_post_create(self):
         with self.settings(GOOGLE_TEST_ID="googleid"):
@@ -627,7 +631,9 @@ class LoginTestCase(ViewTestCase):
                 "application/json",
             )
 
-            self.assertEqual(response.status_code, 204, response.content)
+            self.assertEqual(response.status_code, 200, response.content)
+            json_ = ujson.loads(response.content)
+            self.assertIsInstance(json_, str)
 
     def test_facebook_login_session_post_create(self):
         with self.settings(FACEBOOK_TEST_ID="facebookid"):
@@ -683,4 +689,13 @@ class LoginTestCase(ViewTestCase):
 
         self.client.force_login(user)
         response = self.client.delete("/api/session")
+        self.assertEqual(response.status_code, 204, response.content)
+
+        session = APISession.objects.create(user=user, expires_at=None)
+        response = self.client.delete(
+            "/api/session", HTTP_X_SESSION_ID=session.id_str()
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        response = self.client.delete("/api/session", HTTP_X_SESSION_ID="bad-uuid")
         self.assertEqual(response.status_code, 204, response.content)
