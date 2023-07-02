@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
-from django.db.models.expressions import RawSQL
 from django.db.models.functions import Now
 from django.db.models.query_utils import Q
 from django.utils import timezone
@@ -298,6 +297,9 @@ class Feed(models.Model):
     def read_count(self, user):
         return self._counts(user)["read_count"]
 
+    def __str__(self) -> str:
+        return f"{self.title} - {self.feed_url} - {self.uuid}"
+
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
@@ -378,6 +380,9 @@ class FeedEntry(models.Model):
             self._is_favorite = is_favorite
 
         return is_favorite
+
+    def __str__(self) -> str:
+        return f"{self.title} - {self.url}"
 
 
 class ReadFeedEntryUserMapping(models.Model):
