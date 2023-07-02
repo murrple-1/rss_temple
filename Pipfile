@@ -26,6 +26,9 @@ tabulate = "*"
 django-cors-headers = "*"
 django-throttle-requests = "*"
 django-cprofile-middleware = "*"
+daphne = "*"
+psycopg2 = "*"
+django-redis = "*"
 
 [dev-packages]
 coverage = "*"
@@ -47,6 +50,7 @@ types-requests = "*"
 types-html5lib = "*"
 tblib = "*"
 lxml-stubs = "*"
+watchdog = "*"
 
 [requires]
 python_version = "3.11"

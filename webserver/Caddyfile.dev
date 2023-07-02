@@ -1,0 +1,22 @@
+http://:8000 {
+	encode gzip
+
+	@nocache {
+		path *.manifest *.appcache *.html *.xml *.json
+	}
+	header @nocache {
+		?Cache-Control "no-cache"
+	}
+
+	@yearcache {
+		path *.css *.js
+	}
+	header @yearcache {
+		?Cache-Control "max-age=31536000"
+	}
+
+	@web {
+		path /api/* /admin*
+	}
+	reverse_proxy @web rss_temple:8000
+}

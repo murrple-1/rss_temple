@@ -14,8 +14,6 @@ import datetime
 import os
 from pathlib import Path
 
-from corsheaders.defaults import default_headers
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,13 +22,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-$*7qpc@r-g3e67e=qze01cq3zbwwy9z^5qws1$qmr^+%=z*h6b"
+SECRET_KEY = os.getenv(
+    "APP_SECRET_KEY",
+    "PLEASE_OVERRIDE_ME",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("APP_DEBUG") == "true"
 
-ALLOWED_HOSTS: list[str] = []
-
+ALLOWED_HOSTS: list[str] = ["*"]
 
 # Application definition
 
@@ -82,12 +82,33 @@ WSGI_APPLICATION = "rss_temple.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    },
-}
+REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
+
+if os.getenv("APP_IN_DOCKER") == "true":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql_psycopg2",
+            "NAME": os.getenv("APP_DB_NAME", "postgres"),
+            "USER": os.getenv("APP_DB_USER", "postgres"),
+            "PASSWORD": os.getenv("APP_DB_PASSWORD", "password"),
+            "HOST": os.getenv("APP_DB_HOST", "db"),
+            "PORT": int(os.getenv("APP_DB_PORT", "5432")),
+        }
+    }
+
+    SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+    SESSION_CACHE_ALIAS = "default"
+    SESSION_COOKIE_SECURE = True
+else:
+    # Basically used in CI test phase or when running tests locally.
+    # We don't load redis for that, so avoid setting the cache.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
+    SESSION_COOKIE_SECURE = False
 
 
 # Password validation
@@ -124,7 +145,7 @@ PASSWORD_HASHERS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.getenv("TZ", "UTC")
 
 USE_I18N = True
 
@@ -137,6 +158,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "_static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -160,34 +182,35 @@ LOGGING = {
             "handlers": ["console"],
             "level": os.environ.get("RSS_TEMPLE_LOG_LEVEL", "INFO"),
         },
-        "metrics": {
-            "handlers": ["console"],
-            "level": os.environ.get("METRICS_LOG_LEVEL", "INFO"),
-        },
     },
 }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "default-cache",
-    },
-    "stable_query": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "stable-query-cache",
-    },
-    "throttle": {
-        # this should be memcache or Redis in production. don't enable in dev, as it causes tests to fail
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-    },
-}
+if os.getenv("APP_IN_DOCKER") == "true":
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"{REDIS_URL}/1",
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        },
+        "stable_query": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"{REDIS_URL}/2",
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        },
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "default-cache",
+        },
+        "stable_query": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "stable-query-cache",
+        },
+    }
 
 CORS_ALLOW_ALL_ORIGINS = True
-
-CORS_ALLOW_HEADERS = (
-    *default_headers,
-    "X-Session-ID",
-)
 
 THROTTLE_ZONES = {
     "default": {
@@ -224,7 +247,7 @@ DEFAULT_RETURN_TOTAL_COUNT = True
 
 AUTH_TOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 
-GOOGLE_CLIENT_ID = os.environ["GOOGLE_CLIENT_ID"]
+GOOGLE_CLIENT_ID = os.environ["APP_GOOGLE_CLIENT_ID"]
 
 USER_VERIFICATION_EXPIRY_INTERVAL = datetime.timedelta(days=30)
 PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)
@@ -236,3 +259,8 @@ USER_UNREAD_GRACE_MIN_COUNT = 10
 SUCCESS_BACKOFF_SECONDS = 60
 MIN_ERROR_BACKOFF_SECONDS = 60
 MAX_ERROR_BACKOFF_SECONDS = 7257600  # 3 months
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass

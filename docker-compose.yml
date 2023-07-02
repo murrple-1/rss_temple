@@ -1,0 +1,34 @@
+version: "3"
+
+services:
+  redis:
+    image: redis
+  db:
+    image: postgres:13
+    env_file:
+      - .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - default
+  caddy:
+    image: caddy:2
+    ports:
+      - "8000:8000"
+    volumes:
+      - caddy_data:/data/
+  rss_temple:
+    env_file:
+      - .env
+  rss_temple_feedscrapperdaemon:
+    env_file:
+      - .env
+  rss_temple_notifydaemon:
+    env_file:
+      - .env
+  rss_temple_subscriptionsetupdaemon:
+    env_file:
+      - .env
+volumes:
+  db_data:
+  caddy_data:

@@ -45,7 +45,9 @@ class Command(BaseCommand):
                         for feed in (
                             Feed.objects.select_for_update(skip_locked=True)
                             .filter(update_backoff_until__lte=Now())
-                            .order_by("update_backoff_until")[: cast(int, args.count)]
+                            .order_by("update_backoff_until")[
+                                : cast(int, options["count"])
+                            ]
                         ):
                             count += 1
 

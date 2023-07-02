@@ -40,6 +40,7 @@ class Command(BaseCommand):
         parser.add_argument("--smtp-password-stdin", action="store_true")
         parser.add_argument("--smtp-is-tls", action="store_true")
         parser.add_argument("--smtp-timeout", type=float)
+        parser.add_argument("--dry-run", action="store_true")
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         smtp_password: str | None
@@ -50,20 +51,35 @@ class Command(BaseCommand):
         else:
             smtp_password = None
 
+        send_email_fn: _SendEmailCallable = (
+            functools.partial(
+                self._send_email,
+                options["smtp_host"],
+                options["smtp_port"],
+                options["smtp_sender"],
+                user=options["smtp_user"],
+                password=smtp_password,
+                require_starttls=options["smtp_is_tls"],
+                timeout=options["smtp_timeout"],
+            )
+            if not options["dry_run"]
+            else functools.partial(
+                self._send_email_dryrun,
+                options["smtp_host"],
+                options["smtp_port"],
+                options["smtp_sender"],
+                user=options["smtp_user"],
+                password=smtp_password,
+                require_starttls=options["smtp_is_tls"],
+                timeout=options["smtp_timeout"],
+            )
+        )
+
         try:
             while True:
                 self.stderr.write(self.style.NOTICE("render loop started"))
                 self._render(
-                    functools.partial(
-                        self._send_email,
-                        options["smtp_host"],
-                        options["smtp_port"],
-                        options["smtp_sender"],
-                        user=options["smtp_user"],
-                        password=smtp_password,
-                        require_starttls=options["smtp_is_tls"],
-                        timeout=options["smtp_timeout"],
-                    ),
+                    send_email_fn,
                     options["count_warning_threshold"],
                 )
                 self.stderr.write(self.style.NOTICE("render loop complete"))
@@ -108,6 +124,24 @@ class Command(BaseCommand):
             timeout=timeout,
             require_starttls=require_starttls,
         )
+
+    def _send_email_dryrun(
+        self,
+        host: str,
+        port: int,
+        sender: str,
+        subject: str,
+        plain_text: str | None = None,
+        html_text: str | None = None,
+        send_to: list[str] | None = None,
+        send_cc: list[str] | None = None,
+        send_bcc: list[str] | None = None,
+        user: str | None = None,
+        password: str | None = None,
+        require_starttls: bool = False,
+        timeout: float | None = None,
+    ):
+        time.sleep(1.0)
 
     def _render(self, send_email_fn: _SendEmailCallable, count_warning_threshold: int):
         entry_count = 0

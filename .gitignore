@@ -104,3 +104,7 @@ ENV/
 db.sqlite3
 pyrightconfig.json
 test-results/
+local_settings.py
+docker-compose.override.yml
+_static/
+Caddyfile

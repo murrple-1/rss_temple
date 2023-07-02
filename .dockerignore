@@ -1,0 +1,14 @@
+.venv/
+.mypy_cache/
+.git/
+__pycache__/
+htmlcov/
+.circleci/
+scripts/
+.coverage
+.coveragerc
+.pre-commit-config.yaml
+db.sqlite3
+LICENSE
+pyrightconfig.json
+README.md
