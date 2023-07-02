@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import (
-    APISession,
+    AuthToken,
     FacebookLogin,
     Feed,
     FeedEntry,
@@ -146,11 +146,39 @@ class UserTestCase(TestCase):
         self.assertIsNotNone(user.facebook_login())
 
 
-class APISessionTestCase(TestCase):
+class AuthTokenTestCase(TestCase):
     def test_id_str(self):
-        api_session = APISession()
+        auth_token = AuthToken()
 
-        self.assertIs(type(api_session.id_str()), str)
+        self.assertIs(type(auth_token.id_str()), str)
+
+    def test_extract_id_from_authorization_header(self):
+        self.assertEqual(
+            AuthToken.extract_id_from_authorization_header(
+                "Bearer 6c207bed-4ddd-40e6-9c7b-6e85b2086a3a"
+            ),
+            uuid.UUID("6c207bed-4ddd-40e6-9c7b-6e85b2086a3a"),
+        )
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header(
+                "bearer 17078a5d-940d-4bd6-b89a-b0b7e2167e10"
+            )
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header("bad header")
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header("Bearer")
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header("Bearer ")
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header("Bearerasdf")
+
+        with self.assertRaises(ValueError):
+            AuthToken.extract_id_from_authorization_header("Bearer_asdf")
 
 
 class VerificationTokenTestCase(TestCase):

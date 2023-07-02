@@ -11,22 +11,22 @@ from django.dispatch import receiver
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 
-from api.models import APISession
+from api.models import AuthToken
 
-_API_SESSION_EXPIRY_INTERVAL: datetime.timedelta
+_AUTH_TOKEN_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
-    global _API_SESSION_EXPIRY_INTERVAL
+    global _AUTH_TOKEN_EXPIRY_INTERVAL
 
-    _API_SESSION_EXPIRY_INTERVAL = settings.API_SESSION_EXPIRY_INTERVAL
+    _AUTH_TOKEN_EXPIRY_INTERVAL = settings.AUTH_TOKEN_EXPIRY_INTERVAL
 
 
 _load_global_settings()
 
 
-class SessionIDHeaderAuthenticationMiddleware:
+class BearerAuthenticationMiddleware:
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
 
@@ -40,26 +40,28 @@ class SessionIDHeaderAuthenticationMiddleware:
     def _user_from_request(
         self, request: HttpRequest
     ) -> AbstractBaseUser | AnonymousUser:
-        if session_id := request.META.get("HTTP_X_SESSION_ID"):
-            session_uuid: uuid.UUID
+        if authorization := request.META.get("HTTP_AUTHORIZATION"):
+            auth_token_uuid: uuid.UUID
             try:
-                session_uuid = uuid.UUID(session_id)
+                auth_token_uuid = AuthToken.extract_id_from_authorization_header(
+                    authorization
+                )
             except ValueError:
                 return AnonymousUser()
 
-            api_session: APISession
+            auth_token: AuthToken
             try:
-                api_session = APISession.objects.prefetch_related("user").get(
-                    Q(uuid=session_uuid)
+                auth_token = AuthToken.objects.prefetch_related("user").get(
+                    Q(uuid=auth_token_uuid)
                     & (Q(expires_at__isnull=True) | Q(expires_at__gt=Now()))
                 )
-            except APISession.DoesNotExist:
+            except AuthToken.DoesNotExist:
                 return AnonymousUser()
 
-            if api_session.expires_at is not None:
-                api_session.expires_at = timezone.now() + _API_SESSION_EXPIRY_INTERVAL
-                api_session.save(update_fields=["expires_at"])
+            if auth_token.expires_at is not None:
+                auth_token.expires_at = timezone.now() + _AUTH_TOKEN_EXPIRY_INTERVAL
+                auth_token.save(update_fields=["expires_at"])
 
-            return api_session.user
+            return auth_token.user
 
         return AnonymousUser()

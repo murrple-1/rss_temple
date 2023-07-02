@@ -3,7 +3,7 @@ from typing import ClassVar
 
 import ujson
 
-from api.models import APISession, FacebookLogin, GoogleLogin, User
+from api.models import AuthToken, FacebookLogin, GoogleLogin, User
 from api.tests.views import ViewTestCase
 
 
@@ -691,11 +691,18 @@ class LoginTestCase(ViewTestCase):
         response = self.client.delete("/api/session")
         self.assertEqual(response.status_code, 204, response.content)
 
-        session = APISession.objects.create(user=user, expires_at=None)
+        auth_token = AuthToken.objects.create(user=user, expires_at=None)
         response = self.client.delete(
-            "/api/session", HTTP_X_SESSION_ID=session.id_str()
+            "/api/session", HTTP_AUTHORIZATION=f"Bearer {auth_token.id_str()}"
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-        response = self.client.delete("/api/session", HTTP_X_SESSION_ID="bad-uuid")
+        response = self.client.delete(
+            "/api/session", HTTP_AUTHORIZATION="Bearer bad-uuid"
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        response = self.client.delete(
+            "/api/session", HTTP_AUTHORIZATION="bad authorization header"
+        )
         self.assertEqual(response.status_code, 204, response.content)

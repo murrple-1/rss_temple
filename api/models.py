@@ -1,3 +1,4 @@
+import re
 import uuid
 from collections import defaultdict
 from functools import cached_property
@@ -128,7 +129,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self._facebook_login
 
 
-class APISession(models.Model):
+class AuthToken(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     expires_at = models.DateTimeField(null=True)
     user = models.ForeignKey(
@@ -137,6 +138,16 @@ class APISession(models.Model):
 
     def id_str(self) -> str:
         return str(self.uuid)
+
+    @staticmethod
+    def extract_id_from_authorization_header(authorization_header: str) -> "uuid.UUID":
+        if match := re.search(
+            r"^Bearer ([0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12})$",
+            authorization_header,
+        ):
+            return uuid.UUID(match.group(1))
+        else:
+            raise ValueError("malformed Authorization header")
 
 
 class Login(models.Model):
