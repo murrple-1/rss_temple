@@ -7,7 +7,6 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import (
-    APISession,
     FacebookLogin,
     Feed,
     FeedEntry,
@@ -144,13 +143,6 @@ class UserTestCase(TestCase):
         FacebookLogin.objects.create(user=user, profile_id="facebookid")
 
         self.assertIsNotNone(user.facebook_login())
-
-
-class APISessionTestCase(TestCase):
-    def test_id_str(self):
-        api_session = APISession()
-
-        self.assertIs(type(api_session.id_str()), str)
 
 
 class VerificationTokenTestCase(TestCase):

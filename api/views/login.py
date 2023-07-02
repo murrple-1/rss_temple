@@ -22,7 +22,6 @@ from throttle.decorators import throttle
 
 from api import query_utils
 from api.models import (
-    APISession,
     FacebookLogin,
     GoogleLogin,
     NotifyEmailQueueEntry,
@@ -34,16 +33,13 @@ from api.render import verify as verifyrender
 from api.third_party_login import facebook, google
 
 _USER_VERIFICATION_EXPIRY_INTERVAL: datetime.timedelta
-_API_SESSION_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
     global _USER_VERIFICATION_EXPIRY_INTERVAL
-    global _API_SESSION_EXPIRY_INTERVAL
 
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
-    _API_SESSION_EXPIRY_INTERVAL = settings.API_SESSION_EXPIRY_INTERVAL
 
 
 _load_global_settings()
@@ -364,13 +360,7 @@ def _my_login_session_post(request: HttpRequest):
 
     login(request, user)
 
-    session = APISession.objects.create(
-        user=cast(User, user),
-        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(session.id_str())
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _google_login_session_post(request: HttpRequest):
@@ -415,13 +405,7 @@ def _google_login_session_post(request: HttpRequest):
 
     login(request, google_login.user)
 
-    session = APISession.objects.create(
-        user=google_login.user,
-        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(session.id_str())
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _facebook_login_session_post(request: HttpRequest):
@@ -466,25 +450,10 @@ def _facebook_login_session_post(request: HttpRequest):
 
     login(request, facebook_login.user)
 
-    session = APISession.objects.create(
-        user=facebook_login.user,
-        expires_at=timezone.now() + _API_SESSION_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(session.id_str())
-    return HttpResponse(content, content_type)
+    return HttpResponse(status=204)
 
 
 def _session_delete(request: HttpRequest):
     logout(request)
-
-    if session_id := request.META.get("HTTP_X_SESSION_ID"):
-        session_uuid: uuid.UUID
-        try:
-            session_uuid = uuid.UUID(session_id)
-        except ValueError:
-            return HttpResponse(status=204)
-
-        APISession.objects.filter(uuid=session_uuid).delete()
 
     return HttpResponse(status=204)
