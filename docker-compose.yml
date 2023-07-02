@@ -17,9 +17,12 @@ services:
       - "8000:8000"
     volumes:
       - caddy_data:/data/
+      - django_static:/static/
   rss_temple:
     env_file:
       - .env
+    volumes:
+      - django_static:/code/_static/
   rss_temple_feedscrapperdaemon:
     env_file:
       - .env
@@ -32,3 +35,4 @@ services:
 volumes:
   db_data:
   caddy_data:
+  django_static:

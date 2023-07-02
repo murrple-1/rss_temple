@@ -16,7 +16,12 @@ http://:8000 {
 	}
 
 	@web {
-		path /api/* /admin* /static*
+		path /api/* /admin*
 	}
 	reverse_proxy @web rss_temple:8000
+
+	handle_path /static* {
+		root * /static
+		file_server
+	}
 }

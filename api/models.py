@@ -226,6 +226,9 @@ class UserCategory(models.Model):
     def feed_uuids(self):
         return self.feeds.values_list("uuid", flat=True)
 
+    def __str__(self) -> str:
+        return f"{self.text}"
+
 
 class Feed(models.Model):
     class Meta:
