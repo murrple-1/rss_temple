@@ -1,6 +1,6 @@
-import json
 from typing import Any
 
+import ujson
 from django.core.management.base import BaseCommand, CommandParser
 
 
@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         fixture_json: list[dict[str, Any]]
         with open(options["fixture_filepath"], "r") as f:
-            fixture_json = json.load(f)
+            fixture_json = ujson.load(f)
 
         for mylogin_json in filter(
             (lambda j: j["model"] == "api.mylogin"), fixture_json
@@ -129,4 +129,4 @@ class Command(BaseCommand):
             )
 
         with open(options["to_filepath"], "w") as f:
-            json.dump(fixture_json, f, indent=2, ensure_ascii=False)
+            ujson.dump(fixture_json, f, indent=2, ensure_ascii=False)

@@ -13,7 +13,6 @@ module = [
     "feedparser",
     "validators",
     "google.*",
-    "ipware",
     "facebook",
     "quick_email",
     "defusedxml.*",
