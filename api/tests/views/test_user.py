@@ -3,15 +3,14 @@ import logging
 import uuid
 from typing import Any, ClassVar
 
-import ujson
 from django.utils import timezone
+from rest_framework.test import APITestCase
 
 from api import fields
-from api.models import FacebookLogin, GoogleLogin, User, VerificationToken
-from api.tests.views import ViewTestCase
+from api.models import User, VerificationToken
 
 
-class UserTestCase(ViewTestCase):
+class UserTestCase(APITestCase):
     USER_EMAIL = "test@test.com"
     NON_UNIQUE_EMAIL = "nonunique@test.com"
     UNIQUE_EMAIL = "unique@test.com"
@@ -50,10 +49,10 @@ class UserTestCase(ViewTestCase):
 
         UserTestCase.user.refresh_from_db()
 
-        self.client.force_login(UserTestCase.user)
+        self.client.force_authenticate(user=UserTestCase.user)
 
     def test_user_get(self):
-        self.client.force_login(UserTestCase.user)
+        self.client.force_authenticate(user=UserTestCase.user)
 
         response = self.client.get(
             "/api/user",
@@ -61,7 +60,7 @@ class UserTestCase(ViewTestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
 
         self.assertIn("subscribedFeedUuids", json_)
 
@@ -72,8 +71,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -97,8 +95,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -116,8 +113,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -128,8 +124,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -140,8 +135,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -152,8 +146,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -164,8 +157,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -176,8 +168,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -195,8 +186,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -213,8 +203,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -228,8 +217,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -244,8 +232,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -259,8 +246,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -275,8 +261,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -291,156 +276,9 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 403, response.content)
-
-    def test_user_put_google(self):
-        body: dict[str, Any] = {
-            "google": {},
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 204, response.content)
-
-    def test_user_put_google_typeerror(self):
-        body = {
-            "google": 1,
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_user_put_google_create(self):
-        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
-
-        body = {
-            "google": {
-                "token": "goodtoken",
-            },
-        }
-        with self.settings(GOOGLE_TEST_ID="googleid"):
-            response = self.client.put(
-                "/api/user",
-                ujson.dumps(body),
-                content_type="application/json",
-            )
-            self.assertEqual(response.status_code, 204, response.content)
-
-        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
-
-    def test_user_put_google_delete(self):
-        GoogleLogin.objects.create(user=UserTestCase.user, g_user_id="googleid")
-        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 1)
-
-        body = {
-            "google": None,
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 204, response.content)
-
-        self.assertEqual(GoogleLogin.objects.filter(user=UserTestCase.user).count(), 0)
-
-    def test_user_put_google_token_typeerror(self):
-        body: dict[str, Any] = {
-            "google": {
-                "token": None,
-            },
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_user_put_facebook(self):
-        body: dict[str, Any] = {
-            "facebook": {},
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 204, response.content)
-
-    def test_user_put_facebook_typeerror(self):
-        body = {
-            "facebook": 1,
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_user_put_facebook_create(self):
-        self.assertEqual(
-            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
-        )
-
-        body = {
-            "facebook": {
-                "token": "goodtoken",
-            },
-        }
-        with self.settings(FACEBOOK_TEST_ID="facebookid"):
-            response = self.client.put(
-                "/api/user",
-                ujson.dumps(body),
-                content_type="application/json",
-            )
-            self.assertEqual(response.status_code, 204, response.content)
-
-        self.assertEqual(
-            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
-        )
-
-    def test_user_put_facebook_delete(self):
-        FacebookLogin.objects.create(user=UserTestCase.user, profile_id="facebookid")
-        self.assertEqual(
-            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 1
-        )
-
-        body = {
-            "facebook": None,
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 204, response.content)
-
-        self.assertEqual(
-            FacebookLogin.objects.filter(user=UserTestCase.user).count(), 0
-        )
-
-    def test_user_put_facebook_token_typeerror(self):
-        body = {
-            "facebook": {
-                "token": None,
-            },
-        }
-        response = self.client.put(
-            "/api/user",
-            ujson.dumps(body),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 400, response.content)
 
     def test_user_verify_post(self):
         verification_token = VerificationToken.objects.create(
@@ -451,7 +289,7 @@ class UserTestCase(ViewTestCase):
         params = {
             "token": verification_token.token_str(),
         }
-        response = self.client.post("/api/user/verify", params)
+        response = self.client.post("/api/user/verify", params, format="multipart")
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_user_verify_post_token_missing(self):
@@ -462,14 +300,14 @@ class UserTestCase(ViewTestCase):
         params = {
             "token": "BAD_TOKEN",
         }
-        response = self.client.post("/api/user/verify", params)
+        response = self.client.post("/api/user/verify", params, format="multipart")
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_user_verify_post_token_notfound(self):
         params = {
             "token": str(uuid.uuid4()),
         }
-        response = self.client.post("/api/user/verify", params)
+        response = self.client.post("/api/user/verify", params, format="multipart")
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_user_attributes_put(self):
@@ -478,8 +316,7 @@ class UserTestCase(ViewTestCase):
         }
         response = self.client.put(
             "/api/user/attributes",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -500,8 +337,7 @@ class UserTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/user/attributes",
-            ujson.dumps(body),
-            content_type="application/json",
+            body,
         )
         self.assertEqual(response.status_code, 204, response.content)
 

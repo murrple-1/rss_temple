@@ -10,14 +10,6 @@ from api.fields import FieldMap
 
 
 class QueryUtilsTestCase(TestCase):
-    def test_serialize_content(self):
-        content, content_type = query_utils.serialize_content(
-            {"test1": 1, "test2": True}
-        )
-
-        self.assertEqual(content_type, "application/json")
-        self.assertEqual(content, '{"test1":1,"test2":true}')
-
     def test_get_count(self):
         self.assertEqual(
             query_utils.get_count(

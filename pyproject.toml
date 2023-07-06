@@ -2,7 +2,7 @@
 profile = "black"
 
 [tool.mypy]
-plugins = ["mypy_django_plugin.main"]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 check_untyped_defs = true
 
 [tool.django-stubs]
@@ -12,11 +12,9 @@ django_settings_module = "rss_temple.settings"
 module = [
     "feedparser",
     "validators",
-    "google.*",
-    "facebook",
     "quick_email",
     "defusedxml.*",
     "url_normalize",
-    "throttle.*",
+    "knox.*",
 ]
 ignore_missing_imports = true

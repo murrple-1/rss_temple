@@ -1,21 +1,16 @@
 from typing import Any, cast
 
 import requests
-import ujson
 from django.db import transaction
 from django.db.models import OrderBy, Q
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseBase,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-)
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
 from url_normalize import url_normalize
 
 from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
-from api.decorators import requires_authenticated_user
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
@@ -23,39 +18,27 @@ from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
 _OBJECT_NAME = "feed"
 
 
-@requires_authenticated_user()
-def feed(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"GET"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def feed(request: Request) -> Response:
     if request.method == "GET":
         return _feed_get(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-@requires_authenticated_user()
-def feeds_query(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def feeds_query(request: Request) -> Response:
     if request.method == "POST":
         return _feeds_query_post(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-@requires_authenticated_user()
-def feed_subscribe(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST", "PUT", "DELETE"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["POST", "PUT", "DELETE"])
+@permission_classes([permissions.IsAuthenticated])
+def feed_subscribe(request: Request) -> Response:
     if request.method == "POST":
         return _feed_subscribe_post(request)
     elif request.method == "PUT":
@@ -96,10 +79,10 @@ def _save_feed(url: str):
         return feed
 
 
-def _feed_get(request: HttpRequest):
+def _feed_get(request: Request):
     url: str | None = request.GET.get("url")
     if not url:
-        return HttpResponseBadRequest("'url' missing")
+        raise ValidationError({"url": "missing"})
 
     url = cast(str, url_normalize(url))
 
@@ -108,7 +91,7 @@ def _feed_get(request: HttpRequest):
         fields = query_utils.get_fields__query_dict(request.GET)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     feed: Feed
     try:
@@ -119,72 +102,61 @@ def _feed_get(request: HttpRequest):
         try:
             feed = _save_feed(url)
         except QueryException as e:
-            return HttpResponse(e.message, status=e.httpcode)
+            return Response(e.message, status=e.httpcode)
 
     ret_obj = query_utils.generate_return_object(field_maps, feed, request)
 
-    content, content_type = query_utils.serialize_content(ret_obj)
-
-    return HttpResponse(content, content_type)
+    return Response(ret_obj)
 
 
-def _feeds_query_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
+def _feeds_query_post(request: Request):
+    if type(request.data) is not dict:
+        raise ValidationError({".": "must be object"})  # pragma: no cover
 
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
+    assert isinstance(request.data, dict)
 
     count: int
     try:
-        count = query_utils.get_count(json_)
+        count = query_utils.get_count(request.data)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     skip: int
     try:
-        skip = query_utils.get_skip(json_)
+        skip = query_utils.get_skip(request.data)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     sort: list[OrderBy]
     try:
-        sort = query_utils.get_sort(json_, _OBJECT_NAME)
+        sort = query_utils.get_sort(request.data, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     search: list[Q]
     try:
-        search = query_utils.get_search(request, json_, _OBJECT_NAME)
+        search = query_utils.get_search(request, request.data, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     field_maps: list[FieldMap]
     try:
-        fields = query_utils.get_fields__json(json_)
+        fields = query_utils.get_fields__json(request.data)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     return_objects: bool
     try:
-        return_objects = query_utils.get_return_objects(json_)
+        return_objects = query_utils.get_return_objects(request.data)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     return_total_count: bool
     try:
-        return_total_count = query_utils.get_return_total_count(json_)
+        return_total_count = query_utils.get_return_total_count(request.data)
     except QueryException as e:  # pragma: no cover
-        return HttpResponse(e.message, status=e.httpcode)
+        return Response(e.message, status=e.httpcode)
 
     feeds = Feed.annotate_search_vectors(
         Feed.annotate_subscription_data(Feed.objects.all(), cast(User, request.user))
@@ -203,16 +175,15 @@ def _feeds_query_post(request: HttpRequest):
     if return_total_count:
         ret_obj["totalCount"] = feeds.count()
 
-    content, content_type = query_utils.serialize_content(ret_obj)
-    return HttpResponse(content, content_type)
+    return Response(ret_obj)
 
 
-def _feed_subscribe_post(request: HttpRequest):
+def _feed_subscribe_post(request: Request):
     user = cast(User, request.user)
 
     url: str | None = request.GET.get("url")
     if not url:
-        return HttpResponseBadRequest("'url' missing")
+        raise ValidationError({"url": "missing"})
 
     url = cast(str, url_normalize(url))
 
@@ -223,7 +194,7 @@ def _feed_subscribe_post(request: HttpRequest):
         try:
             feed = _save_feed(url)
         except QueryException as e:
-            return HttpResponse(e.message, status=e.httpcode)
+            return Response(e.message, status=e.httpcode)
 
     custom_title = request.GET.get("customtitle")
 
@@ -239,10 +210,10 @@ def _feed_subscribe_post(request: HttpRequest):
     )
 
     if custom_title is not None and custom_title in existing_custom_titles:
-        return HttpResponse("custom title already used", status=409)
+        return Response("custom title already used", status=409)
 
     if feed.feed_url in existing_feed_urls:
-        return HttpResponse("user already subscribed", status=409)
+        return Response("user already subscribed", status=409)
 
     read_mapping_generator = archived_feed_entry_util.read_mapping_generator_fn(
         feed, user
@@ -255,15 +226,15 @@ def _feed_subscribe_post(request: HttpRequest):
 
         archived_feed_entry_util.mark_archived_entries(read_mapping_generator)
 
-    return HttpResponse(status=204)
+    return Response(status=204)
 
 
-def _feed_subscribe_put(request: HttpRequest):
+def _feed_subscribe_put(request: Request):
     user = cast(User, request.user)
 
     url = request.GET.get("url")
     if not url:
-        return HttpResponseBadRequest("'url' missing")
+        raise ValidationError({"url": "missing"})
 
     url = url_normalize(url)
 
@@ -275,7 +246,7 @@ def _feed_subscribe_put(request: HttpRequest):
             user=user, feed__feed_url=url
         )
     except SubscribedFeedUserMapping.DoesNotExist:
-        return HttpResponseNotFound("not subscribed")
+        raise NotFound("not subscribed")
 
     if custom_title is not None:
         if (
@@ -283,18 +254,18 @@ def _feed_subscribe_put(request: HttpRequest):
             .filter(user=user, custom_feed_title=custom_title)
             .exists()
         ):
-            return HttpResponse("custom title already used", status=409)
+            return Response("custom title already used", status=409)
 
     subscribed_feed_mapping.custom_feed_title = custom_title
     subscribed_feed_mapping.save(update_fields=["custom_feed_title"])
 
-    return HttpResponse(status=204)
+    return Response(status=204)
 
 
-def _feed_subscribe_delete(request: HttpRequest):
+def _feed_subscribe_delete(request: Request):
     url = request.GET.get("url")
     if not url:
-        return HttpResponseBadRequest("'url' missing")
+        raise ValidationError({"url": "missing"})
 
     url = url_normalize(url)
 
@@ -303,6 +274,6 @@ def _feed_subscribe_delete(request: HttpRequest):
     ).delete()
 
     if count < 1:
-        return HttpResponseNotFound("user not subscribed")
+        raise NotFound("user not subscribed")
 
-    return HttpResponse(status=204)
+    return Response(status=204)

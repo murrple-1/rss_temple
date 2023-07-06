@@ -2,14 +2,13 @@ import logging
 import uuid
 from typing import ClassVar
 
-import ujson
 from django.utils import timezone
+from rest_framework.test import APITestCase
 
 from api.models import Feed, User, UserCategory
-from api.tests.views import ViewTestCase
 
 
-class UserCategoryTestCase(ViewTestCase):
+class UserCategoryTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
     user: ClassVar[User]
@@ -40,7 +39,7 @@ class UserCategoryTestCase(ViewTestCase):
     def setUp(self):
         super().setUp()
 
-        self.client.force_login(UserCategoryTestCase.user)
+        self.client.force_authenticate(user=UserCategoryTestCase.user)
 
     def test_usercategory_get(self):
         user_category = UserCategory.objects.create(
@@ -61,31 +60,24 @@ class UserCategoryTestCase(ViewTestCase):
     def test_usercategory_post(self):
         response = self.client.post(
             "/api/usercategory",
-            ujson.dumps(
-                {
-                    "text": "test_usercategory_post",
-                }
-            ),
-            "application/json",
+            {
+                "text": "test_usercategory_post",
+            },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_usercategory_post_malformed(self):
         response = self.client.post(
             "/api/usercategory",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
         response = self.client.post(
             "/api/usercategory",
-            ujson.dumps(
-                {
-                    "text": 0,
-                }
-            ),
-            "application/json",
+            {
+                "text": 0,
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -96,12 +88,9 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/usercategory",
-            ujson.dumps(
-                {
-                    "text": "Test User Category",
-                }
-            ),
-            "application/json",
+            {
+                "text": "Test User Category",
+            },
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -112,12 +101,9 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             f"/api/usercategory/{user_category.uuid}",
-            ujson.dumps(
-                {
-                    "text": "Test User Category 2",
-                }
-            ),
-            "application/json",
+            {
+                "text": "Test User Category 2",
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -128,24 +114,18 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             f"/api/usercategory/{user_category.uuid}",
-            ujson.dumps(
-                {
-                    "text": 0,
-                }
-            ),
-            "application/json",
+            {
+                "text": 0,
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_usercategory_put_not_found(self):
         response = self.client.put(
             f"/api/usercategory/{uuid.uuid4()}",
-            ujson.dumps(
-                {
-                    "text": "Does not matter :)",
-                }
-            ),
-            "application/json",
+            {
+                "text": "Does not matter :)",
+            },
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -160,12 +140,9 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             f"/api/usercategory/{user_category.uuid}",
-            ujson.dumps(
-                {
-                    "text": "Already Exists Text",
-                }
-            ),
-            "application/json",
+            {
+                "text": "Already Exists Text",
+            },
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -192,8 +169,7 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/usercategories/query",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -225,16 +201,13 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(feed1.uuid): [str(user_category1.uuid)],
-                    str(feed2.uuid): [
-                        str(user_category1.uuid),
-                        str(user_category2.uuid),
-                    ],
-                }
-            ),
-            "application/json",
+            {
+                str(feed1.uuid): [str(user_category1.uuid)],
+                str(feed2.uuid): [
+                    str(user_category1.uuid),
+                    str(user_category2.uuid),
+                ],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -247,17 +220,14 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(feed1.uuid): [str(user_category1.uuid)],
-                    str(feed2.uuid): [
-                        str(user_category1.uuid),
-                        str(user_category2.uuid),
-                        str(user_category1.uuid),
-                    ],
-                }
-            ),
-            "application/json",
+            {
+                str(feed1.uuid): [str(user_category1.uuid)],
+                str(feed2.uuid): [
+                    str(user_category1.uuid),
+                    str(user_category2.uuid),
+                    str(user_category1.uuid),
+                ],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -272,34 +242,25 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    "test": [],
-                }
-            ),
-            "application/json",
+            {
+                "test": [],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(uuid.uuid4()): "test",
-                }
-            ),
-            "application/json",
+            {
+                str(uuid.uuid4()): "test",
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(uuid.uuid4()): ["test"],
-                }
-            ),
-            "application/json",
+            {
+                str(uuid.uuid4()): ["test"],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -315,22 +276,16 @@ class UserCategoryTestCase(ViewTestCase):
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(uuid.uuid4()): [],
-                }
-            ),
-            "application/json",
+            {
+                str(uuid.uuid4()): [],
+            },
         )
         self.assertEqual(response.status_code, 404, response.content)
 
         response = self.client.put(
             "/api/usercategories/apply",
-            ujson.dumps(
-                {
-                    str(feed.uuid): [str(uuid.uuid4())],
-                }
-            ),
-            "application/json",
+            {
+                str(feed.uuid): [str(uuid.uuid4())],
+            },
         )
         self.assertEqual(response.status_code, 404, response.content)

@@ -1,4 +1,5 @@
-from django.test.testcases import FSFilesHandler, LiveServerTestCase
+from django.test.testcases import FSFilesHandler
+from rest_framework.test import APILiveServerTestCase
 
 
 class _TestFilesHandler(FSFilesHandler):
@@ -9,5 +10,5 @@ class _TestFilesHandler(FSFilesHandler):
         return "/"
 
 
-class TestFileServerTestCase(LiveServerTestCase):
+class TestFileServerTestCase(APILiveServerTestCase):
     static_handler = _TestFilesHandler

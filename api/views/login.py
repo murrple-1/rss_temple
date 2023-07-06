@@ -1,143 +1,49 @@
 import datetime
-import uuid
-from typing import Any, cast
 
-import ujson
 import validators
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
 from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseBase,
-    HttpResponseForbidden,
-    HttpResponseNotAllowed,
-)
 from django.utils import timezone
-from throttle.decorators import throttle
+from knox.views import LoginView as KnoxLoginView
+from rest_framework import authentication, throttling
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.exceptions import ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
 
-from api import query_utils
 from api.models import (
-    AuthToken,
-    FacebookLogin,
-    GoogleLogin,
     NotifyEmailQueueEntry,
     NotifyEmailQueueEntryRecipient,
     User,
     VerificationToken,
 )
 from api.render import verify as verifyrender
-from api.third_party_login import facebook, google
 
 _USER_VERIFICATION_EXPIRY_INTERVAL: datetime.timedelta
-_AUTH_TOKEN_EXPIRY_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args, **kwargs):
     global _USER_VERIFICATION_EXPIRY_INTERVAL
-    global _AUTH_TOKEN_EXPIRY_INTERVAL
 
     _USER_VERIFICATION_EXPIRY_INTERVAL = settings.USER_VERIFICATION_EXPIRY_INTERVAL
-    _AUTH_TOKEN_EXPIRY_INTERVAL = settings.AUTH_TOKEN_EXPIRY_INTERVAL
 
 
 _load_global_settings()
 
 
-@throttle(zone="default")
-def my_login(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST"}
+class LoginView(KnoxLoginView):
+    authentication_classes = [authentication.BasicAuthentication]
+    throttle_classes = [throttling.UserRateThrottle]
 
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
+@api_view(["POST"])
+@throttle_classes([throttling.UserRateThrottle])
+def my_login(request: Request) -> Response:
     if request.method == "POST":
         return _my_login_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def google_login(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "POST":
-        return _google_login_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def facebook_login(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "POST":
-        return _facebook_login_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def my_login_session(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "POST":
-        return _my_login_session_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def google_login_session(request: HttpRequest) -> HttpResponseBase:  # pragma: no cover
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "POST":
-        return _google_login_session_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def facebook_login_session(
-    request: HttpRequest,
-) -> HttpResponseBase:  # pragma: no cover
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "POST":
-        return _facebook_login_session_post(request)
-    else:  # pragma: no cover
-        raise ValueError
-
-
-@throttle(zone="default")
-def session(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"DELETE"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
-    if request.method == "DELETE":
-        return _session_delete(request)
     else:  # pragma: no cover
         raise ValueError
 
@@ -157,336 +63,40 @@ def _prepare_verify_notification(token_str: str, email: str):
     )
 
 
-def _my_login_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
+def _my_login_post(request: Request):
+    if type(request.data) is not dict:
+        raise ValidationError({".": "must be object"})  # pragma: no cover
 
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
+    assert isinstance(request.data, dict)
 
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
+    if "email" not in request.data:
+        raise ValidationError({"email": "missing"})
 
-    assert isinstance(json_, dict)
+    if type(request.data["email"]) is not str:
+        raise ValidationError({"email": "must be string"})
 
-    if "email" not in json_:
-        return HttpResponseBadRequest("'email' missing")
+    if not validators.email(request.data["email"]):
+        raise ValidationError({"email": "malformed"})
 
-    if type(json_["email"]) is not str:
-        return HttpResponseBadRequest("'email' must be string")
+    if "password" not in request.data:
+        raise ValidationError({"password": "missing"})
 
-    if not validators.email(json_["email"]):
-        return HttpResponseBadRequest("'email' malformed")
+    if type(request.data["password"]) is not str:
+        raise ValidationError({"password": "must be string"})
 
-    if "password" not in json_:
-        return HttpResponseBadRequest("'password' missing")
-
-    if type(json_["password"]) is not str:
-        return HttpResponseBadRequest("'password' must be string")
-
-    if User.objects.filter(email__iexact=json_["email"]).exists():
-        return HttpResponse("login already exists", status=409)
+    if User.objects.filter(email__iexact=request.data["email"]).exists():
+        return Response("login already exists", status=409)
 
     with transaction.atomic():
-        user = User.objects.create_user(json_["email"], json_["password"])
+        user = User.objects.create_user(request.data["email"], request.data["password"])
 
         verification_token = VerificationToken.objects.create(
             user=user,
             expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
         )
 
-        _prepare_verify_notification(verification_token.token_str(), json_["email"])
-
-    return HttpResponse(status=204)
-
-
-def _google_login_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
-
-    if "email" not in json_:
-        return HttpResponseBadRequest("'email' missing")
-
-    if type(json_["email"]) is not str:
-        return HttpResponseBadRequest("'email' must be string")
-
-    if not validators.email(json_["email"]):
-        return HttpResponseBadRequest("'email' malformed")
-
-    if "password" not in json_:
-        return HttpResponseBadRequest("'password' missing")
-
-    if type(json_["password"]) is not str:
-        return HttpResponseBadRequest("'password' must be string")
-
-    if "token" not in json_:
-        return HttpResponseBadRequest("'token' missing")
-
-    if type(json_["token"]) is not str:
-        return HttpResponseBadRequest("'token' must be string")
-
-    g_user_id: str
-    try:
-        g_user_id = google.get_id(json_["token"])
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("bad Google token")
-
-    if (
-        GoogleLogin.objects.filter(g_user_id=g_user_id).exists()
-        or User.objects.filter(email__iexact=json_["email"]).exists()
-    ):
-        return HttpResponse("login already exists", status=409)
-
-    verification_token: VerificationToken | None
-
-    with transaction.atomic():
-        user = User.objects.create_user(json_["email"], json_["password"])
-
-        verification_token = VerificationToken.objects.create(
-            user=user,
-            expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
+        _prepare_verify_notification(
+            verification_token.token_str(), request.data["email"]
         )
 
-        GoogleLogin.objects.create(g_user_id=g_user_id, user=user)
-
-        _prepare_verify_notification(verification_token.token_str(), json_["email"])
-
-    return HttpResponse(status=204)
-
-
-def _facebook_login_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
-
-    if "email" not in json_:
-        return HttpResponseBadRequest("'email' missing")
-
-    if type(json_["email"]) is not str:
-        return HttpResponseBadRequest("'email' must be string")
-
-    if not validators.email(json_["email"]):
-        return HttpResponseBadRequest("'email' malformed")
-
-    if "password" not in json_:
-        return HttpResponseBadRequest("'password' missing")
-
-    if type(json_["password"]) is not str:
-        return HttpResponseBadRequest("'password' must be string")
-
-    if "token" not in json_:
-        return HttpResponseBadRequest("'token' missing")
-
-    if type(json_["token"]) is not str:
-        return HttpResponseBadRequest("'token' must be string")
-
-    fb_id: str
-    try:
-        fb_id = facebook.get_id(json_["token"])
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("bad Facebook token")
-
-    if (
-        FacebookLogin.objects.filter(profile_id=fb_id).exists()
-        or User.objects.filter(email__iexact=json_["email"]).exists()
-    ):
-        return HttpResponse("login already exists", status=409)
-
-    with transaction.atomic():
-        user = User.objects.create_user(json_["email"], json_["password"])
-
-        verification_token = VerificationToken.objects.create(
-            user=user,
-            expires_at=(timezone.now() + _USER_VERIFICATION_EXPIRY_INTERVAL),
-        )
-
-        FacebookLogin.objects.create(profile_id=fb_id, user=user)
-
-        _prepare_verify_notification(verification_token.token_str(), json_["email"])
-
-    return HttpResponse(status=204)
-
-
-def _my_login_session_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
-
-    if "email" not in json_:
-        return HttpResponseBadRequest("'email' missing")
-
-    if type(json_["email"]) is not str:
-        return HttpResponseBadRequest("'email' must be string")
-
-    if "password" not in json_:
-        return HttpResponseBadRequest("'password' missing")
-
-    if type(json_["password"]) is not str:
-        return HttpResponseBadRequest("'password' must be string")
-
-    user = authenticate(request, username=json_["email"], password=json_["password"])
-    if user is None:
-        return HttpResponseForbidden()
-
-    login(request, user)
-
-    auth_token = AuthToken.objects.create(
-        user=cast(User, user),
-        expires_at=timezone.now() + _AUTH_TOKEN_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(auth_token.id_str())
-    return HttpResponse(content, content_type)
-
-
-def _google_login_session_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
-
-    if "token" not in json_:
-        return HttpResponseBadRequest("'token' missing")
-
-    if type(json_["token"]) is not str:
-        return HttpResponseBadRequest("'token' must be string")
-
-    g_user_id: str
-    g_email: str | None
-    try:
-        g_user_id, g_email = google.get_id_and_email(json_["token"])
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("bad Google token")
-
-    google_login: GoogleLogin
-    try:
-        google_login = GoogleLogin.objects.get(g_user_id=g_user_id)
-    except GoogleLogin.DoesNotExist:
-        ret_obj = {
-            "token": json_["token"],
-            "email": g_email,
-        }
-
-        content, content_type = query_utils.serialize_content(ret_obj)
-        return HttpResponse(content, content_type, status=422)
-
-    login(request, google_login.user)
-
-    auth_token = AuthToken.objects.create(
-        user=google_login.user,
-        expires_at=timezone.now() + _AUTH_TOKEN_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(auth_token.id_str())
-    return HttpResponse(content, content_type)
-
-
-def _facebook_login_session_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
-    json_: Any
-    try:
-        json_ = ujson.loads(request.body)
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
-
-    if type(json_) is not dict:
-        return HttpResponseBadRequest("JSON body must be object")  # pragma: no cover
-
-    assert isinstance(json_, dict)
-
-    if "token" not in json_:
-        return HttpResponseBadRequest("'token' missing")
-
-    if type(json_["token"]) is not str:
-        return HttpResponseBadRequest("'token' must be string")
-
-    fb_id: str
-    fb_email: str | None
-    try:
-        fb_id, fb_email = facebook.get_id_and_email(json_["token"])
-    except ValueError:  # pragma: no cover
-        return HttpResponseBadRequest("bad Facebook token")
-
-    facebook_login: FacebookLogin
-    try:
-        facebook_login = FacebookLogin.objects.get(profile_id=fb_id)
-    except FacebookLogin.DoesNotExist:
-        ret_obj = {
-            "token": json_["token"],
-            "email": fb_email,
-        }
-
-        content, content_type = query_utils.serialize_content(ret_obj)
-        return HttpResponse(content, content_type, status=422)
-
-    login(request, facebook_login.user)
-
-    auth_token = AuthToken.objects.create(
-        user=facebook_login.user,
-        expires_at=timezone.now() + _AUTH_TOKEN_EXPIRY_INTERVAL,
-    )
-
-    content, content_type = query_utils.serialize_content(auth_token.id_str())
-    return HttpResponse(content, content_type)
-
-
-def _session_delete(request: HttpRequest):
-    logout(request)
-
-    if authorization := request.META.get("HTTP_AUTHORIZATION"):
-        auth_token_uuid: uuid.UUID
-        try:
-            auth_token_uuid = AuthToken.extract_id_from_authorization_header(
-                authorization
-            )
-        except ValueError:
-            return HttpResponse(status=204)
-
-        AuthToken.objects.filter(uuid=auth_token_uuid).delete()
-
-    return HttpResponse(status=204)
+    return Response(status=204)

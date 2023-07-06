@@ -1,4 +1,3 @@
-import uuid
 from collections import defaultdict
 from typing import cast
 from xml.etree.ElementTree import Element
@@ -8,19 +7,16 @@ import xmlschema
 from defusedxml.ElementTree import ParseError as defused_ParseError
 from defusedxml.ElementTree import fromstring as defused_fromstring
 from django.db import transaction
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseBase,
-    HttpResponseNotAllowed,
-)
+from django.http.response import HttpResponse, HttpResponseBase
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ParseError, ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
 from url_normalize import url_normalize
 
 from api import archived_feed_entry_util
 from api import opml as opml_util
-from api import query_utils
-from api.decorators import requires_authenticated_user
 from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
@@ -31,13 +27,9 @@ from api.models import (
 )
 
 
-@requires_authenticated_user()
-def opml(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"GET", "POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["GET", "POST"])
+@permission_classes([permissions.IsAuthenticated])
+def opml(request: Request) -> HttpResponseBase:
     if request.method == "GET":
         return _opml_get(request)
     elif request.method == "POST":
@@ -46,7 +38,7 @@ def opml(request: HttpRequest) -> HttpResponseBase:
         raise ValueError
 
 
-def _opml_get(request: HttpRequest):
+def _opml_get(request: Request):
     user_category_text_dict = dict(
         user_category_tuple
         for user_category_tuple in UserCategory.objects.filter(
@@ -85,23 +77,20 @@ def _opml_get(request: HttpRequest):
                 htmlUrl=feed.home_url,
             )
 
-    return HttpResponse(lxml_etree.tostring(opml_element), "text/xml")
+    return HttpResponse(lxml_etree.tostring(opml_element), content_type="text/xml")
 
 
-def _opml_post(request: HttpRequest):
-    if not request.body:
-        return HttpResponseBadRequest("no HTTP body")  # pragma: no cover
-
+def _opml_post(request: Request):
     opml_element: Element
     try:
         opml_element = defused_fromstring(request.body)
     except defused_ParseError:
-        return HttpResponseBadRequest("HTTP body cannot be parsed")
+        raise ParseError
 
     try:
         opml_util.schema().validate(opml_element)
     except xmlschema.XMLSchemaException:
-        return HttpResponseBadRequest("OPML not valid")
+        raise ValidationError({".": "OPML not valid"})
 
     outline_dict: dict[str, set[tuple[str, str]]] = {}
 
@@ -238,9 +227,6 @@ def _opml_post(request: HttpRequest):
             )
 
     if feed_subscription_progress_entry is None:
-        return HttpResponse(status=204)
+        return Response(status=204)
     else:
-        content, content_type = query_utils.serialize_content(
-            str(feed_subscription_progress_entry.uuid)
-        )
-        return HttpResponse(content, content_type, status=202)
+        return Response(str(feed_subscription_progress_entry.uuid), status=202)

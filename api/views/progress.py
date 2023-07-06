@@ -1,16 +1,12 @@
 import uuid
 from typing import Any, cast
 
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBase,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-)
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import NotFound
+from rest_framework.request import Request
+from rest_framework.response import Response
 
-from api import query_utils
-from api.decorators import requires_authenticated_user
 from api.models import (
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
@@ -18,14 +14,10 @@ from api.models import (
 )
 
 
-@requires_authenticated_user()
-def feed_subscription_progress(request: HttpRequest, uuid_: str) -> HttpResponseBase:
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def feed_subscription_progress(request: Request, uuid_: str) -> Response:
     uuid__ = uuid.UUID(uuid_)
-
-    permitted_methods = {"GET"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
 
     if request.method == "GET":
         return _feed_subscription_progress_get(request, uuid__)
@@ -33,14 +25,14 @@ def feed_subscription_progress(request: HttpRequest, uuid_: str) -> HttpResponse
         raise ValueError
 
 
-def _feed_subscription_progress_get(request: HttpRequest, uuid_: uuid.UUID):
+def _feed_subscription_progress_get(request: Request, uuid_: uuid.UUID):
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry
     try:
         feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.get(
             uuid=uuid_, user=cast(User, request.user)
         )
     except FeedSubscriptionProgressEntry.DoesNotExist:
-        return HttpResponseNotFound("progress not found")
+        raise NotFound("progress not found")
 
     progress_statuses = list(
         FeedSubscriptionProgressEntryDescriptor.objects.filter(
@@ -68,6 +60,4 @@ def _feed_subscription_progress_get(request: HttpRequest, uuid_: uuid.UUID):
     else:
         ret_obj["state"] = "finished"
 
-    content, content_type = query_utils.serialize_content(ret_obj)
-
-    return HttpResponse(content, content_type)
+    return Response(ret_obj)

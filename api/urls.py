@@ -1,4 +1,5 @@
 from django.urls import re_path
+from knox import views as knox_views
 
 from . import views
 
@@ -8,12 +9,9 @@ _uuid_regex = (
 
 urlpatterns = [
     re_path(r"^login/my/?$", views.my_login),
-    re_path(r"^login/google/?$", views.google_login),
-    re_path(r"^login/facebook/?$", views.facebook_login),
-    re_path(r"^login/my/session/?$", views.my_login_session),
-    re_path(r"^login/google/session/?$", views.google_login_session),
-    re_path(r"^login/facebook/session/?$", views.facebook_login_session),
-    re_path(r"^session/?$", views.session),
+    re_path(r"^login/?", views.LoginView.as_view(), name="knox_login"),
+    re_path(r"^logout/?", knox_views.LogoutView.as_view(), name="knox_logout"),
+    re_path(r"^logoutall/?", knox_views.LogoutAllView.as_view(), name="knox_logoutall"),
     re_path(r"^passwordresettoken/request/?$", views.passwordresettoken_request),
     re_path(r"^passwordresettoken/reset/?$", views.passwordresettoken_reset),
     re_path(r"^user/?$", views.user),

@@ -2,15 +2,14 @@ import logging
 import uuid
 from typing import ClassVar
 
-import ujson
 from django.db import transaction
 from django.utils import timezone
+from rest_framework.test import APITestCase
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
-from api.tests.views import ViewTestCase
 
 
-class FeedEntryTestCase(ViewTestCase):
+class FeedEntryTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
     user: ClassVar[User]
@@ -51,7 +50,7 @@ class FeedEntryTestCase(ViewTestCase):
     def setUp(self):
         super().setUp()
 
-        self.client.force_login(FeedEntryTestCase.user)
+        self.client.force_authenticate(user=FeedEntryTestCase.user)
 
     def test_feedentry_get(self):
         feed_entry = FeedEntry.objects.create(
@@ -92,8 +91,7 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/query",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -115,7 +113,7 @@ class FeedEntryTestCase(ViewTestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
         self.assertIsInstance(json_, str)
 
         self.assertTrue(
@@ -214,12 +212,9 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
-                }
-            ),
-            "application/json",
+            {
+                "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -234,12 +229,9 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)],
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -254,13 +246,10 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": [str(feed_entry1.uuid)],
-                    "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": [str(feed_entry1.uuid)],
+                "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -274,88 +263,68 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_read_post_noentries(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps([]),
-            "application/json",
+            [],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedUuids": 0,
-                }
-            ),
-            "application/json",
+            {
+                "feedUuids": 0,
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_element_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedUuids": [0],
-                }
-            ),
-            "application/json",
+            {
+                "feedUuids": [0],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feeduuids_element_malformed(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedUuids": ["baduuid"],
-                }
-            ),
-            "application/json",
+            {
+                "feedUuids": ["baduuid"],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": 0,
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": 0,
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_element_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": [0],
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": [0],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_read_post_feedentryuuids_element_malformed(self):
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": ["baduuid"],
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": ["baduuid"],
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -378,12 +347,9 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/read",
-            ujson.dumps(
-                {
-                    "feedEntryUuids": [str(feed_entry.uuid)],
-                }
-            ),
-            "application/json",
+            {
+                "feedEntryUuids": [str(feed_entry.uuid)],
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -422,8 +388,7 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.delete(
             "/api/feedentries/read",
-            ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
-            "application/json",
+            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -436,16 +401,14 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_read_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/read",
-            ujson.dumps([]),
-            "application/json",
+            [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_read_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/read",
-            ujson.dumps([0]),
-            "application/json",
+            [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -560,8 +523,7 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/favorite",
-            ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
-            "application/json",
+            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -575,24 +537,21 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_favorite_post_shortcut(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            ujson.dumps([]),
-            "application/json",
+            [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_post_malformed(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            ujson.dumps([0]),
-            "application/json",
+            [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_favorite_post_not_found(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            ujson.dumps([str(uuid.uuid4())]),
-            "application/json",
+            [str(uuid.uuid4())],
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -613,8 +572,7 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/favorite",
-            ujson.dumps([str(feed_entry.uuid)]),
-            "application/json",
+            [str(feed_entry.uuid)],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -647,8 +605,7 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.delete(
             "/api/feedentries/favorite",
-            ujson.dumps([str(feed_entry1.uuid), str(feed_entry2.uuid)]),
-            "application/json",
+            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -661,28 +618,25 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_favorite_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
-            ujson.dumps([]),
-            "application/json",
+            [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_feedentries_favorite_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
-            ujson.dumps([0]),
-            "application/json",
+            [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_feedentries_query_stable_create_post(self):
         response = self.client.post(
             "/api/feedentries/query/stable/create",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
         self.assertIsInstance(json_, str)
 
     def test_feedentries_query_stable_post(self):
@@ -700,27 +654,23 @@ class FeedEntryTestCase(ViewTestCase):
 
         response = self.client.post(
             "/api/feedentries/query/stable/create",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
         self.assertIsInstance(json_, str)
 
         response = self.client.post(
             "/api/feedentries/query/stable",
-            ujson.dumps(
-                {
-                    "token": json_,
-                }
-            ),
-            "application/json",
+            {
+                "token": json_,
+            },
         )
 
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
         self.assertIsInstance(json_, dict)
         self.assertIn("objects", json_)
         self.assertIsInstance(json_["objects"], list)
@@ -728,8 +678,7 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_query_stable_post_token_missing(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
-            ujson.dumps({}),
-            "application/json",
+            {},
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -738,12 +687,9 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_query_stable_post_token_typeerror(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
-            ujson.dumps(
-                {
-                    "token": 0,
-                }
-            ),
-            "application/json",
+            {
+                "token": 0,
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -752,12 +698,9 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_query_stable_post_token_malformed(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
-            ujson.dumps(
-                {
-                    "token": "badtoken",
-                }
-            ),
-            "application/json",
+            {
+                "token": "badtoken",
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
@@ -766,16 +709,13 @@ class FeedEntryTestCase(ViewTestCase):
     def test_feedentries_query_stable_post_token_valid(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
-            ujson.dumps(
-                {
-                    "token": "feedentry-0123456789",
-                }
-            ),
-            "application/json",
+            {
+                "token": "feedentry-0123456789",
+            },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
         self.assertIsInstance(json_, dict)
         self.assertIn("objects", json_)
         self.assertIsInstance(json_["objects"], list)

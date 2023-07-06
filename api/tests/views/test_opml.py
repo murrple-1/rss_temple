@@ -2,12 +2,12 @@ import logging
 from typing import ClassVar
 
 from django.core.management import call_command
+from rest_framework.test import APITestCase
 
 from api.models import SubscribedFeedUserMapping, User
-from api.tests.views import ViewTestCase
 
 
-class OPMLTestCase(ViewTestCase):
+class OPMLTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
 
@@ -36,7 +36,7 @@ class OPMLTestCase(ViewTestCase):
     def _login(self):
         user = User.objects.get(email="test@test.com")
 
-        self.client.force_login(user)
+        self.client.force_authenticate(user=user)
 
     def test_opml_get(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_mix-post.json")

@@ -51,33 +51,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="AuthToken",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("expires_at", models.DateTimeField(null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name="FacebookLogin",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("profile_id", models.CharField(max_length=96)),
-            ],
-            options={
-                "abstract": False,
-            },
-        ),
-        migrations.CreateModel(
             name="Feed",
             fields=[
                 (
@@ -317,28 +290,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name="GoogleLogin",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("g_user_id", models.CharField(max_length=96)),
-                (
-                    "user",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-            ],
-            options={
-                "abstract": False,
-            },
-        ),
-        migrations.CreateModel(
             name="FeedSubscriptionProgressEntryDescriptor",
             fields=[
                 (
@@ -364,22 +315,6 @@ class Migration(migrations.Migration):
             model_name="feed",
             index=models.Index(
                 fields=["update_backoff_until"], name="api_feed_update__033cc4_idx"
-            ),
-        ),
-        migrations.AddField(
-            model_name="facebooklogin",
-            name="user",
-            field=models.OneToOneField(
-                on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
-            ),
-        ),
-        migrations.AddField(
-            model_name="authtoken",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="api_sessions",
-                to=settings.AUTH_USER_MODEL,
             ),
         ),
         migrations.AddField(

@@ -7,11 +7,8 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import (
-    AuthToken,
-    FacebookLogin,
     Feed,
     FeedEntry,
-    GoogleLogin,
     PasswordResetToken,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
@@ -122,63 +119,6 @@ class UserTestCase(TestCase):
 
         self.assertEqual(len(uuids), 1)
         self.assertIn(feed_entry.uuid, uuids)
-
-    def test_google_login(self):
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        self.assertIsNone(user.google_login())
-
-        del user._google_login
-
-        GoogleLogin.objects.create(user=user, g_user_id="googleid1")
-
-        self.assertIsNotNone(user.google_login())
-
-    def test_facebook_login(self):
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        self.assertIsNone(user.facebook_login())
-
-        del user._facebook_login
-
-        FacebookLogin.objects.create(user=user, profile_id="facebookid")
-
-        self.assertIsNotNone(user.facebook_login())
-
-
-class AuthTokenTestCase(TestCase):
-    def test_id_str(self):
-        auth_token = AuthToken()
-
-        self.assertIs(type(auth_token.id_str()), str)
-
-    def test_extract_id_from_authorization_header(self):
-        self.assertEqual(
-            AuthToken.extract_id_from_authorization_header(
-                "Bearer 6c207bed-4ddd-40e6-9c7b-6e85b2086a3a"
-            ),
-            uuid.UUID("6c207bed-4ddd-40e6-9c7b-6e85b2086a3a"),
-        )
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header(
-                "bearer 17078a5d-940d-4bd6-b89a-b0b7e2167e10"
-            )
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header("bad header")
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header("Bearer")
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header("Bearer ")
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header("Bearerasdf")
-
-        with self.assertRaises(ValueError):
-            AuthToken.extract_id_from_authorization_header("Bearer_asdf")
 
 
 class VerificationTokenTestCase(TestCase):

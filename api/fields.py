@@ -30,12 +30,10 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             False,
         ),
         "attributes": _FieldConfig(lambda request, db_obj: db_obj.attributes, False),
-        "hasGoogleLogin": _FieldConfig(
-            lambda request, db_obj: db_obj.google_login() is not None, False
-        ),
-        "hasFacebookLogin": _FieldConfig(
-            lambda request, db_obj: db_obj.facebook_login() is not None, False
-        ),
+        # TODO deprecate or rewrite
+        "hasGoogleLogin": _FieldConfig(lambda request, db_obj: False, False),
+        # TODO deprecate or rewrite
+        "hasFacebookLogin": _FieldConfig(lambda request, db_obj: False, False),
     },
     "usercategory": {
         "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),

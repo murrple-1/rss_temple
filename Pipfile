@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 django = {version = "*", extras = ["argon2"]}
+djangorestframework = "*"
 feedparser = "*"
 requests = "*"
 ujson = "*"
@@ -22,11 +23,13 @@ html5lib = "*"
 validators = "*"
 tabulate = "*"
 django-cors-headers = "*"
-django-throttle-requests = "*"
 django-cprofile-middleware = "*"
 daphne = "*"
 psycopg2 = "*"
 django-redis = "*"
+drf-yasg = "*"
+django-rest-knox = "*"
+drf_ujson2 = "*"
 
 [dev-packages]
 coverage = "*"
@@ -36,8 +39,8 @@ coverage-conditional-plugin = "*"
 packaging = "*"
 black = "*"
 isort = "*"
-mypy = "*"
-django-stubs = "*"
+django-stubs = { version = "*", extras = ["compatible-mypy"] }
+djangorestframework-stubs = { version = "*", extras = ["compatible-mypy"] }
 types-bleach = "*"
 types-python-dateutil = "*"
 types-tabulate = "*"

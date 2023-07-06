@@ -3,15 +3,16 @@ import random
 import uuid
 from typing import ClassVar
 
+from rest_framework.test import APITestCase
+
 from api.models import (
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
     User,
 )
-from api.tests.views import ViewTestCase
 
 
-class ProgressTestCase(ViewTestCase):
+class ProgressTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
     user: ClassVar[User]
@@ -42,7 +43,7 @@ class ProgressTestCase(ViewTestCase):
     def setUp(self):
         super().setUp()
 
-        self.client.force_login(ProgressTestCase.user)
+        self.client.force_authenticate(user=ProgressTestCase.user)
 
     @staticmethod
     def generate_entry(desc_count=10):

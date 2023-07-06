@@ -15,13 +15,13 @@ http://:8000 {
 		?Cache-Control "max-age=31536000"
 	}
 
-	@web {
-		path /api/* /admin*
-	}
-	reverse_proxy @web rss_temple:8000
-
 	handle_path /static* {
 		root * /static
 		file_server
 	}
+
+	@web {
+		path *
+	}
+	reverse_proxy @web rss_temple:8000
 }

@@ -41,6 +41,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_yasg",
+    "knox",
     "corsheaders",
     "api.apps.ApiConfig",
 ]
@@ -50,8 +53,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "api.middleware.bearer_auth.BearerAuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_cprofile_middleware.middleware.ProfilerMiddleware",
@@ -210,19 +213,22 @@ else:
         },
     }
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-THROTTLE_ZONES = {
-    "default": {
-        "VARY": "throttle.zones.RemoteIP",
-        "ALGORITHM": "fixed-bucket",
-        "BUCKET_INTERVAL": 15 * 60,
-        "BUCKET_CAPACITY": 50,
-    },
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("knox.auth.TokenAuthentication",),
+    "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
+    "DEFAULT_PARSER_CLASSES": (
+        "drf_ujson.parsers.UJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ),
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "TEST_REQUEST_RENDERER_CLASSES": (
+        "drf_ujson.renderers.UJSONRenderer",
+        "rest_framework.renderers.MultiPartRenderer",
+    ),
 }
 
-# Where to store request counts.
-THROTTLE_BACKEND = "throttle.backends.cache.CacheBackend"
+CORS_ALLOW_ALL_ORIGINS = True
 
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
@@ -244,8 +250,6 @@ MAX_COUNT = 1000
 DEFAULT_SKIP = 0
 DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
-
-AUTH_TOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 
 GOOGLE_CLIENT_ID = os.environ["APP_GOOGLE_CLIENT_ID"]
 

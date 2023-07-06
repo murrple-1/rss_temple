@@ -1,10 +1,8 @@
 import logging
 from typing import ClassVar
 
-import ujson
 from django.test import tag
 from django.utils import timezone
-from throttle import zones
 
 from api import fields
 from api.models import Feed, SubscribedFeedUserMapping, User
@@ -14,14 +12,10 @@ from api.tests import TestFileServerTestCase
 class FeedTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
-    old_throttle_enabled: ClassVar[bool]
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
-        cls.old_throttle_enabled = zones.THROTTLE_ENABLED
-        zones.THROTTLE_ENABLED = False
 
         cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
@@ -33,15 +27,12 @@ class FeedTestCase(TestFileServerTestCase):
     def tearDownClass(cls):
         super().tearDownClass()
 
-        zones.THROTTLE_ENABLED = cls.old_throttle_enabled
-
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def generate_credentials(self):
         user = User.objects.create_user("test@test.com", None)
-
-        self.client.force_login(user)
+        self.client.force_authenticate(user=user)
 
         return user
 
@@ -90,12 +81,11 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.post(
             "/api/feeds/query",
-            ujson.dumps({"fields": list(fields.field_list("feed"))}),
-            "application/json",
+            {"fields": list(fields.field_list("feed"))},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = ujson.loads(response.content)
+        json_ = response.json()
 
         self.assertIs(type(json_), dict)
         self.assertIn("objects", json_)

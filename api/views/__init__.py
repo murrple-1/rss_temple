@@ -10,15 +10,7 @@ from .feed_entry import (
     feed_entry_favorite,
     feed_entry_read,
 )
-from .login import (
-    facebook_login,
-    facebook_login_session,
-    google_login,
-    google_login_session,
-    my_login,
-    my_login_session,
-    session,
-)
+from .login import LoginView, my_login
 from .opml import opml
 from .passwordresettoken import passwordresettoken_request, passwordresettoken_reset
 from .progress import feed_subscription_progress
@@ -27,12 +19,7 @@ from .user_category import user_categories_apply, user_categories_query, user_ca
 
 __all__ = [
     "my_login",
-    "my_login_session",
-    "google_login",
-    "google_login_session",
-    "facebook_login",
-    "facebook_login_session",
-    "session",
+    "LoginView",
     "passwordresettoken_request",
     "passwordresettoken_reset",
     "user",

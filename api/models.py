@@ -1,4 +1,3 @@
-import re
 import uuid
 from collections import defaultdict
 from functools import cached_property
@@ -59,9 +58,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    _google_login: "GoogleLogin | None"
-    _facebook_login: "FacebookLogin | None"
-
     def category_dict(self):
         category_dict: dict[uuid.UUID | None, list[Feed]] | None = getattr(
             self, "_category_dict", None
@@ -108,61 +104,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     @cached_property
     def favorite_feed_entry_uuids(self):
         return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
-
-    def google_login(self):
-        if not hasattr(self, "_google_login"):
-            try:
-                self._google_login = GoogleLogin.objects.get(user=self)
-            except GoogleLogin.DoesNotExist:
-                self._google_login = None
-
-        return self._google_login
-
-    def facebook_login(self):
-        if not hasattr(self, "_facebook_login"):
-            try:
-                self._facebook_login = FacebookLogin.objects.get(user=self)
-            except FacebookLogin.DoesNotExist:
-                self._facebook_login = None
-
-        return self._facebook_login
-
-
-class AuthToken(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    expires_at = models.DateTimeField(null=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="api_sessions"
-    )
-
-    def id_str(self) -> str:
-        return str(self.uuid)
-
-    @staticmethod
-    def extract_id_from_authorization_header(authorization_header: str) -> "uuid.UUID":
-        if match := re.search(
-            r"^Bearer ([0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12})$",
-            authorization_header,
-        ):
-            return uuid.UUID(match.group(1))
-        else:
-            raise ValueError("malformed Authorization header")
-
-
-class Login(models.Model):
-    class Meta:
-        abstract = True
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-
-class GoogleLogin(Login):
-    g_user_id = models.CharField(max_length=96)
-
-
-class FacebookLogin(Login):
-    profile_id = models.CharField(max_length=96)
 
 
 class VerificationToken(models.Model):

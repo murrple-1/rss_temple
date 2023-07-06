@@ -1,31 +1,23 @@
 from typing import Any, TypedDict, cast
 
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBase,
-    HttpResponseNotAllowed,
-)
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework.response import Response
 
-from api import query_utils
-from api.decorators import requires_authenticated_user
 from api.models import Feed, FeedEntry, User
 
 
-@requires_authenticated_user()
-def explore(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"GET"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def explore(request: Request) -> Response:
     if request.method == "GET":
         return _explore_get(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-def _explore_get(request: HttpRequest):
+def _explore_get(request: Request):
     # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
 
     class FeedDesc(TypedDict):
@@ -155,6 +147,4 @@ def _explore_get(request: HttpRequest):
                 }
             )
 
-    content, content_type = query_utils.serialize_content(ret_obj)
-
-    return HttpResponse(content, content_type)
+    return Response(ret_obj)

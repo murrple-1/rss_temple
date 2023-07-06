@@ -33,9 +33,7 @@ def _load_global_settings(*args: Any, **kwargs: Any):
     _DEFAULT_RETURN_TOTAL_COUNT = settings.DEFAULT_RETURN_TOTAL_COUNT
 
 
-def serialize_content(obj: Any):
-    content = ujson.dumps(obj)
-    return content, "application/json"
+_load_global_settings()
 
 
 def get_count(

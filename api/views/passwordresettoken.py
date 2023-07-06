@@ -4,16 +4,12 @@ from django.conf import settings
 from django.core.signals import setting_changed
 from django.db import transaction
 from django.dispatch import receiver
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseBase,
-    HttpResponseNotAllowed,
-    HttpResponseNotFound,
-)
 from django.utils import timezone
-from throttle.decorators import throttle
+from rest_framework import throttling
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from api.models import (
     NotifyEmailQueueEntry,
@@ -36,43 +32,35 @@ def _load_global_settings(*args, **kwargs):
 _load_global_settings()
 
 
-@throttle(zone="default")
-def passwordresettoken_request(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["POST"])
+@throttle_classes([throttling.UserRateThrottle])
+def passwordresettoken_request(request: Request) -> Response:
     if request.method == "POST":
         return _passwordresettoken_request_post(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-@throttle(zone="default")
-def passwordresettoken_reset(request: HttpRequest) -> HttpResponseBase:
-    permitted_methods = {"POST"}
-
-    if request.method not in permitted_methods:
-        return HttpResponseNotAllowed(permitted_methods)  # pragma: no cover
-
+@api_view(["POST"])
+@throttle_classes([throttling.UserRateThrottle])
+def passwordresettoken_reset(request: Request) -> Response:
     if request.method == "POST":
         return _passwordresettoken_reset_post(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-def _passwordresettoken_request_post(request: HttpRequest):
+def _passwordresettoken_request_post(request: Request):
     email = request.POST.get("email")
 
     if email is None:
-        return HttpResponseBadRequest("'email' missing")
+        raise ValidationError({"email": "missing"})
 
     user: User
     try:
         user = User.objects.get(email__iexact=email)
     except User.DoesNotExist:
-        return HttpResponse(status=204)
+        return Response(status=204)
 
     password_reset_token = PasswordResetToken(
         user=user,
@@ -98,26 +86,26 @@ def _passwordresettoken_request_post(request: HttpRequest):
             entry=email_queue_entry,
         )
 
-    return HttpResponse(status=204)
+    return Response(status=204)
 
 
-def _passwordresettoken_reset_post(request: HttpRequest):
+def _passwordresettoken_reset_post(request: Request):
     token = request.POST.get("token")
     if token is None:
-        return HttpResponseBadRequest("'token' missing")
+        raise ValidationError({"token": "missing"})
 
     password = request.POST.get("password")
     if password is None:
-        return HttpResponseBadRequest("'password' missing")
+        raise ValidationError({"token": "missing"})
 
     password_reset_token = PasswordResetToken.find_by_token(token)
 
     if password_reset_token is None:
-        return HttpResponseNotFound("token not valid")
+        raise NotFound("token not valid")
 
     with transaction.atomic():
         password_reset_token.user.set_password(password)
 
         password_reset_token.delete()
 
-    return HttpResponse(status=204)
+    return Response(status=204)
