@@ -4,6 +4,7 @@ from typing import Any, Callable
 from urllib.parse import ParseResult, urlparse
 
 import bleach
+import bleach.css_sanitizer
 import bleach.sanitizer
 import html5lib
 from bleach.html5lib_shim import SanitizerFilter as HTML5ShimFilter
@@ -126,30 +127,40 @@ _my_bleach_filter_kwargs_: dict[str, Any] | None = None
 def _html_sanitizer_stream(source: TreeWalker):
     global _my_bleach_filter_kwargs_
     if _my_bleach_filter_kwargs_ is None:
-        tags = set(bleach.sanitizer.ALLOWED_TAGS)
-        tags.add("p")
-        tags.add("img")
-        tags.add("br")
-        tags.add("iframe")
+        allowed_tags = set(bleach.sanitizer.ALLOWED_TAGS)
+        allowed_tags.add("p")
+        allowed_tags.add("img")
+        allowed_tags.add("br")
+        allowed_tags.add("iframe")
 
-        attributes = dict(bleach.sanitizer.ALLOWED_ATTRIBUTES)
-        attributes["img"] = ["src"]
-        attributes["iframe"] = ["src", "title", "width", "height", "allowfullscreen"]
+        allowed_attributes = dict(bleach.sanitizer.ALLOWED_ATTRIBUTES)
+        allowed_attributes["img"] = ["src"]
+        allowed_attributes["iframe"] = [
+            "src",
+            "title",
+            "width",
+            "height",
+            "allowfullscreen",
+        ]
 
-        styles = set(bleach.sanitizer.ALLOWED_STYLES)
+        allowed_protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
 
-        protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
+        allowed_css_properties = set(bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES)
+
+        allowed_svg_properties = set(bleach.css_sanitizer.ALLOWED_SVG_PROPERTIES)
+
+        css_sanitizer = bleach.css_sanitizer.CSSSanitizer(
+            allowed_css_properties=allowed_css_properties,
+            allowed_svg_properties=allowed_svg_properties,
+        )
 
         _my_bleach_filter_kwargs_ = {
-            # see https://github.com/mozilla/bleach/blob/3e5d6aa375677821aaf249127e44ac51a815cf2b/bleach/sanitizer.py#L179
-            "attributes": attributes,
-            "strip_disallowed_elements": True,
+            "attributes": allowed_attributes,
+            "strip_disallowed_tags": True,
             "strip_html_comments": True,
-            # see https://github.com/mozilla/bleach/blob/3e5d6aa375677821aaf249127e44ac51a815cf2b/bleach/sanitizer.py#L183
-            "allowed_elements": tags,
-            "allowed_css_properties": styles,
-            "allowed_protocols": protocols,
-            "allowed_svg_properties": [],
+            "allowed_tags": allowed_tags,
+            "allowed_protocols": allowed_protocols,
+            "css_sanitizer": css_sanitizer,
         }
 
     filtered: HTML5LibFilter | HTML5ShimFilter = ScriptRemovalFiler(source=source)

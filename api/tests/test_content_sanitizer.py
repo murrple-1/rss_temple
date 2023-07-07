@@ -5,234 +5,141 @@ from api import content_sanitize
 
 class ContentSanitizerTestCase(TestCase):
     def test_is_html(self):
-        self.assertTrue(content_sanitize.is_html("<p>Some Text</p>"))
-        self.assertTrue(content_sanitize.is_html("<p>Some Text"))
-        self.assertTrue(content_sanitize.is_html("Some Text<br>Some More Text"))
-        self.assertTrue(content_sanitize.is_html("Some Text<br/>Some More Text"))
-        self.assertTrue(content_sanitize.is_html("Some Text<br />Some More Text"))
+        for text in [
+            "<p>Some Text</p>",
+            "<p>Some Text",
+            "Some Text<br>Some More Text",
+            "Some Text<br/>Some More Text",
+            "Some Text<br />Some More Text",
+        ]:
+            with self.subTest(text=text):
+                self.assertTrue(content_sanitize.is_html(text))
 
-        self.assertFalse(content_sanitize.is_html("Some Text"))
-        self.assertFalse(content_sanitize.is_html(""))
+        for text in ["Some Text", ""]:
+            with self.subTest(text=text):
+                self.assertFalse(content_sanitize.is_html(text))
 
     def test_sanitize_html(self):
-        self.assertEqual(
-            content_sanitize.sanitize_html("<p>Some Text</p>"), "<p>Some Text</p>"
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html("<p>Some Text"), "<p>Some Text</p>"
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html("Some Text<br>Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html("Some Text<br/>Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html("Some Text<br />Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                "Some Text<br />Some More Text<script>console.log();</script>"
+        for input_, expected_output in [
+            ("<p>Some Text</p>", "<p>Some Text</p>"),
+            ("<p>Some Text", "<p>Some Text</p>"),
+            ("Some Text<br>Some More Text", "Some Text<br>Some More Text"),
+            ("Some Text<br/>Some More Text", "Some Text<br>Some More Text"),
+            ("Some Text<br />Some More Text", "Some Text<br>Some More Text"),
+            (
+                "Some Text<br />Some More Text<script>console.log();</script>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                "Some Text<br />Some More Text<script><script>console.log();</script></script>"
+            (
+                "Some Text<br />Some More Text<script><script>console.log();</script></script>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                "Some Text<br />Some More Text<style>>html {font-size: 50px;}</style>"
+            (
+                "Some Text<br />Some More Text<style>>html {font-size: 50px;}</style>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                "Some Text<br />Some More Text<style><style>html {font-size: 50px;}</style></style>"
+            (
+                "Some Text<br />Some More Text<style><style>html {font-size: 50px;}</style></style>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<img src="https://test.com/something.png">'
+            (
+                '<img src="https://test.com/something.png">',
+                '<img src="https://test.com/something.png">',
             ),
-            '<img src="https://test.com/something.png">',
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html('<img src="http://test.com/something.png">'),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<img src="smb://192.168.0.1/something.png">'
+            ('<img src="http://test.com/something.png">', ""),
+            ('<img src="smb://192.168.0.1/something.png">', ""),
+            ('<a href="https://test.com/entry"></a>', ""),
+            (
+                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry">Link</a>',
             ),
-            "",
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize_html('<a href="https://test.com/entry"></a>'), ""
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html('<a href="https://test.com/entry">Link</a>'),
-            '<a href="https://test.com/entry">Link</a>',
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>'
+            (
+                '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>',
+                "",
             ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>'
+            (
+                '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>',
+                '<a href="https://test.com/entry">Link</a>',
             ),
-            '<a href="https://test.com/entry">Link</a>',
-        )
-
-        self.assertEqual(content_sanitize.sanitize_html("<iframe></iframe>"), "")
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<iframe src="https://slashdot.org/post1.html"></iframe>'
+            ("<iframe></iframe>", ""),
+            ('<iframe src="https://slashdot.org/post1.html"></iframe>', ""),
+            (
+                '<iframe src="https://slashdot.org/post1.html"><p>Inner Text</p></iframe>',
+                "",
             ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<iframe src="https://slashdot.org/post1.html"><p>Inner Text</p></iframe>'
-            ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_html(
-                '<iframe src="http://::12.34.56.78]/"><p>Inner Text</p></iframe>'
-            ),
-            "",
-        )
+            ('<iframe src="http://::12.34.56.78]/"><p>Inner Text</p></iframe>', ""),
+        ]:
+            with self.subTest(input=input_, expected_output=expected_output):
+                self.assertEqual(
+                    content_sanitize.sanitize_html(input_), expected_output
+                )
 
     def test_sanitize_text(self):
-        self.assertEqual(content_sanitize.sanitize_plain("Some Text"), "Some Text")
-        self.assertEqual(
-            content_sanitize.sanitize_plain("Some Text\nSome More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(content_sanitize.sanitize_plain("1 > 2"), "1 &gt; 2")
-        self.assertEqual(
-            content_sanitize.sanitize_plain("Some Text\nSome More Text 1 < 2"),
-            "Some Text<br>Some More Text 1 &lt; 2",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize_plain("<p>Some Text</p>"),
-            "&lt;p&gt;Some Text&lt;/p&gt;",
-        )
+        for input_, expected_output in [
+            ("Some Text", "Some Text"),
+            ("Some Text\nSome More Text", "Some Text<br>Some More Text"),
+            ("1 > 2", "1 &gt; 2"),
+            ("Some Text\nSome More Text 1 < 2", "Some Text<br>Some More Text 1 &lt; 2"),
+            ("<p>Some Text</p>", "&lt;p&gt;Some Text&lt;/p&gt;"),
+        ]:
+            with self.subTest(input=input_, expected_output=expected_output):
+                self.assertEqual(
+                    content_sanitize.sanitize_plain(input_), expected_output
+                )
 
     def test_sanitize(self):
-        self.assertEqual(
-            content_sanitize.sanitize("<p>Some Text</p>"), "<p>Some Text</p>"
-        )
-        self.assertEqual(content_sanitize.sanitize("<p>Some Text"), "<p>Some Text</p>")
-        self.assertEqual(
-            content_sanitize.sanitize("Some Text<br>Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize("Some Text<br/>Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize("Some Text<br />Some More Text"),
-            "Some Text<br>Some More Text",
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize(
-                "Some Text<br />Some More Text<script>console.log();</script>"
+        for input_, expected_output in [
+            ("<p>Some Text</p>", "<p>Some Text</p>"),
+            ("<p>Some Text", "<p>Some Text</p>"),
+            ("Some Text<br>Some More Text", "Some Text<br>Some More Text"),
+            ("Some Text<br/>Some More Text", "Some Text<br>Some More Text"),
+            ("Some Text<br />Some More Text", "Some Text<br>Some More Text"),
+            (
+                "Some Text<br />Some More Text<script>console.log();</script>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                "Some Text<br />Some More Text<script><script>console.log();</script></script>"
+            (
+                "Some Text<br />Some More Text<script><script>console.log();</script></script>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                "Some Text<br />Some More Text<style>>html {font-size: 50px;}</style>"
+            (
+                "Some Text<br />Some More Text<style>>html {font-size: 50px;}</style>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                "Some Text<br />Some More Text<style><style>html {font-size: 50px;}</style></style>"
+            (
+                "Some Text<br />Some More Text<style><style>html {font-size: 50px;}</style></style>",
+                "Some Text<br>Some More Text",
             ),
-            "Some Text<br>Some More Text",
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize('<img src="https://test.com/something.png">'),
-            '<img src="https://test.com/something.png">',
-        )
-        self.assertEqual(
-            content_sanitize.sanitize('<img src="http://test.com/something.png">'), ""
-        )
-        self.assertEqual(
-            content_sanitize.sanitize('<img src="smb://192.168.0.1/something.png">'), ""
-        )
-
-        self.assertEqual(
-            content_sanitize.sanitize('<a href="https://test.com/entry"></a>'), ""
-        )
-        self.assertEqual(
-            content_sanitize.sanitize('<a href="https://test.com/entry">Link</a>'),
-            '<a href="https://test.com/entry">Link</a>',
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>'
+            (
+                '<img src="https://test.com/something.png">',
+                '<img src="https://test.com/something.png">',
             ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>'
+            ('<img src="http://test.com/something.png">', ""),
+            ('<img src="smb://192.168.0.1/something.png">', ""),
+            ('<a href="https://test.com/entry"></a>', ""),
+            (
+                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry">Link</a>',
             ),
-            '<a href="https://test.com/entry">Link</a>',
-        )
-
-        self.assertEqual(content_sanitize.sanitize("Some Text"), "Some Text")
-        self.assertEqual(
-            content_sanitize.sanitize("Some Text\nSome More Text"),
-            "Some Text<br>Some More Text",
-        )
-        self.assertEqual(content_sanitize.sanitize("1 > 2"), "1 &gt; 2")
-        self.assertEqual(
-            content_sanitize.sanitize("Some Text\nSome More Text 1 < 2"),
-            "Some Text<br>Some More Text 1 &lt; 2",
-        )
-
-        self.assertEqual(content_sanitize.sanitize("<iframe></iframe>"), "")
-        self.assertEqual(
-            content_sanitize.sanitize(
-                '<iframe src="https://slashdot.org/post1.html"></iframe>'
+            (
+                '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>',
+                "",
             ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                '<iframe src="https://slashdot.org/post1.html"><p>Inner Text</p></iframe>'
+            (
+                '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>',
+                '<a href="https://test.com/entry">Link</a>',
             ),
-            "",
-        )
-        self.assertEqual(
-            content_sanitize.sanitize(
-                '<iframe src="http://::12.34.56.78]/"><p>Inner Text</p></iframe>'
+            ("Some Text", "Some Text"),
+            ("Some Text\nSome More Text", "Some Text<br>Some More Text"),
+            ("1 > 2", "1 &gt; 2"),
+            ("Some Text\nSome More Text 1 < 2", "Some Text<br>Some More Text 1 &lt; 2"),
+            ("<iframe></iframe>", ""),
+            ('<iframe src="https://slashdot.org/post1.html"></iframe>', ""),
+            (
+                '<iframe src="https://slashdot.org/post1.html"><p>Inner Text</p></iframe>',
+                "",
             ),
-            "",
-        )
+            ('<iframe src="http://::12.34.56.78]/"><p>Inner Text</p></iframe>', ""),
+        ]:
+            with self.subTest(input=input_, expected_output=expected_output):
+                self.assertEqual(content_sanitize.sanitize(input_), expected_output)
