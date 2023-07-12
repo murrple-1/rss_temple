@@ -7,7 +7,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
-from django.db.models.functions import Now
 from django.db.models.query_utils import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -104,50 +103,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     @cached_property
     def favorite_feed_entry_uuids(self):
         return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
-
-
-class VerificationToken(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    expires_at = models.DateTimeField()
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def token_str(self):
-        return str(self.uuid)
-
-    @staticmethod
-    def find_by_token(token):
-        _uuid: uuid.UUID
-        try:
-            _uuid = uuid.UUID(token)
-        except (ValueError, TypeError):
-            return None
-
-        try:
-            return VerificationToken.objects.get(uuid=_uuid, expires_at__gt=Now())
-        except VerificationToken.DoesNotExist:
-            return None
-
-
-class PasswordResetToken(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    expires_at = models.DateTimeField()
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def token_str(self):
-        return str(self.uuid)
-
-    @staticmethod
-    def find_by_token(token):
-        _uuid: uuid.UUID
-        try:
-            _uuid = uuid.UUID(token)
-        except (ValueError, TypeError):
-            return None
-
-        try:
-            return PasswordResetToken.objects.get(uuid=_uuid, expires_at__gt=Now())
-        except PasswordResetToken.DoesNotExist:
-            return None
 
 
 class UserCategory(models.Model):
@@ -365,27 +320,3 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
     custom_feed_title = models.TextField(null=True)
     user_category_text = models.TextField(null=True)
     is_finished = models.BooleanField(default=False)
-
-
-class NotifyEmailQueueEntry(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    subject = models.CharField(max_length=256)
-    plain_text = models.TextField(null=True)
-    html_text = models.TextField(null=True)
-
-
-class NotifyEmailQueueEntryRecipient(models.Model):
-    TYPE_TO = 0
-    TYPE_CC = 1
-    TYPE_BCC = 2
-
-    TYPE_CHOICES = (
-        (TYPE_TO, "To"),
-        (TYPE_CC, "CC"),
-        (TYPE_BCC, "BCC"),
-    )
-
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    type = models.IntegerField(choices=TYPE_CHOICES)
-    email = models.CharField(max_length=256)
-    entry = models.ForeignKey(NotifyEmailQueueEntry, on_delete=models.CASCADE)

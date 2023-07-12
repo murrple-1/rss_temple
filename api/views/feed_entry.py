@@ -109,7 +109,7 @@ def feed_entries_favorite(request: Request) -> Response:
 def _feed_entry_get(request: Request, uuid_: uuid.UUID):
     field_maps: list[FieldMap]
     try:
-        fields = query_utils.get_fields__query_dict(request.GET)
+        fields = query_utils.get_fields__query_dict(request.query_params)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return Response(e.message, status=e.httpcode)

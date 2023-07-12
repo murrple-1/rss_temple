@@ -41,9 +41,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "rest_framework",
+    "rest_framework.authtoken",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.facebook",
+    "allauth.socialaccount.providers.google",
     "drf_yasg",
-    "knox",
     "corsheaders",
     "api.apps.ApiConfig",
 ]
@@ -213,8 +221,25 @@ else:
         },
     }
 
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ["APP_EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ["APP_EMAIL_PORT"])
+    EMAIL_HOST_USER = os.environ["APP_EMAIL_HOST_USER"]
+    EMAIL_HOST_PASSWORD = os.environ["APP_EMAIL_HOST_PASSWORD"]
+    EMAIL_USE_TLS = os.getenv("APP_EMAIL_USE_TLS", "false") == "true"
+    EMAIL_USE_SSL = os.getenv("APP_EMAIL_USE_SSL", "false") == "true"
+    EMAIL_TIMEOUT = (
+        None if (timeout := os.getenv("APP_EMAIL_TIMEOUT")) is None else float(timeout)
+    )
+
+# DRF
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("knox.auth.TokenAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.TokenAuthentication",
+    ),
     "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
     "DEFAULT_PARSER_CLASSES": (
         "drf_ujson.parsers.UJSONParser",
@@ -228,8 +253,22 @@ REST_FRAMEWORK = {
     ),
 }
 
+# AllAuth
+SITE_ID = 1
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+# dj-rest-auth
+REST_AUTH = {
+    "OLD_PASSWORD_FIELD_ENABLED": True,
+}
+
+# corsheaders
 CORS_ALLOW_ALL_ORIGINS = True
 
+# app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
     pass
@@ -252,10 +291,7 @@ DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
 
 GOOGLE_CLIENT_ID = os.environ["APP_GOOGLE_CLIENT_ID"]
-
-USER_VERIFICATION_EXPIRY_INTERVAL = datetime.timedelta(days=30)
-PASSWORDRESETTOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=1)
-VERIFY_URL_FORMAT = "http://localhost:4200/verify?token={verify_token}"
+GOOGLE_CALLBACK_URL = os.environ["APP_GOOGLE_CALLBACK_URL"]
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10

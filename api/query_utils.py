@@ -1,6 +1,5 @@
 from typing import Any
 
-import ujson
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver

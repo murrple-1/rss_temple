@@ -1,3 +1,10 @@
+from .auth import (
+    LoginView,
+    LogoutView,
+    PasswordChangeView,
+    PasswordResetConfirmView,
+    PasswordResetView,
+)
 from .explore import explore
 from .feed import feed, feed_subscribe, feeds_query
 from .feed_entry import (
@@ -10,20 +17,38 @@ from .feed_entry import (
     feed_entry_favorite,
     feed_entry_read,
 )
-from .login import LoginView, my_login
 from .opml import opml
-from .passwordresettoken import passwordresettoken_request, passwordresettoken_reset
 from .progress import feed_subscription_progress
-from .user import user, user_attributes, user_verify
+from .registration import RegisterView, ResendEmailVerificationView, VerifyEmailView
+from .social import (
+    FacebookConnectView,
+    FacebookDisconnectView,
+    FacebookLoginView,
+    GoogleConnectView,
+    GoogleDisconnectView,
+    GoogleLoginView,
+    SocialAccountListView,
+)
+from .user import user, user_attributes
 from .user_category import user_categories_apply, user_categories_query, user_category
 
 __all__ = [
-    "my_login",
     "LoginView",
-    "passwordresettoken_request",
-    "passwordresettoken_reset",
+    "LogoutView",
+    "PasswordChangeView",
+    "PasswordResetConfirmView",
+    "PasswordResetView",
+    "RegisterView",
+    "VerifyEmailView",
+    "ResendEmailVerificationView",
+    "SocialAccountListView",
+    "FacebookLoginView",
+    "FacebookConnectView",
+    "FacebookDisconnectView",
+    "GoogleLoginView",
+    "GoogleConnectView",
+    "GoogleDisconnectView",
     "user",
-    "user_verify",
     "user_attributes",
     "feed",
     "feeds_query",

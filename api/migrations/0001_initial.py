@@ -139,39 +139,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name="NotifyEmailQueueEntry",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("subject", models.CharField(max_length=256)),
-                ("plain_text", models.TextField(null=True)),
-                ("html_text", models.TextField(null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name="VerificationToken",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("expires_at", models.DateTimeField()),
-                (
-                    "user",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
             name="UserCategory",
             fields=[
                 (
@@ -243,48 +210,6 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
-            name="PasswordResetToken",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                ("expires_at", models.DateTimeField()),
-                (
-                    "user",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-            ],
-        ),
-        migrations.CreateModel(
-            name="NotifyEmailQueueEntryRecipient",
-            fields=[
-                (
-                    "uuid",
-                    models.UUIDField(
-                        default=uuid.uuid4, primary_key=True, serialize=False
-                    ),
-                ),
-                (
-                    "type",
-                    models.IntegerField(choices=[(0, "To"), (1, "CC"), (2, "BCC")]),
-                ),
-                ("email", models.CharField(max_length=256)),
-                (
-                    "entry",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="api.notifyemailqueueentry",
                     ),
                 ),
             ],

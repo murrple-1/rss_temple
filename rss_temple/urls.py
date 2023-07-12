@@ -24,6 +24,5 @@ urlpatterns = [
     ),
     path(r"redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path(r"admin/", admin.site.urls),
-    path(r"api/auth/", include("knox.urls")),
     path(r"api/", include("api.urls")),
 ]

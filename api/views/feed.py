@@ -80,7 +80,7 @@ def _save_feed(url: str):
 
 
 def _feed_get(request: Request):
-    url: str | None = request.GET.get("url")
+    url = request.query_params.get("url")
     if not url:
         raise ValidationError({"url": "missing"})
 
@@ -88,7 +88,7 @@ def _feed_get(request: Request):
 
     field_maps: list[FieldMap]
     try:
-        fields = query_utils.get_fields__query_dict(request.GET)
+        fields = query_utils.get_fields__query_dict(request.query_params)
         field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
     except QueryException as e:  # pragma: no cover
         return Response(e.message, status=e.httpcode)
@@ -181,9 +181,12 @@ def _feeds_query_post(request: Request):
 def _feed_subscribe_post(request: Request):
     user = cast(User, request.user)
 
-    url: str | None = request.GET.get("url")
+    url = request.data.get("url")
     if not url:
         raise ValidationError({"url": "missing"})
+
+    if not isinstance(url, str):
+        raise ValidationError({"url": "must be string"})
 
     url = cast(str, url_normalize(url))
 
@@ -196,7 +199,9 @@ def _feed_subscribe_post(request: Request):
         except QueryException as e:
             return Response(e.message, status=e.httpcode)
 
-    custom_title = request.GET.get("customtitle")
+    custom_title = request.data.get("customTitle")
+    if custom_title is not None and not isinstance(custom_title, str):
+        raise ValidationError({"customTitle": "must be string or null"})
 
     existing_subscription_list = list(
         SubscribedFeedUserMapping.objects.filter(user=user).values_list(
@@ -232,13 +237,18 @@ def _feed_subscribe_post(request: Request):
 def _feed_subscribe_put(request: Request):
     user = cast(User, request.user)
 
-    url = request.GET.get("url")
+    url = request.data.get("url")
     if not url:
         raise ValidationError({"url": "missing"})
 
+    if not isinstance(url, str):
+        raise ValidationError({"url": "must be string"})
+
     url = url_normalize(url)
 
-    custom_title = request.GET.get("customtitle")
+    custom_title = request.data.get("customTitle")
+    if custom_title is not None and not isinstance(custom_title, str):
+        raise ValidationError({"customTitle": "must be string or null"})
 
     subscribed_feed_mapping: SubscribedFeedUserMapping
     try:
@@ -263,9 +273,12 @@ def _feed_subscribe_put(request: Request):
 
 
 def _feed_subscribe_delete(request: Request):
-    url = request.GET.get("url")
+    url = request.data.get("url")
     if not url:
         raise ValidationError({"url": "missing"})
+
+    if not isinstance(url, str):
+        raise ValidationError({"url": "must be string"})
 
     url = url_normalize(url)
 

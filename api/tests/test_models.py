@@ -1,5 +1,4 @@
 import datetime
-import uuid
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -9,12 +8,10 @@ from django.utils import timezone
 from api.models import (
     Feed,
     FeedEntry,
-    PasswordResetToken,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
     User,
     UserCategory,
-    VerificationToken,
 )
 
 
@@ -119,52 +116,6 @@ class UserTestCase(TestCase):
 
         self.assertEqual(len(uuids), 1)
         self.assertIn(feed_entry.uuid, uuids)
-
-
-class VerificationTokenTestCase(TestCase):
-    def test_token_str(self):
-        verification_token = VerificationToken()
-
-        self.assertIs(type(verification_token.token_str()), str)
-
-    def test_find_by_token(self):
-        self.assertIsNone(VerificationToken.find_by_token("badtoken"))
-
-        self.assertIsNone(VerificationToken.find_by_token(str(uuid.uuid4())))
-
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        verification_token = VerificationToken.objects.create(
-            user=user,
-            expires_at=timezone.now() + datetime.timedelta(days=1),
-        )
-
-        self.assertIsNotNone(
-            VerificationToken.find_by_token(verification_token.token_str())
-        )
-
-
-class PasswordResetTokenTestCase(TestCase):
-    def test_token_str(self):
-        password_reset_token = PasswordResetToken()
-
-        self.assertIs(type(password_reset_token.token_str()), str)
-
-    def test_find_by_token(self):
-        self.assertIsNone(PasswordResetToken.find_by_token("badtoken"))
-
-        self.assertIsNone(PasswordResetToken.find_by_token(str(uuid.uuid4())))
-
-        user = User.objects.create_user("test_fields@test.com", None)
-
-        password_reset_token = PasswordResetToken.objects.create(
-            user=user,
-            expires_at=timezone.now() + datetime.timedelta(days=1),
-        )
-
-        self.assertIsNotNone(
-            PasswordResetToken.find_by_token(password_reset_token.token_str())
-        )
 
 
 class UserCategoryTestCase(TestCase):

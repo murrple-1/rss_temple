@@ -97,7 +97,8 @@ class FeedTestCase(TestFileServerTestCase):
         self.generate_credentials()
 
         response = self.client.post(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+            "/api/feed/subscribe",
+            {"url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml"},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -116,7 +117,8 @@ class FeedTestCase(TestFileServerTestCase):
         SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
 
         response = self.client.post(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+            "/api/feed/subscribe",
+            {"url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml"},
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -138,7 +140,11 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
         response = self.client.post(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0_ns/well_formed.xml&customtitle=Custom%20Title",
+            "/api/feed/subscribe",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0_ns/well_formed.xml",
+                "customTitle": "Custom Title",
+            },
         )
         self.assertEqual(response.status_code, 409, response.content)
 
@@ -153,7 +159,10 @@ class FeedTestCase(TestFileServerTestCase):
         self.generate_credentials()
 
         response = self.client.post(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
+            "/api/feed/subscribe?url=",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
+            },
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -174,7 +183,11 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
         response = self.client.put(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
+            "/api/feed/subscribe",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+                "customTitle": "Custom Title 2",
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -221,7 +234,11 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
         response = self.client.put(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
+            "/api/feed/subscribe",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+                "customTitle": "Custom Title 2",
+            },
         )
         self.assertEqual(response.status_code, 404, response.content)
         self.assertIn(b"not subscribed", response.content)
@@ -256,12 +273,20 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
         response = self.client.put(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title",
+            "/api/feed/subscribe",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+                "customTitle": "Custom Title",
+            },
         )
         self.assertEqual(response.status_code, 204, response.content)
 
         response = self.client.put(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml&customtitle=Custom%20Title%202",
+            "/api/feed/subscribe",
+            {
+                "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+                "customTitle": "Custom Title 2",
+            },
         )
         self.assertEqual(response.status_code, 409, response.content)
         self.assertIn(b"already used", response.content)
@@ -281,7 +306,8 @@ class FeedTestCase(TestFileServerTestCase):
         SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
 
         response = self.client.delete(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+            "/api/feed/subscribe",
+            {"url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml"},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -289,7 +315,8 @@ class FeedTestCase(TestFileServerTestCase):
         self.generate_credentials()
 
         response = self.client.delete(
-            f"/api/feed/subscribe?url={FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
+            "/api/feed/subscribe",
+            {"url": f"{FeedTestCase.live_server_url}/rss_2.0/sample-404.xml"},
         )
         self.assertEqual(response.status_code, 404, response.content)
 

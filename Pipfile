@@ -28,7 +28,7 @@ daphne = "*"
 psycopg2 = "*"
 django-redis = "*"
 drf-yasg = "*"
-django-rest-knox = "*"
+dj-rest-auth = {version = "*", extras = ["with_social"]}
 drf_ujson2 = "*"
 
 [dev-packages]
