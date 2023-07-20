@@ -4,6 +4,7 @@ from .auth import (
     PasswordChangeView,
     PasswordResetConfirmView,
     PasswordResetView,
+    password_reset_confirm_redirect,
 )
 from .explore import explore
 from .feed import feed, feed_subscribe, feeds_query
@@ -19,7 +20,13 @@ from .feed_entry import (
 )
 from .opml import opml
 from .progress import feed_subscription_progress
-from .registration import RegisterView, ResendEmailVerificationView, VerifyEmailView
+from .registration import (
+    RegisterView,
+    ResendEmailVerificationView,
+    VerifyEmailView,
+    email_verification_sent_redirect,
+    verify_email_redirect,
+)
 from .social import (
     FacebookConnectView,
     FacebookDisconnectView,
@@ -38,9 +45,12 @@ __all__ = [
     "PasswordChangeView",
     "PasswordResetConfirmView",
     "PasswordResetView",
+    "password_reset_confirm_redirect",
     "RegisterView",
     "VerifyEmailView",
     "ResendEmailVerificationView",
+    "verify_email_redirect",
+    "email_verification_sent_redirect",
     "SocialAccountListView",
     "FacebookLoginView",
     "FacebookConnectView",

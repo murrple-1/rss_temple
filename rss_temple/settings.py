@@ -259,6 +259,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 
 # dj-rest-auth
 REST_AUTH = {
@@ -299,6 +300,12 @@ USER_UNREAD_GRACE_MIN_COUNT = 10
 SUCCESS_BACKOFF_SECONDS = 60
 MIN_ERROR_BACKOFF_SECONDS = 60
 MAX_ERROR_BACKOFF_SECONDS = 7257600  # 3 months
+
+VERIFY_URL_FORMAT = "http://localhost:4200/verify?key={key}"
+VERIFICATION_EMAIL_SENT_URL_FORMAT = "http://localhost:4200/emailsent"
+PASSWORD_RESET_CONFIRM_FORMAT = (
+    "http://localhost:4200/passwordreset?uid={uidb64}&token={token}"
+)
 
 try:
     from .local_settings import *
