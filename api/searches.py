@@ -54,11 +54,6 @@ def _feedentry_is_favorite(request: HttpRequest, search_obj: str):
 
 
 _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
-    "user": {
-        "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
-        "email": lambda request, search_obj: Q(email__icontains=search_obj),
-        "email_exact": lambda request, search_obj: Q(email__iexact=search_obj),
-    },
     "usercategory": {
         "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
         "text": lambda request, search_obj: Q(text__icontains=search_obj),

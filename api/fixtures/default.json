@@ -11,5 +11,14 @@
         "is_active": true,
         "attributes": {}
     }
+},
+{
+    "model": "account.emailaddress",
+    "fields": {
+        "user": "36459680-3224-4678-aa68-72e38dd2998c",
+        "email": "test@test.com",
+        "verified": true,
+        "primary": true
+    }
 }
 ]

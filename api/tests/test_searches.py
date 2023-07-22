@@ -39,14 +39,14 @@ class SearchesTestCase(TestCase):
 
     def test_malformed(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("user", Mock(HttpRequest), "")
+            searches.to_filter_args("feed", Mock(HttpRequest), "")
 
         with self.assertRaises(QueryException):
-            searches.to_filter_args("user", Mock(HttpRequest), '((email:"test")')
+            searches.to_filter_args("feed", Mock(HttpRequest), '((title:"test")')
 
     def test_unknown_field(self):
         with self.assertRaises(QueryException):
-            searches.to_filter_args("feed", Mock(HttpRequest), 'email:"test"')
+            searches.to_filter_args("feed", Mock(HttpRequest), 'unknownfield:"test"')
 
     def test_malformed_value(self):
         with self.assertRaises(QueryException):
@@ -54,31 +54,31 @@ class SearchesTestCase(TestCase):
 
     def test_and(self):
         searches.to_filter_args(
-            "user", Mock(HttpRequest), 'email:"test" or email:"example"'
+            "feed", Mock(HttpRequest), 'title:"test" or title:"example"'
         )
         searches.to_filter_args(
-            "user", Mock(HttpRequest), 'email:"test" OR email:"example"'
+            "feed", Mock(HttpRequest), 'title:"test" OR title:"example"'
         )
 
     def test_or(self):
         searches.to_filter_args(
-            "user", Mock(HttpRequest), 'email:"test" and email:"example"'
+            "feed", Mock(HttpRequest), 'title:"test" and title:"example"'
         )
         searches.to_filter_args(
-            "user", Mock(HttpRequest), 'email:"test" AND email:"example"'
+            "feed", Mock(HttpRequest), 'title:"test" AND title:"example"'
         )
 
     def test_parenthesized(self):
         searches.to_filter_args(
-            "user",
+            "feed",
             Mock(HttpRequest),
-            'email:"word" or (email:"test" and email:"example")',
+            'title:"word" or (title:"test" and title:"example")',
         )
         searches.to_filter_args(
-            "user", Mock(HttpRequest), 'email:"test" or (email:"example")'
+            "feed", Mock(HttpRequest), 'title:"test" or (title:"example")'
         )
-        searches.to_filter_args("user", Mock(HttpRequest), '(email:"test")')
-        searches.to_filter_args("user", Mock(HttpRequest), '((email:"test"))')
+        searches.to_filter_args("feed", Mock(HttpRequest), '(title:"test")')
+        searches.to_filter_args("feed", Mock(HttpRequest), '((title:"test"))')
 
     def test_exclude(self):
         searches.to_filter_args(
@@ -97,14 +97,6 @@ class AllSearchesTestCase(TestCase):
         searches: dict[str, list[Any]]
 
     TRIALS: dict[str, _Trial] = {
-        "user": {
-            "get_queryset": lambda: User.objects,
-            "searches": {
-                "uuid": [str(uuid.uuid4())],
-                "email": ["test@test.com"],
-                "email_exact": ["test@test.com"],
-            },
-        },
         "usercategory": {
             "get_queryset": lambda: UserCategory.objects,
             "searches": {

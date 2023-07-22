@@ -22,19 +22,6 @@ def _feedentry_readAt(request: HttpRequest, db_obj: Any):
 
 
 _field_configs: dict[str, dict[str, _FieldConfig]] = {
-    "user": {
-        "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
-        "email": _FieldConfig(lambda request, db_obj: db_obj.email, False),
-        "subscribedFeedUuids": _FieldConfig(
-            lambda request, db_obj: [str(key) for key in db_obj.subscribed_feed_uuids],
-            False,
-        ),
-        "attributes": _FieldConfig(lambda request, db_obj: db_obj.attributes, False),
-        # TODO deprecate or rewrite
-        "hasGoogleLogin": _FieldConfig(lambda request, db_obj: False, False),
-        # TODO deprecate or rewrite
-        "hasFacebookLogin": _FieldConfig(lambda request, db_obj: False, False),
-    },
     "usercategory": {
         "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
         "text": _FieldConfig(lambda request, db_obj: db_obj.text, True),

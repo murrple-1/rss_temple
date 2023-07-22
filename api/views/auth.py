@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from dj_rest_auth.views import (
     LoginView,
@@ -6,49 +6,65 @@ from dj_rest_auth.views import (
     PasswordChangeView,
     PasswordResetConfirmView,
     PasswordResetView,
+    UserDetailsView,
 )
 from django.conf import settings
-from django.core.signals import setting_changed
-from django.dispatch import receiver
-from django.http.response import HttpResponseBase, HttpResponseRedirect
+from django.views.generic import RedirectView
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
+from rest_framework.response import Response
 
-_PASSWORD_RESET_CONFIRM_FORMAT: str
-
-
-@receiver(setting_changed)
-def _load_global_settings(*args: Any, **kwargs: Any):
-    global _PASSWORD_RESET_CONFIRM_FORMAT
-
-    _PASSWORD_RESET_CONFIRM_FORMAT = settings.PASSWORD_RESET_CONFIRM_FORMAT
+from api.models import User
 
 
-_load_global_settings()
-
-
-@api_view(["GET"])
-@permission_classes([permissions.AllowAny])
-def password_reset_confirm_redirect(
-    request: Request, uidb64: str, token: str
-) -> HttpResponseBase:
-    if request.method == "GET":
-        return _password_reset_confirm_redirect_get(request, uidb64, token)
+@api_view(["PUT"])
+@permission_classes([permissions.IsAuthenticated])
+def user_attributes(request: Request) -> Response:
+    if request.method == "PUT":
+        return _user_attributes_put(request)
     else:  # pragma: no cover
         raise ValueError
 
 
-def _password_reset_confirm_redirect_get(request: Request, uidb64: str, token: str):
-    return HttpResponseRedirect(
-        redirect_to=_PASSWORD_RESET_CONFIRM_FORMAT.format(uidb64=uidb64, token=token)
-    )
+def _user_attributes_put(request: Request):
+    if type(request.data) is not dict:
+        raise ValidationError({".": "must be object"})  # pragma: no cover
+
+    assert isinstance(request.data, dict)
+
+    user = cast(User, request.user)
+
+    user.attributes.update(request.data)
+
+    del_keys = set()
+    for key, value in user.attributes.items():
+        if value is None:
+            del_keys.add(key)
+
+    for key in del_keys:
+        del user.attributes[key]
+
+    user.save(update_fields=["attributes"])
+
+    return Response(status=204)
+
+
+class PasswordResetConfirmRedirect(RedirectView):
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        return settings.PASSWORD_RESET_CONFIRM_URL_FORMAT.format(
+            userId=kwargs["userId"], token=kwargs["token"]
+        )
 
 
 __all__ = [
     "LoginView",
     "LogoutView",
     "PasswordChangeView",
-    "PasswordResetConfirmView",
     "PasswordResetView",
+    "PasswordResetConfirmView",
+    "UserDetailsView",
+    "user_attributes",
+    "PasswordResetConfirmRedirect",
 ]

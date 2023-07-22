@@ -260,10 +260,16 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {"ID_TOKEN_ISSUER": "accounts.google.com"},
+    "facebook": {},
+}
+SOCIALACCOUNT_ADAPTER = "api.socialaccount_adapter.SocialAccountAdapter"
 
 # dj-rest-auth
 REST_AUTH = {
     "OLD_PASSWORD_FIELD_ENABLED": True,
+    "USER_DETAILS_SERIALIZER": "api.serializers.UserDetailsSerializer",
 }
 
 # corsheaders
@@ -291,9 +297,6 @@ DEFAULT_SKIP = 0
 DEFAULT_RETURN_OBJECTS = True
 DEFAULT_RETURN_TOTAL_COUNT = True
 
-GOOGLE_CLIENT_ID = os.environ["APP_GOOGLE_CLIENT_ID"]
-GOOGLE_CALLBACK_URL = os.environ["APP_GOOGLE_CALLBACK_URL"]
-
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
 
@@ -301,11 +304,12 @@ SUCCESS_BACKOFF_SECONDS = 60
 MIN_ERROR_BACKOFF_SECONDS = 60
 MAX_ERROR_BACKOFF_SECONDS = 7257600  # 3 months
 
-VERIFY_URL_FORMAT = "http://localhost:4200/verify?key={key}"
-VERIFICATION_EMAIL_SENT_URL_FORMAT = "http://localhost:4200/emailsent"
-PASSWORD_RESET_CONFIRM_FORMAT = (
-    "http://localhost:4200/passwordreset?uid={uidb64}&token={token}"
+ACCOUNT_CONFIRM_EMAIL_URL = "http://localhost:4200/verify"
+ACCOUNT_EMAIL_VERIFICATION_SENT_URL = "http://localhost:4200/emailsent"
+PASSWORD_RESET_CONFIRM_URL_FORMAT = (
+    "http://localhost:4200/resetpassword?token={token}&userId={userId}"
 )
+SOCIAL_CONNECTIONS_URL = "http://localhost:4200/main/profile"
 
 try:
     from .local_settings import *

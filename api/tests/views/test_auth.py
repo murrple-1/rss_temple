@@ -248,25 +248,55 @@ class AuthTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_password_reset_confirm_redirect_get(self):
-        if "allauth" in settings.INSTALLED_APPS:
-            from allauth.account.forms import default_token_generator
-        else:
-            from django.contrib.auth.tokens import default_token_generator
-
+    def test_UserDetailsView_get(self):
         user = User.objects.create_user("test@test.com", None)
 
-        with self.settings(
-            PASSWORD_RESET_CONFIRM_FORMAT="http://test.com/passwordreset?uid={uidb64}&token={token}"
-        ):
-            response = self.client.get(
-                f"/api/auth/redirect/passwordresetconfirm/{user.uuid}/{default_token_generator.make_token(user)}",
-                follow=False,
-            )
-            self.assertEqual(response.status_code, 302, response.content)
+        self.client.force_authenticate(user=user)
 
-            self.assertIn("Location", response.headers)
-            self.assertEqual(
-                response.headers["Location"],
-                f"http://test.com/passwordreset?uid={user.uuid}&token={default_token_generator.make_token(user)}",
-            )
+        response = self.client.get(
+            "/api/auth/user",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+
+        self.assertIn("subscribedFeedUuids", json_)
+
+    def test_user_attributes_put(self):
+        user = User.objects.create_user("test@test.com", None)
+
+        self.client.force_authenticate(user=user)
+
+        body = {
+            "test": "test_string",
+        }
+        response = self.client.put(
+            "/api/auth/user/attributes",
+            body,
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        user.refresh_from_db()
+        self.assertIn("test", user.attributes)
+        self.assertEqual(user.attributes["test"], "test_string")
+
+    def test_user_attributes_put_deletekeys(self):
+        user = User.objects.create_user("test@test.com", None)
+
+        self.client.force_authenticate(user=user)
+
+        user.attributes["test"] = "test_string"
+        user.save()
+
+        body = {
+            "test": None,
+        }
+
+        response = self.client.put(
+            "/api/auth/user/attributes",
+            body,
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        user.refresh_from_db()
+        self.assertNotIn("test", user.attributes)

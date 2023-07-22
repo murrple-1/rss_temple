@@ -26,9 +26,6 @@ services:
   rss_temple_feedscrapperdaemon:
     env_file:
       - .env
-  rss_temple_notifydaemon:
-    env_file:
-      - .env
   rss_temple_subscriptionsetupdaemon:
     env_file:
       - .env

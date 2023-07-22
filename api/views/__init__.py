@@ -2,9 +2,11 @@ from .auth import (
     LoginView,
     LogoutView,
     PasswordChangeView,
+    PasswordResetConfirmRedirect,
     PasswordResetConfirmView,
     PasswordResetView,
-    password_reset_confirm_redirect,
+    UserDetailsView,
+    user_attributes,
 )
 from .explore import explore
 from .feed import feed, feed_subscribe, feeds_query
@@ -20,46 +22,37 @@ from .feed_entry import (
 )
 from .opml import opml
 from .progress import feed_subscription_progress
-from .registration import (
-    RegisterView,
-    ResendEmailVerificationView,
-    VerifyEmailView,
-    email_verification_sent_redirect,
-    verify_email_redirect,
-)
+from .registration import RegisterView, ResendEmailVerificationView, VerifyEmailView
 from .social import (
-    FacebookConnectView,
-    FacebookDisconnectView,
-    FacebookLoginView,
-    GoogleConnectView,
-    GoogleDisconnectView,
-    GoogleLoginView,
+    FacebookConnect,
+    FacebookDisconnect,
+    FacebookLogin,
+    GoogleConnect,
+    GoogleDisconnect,
+    GoogleLogin,
     SocialAccountListView,
 )
-from .user import user, user_attributes
 from .user_category import user_categories_apply, user_categories_query, user_category
 
 __all__ = [
     "LoginView",
     "LogoutView",
     "PasswordChangeView",
-    "PasswordResetConfirmView",
     "PasswordResetView",
-    "password_reset_confirm_redirect",
-    "RegisterView",
-    "VerifyEmailView",
-    "ResendEmailVerificationView",
-    "verify_email_redirect",
-    "email_verification_sent_redirect",
-    "SocialAccountListView",
-    "FacebookLoginView",
-    "FacebookConnectView",
-    "FacebookDisconnectView",
-    "GoogleLoginView",
-    "GoogleConnectView",
-    "GoogleDisconnectView",
-    "user",
+    "PasswordResetConfirmView",
+    "UserDetailsView",
     "user_attributes",
+    "PasswordResetConfirmRedirect",
+    "RegisterView",
+    "ResendEmailVerificationView",
+    "VerifyEmailView",
+    "SocialAccountListView",
+    "FacebookLogin",
+    "FacebookConnect",
+    "FacebookDisconnect",
+    "GoogleLogin",
+    "GoogleConnect",
+    "GoogleDisconnect",
     "feed",
     "feeds_query",
     "feed_subscribe",

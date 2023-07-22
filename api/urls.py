@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.urls import re_path
+from django.views.generic import RedirectView
 
 from . import views
 
@@ -17,43 +19,64 @@ urlpatterns = [
     ),
     re_path(r"^auth/login/?$", views.LoginView.as_view()),
     re_path(r"^auth/logout/?$", views.LogoutView.as_view()),
-    re_path(
-        r"^auth/redirect/passwordresetconfirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/?$",
-        views.password_reset_confirm_redirect,
-        name="password_reset_confirm",
-    ),
+    re_path(r"^auth/user/?$", views.UserDetailsView.as_view()),
     re_path(
         r"^auth/password/change/?$",
         views.PasswordChangeView.as_view(),
     ),
-    re_path(r"^registration/?$", views.RegisterView.as_view()),
+    re_path(r"^auth/user/attributes/?$", views.user_attributes),
+    re_path(
+        r"^auth/redirect/passwordresetconfirm/(?P<userId>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/?$",
+        views.PasswordResetConfirmRedirect.as_view(),
+        name="password_reset_confirm",
+    ),
+    re_path(r"^registration/?$", views.RegisterView.as_view(), name="rest_register"),
     re_path(
         r"^registration/verifyemail/?$",
         views.VerifyEmailView.as_view(),
-    ),
-    re_path(
-        r"^registration/redirect/verifyemail/(?P<key>[-:\w]+)/?$",
-        views.verify_email_redirect,
-        name="account_confirm_email",
-    ),
-    re_path(
-        r"^registration/redirect/emailsent/?$",
-        views.email_verification_sent_redirect,
-        name="account_email_verification_sent",
+        name="rest_verify_email",
     ),
     re_path(
         r"^registration/resendemail/?$",
         views.ResendEmailVerificationView.as_view(),
+        name="rest_resend_email",
     ),
-    re_path(r"^social/?", views.SocialAccountListView.as_view()),
-    re_path(r"^social/google/?$", views.GoogleLoginView.as_view()),
-    re_path(r"^social/google/connect/?$", views.GoogleConnectView.as_view()),
-    re_path(r"^social/google/disconnect/?$", views.GoogleDisconnectView.as_view()),
-    re_path(r"^social/facebook/?$", views.FacebookLoginView.as_view()),
-    re_path(r"^social/facebook/connect/?$", views.FacebookConnectView.as_view()),
-    re_path(r"^social/facebook/disconnect/?$", views.FacebookDisconnectView.as_view()),
-    re_path(r"^user/?$", views.user),
-    re_path(r"^user/attributes/?$", views.user_attributes),
+    re_path(
+        r"^registration/redirect/accountconfirmemail/(?P<key>[-:\w]+)/?$",
+        RedirectView.as_view(url=settings.ACCOUNT_CONFIRM_EMAIL_URL, query_string=True),
+        name="account_confirm_email",
+    ),
+    re_path(
+        r"^registration/redirect/accountemailverificationsent/?$",
+        RedirectView.as_view(
+            url=settings.ACCOUNT_EMAIL_VERIFICATION_SENT_URL, query_string=True
+        ),
+        name="account_email_verification_sent",
+    ),
+    re_path(
+        r"^social/?$",
+        views.SocialAccountListView.as_view(),
+    ),
+    re_path(r"^social/google/?$", views.GoogleLogin.as_view()),
+    re_path(r"^social/google/connect/?$", views.GoogleConnect.as_view()),
+    re_path(
+        r"^social/google/disconnect/?$",
+        views.GoogleDisconnect.as_view(),
+    ),
+    re_path(r"^social/facebook/?$", views.FacebookLogin.as_view()),
+    re_path(
+        r"^social/facebook/connect/?$",
+        views.FacebookConnect.as_view(),
+    ),
+    re_path(
+        r"^social/facebook/disconnect/?$",
+        views.FacebookDisconnect.as_view(),
+    ),
+    re_path(
+        r"^social/redirect/socialaccountconnections",
+        RedirectView.as_view(url=settings.SOCIAL_CONNECTIONS_URL, query_string=True),
+        name="socialaccount_connections",
+    ),
     re_path(r"^feed/?$", views.feed),
     re_path(r"^feeds/query/?$", views.feeds_query),
     re_path(r"^feed/subscribe/?$", views.feed_subscribe),

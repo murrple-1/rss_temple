@@ -30,10 +30,6 @@ def _standard_sort(field_name: str):
 
 
 _sort_configs: dict[str, dict[str, _SortConfig]] = {
-    "user": {
-        "uuid": _SortConfig([_standard_sort("uuid")], _DefaultDescriptor(0, "ASC")),
-        "email": _SortConfig([_standard_sort("email")], None),
-    },
     "usercategory": {
         "uuid": _SortConfig([_standard_sort("uuid")], _DefaultDescriptor(0, "ASC")),
         "text": _SortConfig([_standard_sort("text")], None),

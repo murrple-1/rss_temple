@@ -254,17 +254,17 @@ class QueryUtilsTestCase(TestCase):
         )
 
     def test_get_search(self):
-        self.assertEqual(query_utils.get_search(Mock(HttpRequest), {}, "user"), [])
+        self.assertEqual(query_utils.get_search(Mock(HttpRequest), {}, "feed"), [])
         self.assertEqual(
             query_utils.get_search(
                 Mock(HttpRequest),
                 {
-                    "search": 'email:"test"',
+                    "search": 'title:"test"',
                 },
-                "user",
+                "feed",
             ),
             query_utils.searchutils.to_filter_args(
-                "user", Mock(HttpRequest), 'email:"test"'
+                "feed", Mock(HttpRequest), 'title:"test"'
             ),
         )
 
@@ -272,13 +272,13 @@ class QueryUtilsTestCase(TestCase):
             query_utils.get_search(
                 Mock(HttpRequest),
                 {
-                    "tsearch": 'email:"test"',
+                    "tsearch": 'title:"test"',
                 },
-                "user",
+                "feed",
                 param_name="tsearch",
             ),
             query_utils.searchutils.to_filter_args(
-                "user", Mock(HttpRequest), 'email:"test"'
+                "feed", Mock(HttpRequest), 'title:"test"'
             ),
         )
 

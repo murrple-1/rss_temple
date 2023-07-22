@@ -35,7 +35,6 @@ class _ObjectConfig:
 
 
 _object_configs = [
-    _ObjectConfig("user", 6, 1, "uuid"),
     _ObjectConfig("feed", 12, 1, "uuid"),
     _ObjectConfig("feedentry", 14, 1, "uuid"),
     _ObjectConfig("usercategory", 3, 2, "uuid"),
@@ -101,10 +100,6 @@ class AllFieldsTestCase(TestCase):
     feed_entry: ClassVar[FeedEntry]
 
     @classmethod
-    def generate_users(cls):
-        return [cls.user]
-
-    @classmethod
     def generate_usercategories(cls):
         return [cls.user_category]
 
@@ -136,7 +131,6 @@ class AllFieldsTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
 
         cls.TRIALS = {
-            "user": AllFieldsTestCase.generate_users,
             "usercategory": AllFieldsTestCase.generate_usercategories,
             "feed": AllFieldsTestCase.generate_feeds,
             "feedentry": AllFieldsTestCase.generate_feedentries,

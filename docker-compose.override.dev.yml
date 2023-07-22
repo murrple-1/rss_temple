@@ -39,24 +39,6 @@ services:
       context: ./
     volumes:
       - ./:/code/
-  rss_temple_notifydaemon:
-    image: rss_temple
-    command: >
-      bash -c "while ! python ./manage.py testready; do
-                 sleep 0.1
-               done
-
-               while ! python ./manage.py migrate --check; do
-                 sleep 5
-               done
-
-
-               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py notifydaemon --dry-run stmphost.com 1000 admin@rsstemple.com
-              "
-    build:
-      context: ./
-    volumes:
-      - ./:/code/
   rss_temple_subscriptionsetupdaemon:
     image: rss_temple
     command: >

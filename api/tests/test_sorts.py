@@ -99,7 +99,7 @@ class SortsTestCase(TestCase):
     def test_bad_sort_list(self):
         with self.assertRaises(QueryException):
             sorts.sort_list_to_order_by_args(
-                "user",
+                "feed",
                 [
                     {
                         "field_name": "bad_field",
@@ -116,9 +116,6 @@ class AllSortsTestCase(TestCase):
         get_queryset: Callable[[], BaseManager | QuerySet]
 
     TRIALS: dict[str, _Trial] = {
-        "user": {
-            "get_queryset": lambda: User.objects,
-        },
         "usercategory": {
             "get_queryset": lambda: UserCategory.objects,
         },
