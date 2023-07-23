@@ -65,6 +65,16 @@ class AuthTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
+    def test_LoginView_post_bad_credentials(self):
+        response = self.client.post(
+            "/api/auth/login",
+            {
+                "email": "unknown@test.com",
+                "password": "badpassword",
+            },
+        )
+        self.assertEqual(response.status_code, 401, response.content)
+
     def test_LogoutView_post(self):
         user = User.objects.create_user("test@test.com", None)
 
@@ -101,9 +111,8 @@ class AuthTestCase(APITestCase):
         response = self.client.post(
             "/api/auth/password/change",
             {
-                "old_password": "password",
-                "new_password1": "aC0mplic?tedTestPassword",
-                "new_password2": "aC0mplic?tedTestPassword",
+                "oldPassword": "password",
+                "newPassword": "aC0mplic?tedTestPassword",
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -114,6 +123,13 @@ class AuthTestCase(APITestCase):
         self.assertIn("detail", json_)
         self.assertIsInstance(json_["detail"], str)
 
+        self.assertTrue(
+            self.client.login(
+                email="test@test.com", password="aC0mplic?tedTestPassword"
+            )
+        )
+        self.assertFalse(self.client.login(email="test@test.com", password="password"))
+
     def test_PasswordChangeView_post_weak_password(self):
         user = User.objects.create_user("test@test.com", "password")
 
@@ -122,24 +138,8 @@ class AuthTestCase(APITestCase):
         response = self.client.post(
             "/api/auth/password/change",
             {
-                "old_password": "password",
-                "new_password1": "password2",
-                "new_password2": "password2",
-            },
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_PasswordChangeView_post_new_passwords_dont_match(self):
-        user = User.objects.create_user("test@test.com", "password")
-
-        self.client.force_authenticate(user=user)
-
-        response = self.client.post(
-            "/api/auth/password/change",
-            {
-                "old_password": "password",
-                "new_password1": "aC0mplic?tedTestPassword",
-                "new_password2": "aD1ff3rEntTestPassword",
+                "oldPassword": "password",
+                "newPassword": "password2",
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -177,9 +177,8 @@ class AuthTestCase(APITestCase):
         response = self.client.post(
             "/api/auth/password/reset/confirm",
             {
-                "new_password1": "aC0mplic?tedTestPassword",
-                "new_password2": "aC0mplic?tedTestPassword",
-                "uid": str(user.uuid),
+                "newPassword": "aC0mplic?tedTestPassword",
+                "userUuid": str(user.uuid),
                 "token": default_token_generator.make_token(user),
             },
         )
@@ -190,15 +189,20 @@ class AuthTestCase(APITestCase):
         self.assertIs(type(json_), dict)
         self.assertIn("detail", json_)
         self.assertIsInstance(json_["detail"], str)
+
+        self.assertTrue(
+            self.client.login(
+                email="test@test.com", password="aC0mplic?tedTestPassword"
+            )
+        )
 
         user = User.objects.create_user("test2@test.com", "password")
 
         response = self.client.post(
             "/api/auth/password/reset/confirm",
             {
-                "new_password1": "aC0mplic?tedTestPassword",
-                "new_password2": "aC0mplic?tedTestPassword",
-                "uid": str(user.uuid),
+                "newPassword": "aC0mplic?tedTestPassword",
+                "userUuid": str(user.uuid),
                 "token": default_token_generator.make_token(user),
             },
         )
@@ -209,6 +213,13 @@ class AuthTestCase(APITestCase):
         self.assertIs(type(json_), dict)
         self.assertIn("detail", json_)
         self.assertIsInstance(json_["detail"], str)
+
+        self.assertTrue(
+            self.client.login(
+                email="test2@test.com", password="aC0mplic?tedTestPassword"
+            )
+        )
+        self.assertFalse(self.client.login(email="test2@test.com", password="password"))
 
     def test_PasswordResetConfirmView_post_weak_password(self):
         if "allauth" in settings.INSTALLED_APPS:
@@ -221,28 +232,8 @@ class AuthTestCase(APITestCase):
         response = self.client.post(
             "/api/auth/password/reset/confirm",
             {
-                "new_password1": "password2",
-                "new_password2": "password2",
-                "uid": str(user.uuid),
-                "token": default_token_generator.make_token(user),
-            },
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_PasswordResetConfirmView_post_new_passwords_dont_match(self):
-        if "allauth" in settings.INSTALLED_APPS:
-            from allauth.account.forms import default_token_generator
-        else:
-            from django.contrib.auth.tokens import default_token_generator
-
-        user = User.objects.create_user("test@test.com", None)
-
-        response = self.client.post(
-            "/api/auth/password/reset/confirm",
-            {
-                "new_password1": "aC0mplic?tedTestPassword",
-                "new_password2": "aD1ff3rEntTestPassword",
-                "uid": str(user.uuid),
+                "newPassword": "password2",
+                "userId": str(user.uuid),
                 "token": default_token_generator.make_token(user),
             },
         )

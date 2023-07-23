@@ -1,14 +1,12 @@
 from typing import Any, cast
 
-from dj_rest_auth.views import (
-    LoginView,
-    LogoutView,
-    PasswordChangeView,
-    PasswordResetConfirmView,
-    PasswordResetView,
-    UserDetailsView,
-)
+from dj_rest_auth.views import LoginView, LogoutView
+from dj_rest_auth.views import PasswordChangeView as _PasswordChangeView
+from dj_rest_auth.views import PasswordResetConfirmView as _PasswordResetConfirmView
+from dj_rest_auth.views import PasswordResetView, UserDetailsView
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import RedirectView
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
@@ -17,6 +15,26 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from api.models import User
+
+sensitive_post_parameters_m = method_decorator(
+    sensitive_post_parameters(
+        "password",
+        "oldPassword",
+        "newPassword",
+    ),
+)
+
+
+class PasswordChangeView(_PasswordChangeView):
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+
+class PasswordResetConfirmView(_PasswordResetConfirmView):
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
 
 @api_view(["PUT"])

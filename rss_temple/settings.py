@@ -270,6 +270,10 @@ SOCIALACCOUNT_ADAPTER = "api.socialaccount_adapter.SocialAccountAdapter"
 REST_AUTH = {
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "USER_DETAILS_SERIALIZER": "api.serializers.UserDetailsSerializer",
+    "PASSWORD_CHANGE_SERIALIZER": "api.serializers.PasswordChangeSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "api.serializers.PasswordResetConfirmSerializer",
+    "REGISTER_SERIALIZER": "api.serializers.RegisterSerializer",
+    "LOGIN_SERIALIZER": "api.serializers.LoginSerializer",
 }
 
 # corsheaders

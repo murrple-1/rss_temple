@@ -33,8 +33,7 @@ class RegistrationTestCase(APITestCase):
             "/api/registration",
             {
                 "email": "test@test.com",
-                "password1": "aC0mplic?tedTestPassword",
-                "password2": "aC0mplic?tedTestPassword",
+                "password": "aC0mplic?tedTestPassword",
             },
         )
         self.assertEqual(response.status_code, 201, response.content)
@@ -53,19 +52,7 @@ class RegistrationTestCase(APITestCase):
             "/api/registration",
             {
                 "email": "test@test.com",
-                "password1": "password",
-                "password2": "password",
-            },
-        )
-        self.assertEqual(response.status_code, 400, response.content)
-
-    def test_RegisterView_post_passwords_dont_match(self):
-        response = self.client.post(
-            "/api/registration",
-            {
-                "email": "test@test.com",
-                "password1": "aC0mplic?tedTestPassword",
-                "password2": "aD1ff3rEntTestPassword",
+                "password": "password",
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
