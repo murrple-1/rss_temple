@@ -96,7 +96,7 @@ urlpatterns = [
     re_path(r"^opml/?$", views.opml),
     re_path(
         rf"^feed/subscribe/progress/({_uuid_regex})/?$",
-        views.feed_subscription_progress,
+        views.FeedSubscriptionProgressView.as_view(),
     ),
     re_path(r"^explore/?$", views.ExploreView.as_view()),
 ]

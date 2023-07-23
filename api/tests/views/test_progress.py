@@ -72,13 +72,13 @@ class ProgressTestCase(APITestCase):
             feed_subscription_progress_entry_descriptors,
         )
 
-    def test_feed_subscription_progress_get_404(self):
+    def test_FeedSubscriptionProgressView_get_404(self):
         response = self.client.get(
             f"/api/feed/subscribe/progress/{uuid.uuid4()}",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feed_subscription_progress_get_not_started(self):
+    def test_FeedSubscriptionProgressView_get_not_started(self):
         (
             feed_subscription_progress_entry,
             feed_subscription_progress_entry_descriptors,
@@ -95,7 +95,7 @@ class ProgressTestCase(APITestCase):
         self.assertIn("state", json_)
         self.assertEqual(json_["state"], "notstarted")
 
-    def test_feed_subscription_progress_get_started(self):
+    def test_FeedSubscriptionProgressView_get_started(self):
         (
             feed_subscription_progress_entry,
             feed_subscription_progress_entry_descriptors,
@@ -137,7 +137,7 @@ class ProgressTestCase(APITestCase):
         self.assertIn("finishedCount", json_)
         self.assertEqual(json_["finishedCount"], finished_count)
 
-    def test_feed_subscription_progress_get_finished(self):
+    def test_FeedSubscriptionProgressView_get_finished(self):
         (
             feed_subscription_progress_entry,
             feed_subscription_progress_entry_descriptors,

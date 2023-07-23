@@ -21,7 +21,7 @@ from .feed_entry import (
     feed_entry_read,
 )
 from .opml import opml
-from .progress import feed_subscription_progress
+from .progress import FeedSubscriptionProgressView
 from .registration import RegisterView, ResendEmailVerificationView, VerifyEmailView
 from .social import (
     FacebookConnect,
@@ -69,6 +69,6 @@ __all__ = [
     "user_categories_query",
     "user_categories_apply",
     "opml",
-    "feed_subscription_progress",
+    "FeedSubscriptionProgressView",
     "ExploreView",
 ]

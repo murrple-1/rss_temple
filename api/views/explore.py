@@ -1,9 +1,9 @@
 from typing import Any, TypedDict, cast
 
-from drf_yasg.views import APIView
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from api.models import Feed, FeedEntry, User
 
