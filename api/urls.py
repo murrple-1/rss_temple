@@ -24,10 +24,10 @@ urlpatterns = [
         r"^auth/password/change/?$",
         views.PasswordChangeView.as_view(),
     ),
-    re_path(r"^auth/user/attributes/?$", views.user_attributes),
+    re_path(r"^auth/user/attributes/?$", views.UserAttributesView.as_view()),
     re_path(
         r"^auth/redirect/passwordresetconfirm/(?P<userId>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/?$",
-        views.PasswordResetConfirmRedirect.as_view(),
+        views.PasswordResetConfirmRedirectView.as_view(),
         name="password_reset_confirm",
     ),
     re_path(r"^registration/?$", views.RegisterView.as_view(), name="rest_register"),

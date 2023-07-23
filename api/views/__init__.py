@@ -2,11 +2,11 @@ from .auth import (
     LoginView,
     LogoutView,
     PasswordChangeView,
-    PasswordResetConfirmRedirect,
+    PasswordResetConfirmRedirectView,
     PasswordResetConfirmView,
     PasswordResetView,
+    UserAttributesView,
     UserDetailsView,
-    user_attributes,
 )
 from .explore import explore
 from .feed import feed, feed_subscribe, feeds_query
@@ -41,8 +41,8 @@ __all__ = [
     "PasswordResetView",
     "PasswordResetConfirmView",
     "UserDetailsView",
-    "user_attributes",
-    "PasswordResetConfirmRedirect",
+    "UserAttributesView",
+    "PasswordResetConfirmRedirectView",
     "RegisterView",
     "ResendEmailVerificationView",
     "VerifyEmailView",

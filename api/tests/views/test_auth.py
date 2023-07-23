@@ -253,7 +253,7 @@ class AuthTestCase(APITestCase):
 
         self.assertIn("subscribedFeedUuids", json_)
 
-    def test_user_attributes_put(self):
+    def test_UserAttributesView_put(self):
         user = User.objects.create_user("test@test.com", None)
 
         self.client.force_authenticate(user=user)
@@ -271,7 +271,7 @@ class AuthTestCase(APITestCase):
         self.assertIn("test", user.attributes)
         self.assertEqual(user.attributes["test"], "test_string")
 
-    def test_user_attributes_put_deletekeys(self):
+    def test_UserAttributesView_put_deletekeys(self):
         user = User.objects.create_user("test@test.com", None)
 
         self.client.force_authenticate(user=user)
