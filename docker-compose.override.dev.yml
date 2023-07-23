@@ -17,6 +17,8 @@ services:
               "
     build:
       context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
     expose:
       - "8000"
     volumes:

@@ -16,6 +16,13 @@ class Command(BaseCommand):
         with open(options["fixture_filepath"], "r") as f:
             fixture_json = ujson.load(f)
 
+        fixture_json = [
+            json_
+            for json_ in fixture_json
+            if json_["model"]
+            not in ("api.googlelogin", "api.facebooklogin", "api.verificationtoken")
+        ]
+
         for mylogin_json in filter(
             (lambda j: j["model"] == "api.mylogin"), fixture_json
         ):
@@ -76,8 +83,24 @@ class Command(BaseCommand):
             j for j in fixture_json if j["model"] != "api.favoritefeedentryusermapping"
         ]
 
+        email_address_jsons: list[dict[str, Any]] = []
         for user_json in filter((lambda j: j["model"] == "api.user"), fixture_json):
             user_json["fields"]["created_at"] = user_json["fields"]["created_at"] + "Z"
+            user_json["fields"]["is_superuser"] = True
+            user_json["fields"]["is_staff"] = True
+            email_address_jsons.append(
+                {
+                    "model": "account.emailaddress",
+                    "fields": {
+                        "user": user_json["pk"],
+                        "email": user_json["fields"]["email"],
+                        "verified": True,
+                        "primary": True,
+                    },
+                }
+            )
+
+        fixture_json.extend(email_address_jsons)
 
         for verification_token_json in filter(
             (lambda j: j["model"] == "api.verificationtoken"), fixture_json
