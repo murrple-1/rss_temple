@@ -8,7 +8,7 @@ from .auth import (
     UserAttributesView,
     UserDetailsView,
 )
-from .explore import explore
+from .explore import ExploreView
 from .feed import feed, feed_subscribe, feeds_query
 from .feed_entry import (
     feed_entries_favorite,
@@ -70,5 +70,5 @@ __all__ = [
     "user_categories_apply",
     "opml",
     "feed_subscription_progress",
-    "explore",
+    "ExploreView",
 ]
