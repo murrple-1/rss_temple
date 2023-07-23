@@ -32,7 +32,12 @@ from .social import (
     GoogleLogin,
     SocialAccountListView,
 )
-from .user_category import user_categories_apply, user_categories_query, user_category
+from .user_category import (
+    UserCategoriesApplyView,
+    UserCategoriesQueryView,
+    UserCategoryCreateView,
+    UserCategoryView,
+)
 
 __all__ = [
     "LoginView",
@@ -65,9 +70,10 @@ __all__ = [
     "feed_entry_read",
     "feed_entry_favorite",
     "feed_entries_favorite",
-    "user_category",
-    "user_categories_query",
-    "user_categories_apply",
+    "UserCategoryView",
+    "UserCategoryCreateView",
+    "UserCategoriesQueryView",
+    "UserCategoriesApplyView",
     "opml",
     "FeedSubscriptionProgressView",
     "ExploreView",

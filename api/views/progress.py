@@ -1,6 +1,8 @@
 import uuid
 from typing import Any, cast
 
+from django.http.request import HttpRequest
+from django.http.response import HttpResponseBase
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -17,14 +19,18 @@ from api.models import (
 class FeedSubscriptionProgressView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get(self, request: Request, uuid_: str):
-        uuid__ = uuid.UUID(uuid_)
+    def dispatch(
+        self, request: HttpRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
+        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request: Request, **kwargs: Any):
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry
         try:
             feed_subscription_progress_entry = (
                 FeedSubscriptionProgressEntry.objects.get(
-                    uuid=uuid__, user=cast(User, request.user)
+                    uuid=kwargs["uuid"], user=cast(User, request.user)
                 )
             )
         except FeedSubscriptionProgressEntry.DoesNotExist:

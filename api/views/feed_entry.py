@@ -22,11 +22,11 @@ _OBJECT_NAME = "feedentry"
 
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
-def feed_entry(request: Request, uuid_: str) -> Response:
-    uuid__ = uuid.UUID(uuid_)
+def feed_entry(request: Request, **kwargs: Any) -> Response:
+    kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
 
     if request.method == "GET":
-        return _feed_entry_get(request, uuid__)
+        return _feed_entry_get(request, **kwargs)
     else:  # pragma: no cover
         raise ValueError
 
@@ -60,13 +60,13 @@ def feed_entries_query_stable(request: Request) -> Response:
 
 @api_view(["POST", "DELETE"])
 @permission_classes([permissions.IsAuthenticated])
-def feed_entry_read(request: Request, uuid_: str) -> Response:
-    uuid__ = uuid.UUID(uuid_)
+def feed_entry_read(request: Request, **kwargs: Any) -> Response:
+    kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
 
     if request.method == "POST":
-        return _feed_entry_read_post(request, uuid__)
+        return _feed_entry_read_post(request, **kwargs)
     elif request.method == "DELETE":
-        return _feed_entry_read_delete(request, uuid__)
+        return _feed_entry_read_delete(request, **kwargs)
     else:  # pragma: no cover
         raise ValueError
 
@@ -84,13 +84,13 @@ def feed_entries_read(request: Request) -> Response:
 
 @api_view(["POST", "DELETE"])
 @permission_classes([permissions.IsAuthenticated])
-def feed_entry_favorite(request: Request, uuid_: str) -> Response:
-    uuid__ = uuid.UUID(uuid_)
+def feed_entry_favorite(request: Request, **kwargs: Any) -> Response:
+    kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
 
     if request.method == "POST":
-        return _feed_entry_favorite_post(request, uuid__)
+        return _feed_entry_favorite_post(request, **kwargs)
     elif request.method == "DELETE":
-        return _feed_entry_favorite_delete(request, uuid__)
+        return _feed_entry_favorite_delete(request, **kwargs)
     else:  # pragma: no cover
         raise ValueError
 
@@ -106,7 +106,7 @@ def feed_entries_favorite(request: Request) -> Response:
         raise ValueError
 
 
-def _feed_entry_get(request: Request, uuid_: uuid.UUID):
+def _feed_entry_get(request: Request, **kwargs: Any):
     field_maps: list[FieldMap]
     try:
         fields = query_utils.get_fields__query_dict(request.query_params)
@@ -116,7 +116,7 @@ def _feed_entry_get(request: Request, uuid_: uuid.UUID):
 
     feed_entry: FeedEntry
     try:
-        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+        feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
     except FeedEntry.DoesNotExist:
         raise NotFound("feed entry not found")
 
@@ -310,12 +310,12 @@ def _feed_entries_query_stable_post(request: Request):
     return Response(ret_obj)
 
 
-def _feed_entry_read_post(request: Request, uuid_: uuid.UUID):
+def _feed_entry_read_post(request: Request, **kwargs: Any):
     read_feed_entry_user_mapping: ReadFeedEntryUserMapping
     with transaction.atomic():
         feed_entry: FeedEntry
         try:
-            feed_entry = FeedEntry.objects.get(uuid=uuid_)
+            feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
@@ -331,7 +331,7 @@ def _feed_entry_read_post(request: Request, uuid_: uuid.UUID):
     return Response(ret_obj)
 
 
-def _feed_entry_read_delete(request: Request, uuid_: uuid.UUID):
+def _feed_entry_read_delete(request: Request, **kwargs: Any):
     cast(User, request.user).read_feed_entries.clear()
     return Response(status=204)
 
@@ -420,10 +420,10 @@ def _feed_entries_read_delete(request: Request):
     return Response(status=204)
 
 
-def _feed_entry_favorite_post(request: Request, uuid_: uuid.UUID):
+def _feed_entry_favorite_post(request: Request, **kwargs: Any):
     feed_entry: FeedEntry
     try:
-        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+        feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
     except FeedEntry.DoesNotExist:
         return Response("feed entry not found", status=404)
 
@@ -432,10 +432,10 @@ def _feed_entry_favorite_post(request: Request, uuid_: uuid.UUID):
     return Response(status=204)
 
 
-def _feed_entry_favorite_delete(request: Request, uuid_: uuid.UUID):
+def _feed_entry_favorite_delete(request: Request, **kwargs: Any):
     feed_entry: FeedEntry
     try:
-        feed_entry = FeedEntry.objects.get(uuid=uuid_)
+        feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
     except FeedEntry.DoesNotExist:
         return Response(status=204)
 
