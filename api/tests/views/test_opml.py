@@ -38,7 +38,7 @@ class OPMLTestCase(APITestCase):
 
         self.client.force_authenticate(user=user)
 
-    def test_opml_get(self):
+    def test_OPMLView_get(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_mix-post.json")
 
         self._login()
@@ -46,7 +46,7 @@ class OPMLTestCase(APITestCase):
         response = self.client.get("/api/opml")
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_opml_post(self):
+    def test_OPMLView_post(self):
         OPMLTestCase._reset_db("api/fixtures/default.json")
 
         self._login()
@@ -61,7 +61,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 202, response.content)
 
-    def test_opml_post_malformed_xml(self):
+    def test_OPMLView_post_malformed_xml(self):
         OPMLTestCase._reset_db("api/fixtures/default.json")
 
         self._login()
@@ -77,7 +77,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_opml_post_malformed_opml(self):
+    def test_OPMLView_post_malformed_opml(self):
         OPMLTestCase._reset_db("api/fixtures/default.json")
 
         self._login()
@@ -93,7 +93,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_opml_post_duplicates(self):
+    def test_OPMLView_post_duplicates(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_mix-pre.json")
 
         self._login()
@@ -109,7 +109,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 202, response.content)
 
-    def test_opml_post_duplicatesinopml(self):
+    def test_OPMLView_post_duplicatesinopml(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_duplicates-pre.json")
 
         self._login()
@@ -125,7 +125,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 202, response.content)
 
-    def test_opml_post_done_before(self):
+    def test_OPMLView_post_done_before(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_no_404-post.json")
 
         self._login()
@@ -141,7 +141,7 @@ class OPMLTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_opml_post_quick_subscribe(self):
+    def test_OPMLView_post_quick_subscribe(self):
         OPMLTestCase._reset_db("api/tests/fixtures/opml_no_404-post.json")
 
         user = User.objects.get(email="test@test.com")

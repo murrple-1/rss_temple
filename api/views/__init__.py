@@ -20,7 +20,7 @@ from .feed_entry import (
     feed_entry_favorite,
     feed_entry_read,
 )
-from .opml import opml
+from .opml import OPMLView
 from .progress import FeedSubscriptionProgressView
 from .registration import RegisterView, ResendEmailVerificationView, VerifyEmailView
 from .social import (
@@ -74,7 +74,7 @@ __all__ = [
     "UserCategoryCreateView",
     "UserCategoriesQueryView",
     "UserCategoriesApplyView",
-    "opml",
+    "OPMLView",
     "FeedSubscriptionProgressView",
     "ExploreView",
 ]

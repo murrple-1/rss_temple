@@ -41,7 +41,7 @@ class UserCategoryTestCase(APITestCase):
 
         self.client.force_authenticate(user=UserCategoryTestCase.user)
 
-    def test_usercategory_get(self):
+    def test_UserCategoryView_get(self):
         user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -51,13 +51,13 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_usercategory_get_not_found(self):
+    def test_UserCategoryView_get_not_found(self):
         response = self.client.get(
             f"/api/usercategory/{uuid.uuid4()}",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_usercategory_post(self):
+    def test_UserCategoryCreateView_post(self):
         response = self.client.post(
             "/api/usercategory",
             {
@@ -66,7 +66,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_usercategory_post_malformed(self):
+    def test_UserCategoryCreateView_post_malformed(self):
         response = self.client.post(
             "/api/usercategory",
             {},
@@ -81,7 +81,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_usercategory_post_already_exists(self):
+    def test_UserCategoryCreateView_post_already_exists(self):
         UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -94,7 +94,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 409, response.content)
 
-    def test_usercategory_put(self):
+    def test_UserCategoryView_put(self):
         user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -107,7 +107,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_usercategory_put_malformed(self):
+    def test_UserCategoryView_put_malformed(self):
         user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -120,7 +120,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_usercategory_put_not_found(self):
+    def test_UserCategoryView_put_not_found(self):
         response = self.client.put(
             f"/api/usercategory/{uuid.uuid4()}",
             {
@@ -129,7 +129,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_usercategory_put_already_exists(self):
+    def test_UserCategoryView_put_already_exists(self):
         UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Already Exists Text"
         )
@@ -146,7 +146,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 409, response.content)
 
-    def test_usercategory_delete(self):
+    def test_UserCategoryView_delete(self):
         user_category = UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -156,13 +156,13 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_usercategory_delete_not_found(self):
+    def test_UserCategoryView_delete_not_found(self):
         response = self.client.delete(
             f"/api/usercategory/{uuid.uuid4()}",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_usercategories_query_post(self):
+    def test_UserCategoriesQueryView_post(self):
         UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -173,7 +173,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_usercategories_apply_put(self):
+    def test_UserCategoriesApplyView_put(self):
         feed1 = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
@@ -235,7 +235,7 @@ class UserCategoryTestCase(APITestCase):
         self.assertIsNotNone(user_category1.feeds.get(uuid=feed2.uuid))
         self.assertIsNotNone(user_category2.feeds.get(uuid=feed2.uuid))
 
-    def test_usercategories_apply_put_malformed(self):
+    def test_UserCategoriesApplyView_put_malformed(self):
         UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"
         )
@@ -264,7 +264,7 @@ class UserCategoryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_usercategories_apply_put_not_found(self):
+    def test_UserCategoriesApplyView_put_not_found(self):
         feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
