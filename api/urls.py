@@ -78,16 +78,21 @@ urlpatterns = [
     re_path(r"^feed/?$", views.FeedView.as_view()),
     re_path(r"^feeds/query/?$", views.FeedsQueryView.as_view()),
     re_path(r"^feed/subscribe/?$", views.FeedSubscribeView.as_view()),
-    re_path(rf"^feedentry/{_uuid_regex}/?$", views.feed_entry),
-    re_path(r"^feedentries/query/?$", views.feed_entries_query),
+    re_path(rf"^feedentry/{_uuid_regex}/?$", views.FeedEntryView.as_view()),
+    re_path(r"^feedentries/query/?$", views.FeedEntriesQueryView.as_view()),
     re_path(
-        r"^feedentries/query/stable/create/?$", views.feed_entries_query_stable_create
+        r"^feedentries/query/stable/create/?$",
+        views.FeedEntriesQueryStableCreateView.as_view(),
     ),
-    re_path(r"^feedentries/query/stable/?$", views.feed_entries_query_stable),
-    re_path(rf"^feedentry/{_uuid_regex}/read/?$", views.feed_entry_read),
-    re_path(r"^feedentries/read/?$", views.feed_entries_read),
-    re_path(rf"^feedentry/{_uuid_regex}/favorite/?$", views.feed_entry_favorite),
-    re_path(r"^feedentries/favorite/?$", views.feed_entries_favorite),
+    re_path(
+        r"^feedentries/query/stable/?$", views.FeedEntriesQueryStableView.as_view()
+    ),
+    re_path(rf"^feedentry/{_uuid_regex}/read/?$", views.FeedEntryReadView.as_view()),
+    re_path(r"^feedentries/read/?$", views.FeedEntriesReadView.as_view()),
+    re_path(
+        rf"^feedentry/{_uuid_regex}/favorite/?$", views.FeedEntryFavoriteView.as_view()
+    ),
+    re_path(r"^feedentries/favorite/?$", views.FeedEntriesFavoriteView.as_view()),
     re_path(rf"^usercategory/?$", views.UserCategoryCreateView.as_view()),
     re_path(rf"^usercategory/{_uuid_regex}/?$", views.UserCategoryView.as_view()),
     re_path(r"^usercategories/query/?$", views.UserCategoriesQueryView.as_view()),

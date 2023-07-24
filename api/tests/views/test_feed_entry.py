@@ -52,7 +52,7 @@ class FeedEntryTestCase(APITestCase):
 
         self.client.force_authenticate(user=FeedEntryTestCase.user)
 
-    def test_feedentry_get(self):
+    def test_FeedEntryView_get(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -70,13 +70,13 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_feedentry_get_not_found(self):
+    def test_FeedEntryView_get_not_found(self):
         response = self.client.get(
             f"/api/feedentry/{uuid.uuid4()}",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feedentries_query_post(self):
+    def test_FeedEntriesQueryView_post(self):
         FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -95,7 +95,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_feedentry_read_post(self):
+    def test_FeedEntryReadView_post(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -122,13 +122,13 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentry_read_post_not_found(self):
+    def test_FeedEntryReadView_post_not_found(self):
         response = self.client.post(
             f"/api/feedentry/{uuid.uuid4()}/read",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feedentry_read_post_duplicate(self):
+    def test_FeedEntryReadView_post_duplicate(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -157,7 +157,7 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentry_read_delete(self):
+    def test_FeedEntryReadView_delete(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -185,7 +185,7 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentries_read_post(self):
+    def test_FeedEntriesReadView_post(self):
         feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -260,21 +260,21 @@ class FeedEntryTestCase(APITestCase):
             2,
         )
 
-    def test_feedentries_read_post_noentries(self):
+    def test_FeedEntriesReadView_post_noentries(self):
         response = self.client.post(
             "/api/feedentries/read",
             {},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_typeerror(self):
+    def test_FeedEntriesReadView_post_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
             [],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feeduuids_typeerror(self):
+    def test_FeedEntriesReadView_post_feeduuids_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -283,7 +283,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feeduuids_element_typeerror(self):
+    def test_FeedEntriesReadView_post_feeduuids_element_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -292,7 +292,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feeduuids_element_malformed(self):
+    def test_FeedEntriesReadView_post_feeduuids_element_malformed(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -301,7 +301,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feedentryuuids_typeerror(self):
+    def test_FeedEntriesReadView_post_feedentryuuids_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -310,7 +310,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feedentryuuids_element_typeerror(self):
+    def test_FeedEntriesReadView_post_feedentryuuids_element_typeerror(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -319,7 +319,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_feedentryuuids_element_malformed(self):
+    def test_FeedEntriesReadView_post_feedentryuuids_element_malformed(self):
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -328,7 +328,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_read_post_duplicate(self):
+    def test_FeedEntriesReadView_post_duplicate(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -353,7 +353,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_read_delete(self):
+    def test_FeedEntriesReadView_delete(self):
         feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -398,21 +398,21 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentries_read_delete_shortcut(self):
+    def test_FeedEntriesReadView_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/read",
             [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_read_delete_malformed(self):
+    def test_FeedEntriesReadView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/read",
             [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentry_favorite_post(self):
+    def test_FeedEntryFavoriteView_post(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -436,13 +436,13 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentry_favorite_post_not_found(self):
+    def test_FeedEntryFavoriteView_post_not_found(self):
         response = self.client.post(
             f"/api/feedentry/{uuid.uuid4()}/favorite",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feedentry_favorite_post_duplicate(self):
+    def test_FeedEntryFavoriteView_post_duplicate(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -462,7 +462,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentry_favorite_delete(self):
+    def test_FeedEntryFavoriteView_delete(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -488,7 +488,7 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentry_favorite_delete_not_exist(self):
+    def test_FeedEntryFavoriteView_delete_not_exist(self):
         uuid_ = uuid.UUID(int=0)
 
         response = self.client.delete(
@@ -496,7 +496,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_favorite_post(self):
+    def test_FeedEntriesFavoriteView_post(self):
         feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -534,28 +534,28 @@ class FeedEntryTestCase(APITestCase):
             2,
         )
 
-    def test_feedentries_favorite_post_shortcut(self):
+    def test_FeedEntriesFavoriteView_post_shortcut(self):
         response = self.client.post(
             "/api/feedentries/favorite",
             [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_favorite_post_malformed(self):
+    def test_FeedEntriesFavoriteView_post_malformed(self):
         response = self.client.post(
             "/api/feedentries/favorite",
             [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_favorite_post_not_found(self):
+    def test_FeedEntriesFavoriteView_post_not_found(self):
         response = self.client.post(
             "/api/feedentries/favorite",
             [str(uuid.uuid4())],
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feedentries_favorite_post_duplicate(self):
+    def test_FeedEntriesFavoriteView_post_duplicate(self):
         feed_entry = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -576,7 +576,7 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_favorite_delete(self):
+    def test_FeedEntriesFavoriteView_delete(self):
         feed_entry1 = FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -615,21 +615,21 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
-    def test_feedentries_favorite_delete_shortcut(self):
+    def test_FeedEntriesFavoriteView_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
             [],
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feedentries_favorite_delete_malformed(self):
+    def test_FeedEntriesFavoriteView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
             [0],
         )
         self.assertEqual(response.status_code, 400, response.content)
 
-    def test_feedentries_query_stable_create_post(self):
+    def test_FeedEntriesQueryStableCreateView_post(self):
         response = self.client.post(
             "/api/feedentries/query/stable/create",
             {},
@@ -639,7 +639,7 @@ class FeedEntryTestCase(APITestCase):
         json_ = response.json()
         self.assertIsInstance(json_, str)
 
-    def test_feedentries_query_stable_post(self):
+    def test_FeedEntriesQueryStableView_post(self):
         FeedEntry.objects.create(
             id=None,
             feed=FeedEntryTestCase.feed,
@@ -675,7 +675,7 @@ class FeedEntryTestCase(APITestCase):
         self.assertIn("objects", json_)
         self.assertIsInstance(json_["objects"], list)
 
-    def test_feedentries_query_stable_post_token_missing(self):
+    def test_FeedEntriesQueryStableView_post_token_missing(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
             {},
@@ -684,7 +684,7 @@ class FeedEntryTestCase(APITestCase):
         self.assertIn(b"token", response.content)
         self.assertIn(b"missing", response.content)
 
-    def test_feedentries_query_stable_post_token_typeerror(self):
+    def test_FeedEntriesQueryStableView_post_token_typeerror(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
             {
@@ -695,7 +695,7 @@ class FeedEntryTestCase(APITestCase):
         self.assertIn(b"token", response.content)
         self.assertIn(b"must be", response.content)
 
-    def test_feedentries_query_stable_post_token_malformed(self):
+    def test_FeedEntriesQueryStableView_post_token_malformed(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
             {
@@ -706,7 +706,7 @@ class FeedEntryTestCase(APITestCase):
         self.assertIn(b"token", response.content)
         self.assertIn(b"malformed", response.content)
 
-    def test_feedentries_query_stable_post_token_valid(self):
+    def test_FeedEntriesQueryStableView_post_token_valid(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
             {
