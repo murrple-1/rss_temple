@@ -7,6 +7,7 @@ from dj_rest_auth.serializers import LoginSerializer as _LoginSerializer
 from dj_rest_auth.serializers import UserDetailsSerializer as _UserDetailsSerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http.request import HttpRequest
 from django.urls import exceptions as url_exceptions
@@ -21,21 +22,12 @@ try:
 except ImportError:
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
-from api.models import User
+from api.models import Feed, User
 
 
 class LoginSerializer(_LoginSerializer):
     def get_auth_user(self, username, email, password):
-        """
-        Retrieve the auth user from given POST payload by using
-        either `allauth` auth scheme or bare Django auth scheme.
-
-        Returns the authenticated user instance if credentials are correct,
-        else `None` will be returned
-        """
         if "allauth" in settings.INSTALLED_APPS:
-            # When `is_active` of a user is set to False, allauth tries to return template html
-            # which does not exist. This is the solution for it. See issue #264.
             try:
                 return self.get_auth_user_using_allauth(username, email, password)
             except url_exceptions.NoReverseMatch:
@@ -53,10 +45,8 @@ class LoginSerializer(_LoginSerializer):
         if not user:
             raise AuthenticationFailed("Unable to log in with provided credentials.")
 
-        # Did we get back an active user?
         self.validate_auth_user_status(user)
 
-        # If required, is the email verified?
         if "dj_rest_auth.registration" in settings.INSTALLED_APPS:
             self.validate_email_verification_status(user, email=email)
 
@@ -65,8 +55,10 @@ class LoginSerializer(_LoginSerializer):
 
 
 class UserDetailsSerializer(serializers.ModelSerializer):
-    subscribedFeedUuids = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source="subscribed_feeds"
+    subscribedFeedUuids: "serializers.PrimaryKeyRelatedField[Feed]" = (
+        serializers.PrimaryKeyRelatedField(
+            many=True, read_only=True, source="subscribed_feeds"
+        )
     )
 
     class Meta(_UserDetailsSerializer.Meta):
@@ -126,6 +118,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         if not self.logout_on_password_change:
             from django.contrib.auth import update_session_auth_hash
 
+            assert isinstance(self.request.user, AbstractBaseUser)
             update_session_auth_hash(self.request, self.request.user)
 
 
@@ -190,7 +183,7 @@ class RegisterSerializer(serializers.Serializer):
         if allauth_account_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
                 raise serializers.ValidationError(
-                    _("A user is already registered with this e-mail address."),
+                    "A user is already registered with this e-mail address.",
                 )
         return email
 

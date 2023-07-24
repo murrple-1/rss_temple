@@ -47,4 +47,4 @@ class Command(BaseCommand):
             google_social_app.save(update_fields=("client_id", "secret"))
             facebook_social_app.save(update_fields=("client_id", "secret"))
 
-            site.socialapp_set.add(google_social_app, facebook_social_app)
+            site.socialapp_set.add(google_social_app, facebook_social_app)  # type: ignore

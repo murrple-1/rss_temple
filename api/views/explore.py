@@ -8,21 +8,23 @@ from rest_framework.views import APIView
 from api.models import Feed, FeedEntry, User
 
 
+class _FeedDesc(TypedDict):
+    feed_url: str
+    image_src: str | None
+
+
+class _Section(TypedDict):
+    tag: str
+    feeds: list[_FeedDesc]
+
+
 class ExploreView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request: Request):
         # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
 
-        class FeedDesc(TypedDict):
-            feed_url: str
-            image_src: str | None
-
-        class Section(TypedDict):
-            tag: str
-            feeds: list[FeedDesc]
-
-        section_lookups: list[Section] = [
+        section_lookups: list[_Section] = [
             {
                 "tag": "Gaming",
                 "feeds": [

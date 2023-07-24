@@ -31,13 +31,9 @@ class SocialTestCase(APITestCase):
         site = Site.objects.get_current()
 
         # TODO setup ids and secrets
-        site.socialapp_set.create(
-            provider="google", name="Google", client_id="", secret=""
-        )
+        site.socialapp_set.create(provider="google", name="Google", client_id="", secret="")  # type: ignore
 
-        site.socialapp_set.create(
-            provider="facebook", name="Facebook", client_id="", secret=""
-        )
+        site.socialapp_set.create(provider="facebook", name="Facebook", client_id="", secret="")  # type: ignore
 
     def test_SocialAccountListView_get(self):
         user = User.objects.create_user("test@test.com", None)
