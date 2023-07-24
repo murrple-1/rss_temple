@@ -9,7 +9,7 @@ from .auth import (
     UserDetailsView,
 )
 from .explore import ExploreView
-from .feed import feed, feed_subscribe, feeds_query
+from .feed import FeedsQueryView, FeedSubscribeView, FeedView
 from .feed_entry import (
     feed_entries_favorite,
     feed_entries_query,
@@ -58,9 +58,9 @@ __all__ = [
     "GoogleLogin",
     "GoogleConnect",
     "GoogleDisconnect",
-    "feed",
-    "feeds_query",
-    "feed_subscribe",
+    "FeedView",
+    "FeedsQueryView",
+    "FeedSubscribeView",
     "feed_entry",
     "feed_entries_query",
     "feed_entries_query_stable_create",

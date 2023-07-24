@@ -37,7 +37,7 @@ class FeedTestCase(TestFileServerTestCase):
         return user
 
     @tag("slow")
-    def test_feed_get(self):
+    def test_FeedView_get(self):
         self.generate_credentials()
 
         response = self.client.get(
@@ -49,14 +49,14 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    def test_feed_get_no_url(self):
+    def test_FeedView_get_no_url(self):
         self.generate_credentials()
 
         response = self.client.get("/api/feed")
         self.assertEqual(response.status_code, 400, response.content)
 
     @tag("slow")
-    def test_feed_get_non_rss_url(self):
+    def test_FeedView_get_non_rss_url(self):
         self.generate_credentials()
 
         response = self.client.get(
@@ -67,7 +67,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feeds_query_post(self):
+    def test_FeedsQueryView_post(self):
         self.generate_credentials()
 
         Feed.objects.create(
@@ -93,7 +93,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertGreaterEqual(len(json_["objects"]), 1)
 
     @tag("slow")
-    def test_feed_subscribe_post(self):
+    def test_FeedSubscribeView_post(self):
         self.generate_credentials()
 
         response = self.client.post(
@@ -102,7 +102,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feed_subscribe_post_duplicate(self):
+    def test_FeedSubscribeView_post_duplicate(self):
         user = self.generate_credentials()
 
         feed = Feed.objects.create(
@@ -123,7 +123,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertEqual(response.status_code, 409, response.content)
 
     @tag("slow")
-    def test_feed_subscribe_post_existing_custom_title(self):
+    def test_FeedSubscribeView_post_existing_custom_title(self):
         user = self.generate_credentials()
 
         feed = Feed.objects.create(
@@ -148,14 +148,14 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 409, response.content)
 
-    def test_feed_subscribe_post_no_url(self):
+    def test_FeedSubscribeView_post_no_url(self):
         self.generate_credentials()
 
         response = self.client.post("/api/feed/subscribe")
         self.assertEqual(response.status_code, 400, response.content)
 
     @tag("slow")
-    def test_feed_subscribe_post_non_rss_url(self):
+    def test_FeedSubscribeView_post_non_rss_url(self):
         self.generate_credentials()
 
         response = self.client.post(
@@ -166,7 +166,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feed_subscribe_put(self):
+    def test_FeedSubscribeView_put(self):
         user = self.generate_credentials()
 
         feed = Feed.objects.create(
@@ -198,7 +198,7 @@ class FeedTestCase(TestFileServerTestCase):
             1,
         )
 
-    def test_feed_subscribe_put_no_url(self):
+    def test_FeedSubscribeView_put_no_url(self):
         user = self.generate_credentials()
 
         feed = Feed.objects.create(
@@ -221,7 +221,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertIn(b"url", response.content)
         self.assertIn(b"missing", response.content)
 
-    def test_feed_subscribe_put_not_subscribed(self):
+    def test_FeedSubscribeView_put_not_subscribed(self):
         self.generate_credentials()
 
         Feed.objects.create(
@@ -243,7 +243,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertEqual(response.status_code, 404, response.content)
         self.assertIn(b"not subscribed", response.content)
 
-    def test_feed_subscribe_put_renames(self):
+    def test_FeedSubscribeView_put_renames(self):
         user = self.generate_credentials()
 
         feed1 = Feed.objects.create(
@@ -291,7 +291,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertEqual(response.status_code, 409, response.content)
         self.assertIn(b"already used", response.content)
 
-    def test_feed_subscribe_delete(self):
+    def test_FeedSubscribeView_delete(self):
         user = self.generate_credentials()
 
         feed = Feed.objects.create(
@@ -311,7 +311,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 204, response.content)
 
-    def test_feed_subscribe_delete_not_subscribed(self):
+    def test_FeedSubscribeView_delete_not_subscribed(self):
         self.generate_credentials()
 
         response = self.client.delete(
@@ -320,7 +320,7 @@ class FeedTestCase(TestFileServerTestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_feed_subscribe_delete_no_url(self):
+    def test_FeedSubscribeView_delete_no_url(self):
         self.generate_credentials()
 
         response = self.client.delete("/api/feed/subscribe")

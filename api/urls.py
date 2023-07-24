@@ -75,9 +75,9 @@ urlpatterns = [
         RedirectView.as_view(url=settings.SOCIAL_CONNECTIONS_URL, query_string=True),
         name="socialaccount_connections",
     ),
-    re_path(r"^feed/?$", views.feed),
-    re_path(r"^feeds/query/?$", views.feeds_query),
-    re_path(r"^feed/subscribe/?$", views.feed_subscribe),
+    re_path(r"^feed/?$", views.FeedView.as_view()),
+    re_path(r"^feeds/query/?$", views.FeedsQueryView.as_view()),
+    re_path(r"^feed/subscribe/?$", views.FeedSubscribeView.as_view()),
     re_path(rf"^feedentry/{_uuid_regex}/?$", views.feed_entry),
     re_path(r"^feedentries/query/?$", views.feed_entries_query),
     re_path(
