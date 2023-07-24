@@ -96,11 +96,6 @@ class UserCategoryCreateView(APIView):
         except QueryException as e:  # pragma: no cover
             return Response(e.message, status=e.httpcode)
 
-        if type(request.data) is not dict:
-            return Response("JSON body must be object", status=400)  # pragma: no cover
-
-        assert isinstance(request.data, dict)
-
         if "text" not in request.data:
             return Response("'text' missing", status=400)
 

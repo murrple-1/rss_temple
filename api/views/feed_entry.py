@@ -261,9 +261,14 @@ class FeedEntryReadView(APIView):
         return Response(ret_obj)
 
     def delete(self, request: Request, **kwargs: Any):
-        ReadFeedEntryUserMapping.objects.filter(
-            user=cast(User, request.user), feed_entry_id=kwargs["uuid"]
-        ).delete()
+        feed_entry: FeedEntry
+        try:
+            feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
+        except FeedEntry.DoesNotExist:
+            return Response(status=204)
+
+        cast(User, request.user).read_feed_entries.remove(feed_entry)
+
         return Response(status=204)
 
 
@@ -333,17 +338,20 @@ class FeedEntriesReadView(APIView):
         return Response(status=204)
 
     def delete(self, request: Request):
-        if type(request.data) is not list:
-            raise ValidationError({".": "must be array"})  # pragma: no cover
+        if "feedEntryUuids" not in request.data:
+            raise ValidationError({"feedEntryUuids": "missing"})
 
-        assert isinstance(request.data, list)
+        feed_entry_uuid_strs = request.data["feedEntryUuids"]
+
+        if type(feed_entry_uuid_strs) is not list:
+            raise ValidationError({"feedEntryUuids": "must be array"})
 
         if len(request.data) < 1:
             return Response(status=204)
 
         _ids: frozenset[uuid.UUID]
         try:
-            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in request.data)
+            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in feed_entry_uuid_strs)
         except (ValueError, TypeError, AttributeError):
             raise ValidationError({".[]": "uuid malformed"})
 
@@ -388,19 +396,21 @@ class FeedEntriesFavoriteView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request: Request):
-        if type(request.data) is not list:
-            raise ValidationError({".": "must be array"})  # pragma: no cover
+        if "feedEntryUuids" not in request.data:
+            raise ValidationError({"feedEntryUuids": "missing"})
 
-        assert isinstance(request.data, list)
+        feed_entry_uuid_strs = request.data["feedEntryUuids"]
+        if type(feed_entry_uuid_strs) is not list:
+            raise ValidationError({"feedEntryUuids": "must be array"})
 
-        if len(request.data) < 1:
+        if len(feed_entry_uuid_strs) < 1:
             return Response(status=204)
 
         _ids: frozenset[uuid.UUID]
         try:
-            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in request.data)
+            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in feed_entry_uuid_strs)
         except (ValueError, TypeError, AttributeError):
-            raise ValidationError({".[]": "uuid malformed"})
+            raise ValidationError({"feedEntryUuids[]": "uuid malformed"})
 
         feed_entries = list(FeedEntry.objects.filter(uuid__in=_ids))
 
@@ -413,17 +423,19 @@ class FeedEntriesFavoriteView(APIView):
         return Response(status=204)
 
     def delete(self, request: Request):
-        if type(request.data) is not list:
-            return Response("JSON body must be array", status=400)  # pragma: no cover
+        if "feedEntryUuids" not in request.data:
+            raise ValidationError({"feedEntryUuids": "missing"})
 
-        assert isinstance(request.data, list)
+        feed_entry_uuid_strs = request.data["feedEntryUuids"]
+        if type(feed_entry_uuid_strs) is not list:
+            raise ValidationError({"feedEntryUuids": "must be array"})
 
-        if len(request.data) < 1:
+        if len(feed_entry_uuid_strs) < 1:
             return Response(status=204)
 
         _ids: frozenset[uuid.UUID]
         try:
-            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in request.data)
+            _ids = frozenset(uuid.UUID(uuid_) for uuid_ in feed_entry_uuid_strs)
         except (ValueError, TypeError, AttributeError):
             raise ValidationError({".[]": "uuid malformed"})
 

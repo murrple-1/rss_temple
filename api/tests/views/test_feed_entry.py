@@ -388,7 +388,7 @@ class FeedEntryTestCase(APITestCase):
 
         response = self.client.delete(
             "/api/feedentries/read",
-            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -401,14 +401,14 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesReadView_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/read",
-            [],
+            {"feedEntryUuids": []},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_FeedEntriesReadView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/read",
-            [0],
+            {"feedEntryUuids": [0]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -523,7 +523,7 @@ class FeedEntryTestCase(APITestCase):
 
         response = self.client.post(
             "/api/feedentries/favorite",
-            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -537,21 +537,21 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesFavoriteView_post_shortcut(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            [],
+            {"feedEntryUuids": []},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_FeedEntriesFavoriteView_post_malformed(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            [0],
+            {"feedEntryUuids": [0]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
     def test_FeedEntriesFavoriteView_post_not_found(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            [str(uuid.uuid4())],
+            {"feedEntryUuids": [str(uuid.uuid4())]},
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -572,7 +572,7 @@ class FeedEntryTestCase(APITestCase):
 
         response = self.client.post(
             "/api/feedentries/favorite",
-            [str(feed_entry.uuid)],
+            {"feedEntryUuids": [str(feed_entry.uuid)]},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -605,7 +605,7 @@ class FeedEntryTestCase(APITestCase):
 
         response = self.client.delete(
             "/api/feedentries/favorite",
-            [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
@@ -618,14 +618,14 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesFavoriteView_delete_shortcut(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
-            [],
+            {"feedEntryUuids": []},
         )
         self.assertEqual(response.status_code, 204, response.content)
 
     def test_FeedEntriesFavoriteView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
-            [0],
+            {"feedEntryUuids": [0]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
