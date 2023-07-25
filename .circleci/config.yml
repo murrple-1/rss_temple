@@ -3,23 +3,52 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - build
+      - build_latest:
+          filters:
+            branches:
+              only: master
+            tags:
+              ignore: /.*/
+      - build_tag:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - test
 jobs:
-  build:
+  build_latest:
     docker:
-      - image: cimg/base:2022.08
+      - image: docker:20
     steps:
       - checkout
+      - setup_remote_docker
       - run:
-          name: remove unneeded files
+          name: Docker Build
+          command: docker build -t rss_temple:latest .
+      - run:
+          name: Docker Upload
           command: |
-            rm -r api/tests/
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker tag rss_temple:latest $DOCKER_USERNAME/rss_temple:latest
+            docker push $DOCKER_USERNAME/rss_temple:latest
+
+  build_tag:
+    docker:
+      - image: docker:20
+    steps:
+      - checkout
+      - setup_remote_docker
       - run:
-          name: tarball
-          command: tar -czf build.tar.gz rss_temple api manage.py
-      - store_artifacts:
-          path: ~/build.tar.gz
+          name: Docker Build
+          command: docker build -t rss_temple:latest .
+      - run:
+          name: Docker Upload
+          command: |
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker tag rss_temple:latest $DOCKER_USERNAME/rss_temple:$CIRCLE_TAG
+            docker push $DOCKER_USERNAME/rss_temple:$CIRCLE_TAG
+
   test:
     docker:
       - image: cimg/python:3.11.3
