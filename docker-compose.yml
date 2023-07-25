@@ -3,7 +3,7 @@ version: "3"
 services:
   redis:
     image: redis
-  db:
+  postgresql:
     image: postgres:13
     env_file:
       - .env

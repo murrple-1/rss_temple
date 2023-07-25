@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("APP_DEBUG") == "true"
 
-ALLOWED_HOSTS: list[str] = ["*"]
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -81,9 +81,7 @@ TEMPLATES = [
             ],
         },
         "APP_DIRS": True,
-        "DIRS": [
-            "api/render",
-        ],
+        "DIRS": [],
     },
 ]
 
@@ -292,8 +290,6 @@ elif _test_runner_type == "timed":
     TEST_SLOW_TEST_THRESHOLD = float(os.environ.get("TEST_SLOW_TEST_THRESHOLD", "0.5"))
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
-
-REALM = "RSS Temple"
 
 DEFAULT_COUNT = 50
 MAX_COUNT = 1000

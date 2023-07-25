@@ -28,6 +28,7 @@ class Command(BaseCommand):
         try:
             google_social_app = SocialApp.objects.get(provider="google")
         except SocialApp.DoesNotExist:
+            self.stderr.write("new social app: Google")
             google_social_app = SocialApp(provider="google", name="Google", key="")
         google_social_app.client_id = options["google_client_id"]
         google_social_app.secret = options["google_secret"]
@@ -36,6 +37,7 @@ class Command(BaseCommand):
         try:
             facebook_social_app = SocialApp.objects.get(provider="facebook")
         except SocialApp.DoesNotExist:
+            self.stderr.write("new social app: Facebook")
             facebook_social_app = SocialApp(
                 provider="facebook", name="Facebook", key=""
             )
@@ -48,3 +50,5 @@ class Command(BaseCommand):
             facebook_social_app.save(update_fields=("client_id", "secret"))
 
             site.socialapp_set.add(google_social_app, facebook_social_app)  # type: ignore
+
+        self.stderr.write("social apps setup complete")
