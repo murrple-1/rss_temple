@@ -45,9 +45,9 @@ class Command(BaseCommand):
         facebook_social_app.secret = options["facebook_secret"]
 
         with transaction.atomic():
-            site.save(update_fields=("domain", "name"))
-            google_social_app.save(update_fields=("client_id", "secret"))
-            facebook_social_app.save(update_fields=("client_id", "secret"))
+            site.save()
+            google_social_app.save()
+            facebook_social_app.save()
 
             site.socialapp_set.add(google_social_app, facebook_social_app)  # type: ignore
 

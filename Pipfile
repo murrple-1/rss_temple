@@ -17,7 +17,6 @@ defusedxml = "*"
 lxml = "*"
 xmlschema = "*"
 url-normalize = "*"
-quick-email = "*"
 bleach = {version = "*", extras = ["css"]}
 html5lib = "*"
 validators = "*"

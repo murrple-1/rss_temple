@@ -185,11 +185,11 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
         },
         "rss_temple": {
             "handlers": ["console"],
-            "level": os.environ.get("RSS_TEMPLE_LOG_LEVEL", "INFO"),
+            "level": os.getenv("RSS_TEMPLE_LOG_LEVEL", "INFO"),
         },
     },
 }
@@ -227,8 +227,8 @@ else:
     EMAIL_PORT = int(os.environ["APP_EMAIL_PORT"])
     EMAIL_HOST_USER = os.environ["APP_EMAIL_HOST_USER"]
     EMAIL_HOST_PASSWORD = os.environ["APP_EMAIL_HOST_PASSWORD"]
-    EMAIL_USE_TLS = os.getenv("APP_EMAIL_USE_TLS", "false") == "true"
-    EMAIL_USE_SSL = os.getenv("APP_EMAIL_USE_SSL", "false") == "true"
+    EMAIL_USE_TLS = os.getenv("APP_EMAIL_USE_TLS", "false").lower() == "true"
+    EMAIL_USE_SSL = os.getenv("APP_EMAIL_USE_SSL", "false").lower() == "true"
     EMAIL_TIMEOUT = (
         None if (timeout := os.getenv("APP_EMAIL_TIMEOUT")) is None else float(timeout)
     )
@@ -304,12 +304,19 @@ SUCCESS_BACKOFF_SECONDS = 60
 MIN_ERROR_BACKOFF_SECONDS = 60
 MAX_ERROR_BACKOFF_SECONDS = 7257600  # 3 months
 
-ACCOUNT_CONFIRM_EMAIL_URL = "http://localhost:4200/verify"
-ACCOUNT_EMAIL_VERIFICATION_SENT_URL = "http://localhost:4200/emailsent"
-PASSWORD_RESET_CONFIRM_URL_FORMAT = (
-    "http://localhost:4200/resetpassword?token={token}&userId={userId}"
+ACCOUNT_CONFIRM_EMAIL_URL = os.getenv(
+    "APP_ACCOUNT_CONFIRM_EMAIL_URL", "http://localhost:4200/verify"
 )
-SOCIAL_CONNECTIONS_URL = "http://localhost:4200/main/profile"
+ACCOUNT_EMAIL_VERIFICATION_SENT_URL = os.getenv(
+    "APP_ACCOUNT_EMAIL_VERIFICATION_SENT_URL", "http://localhost:4200/emailsent"
+)
+PASSWORD_RESET_CONFIRM_URL_FORMAT = os.getenv(
+    "APP_PASSWORD_RESET_CONFIRM_URL_FORMAT",
+    "http://localhost:4200/resetpassword?token={token}&userId={userId}",
+)
+SOCIAL_CONNECTIONS_URL = os.getenv(
+    "APP_SOCIAL_CONNECTIONS_URL", "http://localhost:4200/main/profile"
+)
 
 try:
     from .local_settings import *

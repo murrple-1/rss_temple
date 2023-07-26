@@ -1,4 +1,4 @@
-version: "3"
+version: '3.9'
 
 services:
   redis:
@@ -14,7 +14,7 @@ services:
   caddy:
     image: caddy:2
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - caddy_data:/data/
       - django_static:/static/

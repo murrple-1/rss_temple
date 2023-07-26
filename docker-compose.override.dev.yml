@@ -20,7 +20,7 @@ services:
     environment:
       APP_IN_DOCKER: 'true'
     expose:
-      - "8000"
+      - '8000'
     volumes:
       - ./:/code/
   rss_temple_feedscrapperdaemon:
