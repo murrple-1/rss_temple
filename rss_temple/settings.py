@@ -100,7 +100,7 @@ if os.getenv("APP_IN_DOCKER") == "true":
             "NAME": os.getenv("APP_DB_NAME", "postgres"),
             "USER": os.getenv("APP_DB_USER", "postgres"),
             "PASSWORD": os.getenv("APP_DB_PASSWORD", "password"),
-            "HOST": os.getenv("APP_DB_HOST", "db"),
+            "HOST": os.getenv("APP_DB_HOST", "postgresql"),
             "PORT": int(os.getenv("APP_DB_PORT", "5432")),
         }
     }
