@@ -276,7 +276,7 @@ class FeedEntry(models.Model):
     def is_read(self, user):
         is_read = getattr(self, "_is_read", None)
         if is_read is None:
-            is_read = self.uuid in user.read_feed_entry_uuids
+            is_read = self.is_archived or self.uuid in user.read_feed_entry_uuids
             self._is_read = is_read
 
         return is_read
