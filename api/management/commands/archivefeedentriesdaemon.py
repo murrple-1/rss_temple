@@ -40,7 +40,7 @@ class Command(BaseCommand):
                         settings.ARCHIVE_BACKOFF_SECONDS,
                     )
 
-            self.stderr.write(self.style.NOTICE(f"scrapped {count} feeds"))
+            self.stderr.write(self.style.NOTICE(f"updated {count} feed archives"))
         else:
             try:
                 while True:
@@ -64,7 +64,7 @@ class Command(BaseCommand):
                             )
 
                     self.stderr.write(
-                        self.style.NOTICE(f"scrapped {count} feeds this round")
+                        self.style.NOTICE(f"updated {count} feed archives this round")
                     )
 
                     time.sleep(options["sleep_seconds"])

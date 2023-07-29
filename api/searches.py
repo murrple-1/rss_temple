@@ -37,7 +37,9 @@ def _feedentry_subscribed(request: HttpRequest, search_obj: str):
 
 def _feedentry_is_read(request: HttpRequest, search_obj: str):
     q = Q(is_archived=True) | Q(
-        uuid__in=cast(User, request.user).read_feed_entries.values("uuid")
+        uuid__in=ReadFeedEntryUserMapping.objects.filter(
+            user=cast(User, request.user)
+        ).values("feed_entry_id")
     )
 
     if not Bool.convertto(search_obj):
