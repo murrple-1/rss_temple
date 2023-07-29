@@ -25,8 +25,7 @@ class Command(BaseCommand):
             count = 0
             with transaction.atomic():
                 for feed in (
-                    Feed.objects.select_for_update(skip_locked=True)
-                    .filter(archive_update_backoff_until__lte=Now())
+                    Feed.objects.filter(archive_update_backoff_until__lte=Now())
                     .order_by("archive_update_backoff_until")
                     .iterator()
                 ):
@@ -46,13 +45,11 @@ class Command(BaseCommand):
                 while True:
                     count = 0
                     with transaction.atomic():
-                        for feed in (
-                            Feed.objects.select_for_update(skip_locked=True)
-                            .filter(archive_update_backoff_until__lte=Now())
-                            .order_by("archive_update_backoff_until")[
-                                : cast(int, options["count"])
-                            ]
-                        ):
+                        for feed in Feed.objects.filter(
+                            archive_update_backoff_until__lte=Now()
+                        ).order_by("archive_update_backoff_until")[
+                            : cast(int, options["count"])
+                        ]:
                             count += 1
 
                             self._handle_feed(
