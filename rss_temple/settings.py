@@ -200,11 +200,13 @@ if os.getenv("APP_IN_DOCKER") == "true":
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/1",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+            "TIMEOUT": 60 * 5,  # 5 minutes
         },
         "stable_query": {
             "BACKEND": "django_redis.cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/2",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+            "TIMEOUT": 60 * 60,  # 1 hour
         },
     }
 else:
@@ -212,10 +214,12 @@ else:
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "default-cache",
+            "TIMEOUT": 60 * 5,  # 5 minutes
         },
         "stable_query": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "stable-query-cache",
+            "TIMEOUT": 60 * 60,  # 1 hour
         },
     }
 
@@ -303,6 +307,8 @@ USER_UNREAD_GRACE_MIN_COUNT = 10
 SUCCESS_BACKOFF_SECONDS = 60
 MIN_ERROR_BACKOFF_SECONDS = 60
 MAX_ERROR_BACKOFF_SECONDS = 7257600  # 3 months
+
+MAX_FEED_ENTRIES_STABLE_QUERY_COUNT = 5000
 
 ACCOUNT_CONFIRM_EMAIL_URL = os.getenv(
     "APP_ACCOUNT_CONFIRM_EMAIL_URL", "http://localhost:4200/verify"

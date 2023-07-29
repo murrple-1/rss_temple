@@ -3,9 +3,12 @@ import re
 import uuid
 from typing import Any, cast
 
+from django.conf import settings
 from django.core.cache import caches
+from django.core.signals import setting_changed
 from django.db import transaction
 from django.db.models import OrderBy, Q
+from django.dispatch import receiver
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
 from rest_framework import permissions
@@ -18,6 +21,18 @@ from api import query_utils
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
+
+_MAX_FEED_ENTRIES_STABLE_QUERY_COUNT: int
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT
+
+    _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT = settings.MAX_FEED_ENTRIES_STABLE_QUERY_COUNT
+
+
+_load_global_settings()
 
 _OBJECT_NAME = "feedentry"
 
@@ -145,7 +160,7 @@ class FeedEntriesQueryStableCreateView(APIView):
                 FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
                 .filter(*search)
                 .order_by(*sort)
-                .values_list("uuid", flat=True)
+                .values_list("uuid", flat=True)[:_MAX_FEED_ENTRIES_STABLE_QUERY_COUNT]
             ),
         )
 
