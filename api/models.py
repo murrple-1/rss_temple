@@ -215,6 +215,9 @@ class FeedEntry(models.Model):
         indexes = [
             models.Index(fields=["id"]),
             models.Index(fields=["url"]),
+            models.Index(fields=["-published_at"]),
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["-updated_at"]),
         ]
 
         constraints = [
