@@ -19,7 +19,7 @@ from api.models import (
 
 
 class Command(BaseCommand):
-    help = "Daemon to send process subscriptions asynchronously"
+    help = "Daemon to process subscriptions asynchronously"
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         try:

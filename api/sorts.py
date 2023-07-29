@@ -53,6 +53,7 @@ _sort_configs: dict[str, dict[str, _SortConfig]] = {
         "publishedAt": _SortConfig([_standard_sort("published_at")], None),
         "updatedAt": _SortConfig([_standard_sort("updated_at")], None),
         "title": _SortConfig([_standard_sort("title")], None),
+        "isArchived": _SortConfig([_standard_sort("is_archived")], None),
     },
 }
 

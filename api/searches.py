@@ -36,7 +36,9 @@ def _feedentry_subscribed(request: HttpRequest, search_obj: str):
 
 
 def _feedentry_is_read(request: HttpRequest, search_obj: str):
-    q = Q(uuid__in=cast(User, request.user).read_feed_entries.values("uuid"))
+    q = Q(is_archived=True) | Q(
+        uuid__in=cast(User, request.user).read_feed_entries.values("uuid")
+    )
 
     if not Bool.convertto(search_obj):
         q = ~q
@@ -157,6 +159,9 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
                 user=cast(User, request.user),
                 read_at__range=DateTimeDeltaRange.convertto(search_obj),
             )
+        ),
+        "isArchived": lambda request, search_obj: Q(
+            is_archived=Bool.convertto(search_obj)
         ),
     },
 }

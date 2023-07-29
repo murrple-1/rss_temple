@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 from django.db.models.functions import Now
 from django.utils import timezone
@@ -17,23 +17,24 @@ from api.models import Feed, FeedEntry
 
 
 class Command(BaseCommand):
-    help = "Daemon to send periodically web-scrape the various feeds and update our DB"
+    help = "Daemon to periodically web-scrape the various feeds and update our DB"
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("-c", "--count", type=int, default=1000)
+        parser.add_argument("--sleep-seconds", type=float, default=30.0)
         parser.add_argument("--feed-url")
         parser.add_argument("--feed-uuid")
 
     def handle(self, *args: Any, **options: Any) -> None:
-        if options["feed_url"] or options["feed_uuid"]:
-            feed: Feed
-            if options["feed_url"]:
-                feed = Feed.objects.get(feed_url=options["feed_url"])
-            elif options["feed_uuid"]:
-                feed = Feed.objects.get(uuid=uuid.UUID(options["feed_uuid"]))
-            else:
-                raise RuntimeError  # TODO this is just a placeholder
+        feed: Feed | None
+        if options["feed_url"]:
+            feed = Feed.objects.get(feed_url=options["feed_url"])
+        elif options["feed_uuid"]:
+            feed = Feed.objects.get(uuid=uuid.UUID(options["feed_uuid"]))
+        else:
+            feed = None
 
+        if feed is not None:
             response = rss_requests.get(feed.feed_url)
             response.raise_for_status()
             self._scrape_feed(feed, response.text)
@@ -95,14 +96,9 @@ class Command(BaseCommand):
                         self.style.NOTICE(f"scrapped {count} feeds this round")
                     )
 
-                    time.sleep(30)
-            except Exception:
-                self.stderr.write(
-                    self.style.ERROR(
-                        f"render loop stopped unexpectedly\n{traceback.format_exc()}"
-                    )
-                )
-                raise
+                    time.sleep(options["sleep_seconds"])
+            except Exception as e:
+                raise CommandError("render loop stopped unexpectedly") from e
 
     def _scrape_feed(self, feed: Feed, response_text: str):
         d = feed_handler.text_2_d(response_text)

@@ -102,6 +102,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             lambda request, db_obj: db_obj.is_favorite(request.user), False
         ),
         "readAt": _FieldConfig(_feedentry_readAt, False),
+        "isArchived": _FieldConfig(lambda request, db_obj: db_obj.is_archived, False),
     },
 }
 

@@ -141,6 +141,7 @@ class Feed(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
+    archive_update_backoff_until = models.DateTimeField(default=timezone.now)
 
     @staticmethod
     def annotate_search_vectors(qs: models.QuerySet["Feed"]):
@@ -170,9 +171,12 @@ class Feed(models.Model):
     @staticmethod
     def _generate_counts(feed, user):
         total_feed_entry_count = feed.feed_entries.count()
-        read_count = ReadFeedEntryUserMapping.objects.filter(
-            feed_entry__feed=feed, user=user
-        ).count()
+        read_count = (
+            ReadFeedEntryUserMapping.objects.filter(
+                feed_entry__feed=feed, user=user
+            ).count()
+            + feed.feed_entries.filter(is_archived=True).count()
+        )
         unread_count = total_feed_entry_count - read_count
 
         counts = {
@@ -218,6 +222,7 @@ class FeedEntry(models.Model):
             models.Index(fields=["-published_at"]),
             models.Index(fields=["-created_at"]),
             models.Index(fields=["-updated_at"]),
+            models.Index(fields=["is_archived"]),
         ]
 
         constraints = [
@@ -246,6 +251,7 @@ class FeedEntry(models.Model):
     author_name = models.TextField(null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
+    is_archived = models.BooleanField(default=False)
 
     @staticmethod
     def annotate_search_vectors(qs):
