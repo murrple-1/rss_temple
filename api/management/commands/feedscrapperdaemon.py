@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 from django.db.models.functions import Now
+from django.db.utils import OperationalError
 from django.utils import timezone
 
 from api import feed_handler, rss_requests
@@ -97,6 +98,8 @@ class Command(BaseCommand):
                     )
 
                     time.sleep(options["sleep_seconds"])
+            except OperationalError as e:
+                raise CommandError("db went away") from e
             except Exception as e:
                 raise CommandError("render loop stopped unexpectedly") from e
 

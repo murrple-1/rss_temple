@@ -1,12 +1,12 @@
 import datetime
 import time
-import traceback
 from typing import Any, cast
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 from django.db.models.functions import Now
+from django.db.utils import OperationalError
 from django.utils import timezone
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping
@@ -67,13 +67,10 @@ class Command(BaseCommand):
                     )
 
                     time.sleep(options["sleep_seconds"])
-            except Exception:
-                self.stderr.write(
-                    self.style.ERROR(
-                        f"loop stopped unexpectedly\n{traceback.format_exc()}"
-                    )
-                )
-                raise
+            except OperationalError as e:
+                raise CommandError("db went away") from e
+            except Exception as e:
+                raise CommandError("loop stopped unexpectedly") from e
 
     def _handle_feed(
         self,

@@ -3,8 +3,9 @@ import traceback
 from typing import Any, Iterable, cast
 
 import requests
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.db.utils import OperationalError
 
 from api import feed_handler, rss_requests
 from api.exceptions import QueryException
@@ -39,12 +40,12 @@ class Command(BaseCommand):
                             "no subscription process available. sleeping..."
                         )
                     )
+
                     time.sleep(options["sleep_seconds"])
-        except Exception:
-            self.stderr.write(
-                self.style.ERROR(f"loop stopped unexpectedly\n{traceback.format_exc()}")
-            )
-            raise
+        except OperationalError as e:
+            raise CommandError("db went away") from e
+        except Exception as e:
+            raise CommandError("loop stooped unexpectedly") from e
 
     def _get_first_entry(self):
         with transaction.atomic():
