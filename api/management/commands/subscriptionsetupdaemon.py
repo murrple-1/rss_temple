@@ -3,7 +3,7 @@ import traceback
 from typing import Any, Iterable, cast
 
 import requests
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
 
 from api import feed_handler, rss_requests
@@ -21,6 +21,9 @@ from api.models import (
 class Command(BaseCommand):
     help = "Daemon to process subscriptions asynchronously"
 
+    def add_arguments(self, parser: CommandParser) -> None:
+        parser.add_argument("--sleep-seconds", type=float, default=5.0)
+
     def handle(self, *args: Any, **options: Any) -> str | None:
         try:
             while True:
@@ -36,7 +39,7 @@ class Command(BaseCommand):
                             "no subscription process available. sleeping..."
                         )
                     )
-                    time.sleep(5)
+                    time.sleep(options["sleep_seconds"])
         except Exception:
             self.stderr.write(
                 self.style.ERROR(f"loop stopped unexpectedly\n{traceback.format_exc()}")

@@ -17,7 +17,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("-c", "--count", type=int, default=1000)
-        parser.add_argument("--sleep-seconds", type=float, default=30.0)
+        parser.add_argument(
+            "--sleep-seconds", type=float, default=60.0 * 30.0
+        )  # 30 minutes
         parser.add_argument("--single-run", action="store_true")
 
     def handle(self, *args: Any, **options: Any) -> None:
