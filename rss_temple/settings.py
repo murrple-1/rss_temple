@@ -227,6 +227,8 @@ else:
         },
     }
 
+CSRF_COOKIE_DOMAIN = os.getenv("APP_CSRF_COOKIE_DOMAIN")
+
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
