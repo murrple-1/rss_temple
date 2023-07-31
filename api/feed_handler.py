@@ -1,7 +1,6 @@
 import datetime
 import logging
 import pprint
-from typing import Any
 
 import feedparser
 import validators
@@ -16,7 +15,7 @@ _logger: logging.Logger | None = None
 def logger() -> logging.Logger:  # pragma: no cover
     global _logger
     if _logger is None:
-        _logger = logging.getLogger("rss_temple")
+        _logger = logging.getLogger("rss_temple.feed_handler")
 
     return _logger
 

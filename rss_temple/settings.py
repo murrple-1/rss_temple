@@ -185,11 +185,15 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "level": os.getenv("APP_DJANGO_LOG_LEVEL", "INFO"),
         },
         "rss_temple": {
             "handlers": ["console"],
-            "level": os.getenv("RSS_TEMPLE_LOG_LEVEL", "INFO"),
+            "level": os.getenv("APP_LOG_LEVEL", "INFO"),
+        },
+        "rss_temple.feed_handler": {
+            "handlers": ["console"],
+            "level": os.getenv("APP_FEED_LOG_LEVEL", "ERROR"),
         },
     },
 }
