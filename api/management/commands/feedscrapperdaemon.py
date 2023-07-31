@@ -42,12 +42,7 @@ class Command(BaseCommand):
             response.raise_for_status()
             self._scrape_feed(feed, response.text)
         else:
-            exit = Event()
-
-            def _quit(signo: int, frame: FrameType | None):
-                exit.set()
-
-            signal.signal(signal.SIGTERM, _quit)
+            exit = self._setup_exit_event()
 
             try:
                 while not exit.is_set():
@@ -111,6 +106,16 @@ class Command(BaseCommand):
                 raise CommandError("db went away") from e
             except Exception as e:
                 raise CommandError("render loop stopped unexpectedly") from e
+
+    def _setup_exit_event(self):
+        exit = Event()
+
+        def _quit(signo: int, frame: FrameType | None):
+            exit.set()
+
+        signal.signal(signal.SIGTERM, _quit)
+
+        return exit
 
     def _scrape_feed(self, feed: Feed, response_text: str):
         d = feed_handler.text_2_d(response_text)

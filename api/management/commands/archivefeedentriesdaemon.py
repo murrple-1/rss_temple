@@ -45,12 +45,7 @@ class Command(BaseCommand):
 
             self.stderr.write(self.style.NOTICE(f"updated {count} feed archives"))
         else:
-            exit = Event()
-
-            def _quit(signo: int, frame: FrameType | None):
-                exit.set()
-
-            signal.signal(signal.SIGTERM, _quit)
+            exit = self._setup_exit_event()
 
             try:
                 while not exit.is_set():
@@ -80,6 +75,16 @@ class Command(BaseCommand):
                 raise CommandError("db went away") from e
             except Exception as e:
                 raise CommandError("loop stopped unexpectedly") from e
+
+    def _setup_exit_event(self):
+        exit = Event()
+
+        def _quit(signo: int, frame: FrameType | None):
+            exit.set()
+
+        signal.signal(signal.SIGTERM, _quit)
+
+        return exit
 
     def _handle_feed(
         self,

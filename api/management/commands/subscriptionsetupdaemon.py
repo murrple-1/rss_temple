@@ -28,12 +28,7 @@ class Command(BaseCommand):
         parser.add_argument("--sleep-seconds", type=float, default=5.0)
 
     def handle(self, *args: Any, **options: Any) -> str | None:
-        exit = Event()
-
-        def _quit(signo: int, frame: FrameType | None):
-            exit.set()
-
-        signal.signal(signal.SIGTERM, _quit)
+        exit = self._setup_exit_event()
 
         try:
             while not exit.is_set():
@@ -55,6 +50,16 @@ class Command(BaseCommand):
             raise CommandError("db went away") from e
         except Exception as e:
             raise CommandError("loop stooped unexpectedly") from e
+
+    def _setup_exit_event(self):
+        exit = Event()
+
+        def _quit(signo: int, frame: FrameType | None):
+            exit.set()
+
+        signal.signal(signal.SIGTERM, _quit)
+
+        return exit
 
     def _get_first_entry(self):
         with transaction.atomic():
