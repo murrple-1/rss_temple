@@ -15,11 +15,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
+from api import grace_period_util
 from api import opml as opml_util
 from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
+    ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
     User,
     UserCategory,
@@ -213,6 +215,14 @@ class OPMLView(APIView):
                 assert feed is not None
 
                 feed.user_categories.add(*user_categories)
+
+            for feed in feeds_dict.values():
+                if feed is not None:
+                    ReadFeedEntryUserMapping.objects.bulk_create(
+                        grace_period_util.generate_grace_period_read_entries(
+                            feed, cast(User, request.user)
+                        ),
+                    )
 
             if feed_subscription_progress_entry is not None:
                 feed_subscription_progress_entry.save()

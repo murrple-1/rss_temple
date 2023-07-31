@@ -10,10 +10,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import feed_handler, query_utils, rss_requests
+from api import feed_handler, grace_period_util, query_utils, rss_requests
 from api.exceptions import QueryException
 from api.fields import FieldMap
-from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
+from api.models import (
+    Feed,
+    FeedEntry,
+    ReadFeedEntryUserMapping,
+    SubscribedFeedUserMapping,
+    User,
+)
 
 _OBJECT_NAME = "feed"
 
@@ -165,10 +171,14 @@ class FeedSubscribeView(APIView):
         if feed.feed_url in existing_feed_urls:
             return Response("user already subscribed", status=409)
 
+        read_mappings = grace_period_util.generate_grace_period_read_entries(feed, user)
+
         with transaction.atomic():
             SubscribedFeedUserMapping.objects.create(
                 user=user, feed=feed, custom_feed_title=custom_title
             )
+
+            ReadFeedEntryUserMapping.objects.bulk_create(read_mappings)
 
         return Response(status=204)
 
