@@ -1,5 +1,7 @@
 import datetime
-import time
+import signal
+from threading import Event
+from types import FrameType
 from typing import Any, cast
 
 from django.conf import settings
@@ -43,8 +45,15 @@ class Command(BaseCommand):
 
             self.stderr.write(self.style.NOTICE(f"updated {count} feed archives"))
         else:
+            exit = Event()
+
+            def _quit(signo: int, frame: FrameType | None):
+                exit.set()
+
+            signal.signal(signal.SIGTERM, _quit)
+
             try:
-                while True:
+                while not exit.is_set():
                     count = 0
                     with transaction.atomic():
                         for feed in Feed.objects.filter(
@@ -66,7 +75,7 @@ class Command(BaseCommand):
                         self.style.NOTICE(f"updated {count} feed archives this round")
                     )
 
-                    time.sleep(options["sleep_seconds"])
+                    exit.wait(options["sleep_seconds"])
             except OperationalError as e:
                 raise CommandError("db went away") from e
             except Exception as e:

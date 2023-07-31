@@ -1,5 +1,7 @@
-import time
+import signal
 import traceback
+from threading import Event
+from types import FrameType
 from typing import Any, Iterable, cast
 
 import requests
@@ -26,8 +28,15 @@ class Command(BaseCommand):
         parser.add_argument("--sleep-seconds", type=float, default=5.0)
 
     def handle(self, *args: Any, **options: Any) -> str | None:
+        exit = Event()
+
+        def _quit(signo: int, frame: FrameType | None):
+            exit.set()
+
+        signal.signal(signal.SIGTERM, _quit)
+
         try:
-            while True:
+            while not exit.is_set():
                 feed_subscription_progress_entry = self._get_first_entry()
                 if feed_subscription_progress_entry is not None:
                     self.stderr.write(
@@ -41,7 +50,7 @@ class Command(BaseCommand):
                         )
                     )
 
-                    time.sleep(options["sleep_seconds"])
+                    exit.wait(options["sleep_seconds"])
         except OperationalError as e:
             raise CommandError("db went away") from e
         except Exception as e:

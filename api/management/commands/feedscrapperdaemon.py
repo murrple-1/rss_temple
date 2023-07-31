@@ -1,7 +1,9 @@
 import datetime
-import time
+import signal
 import traceback
 import uuid
+from threading import Event
+from types import FrameType
 from typing import Any, cast
 
 import requests
@@ -40,8 +42,15 @@ class Command(BaseCommand):
             response.raise_for_status()
             self._scrape_feed(feed, response.text)
         else:
+            exit = Event()
+
+            def _quit(signo: int, frame: FrameType | None):
+                exit.set()
+
+            signal.signal(signal.SIGTERM, _quit)
+
             try:
-                while True:
+                while not exit.is_set():
                     count = 0
                     with transaction.atomic():
                         for feed in (
@@ -97,7 +106,7 @@ class Command(BaseCommand):
                         self.style.NOTICE(f"scrapped {count} feeds this round")
                     )
 
-                    time.sleep(options["sleep_seconds"])
+                    exit.wait(options["sleep_seconds"])
             except OperationalError as e:
                 raise CommandError("db went away") from e
             except Exception as e:
