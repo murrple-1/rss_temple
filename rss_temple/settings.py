@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("APP_DEBUG") == "true"
+DEBUG = os.getenv("APP_DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -93,7 +93,7 @@ WSGI_APPLICATION = "rss_temple.wsgi.application"
 
 REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
 
-if os.getenv("APP_IN_DOCKER") == "true":
+if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql_psycopg2",
@@ -198,7 +198,7 @@ LOGGING = {
     },
 }
 
-if os.getenv("APP_IN_DOCKER") == "true":
+if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
