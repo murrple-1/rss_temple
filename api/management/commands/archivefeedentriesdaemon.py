@@ -9,7 +9,7 @@ from django.db import transaction
 from django.db.models.functions import Now
 from django.utils import timezone
 
-from api.models import Feed
+from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping
 
 
 class Command(BaseCommand):
@@ -84,6 +84,7 @@ class Command(BaseCommand):
         time_cutoff = now + archive_time_threshold
 
         count = 0
+        newly_archived: list[FeedEntry] = []
         for feed_entry in feed.feed_entries.filter(is_archived=False).order_by(
             "-published_at", "-created_at", "-updated_at"
         ):
@@ -93,12 +94,11 @@ class Command(BaseCommand):
                 or count >= archive_count_threshold
             ):
                 feed_entry.is_archived = True
-                feed_entry.save(
-                    update_fields=[
-                        "is_archived",
-                    ]
-                )
-                feed_entry.read_user_set.clear()
+                newly_archived.append(feed_entry)
+
+        FeedEntry.objects.bulk_update(newly_archived, ["is_archived"])
+
+        ReadFeedEntryUserMapping.objects.filter(feed_entry__in=newly_archived).delete()
 
         feed.archive_update_backoff_until = now + datetime.timedelta(
             seconds=backoff_seconds

@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import re
 import uuid
@@ -11,6 +12,7 @@ from django.db.models import OrderBy, Q
 from django.dispatch import receiver
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
+from django.utils import timezone
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
@@ -264,14 +266,18 @@ class FeedEntryReadView(APIView):
             except FeedEntry.DoesNotExist:
                 raise NotFound("feed entry not found")
 
-            (
-                read_feed_entry_user_mapping,
-                _,
-            ) = ReadFeedEntryUserMapping.objects.get_or_create(
-                feed_entry=feed_entry, user=cast(User, request.user)
-            )
+            ret_obj: str
+            if feed_entry.is_archived:
+                ret_obj = ""
+            else:
+                (
+                    read_feed_entry_user_mapping,
+                    _,
+                ) = ReadFeedEntryUserMapping.objects.get_or_create(
+                    feed_entry=feed_entry, user=cast(User, request.user)
+                )
 
-        ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
+                ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
         return Response(ret_obj)
 
@@ -334,21 +340,17 @@ class FeedEntriesReadView(APIView):
         if q is None:
             raise ValidationError("no entries to mark read")
 
-        batch_size = 768
-        objs = (
-            ReadFeedEntryUserMapping(
-                feed_entry=feed_entry, user=cast(User, request.user)
-            )
-            for feed_entry in FeedEntry.objects.filter(q).iterator()
-        )
-        with transaction.atomic():
-            while True:
-                batch = list(itertools.islice(objs, batch_size))
-                if not batch:
-                    break
-                ReadFeedEntryUserMapping.objects.bulk_create(
-                    batch, ignore_conflicts=True
+        q = Q(is_archived=False) & q
+
+        ReadFeedEntryUserMapping.objects.bulk_create(
+            [
+                ReadFeedEntryUserMapping(
+                    feed_entry=feed_entry, user=cast(User, request.user)
                 )
+                for feed_entry in FeedEntry.objects.filter(q).iterator()
+            ],
+            ignore_conflicts=True,
+        )
 
         return Response(status=204)
 

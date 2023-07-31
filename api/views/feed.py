@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import archived_feed_entry_util, feed_handler, query_utils, rss_requests
+from api import feed_handler, query_utils, rss_requests
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import Feed, FeedEntry, SubscribedFeedUserMapping, User
@@ -165,16 +165,10 @@ class FeedSubscribeView(APIView):
         if feed.feed_url in existing_feed_urls:
             return Response("user already subscribed", status=409)
 
-        read_mapping_generator = archived_feed_entry_util.read_mapping_generator_fn(
-            feed, user
-        )
-
         with transaction.atomic():
             SubscribedFeedUserMapping.objects.create(
                 user=user, feed=feed, custom_feed_title=custom_title
             )
-
-            archived_feed_entry_util.mark_archived_entries(read_mapping_generator)
 
         return Response(status=204)
 

@@ -15,7 +15,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import archived_feed_entry_util
 from api import opml as opml_util
 from api.models import (
     Feed,
@@ -214,14 +213,6 @@ class OPMLView(APIView):
                 assert feed is not None
 
                 feed.user_categories.add(*user_categories)
-
-            for feed in feeds_dict.values():
-                if feed is not None:
-                    archived_feed_entry_util.mark_archived_entries(
-                        archived_feed_entry_util.read_mapping_generator_fn(
-                            feed, cast(User, request.user)
-                        )
-                    )
 
             if feed_subscription_progress_entry is not None:
                 feed_subscription_progress_entry.save()
