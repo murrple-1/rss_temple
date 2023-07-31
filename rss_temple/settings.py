@@ -227,7 +227,11 @@ else:
         },
     }
 
-CSRF_COOKIE_DOMAIN = os.getenv("APP_CSRF_COOKIE_DOMAIN")
+CSRF_TRUSTED_ORIGINS = (
+    csrf_trusted_origins.split(",")
+    if (csrf_trusted_origins := os.getenv("APP_CSRF_TRUSTED_ORIGINS")) is not None
+    else []
+)
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
