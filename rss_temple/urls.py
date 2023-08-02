@@ -15,14 +15,14 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path(
-        r"swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
+        "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
     ),
     path(
-        r"swagger/",
+        "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path(r"redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-    path(r"admin/", admin.site.urls),
-    path(r"api/", include("api.urls")),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("admin/", admin.site.urls),
+    path("api/", include("api.urls")),
 ]

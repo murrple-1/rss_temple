@@ -1,11 +1,13 @@
 from typing import Any, TypedDict, cast
 
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Feed, FeedEntry, User
+from api.serializers import ExploreSerializer
 
 
 class _FeedDesc(TypedDict):
@@ -21,9 +23,15 @@ class _Section(TypedDict):
 class ExploreView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
-    def get(self, request: Request):
-        # TODO for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
+    @swagger_auto_schema(
+        responses={200: ExploreSerializer(many=True)},
+        operation_summary="Return a list of feeds, with example headlines, which are tailored to you",
+        operation_description="""Return a list of feeds, with example headlines, which are tailored to you.
 
+TODO: for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
+""",
+    )
+    def get(self, request: Request):
         section_lookups: list[_Section] = [
             {
                 "tag": "Gaming",
@@ -143,4 +151,4 @@ class ExploreView(APIView):
                     }
                 )
 
-        return Response(ret_obj)
+        return Response(ExploreSerializer(data=ret_obj).data)

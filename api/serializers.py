@@ -212,3 +212,17 @@ class RegisterSerializer(serializers.Serializer):
         user.save()
         setup_user_email(request, user, [])
         return user
+
+
+class _ExploreFeedSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    feedUrl = serializers.URLField()
+    homeUrl = serializers.URLField()
+    imageSrc = serializers.URLField()
+    entryTitles = serializers.ListField(child=serializers.CharField())
+    isSubscribed = serializers.BooleanField()
+
+
+class ExploreSerializer(serializers.Serializer):
+    tagName = serializers.CharField()
+    feeds = _ExploreFeedSerializer(many=True)

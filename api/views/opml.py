@@ -8,6 +8,9 @@ from defusedxml.ElementTree import ParseError as defused_ParseError
 from defusedxml.ElementTree import fromstring as defused_fromstring
 from django.db import transaction
 from django.http.response import HttpResponse
+from drf_yasg import openapi
+from drf_yasg.inspectors import SwaggerAutoSchema
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.request import Request
@@ -28,9 +31,22 @@ from api.models import (
 )
 
 
+class OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):
+    def get_produces(self):
+        return ["text/xml"]
+
+
 class OPMLView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        auto_schema=OPMLGetSwaggerAutoSchema,
+        responses={200: "OPML XML"},
+        operation_summary="Download your OPML file",
+        operation_description="""Download your OPML file.
+
+This will return [OPML](http://opml.org/spec2.opml) XML representing your subscribed feeds.""",
+    )
     def get(self, request: Request):
         user_category_text_dict = dict(
             user_category_tuple

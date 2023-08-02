@@ -8,6 +8,8 @@ from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.generic import RedirectView
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -39,6 +41,20 @@ class PasswordResetConfirmView(_PasswordResetConfirmView):
 class UserAttributesView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        responses={204: ""},
+        request_body=openapi.Schema(
+            title="User attributes",
+            description="Arbitrary user attributes",
+            type="object",
+        ),
+        operation_summary="Update the user attributes additively",
+        operation_description="""Update the user attributes additively.
+
+The request body must be a JSON object with arbitrary key-values.
+If a value is `null`, it will be deleted from the attributes.
+Otherwise, that value will be added to the attribute unchanged.""",
+    )
     def put(self, request: Request):
         user = cast(User, request.user)
 
