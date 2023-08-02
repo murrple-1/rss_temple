@@ -215,6 +215,9 @@ class RegisterSerializer(serializers.Serializer):
 
 
 class _ExploreFeedSerializer(serializers.Serializer):
+    class Meta:
+        ref_name = "ExploreFeed"
+
     name = serializers.CharField()
     feedUrl = serializers.URLField()
     homeUrl = serializers.URLField()

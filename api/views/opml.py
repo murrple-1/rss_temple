@@ -29,15 +29,20 @@ from api.models import (
     User,
     UserCategory,
 )
+from api.negotiation import IgnoreClientContentNegotiation
 
 
 class OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):
+    def get_consumes(self):
+        return ["text/xml"]
+
     def get_produces(self):
         return ["text/xml"]
 
 
 class OPMLView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    content_negotiation_class = IgnoreClientContentNegotiation
 
     @swagger_auto_schema(
         auto_schema=OPMLGetSwaggerAutoSchema,
@@ -93,6 +98,14 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
 
         return HttpResponse(lxml_etree.tostring(opml_element), content_type="text/xml")
 
+    @swagger_auto_schema(
+        request_body=openapi.Schema(type="string"),
+        responses={202: openapi.Schema(type="string"), 204: ""},
+        operation_summary="Download your OPML file",
+        operation_description="""Download your OPML file.
+
+This will return [OPML](http://opml.org/spec2.opml) XML representing your subscribed feeds.""",
+    )
     def post(self, request: Request):
         opml_element: Element
         try:
@@ -238,6 +251,7 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
                         grace_period_util.generate_grace_period_read_entries(
                             feed, cast(User, request.user)
                         ),
+                        ignore_conflicts=True,
                     )
 
             if feed_subscription_progress_entry is not None:

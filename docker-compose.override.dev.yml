@@ -39,6 +39,8 @@ services:
               "
     build:
       context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
     volumes:
       - ./:/code/
   rss_temple_subscriptionsetupdaemon:
@@ -57,5 +59,27 @@ services:
               "
     build:
       context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
+    volumes:
+      - ./:/code/
+  rss_temple_archivefeedentriesdaemon:
+    image: rss_temple
+    command: >
+      bash -c "while ! python ./manage.py testready; do
+                 sleep 0.1
+               done
+
+               while ! python ./manage.py migrate --check; do
+                 sleep 5
+               done
+
+
+               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py archivefeedentriesdaemon
+              "
+    build:
+      context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
     volumes:
       - ./:/code/

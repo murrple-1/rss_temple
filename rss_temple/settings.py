@@ -251,6 +251,8 @@ else:
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
     ),
     "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
     "DEFAULT_PARSER_CLASSES": (
@@ -286,6 +288,11 @@ REST_AUTH = {
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "api.serializers.PasswordResetConfirmSerializer",
     "REGISTER_SERIALIZER": "api.serializers.RegisterSerializer",
     "LOGIN_SERIALIZER": "api.serializers.LoginSerializer",
+}
+
+# drf-yasg
+SWAGGER_SETTINGS = {
+    "USE_SESSION_AUTH": False,
 }
 
 # corsheaders
