@@ -237,10 +237,10 @@ if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.environ["APP_EMAIL_HOST"]
-    EMAIL_PORT = int(os.environ["APP_EMAIL_PORT"])
-    EMAIL_HOST_USER = os.environ["APP_EMAIL_HOST_USER"]
-    EMAIL_HOST_PASSWORD = os.environ["APP_EMAIL_HOST_PASSWORD"]
+    EMAIL_HOST = os.getenv("APP_EMAIL_HOST")
+    EMAIL_PORT = int(os.getenv("APP_EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.getenv("APP_EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = os.getenv("APP_EMAIL_HOST_PASSWORD")
     EMAIL_USE_TLS = os.getenv("APP_EMAIL_USE_TLS", "false").lower() == "true"
     EMAIL_USE_SSL = os.getenv("APP_EMAIL_USE_SSL", "false").lower() == "true"
     EMAIL_TIMEOUT = (
@@ -251,7 +251,6 @@ else:
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ),
     "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
@@ -293,6 +292,14 @@ REST_AUTH = {
 # drf-yasg
 SWAGGER_SETTINGS = {
     "USE_SESSION_AUTH": False,
+    "SECURITY_DEFINITIONS": {
+        "Basic": {"type": "basic"},
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"},
+    },
+    "SECURITY_REQUIREMENTS": [
+        {"Basic": []},
+        {"Bearer": []},
+    ],
 }
 
 # corsheaders
