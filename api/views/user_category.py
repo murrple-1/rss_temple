@@ -5,6 +5,8 @@ from django.db import IntegrityError, transaction
 from django.db.models import OrderBy, Q
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
@@ -12,9 +14,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import query_utils
-from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import Feed, User, UserCategory
+from api.serializers import (
+    GetMultipleSerializer,
+    GetSingleSerializer,
+    UserCategoryCreateSerializer,
+    UserCategorySerializer,
+)
 
 _OBJECT_NAME = "usercategory"
 
@@ -28,13 +35,19 @@ class UserCategoryView(APIView):
         kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Get Single User Category",
+        operation_description="Get Single User Category",
+        query_serializer=GetSingleSerializer,
+    )
     def get(self, request: Request, **kwargs: Any):
-        field_maps: list[FieldMap]
-        try:
-            fields = query_utils.get_fields__query_dict(request.query_params)
-            field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        serializer = GetSingleSerializer(
+            data=request.query_params,
+            context={"object_name": _OBJECT_NAME, "request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        field_maps: list[FieldMap] = serializer.data["my_fields"]
 
         user_category: UserCategory
         try:
@@ -48,6 +61,11 @@ class UserCategoryView(APIView):
 
         return Response(ret_obj)
 
+    @swagger_auto_schema(
+        operation_summary="Update a User Category",
+        operation_description="Update a User Category",
+        request_body=UserCategorySerializer,
+    )
     def put(self, request: Request, **kwargs: Any):
         user_category: UserCategory
         try:
@@ -57,23 +75,21 @@ class UserCategoryView(APIView):
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
 
-        has_changed = False
-
-        if "text" in request.data:
-            if type(request.data["text"]) is not str:
-                return Response("'text' must be string", status=400)
-
-            user_category.text = request.data["text"]
-            has_changed = True
-
-        if has_changed:
-            try:
-                user_category.save()
-            except IntegrityError:
-                return Response("user category already exists", status=409)
+        serializer = UserCategorySerializer(
+            instance=user_category, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.save()
+        except IntegrityError:
+            return Response("user category already exists", status=409)
 
         return Response(status=204)
 
+    @swagger_auto_schema(
+        operation_summary="Delete a User Category",
+        operation_description="Delete a User Category",
+    )
     def delete(self, request: Request, **kwargs: Any):
         count, _ = UserCategory.objects.filter(
             uuid=kwargs["uuid"], user=cast(User, request.user)
@@ -88,22 +104,21 @@ class UserCategoryView(APIView):
 class UserCategoryCreateView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Create a User Category",
+        operation_description="Create a User Category",
+        request_body=UserCategoryCreateSerializer,
+    )
     def post(self, request: Request):
-        field_maps: list[FieldMap]
-        try:
-            fields = query_utils.get_fields__json(request.data)
-            field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        serializer = UserCategoryCreateSerializer(
+            data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
+        )
+        serializer.is_valid(raise_exception=True)
 
-        if "text" not in request.data:
-            return Response("'text' missing", status=400)
-
-        if type(request.data["text"]) is not str:
-            return Response("'text' must be string", status=400)
+        field_maps: list[FieldMap] = serializer.data["my_fields"]
 
         user_category = UserCategory(
-            user=cast(User, request.user), text=request.data["text"]
+            user=cast(User, request.user), text=serializer.data["text"]
         )
 
         try:
@@ -119,51 +134,24 @@ class UserCategoryCreateView(APIView):
 class UserCategoriesQueryView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Query for User Categories",
+        operation_description="Query for User Categories",
+        request_body=GetMultipleSerializer,
+    )
     def post(self, request: Request):
-        count: int
-        try:
-            count = query_utils.get_count(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        serializer = GetMultipleSerializer(
+            data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
+        )
+        serializer.is_valid(raise_exception=True)
 
-        skip: int
-        try:
-            skip = query_utils.get_skip(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        sort: list[OrderBy]
-        try:
-            sort = query_utils.get_sort(request.data, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        search: list[Q]
-        try:
-            search = [Q(user=cast(User, request.user))] + query_utils.get_search(
-                request, request.data, _OBJECT_NAME
-            )
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        field_maps: list[FieldMap]
-        try:
-            fields = query_utils.get_fields__json(request.data)
-            field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        return_objects: bool
-        try:
-            return_objects = query_utils.get_return_objects(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        return_total_count: bool
-        try:
-            return_total_count = query_utils.get_return_total_count(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        count: int = serializer.data["count"]
+        skip: int = serializer.data["skip"]
+        sort: list[OrderBy] = serializer.data["sort"]
+        search: list[Q] = serializer.get_filter_args(request)
+        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        return_objects: bool = serializer.data["return_objects"]
+        return_total_count: bool = serializer.data["return_total_count"]
 
         user_categories = UserCategory.objects.filter(*search)
 
@@ -188,6 +176,11 @@ class UserCategoriesQueryView(APIView):
 class UserCategoriesApplyView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Add Feeds to a User Category",
+        operation_description="Add Feeds to a User Category",
+        request_body=openapi.Schema(type="object"),
+    )
     def put(self, request: Request):
         all_feed_uuids: set[uuid.UUID] = set()
         all_user_category_uuids: set[uuid.UUID] = set()

@@ -3,6 +3,7 @@ from typing import Any, cast
 import requests
 from django.db import transaction
 from django.db.models import OrderBy, Q
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
@@ -20,6 +21,7 @@ from api.models import (
     SubscribedFeedUserMapping,
     User,
 )
+from api.serializers import FeedParamsSerializer, GetMultipleSerializer
 
 _OBJECT_NAME = "feed"
 
@@ -27,19 +29,21 @@ _OBJECT_NAME = "feed"
 class FeedView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Get Single Feed",
+        operation_description="Get Single Feed",
+        query_serializer=FeedParamsSerializer,
+    )
     def get(self, request: Request):
-        url = request.query_params.get("url")
-        if not url:
-            raise ValidationError({"url": "missing"})
+        serializer = FeedParamsSerializer(
+            data=request.query_params,
+            context={"object_name": _OBJECT_NAME, "request": request},
+        )
+        serializer.is_valid(raise_exception=True)
 
-        url = cast(str, url_normalize(url))
+        url = cast(str, url_normalize(serializer.data["url"]))
 
-        field_maps: list[FieldMap]
-        try:
-            fields = query_utils.get_fields__query_dict(request.query_params)
-            field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        field_maps: list[FieldMap] = serializer.data["my_fields"]
 
         feed: Feed
         try:
@@ -60,49 +64,25 @@ class FeedView(APIView):
 class FeedsQueryView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Query for Feeds",
+        operation_description="Query for Feeds",
+        query_serializer=GetMultipleSerializer,
+    )
     def post(self, request: Request):
-        count: int
-        try:
-            count = query_utils.get_count(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        serializer = GetMultipleSerializer(
+            data=request.query_params,
+            context={"object_name": _OBJECT_NAME, "request": request},
+        )
+        serializer.is_valid(raise_exception=True)
 
-        skip: int
-        try:
-            skip = query_utils.get_skip(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        sort: list[OrderBy]
-        try:
-            sort = query_utils.get_sort(request.data, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        search: list[Q]
-        try:
-            search = query_utils.get_search(request, request.data, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        field_maps: list[FieldMap]
-        try:
-            fields = query_utils.get_fields__json(request.data)
-            field_maps = query_utils.get_field_maps(fields, _OBJECT_NAME)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        return_objects: bool
-        try:
-            return_objects = query_utils.get_return_objects(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
-
-        return_total_count: bool
-        try:
-            return_total_count = query_utils.get_return_total_count(request.data)
-        except QueryException as e:  # pragma: no cover
-            return Response(e.message, status=e.httpcode)
+        count: int = serializer.data["count"]
+        skip: int = serializer.data["skip"]
+        sort: list[OrderBy] = serializer.data["sort"]
+        search: list[Q] = serializer.get_filter_args(request)
+        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        return_objects: bool = serializer.data["return_objects"]
+        return_total_count: bool = serializer.data["return_total_count"]
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data(
