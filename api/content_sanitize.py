@@ -11,6 +11,8 @@ from bleach.html5lib_shim import SanitizerFilter as HTML5ShimFilter
 from html5lib.filters.base import Filter as HTML5LibFilter
 from html5lib.treewalkers.base import TreeWalker
 
+# TODO add filter so anchors automatically open in new tabs
+
 
 class TagRemovalFilter(HTML5LibFilter):
     def __init__(self, *args: Any, **kwargs: Any):
