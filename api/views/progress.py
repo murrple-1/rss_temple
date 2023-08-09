@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -25,6 +26,10 @@ class FeedSubscriptionProgressView(APIView):
         kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Check on the progress of your subscription queue entry",
+        operation_description="Check on the progress of your subscription queue entry",
+    )
     def get(self, request: Request, **kwargs: Any):
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry
         try:

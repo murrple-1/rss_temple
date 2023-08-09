@@ -17,15 +17,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api import query_utils
+from api import fields as fieldutils
 from api.fields import FieldMap
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
-    FeedEntriesMarkGlobalSerializer,
+    FeedEntriesMarkReadSerializer,
     FeedEntriesMarkSerializer,
-    GetMultipleSerializer,
+    GetManySerializer,
     GetSingleSerializer,
-    StableCreateMultipleSerializer,
+    StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
 )
 
@@ -65,7 +65,7 @@ class FeedEntryView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
         feed_entry: FeedEntry
         try:
@@ -73,7 +73,7 @@ class FeedEntryView(APIView):
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
-        ret_obj = query_utils.generate_return_object(field_maps, feed_entry, request)
+        ret_obj = fieldutils.generate_return_object(field_maps, feed_entry, request)
 
         return Response(ret_obj)
 
@@ -84,21 +84,21 @@ class FeedEntriesQueryView(APIView):
     @swagger_auto_schema(
         operation_summary="Query for Feed Entries",
         operation_description="Query for Feed Entries",
-        request_body=GetMultipleSerializer,
+        request_body=GetManySerializer,
     )
     def post(self, request: Request):
-        serializer = GetMultipleSerializer(
+        serializer = GetManySerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
         serializer.is_valid(raise_exception=True)
 
-        count: int = serializer.data["count"]
-        skip: int = serializer.data["skip"]
-        sort: list[OrderBy] = serializer.data["sort"]
-        search: list[Q] = serializer.get_filter_args(request)
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
-        return_objects: bool = serializer.data["return_objects"]
-        return_total_count: bool = serializer.data["return_total_count"]
+        count: int = serializer.validated_data["count"]
+        skip: int = serializer.validated_data["skip"]
+        sort: list[OrderBy] = serializer.validated_data["sort"]
+        search: list[Q] = serializer.validated_data["search"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        return_objects: bool = serializer.validated_data["return_objects"]
+        return_total_count: bool = serializer.validated_data["return_total_count"]
 
         feed_entries = FeedEntry.annotate_search_vectors(
             FeedEntry.objects.all()
@@ -109,9 +109,7 @@ class FeedEntriesQueryView(APIView):
         if return_objects:
             objs: list[dict[str, Any]] = []
             for feed_entry in feed_entries.order_by(*sort)[skip : skip + count]:
-                obj = query_utils.generate_return_object(
-                    field_maps, feed_entry, request
-                )
+                obj = fieldutils.generate_return_object(field_maps, feed_entry, request)
                 objs.append(obj)
 
             ret_obj["objects"] = objs
@@ -128,18 +126,18 @@ class FeedEntriesQueryStableCreateView(APIView):
     @swagger_auto_schema(
         operation_summary="Stable Query Creation for Feed Entries",
         operation_description="Stable Query Creation for Feed Entries",
-        request_body=StableCreateMultipleSerializer,
+        request_body=StableQueryCreateSerializer,
     )
     def post(self, request: Request):
         cache = caches["stable_query"]
 
-        serializer = StableCreateMultipleSerializer(
+        serializer = StableQueryCreateSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
         serializer.is_valid(raise_exception=True)
 
-        sort: list[OrderBy] = serializer.data["sort"]
-        search: list[Q] = serializer.get_filter_args(request)
+        sort: list[OrderBy] = serializer.validated_data["sort"]
+        search: list[Q] = serializer.validated_data["search"]
 
         token = f"feedentry-{uuid.uuid4().int}"
 
@@ -172,12 +170,12 @@ class FeedEntriesQueryStableView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        token: str = serializer.data["token"]
-        count: int = serializer.data["count"]
-        skip: int = serializer.data["skip"]
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
-        return_objects: bool = serializer.data["return_objects"]
-        return_total_count: bool = serializer.data["return_total_count"]
+        token: str = serializer.validated_data["token"]
+        count: int = serializer.validated_data["count"]
+        skip: int = serializer.validated_data["skip"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        return_objects: bool = serializer.validated_data["return_objects"]
+        return_total_count: bool = serializer.validated_data["return_total_count"]
 
         cache.touch(token)
         uuids = cache.get(token, [])
@@ -196,7 +194,7 @@ class FeedEntriesQueryStableView(APIView):
             if len(current_uuids) == len(feed_entries):
                 for uuid_ in current_uuids:
                     feed_entry = feed_entries[uuid_]
-                    obj = query_utils.generate_return_object(
+                    obj = fieldutils.generate_return_object(
                         field_maps, feed_entry, request
                     )
                     objs.append(obj)
@@ -268,20 +266,20 @@ class FeedEntriesReadView(APIView):
     @swagger_auto_schema(
         operation_summary="Mark multiple feed entries as 'read'",
         operation_description="Mark multiple feed entries as 'read'",
-        request_body=FeedEntriesMarkGlobalSerializer,
+        request_body=FeedEntriesMarkReadSerializer,
     )
     def post(self, request: Request):
-        serializer = FeedEntriesMarkGlobalSerializer(data=request.data)
+        serializer = FeedEntriesMarkReadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         q: Q | None = None
-        if feed_uuids := serializer.data["feed_uuids"]:
+        if feed_uuids := serializer.validated_data.get("feed_uuids"):
             if q is None:
                 q = Q(feed__uuid__in=feed_uuids)
             else:
                 q |= Q(feed__uuid__in=feed_uuids)  # pragma: no cover
 
-        if feed_entry_uuids := serializer.data["feed_entry_uuids"]:
+        if feed_entry_uuids := serializer.validated_data.get("feed_entry_uuids"):
             if q is None:
                 q = Q(uuid__in=feed_entry_uuids)
             else:
@@ -314,7 +312,7 @@ class FeedEntriesReadView(APIView):
         serializer.is_valid(raise_exception=True)
 
         feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
-            serializer.data["feed_entry_uuids"]
+            serializer.validated_data["feed_entry_uuids"]
         )
 
         if len(feed_entry_uuids) < 1:
@@ -380,7 +378,7 @@ class FeedEntriesFavoriteView(APIView):
         serializer.is_valid(raise_exception=True)
 
         feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
-            serializer.data["feed_entry_uuids"]
+            serializer.validated_data["feed_entry_uuids"]
         )
 
         if len(feed_entry_uuids) < 1:
@@ -406,7 +404,7 @@ class FeedEntriesFavoriteView(APIView):
         serializer.is_valid(raise_exception=True)
 
         feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
-            serializer.data["feed_entry_uuids"]
+            serializer.validated_data["feed_entry_uuids"]
         )
 
         if len(feed_entry_uuids) < 1:

@@ -89,6 +89,24 @@ class FieldsTestCase(TestCase):
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)
 
+    def test_generate_return_object(self):
+        field_maps: list[fields.FieldMap] = [
+            {
+                "field_name": "uuid",
+                "accessor": lambda request, db_obj: db_obj.uuid,
+            }
+        ]
+
+        db_obj = Mock()
+        db_obj.uuid = "test string"
+
+        self.assertEqual(
+            fields.generate_return_object(field_maps, db_obj, Mock(HttpRequest)),
+            {
+                "uuid": "test string",
+            },
+        )
+
 
 class AllFieldsTestCase(TestCase):
     old_logger_level: ClassVar[int]

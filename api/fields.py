@@ -157,3 +157,14 @@ def to_field_map(object_name: str, field_name: str) -> FieldMap | None:
 
 def field_list(object_name: str):
     return _field_configs[object_name].keys()
+
+
+def generate_return_object(
+    field_maps: list[FieldMap], db_obj: Any, request: HttpRequest
+):
+    return_obj: dict[str, Any] = {}
+    for field_map in field_maps:
+        field_name = field_map["field_name"]
+        return_obj[field_name] = field_map["accessor"](request, db_obj)
+
+    return return_obj

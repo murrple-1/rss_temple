@@ -44,7 +44,7 @@ class FeedTestCase(TestFileServerTestCase):
             "/api/feed",
             {
                 "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-                "fields": ",".join(fields.field_list("feed")),
+                "fields": fields.field_list("feed"),
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -215,11 +215,14 @@ class FeedTestCase(TestFileServerTestCase):
         )
 
         response = self.client.put(
-            "/api/feed/subscribe?customtitle=Custom%20Title%202",
+            "/api/feed/subscribe",
+            {
+                "customTitle": "Custom Title 2",
+            },
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"url", response.content)
-        self.assertIn(b"missing", response.content)
+        self.assertIn(b"required", response.content)
 
     def test_FeedSubscribeView_put_not_subscribed(self):
         self.generate_credentials()

@@ -76,7 +76,7 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.post(
             "/api/usercategory",
             {
-                "text": 0,
+                "text": True,
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -115,7 +115,7 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             f"/api/usercategory/{user_category.uuid}",
             {
-                "text": 0,
+                "text": True,
             },
         )
         self.assertEqual(response.status_code, 400, response.content)

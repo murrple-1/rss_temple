@@ -319,12 +319,6 @@ elif _test_runner_type == "timed":
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
-DEFAULT_COUNT = 50
-MAX_COUNT = 1000
-DEFAULT_SKIP = 0
-DEFAULT_RETURN_OBJECTS = True
-DEFAULT_RETURN_TOTAL_COUNT = True
-
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
 

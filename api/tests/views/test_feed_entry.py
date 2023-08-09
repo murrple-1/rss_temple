@@ -287,7 +287,7 @@ class FeedEntryTestCase(APITestCase):
         response = self.client.post(
             "/api/feedentries/read",
             {
-                "feedUuids": [0],
+                "feedUuids": ["baduuid"],
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -314,7 +314,7 @@ class FeedEntryTestCase(APITestCase):
         response = self.client.post(
             "/api/feedentries/read",
             {
-                "feedEntryUuids": [0],
+                "feedEntryUuids": ["baduuid"],
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -408,7 +408,7 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesReadView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/read",
-            {"feedEntryUuids": [0]},
+            {"feedEntryUuids": ["baduuid"]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -544,7 +544,7 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesFavoriteView_post_malformed(self):
         response = self.client.post(
             "/api/feedentries/favorite",
-            {"feedEntryUuids": [0]},
+            {"feedEntryUuids": ["baduuid"]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -625,7 +625,7 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntriesFavoriteView_delete_malformed(self):
         response = self.client.delete(
             "/api/feedentries/favorite",
-            {"feedEntryUuids": [0]},
+            {"feedEntryUuids": ["baduuid"]},
         )
         self.assertEqual(response.status_code, 400, response.content)
 
@@ -682,18 +682,18 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
-        self.assertIn(b"missing", response.content)
+        self.assertIn(b"required", response.content)
 
     def test_FeedEntriesQueryStableView_post_token_typeerror(self):
         response = self.client.post(
             "/api/feedentries/query/stable",
             {
-                "token": 0,
+                "token": True,
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
         self.assertIn(b"token", response.content)
-        self.assertIn(b"must be", response.content)
+        self.assertIn(b"Not a valid", response.content)
 
     def test_FeedEntriesQueryStableView_post_token_malformed(self):
         response = self.client.post(

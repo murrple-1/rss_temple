@@ -13,11 +13,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api import query_utils
+from api import fields as fieldutils
 from api.fields import FieldMap
 from api.models import Feed, User, UserCategory
 from api.serializers import (
-    GetMultipleSerializer,
+    GetManySerializer,
     GetSingleSerializer,
     UserCategoryCreateSerializer,
     UserCategorySerializer,
@@ -47,7 +47,7 @@ class UserCategoryView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
         user_category: UserCategory
         try:
@@ -57,7 +57,7 @@ class UserCategoryView(APIView):
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
 
-        ret_obj = query_utils.generate_return_object(field_maps, user_category, request)
+        ret_obj = fieldutils.generate_return_object(field_maps, user_category, request)
 
         return Response(ret_obj)
 
@@ -115,10 +115,10 @@ class UserCategoryCreateView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
         user_category = UserCategory(
-            user=cast(User, request.user), text=serializer.data["text"]
+            user=cast(User, request.user), text=serializer.validated_data["text"]
         )
 
         try:
@@ -126,7 +126,7 @@ class UserCategoryCreateView(APIView):
         except IntegrityError:
             return Response("user category already exists", status=409)
 
-        ret_obj = query_utils.generate_return_object(field_maps, user_category, request)
+        ret_obj = fieldutils.generate_return_object(field_maps, user_category, request)
 
         return Response(ret_obj)
 
@@ -137,21 +137,21 @@ class UserCategoriesQueryView(APIView):
     @swagger_auto_schema(
         operation_summary="Query for User Categories",
         operation_description="Query for User Categories",
-        request_body=GetMultipleSerializer,
+        request_body=GetManySerializer,
     )
     def post(self, request: Request):
-        serializer = GetMultipleSerializer(
+        serializer = GetManySerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
         serializer.is_valid(raise_exception=True)
 
-        count: int = serializer.data["count"]
-        skip: int = serializer.data["skip"]
-        sort: list[OrderBy] = serializer.data["sort"]
-        search: list[Q] = serializer.get_filter_args(request)
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
-        return_objects: bool = serializer.data["return_objects"]
-        return_total_count: bool = serializer.data["return_total_count"]
+        count: int = serializer.validated_data["count"]
+        skip: int = serializer.validated_data["skip"]
+        sort: list[OrderBy] = serializer.validated_data["sort"]
+        search: list[Q] = serializer.validated_data["search"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        return_objects: bool = serializer.validated_data["return_objects"]
+        return_total_count: bool = serializer.validated_data["return_total_count"]
 
         user_categories = UserCategory.objects.filter(*search)
 
@@ -160,7 +160,7 @@ class UserCategoriesQueryView(APIView):
         if return_objects:
             objs: list[dict[str, Any]] = []
             for user_category in user_categories.order_by(*sort)[skip : skip + count]:
-                obj = query_utils.generate_return_object(
+                obj = fieldutils.generate_return_object(
                     field_maps, user_category, request
                 )
                 objs.append(obj)

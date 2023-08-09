@@ -1,5 +1,5 @@
 import re
-from typing import Any, Mapping, cast
+from typing import Any, cast
 
 from allauth.account.adapter import get_adapter
 from allauth.account.forms import PasswordVerificationMixin, SetPasswordField, UserForm
@@ -10,17 +10,17 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Q
+from django.db.models import OrderBy, Q
 from django.http.request import HttpRequest
 from django.urls import exceptions as url_exceptions
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 
-from api import query_utils
+from api import fields as fieldutils
 from api import searches as searchutils
 from api import sorts as sortutils
-from api.fields import FieldMap
+from api.exceptions import QueryException
 
 try:
     from allauth.account import app_settings as allauth_account_settings
@@ -222,84 +222,217 @@ class RegisterSerializer(serializers.Serializer):
         return user
 
 
-class FieldsField(serializers.Field):
-    def to_internal_value(self, data: str):
-        object_name: str = self.context["object_name"]
+class _FieldsField(serializers.ListField):
+    def __init__(self, *args, **kwargs):
+        kwargs["child"] = serializers.CharField()
+        super().__init__(*args, **kwargs)
 
-        fields = data.split(",")
-        return query_utils.get_field_maps(fields, object_name)
+    def to_internal_value(self, data: Any):
+        data = super().to_internal_value(data)
 
-    def to_representation(self, value: list[FieldMap]):
-        return super().to_representation(value)
+        object_name: str | None = self.context.get("object_name")
+        if not object_name:
+            return []
+
+        if settings.DEBUG and len(data) == 1 and data[0] == "_all":
+            field_maps = fieldutils.get_all_field_maps(object_name)
+        else:
+            field_maps = []
+            for field_name in data:
+                field_map = fieldutils.to_field_map(object_name, field_name)
+                if field_map:
+                    field_maps.append(field_map)
+
+            if len(field_maps) < 1:
+                field_maps = fieldutils.get_default_field_maps(object_name)
+
+        return field_maps
+
+
+class _SortField(serializers.Field):
+    def get_default(self):
+        object_name: str | None = self.context.get("object_name")
+        if not object_name:
+            return []
+
+        try:
+            default_sort_enabled = not self.parent.initial_data.get(
+                "disableDefaultSort"
+            )
+        except AttributeError:
+            default_sort_enabled = True
+
+        sort_list = sortutils.to_sort_list(object_name, None, default_sort_enabled)
+        return sortutils.sort_list_to_order_by_args(object_name, sort_list)
+
+    def to_internal_value(self, data: Any):
+        object_name: str | None = self.context.get("object_name")
+        if not object_name:
+            return []
+
+        if isinstance(data, bool) or not isinstance(
+            data,
+            (
+                str,
+                int,
+                float,
+            ),
+        ):
+            raise serializers.ValidationError("Not a valid string.")
+        data = str(data).strip()
+
+        try:
+            default_sort_enabled = not self.parent.initial_data.get(
+                "disableDefaultSort"
+            )
+        except AttributeError:
+            default_sort_enabled = True
+
+        try:
+            sort_list = sortutils.to_sort_list(object_name, data, default_sort_enabled)
+            return sortutils.sort_list_to_order_by_args(object_name, sort_list)
+        except QueryException:
+            raise serializers.ValidationError("sort malformed")
+
+    def to_representation(self, value: list[OrderBy]):
+        return value
+
+
+class _SearchField(serializers.Field):
+    def to_internal_value(self, data: Any):
+        if isinstance(data, bool) or not isinstance(
+            data,
+            (
+                str,
+                int,
+                float,
+            ),
+        ):
+            raise serializers.ValidationError("Not a valid string.")
+        data = str(data).strip()
+
+        request: Request | None = self.context.get("request")
+        object_name: str | None = self.context.get("object_name")
+        if not request or not object_name:
+            return []
+
+        try:
+            return searchutils.to_filter_args(object_name, request, data)
+        except QueryException:
+            raise serializers.ValidationError("search malformed")
+
+    def to_representation(self, value: list[Q]):
+        return value
 
 
 class GetSingleSerializer(serializers.Serializer):
-    my_fields = FieldsField(required=False, default=[], source="fields")
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
 
 
-class SortField(serializers.Field):
-    def get_value(self, dictionary: Mapping[Any, Any]) -> Any:
-        return super().get_value(dictionary)
-
-    def to_internal_value(self, data: str):
-        default_sort_enabled: bool = not attrs["disableDefaultSort"]
-
-        object_name: str = self.context["object_name"]
-
-        sort_list = sortutils.to_sort_list(object_name, data, default_sort_enabled)
-        return sortutils.sort_list_to_order_by_args(object_name, sort_list)
-
-    def to_representation(self, value):
-        return super().to_representation(value)
-
-
-class SearchField(serializers.Field):
-    def to_internal_value(self, data: str):
-        request: Request = self.context["request"]
-        object_name: str = self.context["object_name"]
-        return searchutils.to_filter_args(object_name, request, data)
-
-    def to_representation(self, value):
-        return super().to_representation(value)
-
-
-class StableCreateMultipleSerializer(GetSingleSerializer):
-    sort = SortField(required=False, default="")
-    search = SearchField(required=False, default="")
-    disable_default_sort = serializers.BooleanField(
-        default=False, required=False, source="disableDefaultSort"
-    )
-
-    def get_filter_args(self, request: Request) -> list[Q]:
-        search_str = self.data["search"]
-        if not search_str:
-            return []
-
-        return searchutils.to_filter_args(
-            self.context["object_name"], request, search_str
-        )
-
-
-class GetMultipleSerializer(StableCreateMultipleSerializer):
+class GetManySerializer(serializers.Serializer):
     count = serializers.IntegerField(
         max_value=1000, min_value=0, default=50, required=False
     )
     skip = serializers.IntegerField(min_value=0, default=0, required=False)
-    return_objects = serializers.BooleanField(
-        default=True, required=False, source="returnObjects"
+    returnObjects = serializers.BooleanField(
+        default=True, required=False, source="return_objects"
     )
-    return_total_count = serializers.BooleanField(
-        default=True, required=False, source="returnTotalCount"
+    returnTotalCount = serializers.BooleanField(
+        default=True, required=False, source="return_total_count"
+    )
+    sort = _SortField(required=False)
+    search = _SearchField(required=False, default=[])
+    disableDefaultSort = serializers.BooleanField(
+        default=False, required=False, source="disable_default_sort"
     )
 
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
 
-def _token_validate(data):
-    if re.search(r"^feedentry-\d+$", data) is None:
+
+class StableQueryCreateSerializer(serializers.Serializer):
+    sort = _SortField(required=False)
+    search = _SearchField(required=False, default=[])
+    disableDefaultSort = serializers.BooleanField(
+        default=False, required=False, source="disable_default_sort"
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
+
+
+def _token_validate(data: Any):
+    if isinstance(data, str) and re.search(r"^[a-z_]+-\d+$", data) is None:
         raise serializers.ValidationError("malformed")
 
 
-class StableQueryMultipleSerializer(GetMultipleSerializer):
+class StableQueryMultipleSerializer(serializers.Serializer):
     token = serializers.CharField(required=True, validators=[_token_validate])
+    count = serializers.IntegerField(
+        max_value=1000, min_value=0, default=50, required=False
+    )
+    skip = serializers.IntegerField(min_value=0, default=0, required=False)
+    returnObjects = serializers.BooleanField(
+        default=True, required=False, source="return_objects"
+    )
+    returnTotalCount = serializers.BooleanField(
+        default=True, required=False, source="return_total_count"
+    )
+    sort = _SortField(required=False)
+    search = _SearchField(required=False, default=[])
+    disableDefaultSort = serializers.BooleanField(
+        default=False, required=False, source="disable_default_sort"
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
+
+
+class FeedGetSerializer(serializers.Serializer):
+    url = serializers.URLField(required=True)
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
+
+
+class FeedSubscribeSerializer(serializers.Serializer):
+    url = serializers.URLField(required=True)
+    customTitle = serializers.CharField(required=False, source="custom_title")
+
+
+class UserCategoryCreateSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.fields["fields"] = _FieldsField(required=False, default=[])
+
+
+class FeedEntriesMarkSerializer(serializers.Serializer):
+    feedEntryUuids = serializers.ListField(
+        child=serializers.UUIDField(), required=True, source="feed_entry_uuids"
+    )
+
+
+class FeedEntriesMarkReadSerializer(serializers.Serializer):
+    feedUuids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, source="feed_uuids"
+    )
+    feedEntryUuids = serializers.ListField(
+        child=serializers.UUIDField(), required=False, source="feed_entry_uuids"
+    )
+
+
+class UserCategorySerializer(serializers.ModelSerializer[UserCategory]):
+    class Meta:
+        model = UserCategory
+        fields = ("text",)
 
 
 class _ExploreFeedSerializer(serializers.Serializer):
@@ -317,32 +450,3 @@ class _ExploreFeedSerializer(serializers.Serializer):
 class ExploreSerializer(serializers.Serializer):
     tagName = serializers.CharField()
     feeds = _ExploreFeedSerializer(many=True)
-
-
-class FeedParamsSerializer(GetSingleSerializer):
-    url = serializers.CharField(required=True)
-
-
-class UserCategoryCreateSerializer(GetSingleSerializer):
-    text = serializers.CharField(required=True)
-
-
-class FeedEntriesMarkGlobalSerializer(serializers.Serializer):
-    feed_uuids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, source="feedUuids"
-    )
-    feed_entry_uuids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, source="feedEntryUuids"
-    )
-
-
-class FeedEntriesMarkSerializer(serializers.Serializer):
-    feed_entry_uuids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, source="feedEntryUuids"
-    )
-
-
-class UserCategorySerializer(serializers.ModelSerializer[UserCategory]):
-    class Meta:
-        model = UserCategory
-        fields = ("text",)

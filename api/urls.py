@@ -99,7 +99,7 @@ urlpatterns = [
     re_path(r"^usercategories/apply/?$", views.UserCategoriesApplyView.as_view()),
     re_path(r"^opml/?$", views.OPMLView.as_view()),
     re_path(
-        rf"^feed/subscribe/progress/({_uuid_regex})/?$",
+        rf"^feed/subscribe/progress/{_uuid_regex}/?$",
         views.FeedSubscriptionProgressView.as_view(),
     ),
     re_path(r"^explore/?$", views.ExploreView.as_view()),

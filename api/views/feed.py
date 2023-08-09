@@ -11,7 +11,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import feed_handler, grace_period_util, query_utils, rss_requests
+from api import feed_handler
+from api import fields as fieldutils
+from api import grace_period_util, rss_requests
 from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import (
@@ -21,7 +23,11 @@ from api.models import (
     SubscribedFeedUserMapping,
     User,
 )
-from api.serializers import FeedParamsSerializer, GetMultipleSerializer
+from api.serializers import (
+    FeedGetSerializer,
+    FeedSubscribeSerializer,
+    GetManySerializer,
+)
 
 _OBJECT_NAME = "feed"
 
@@ -32,18 +38,18 @@ class FeedView(APIView):
     @swagger_auto_schema(
         operation_summary="Get Single Feed",
         operation_description="Get Single Feed",
-        query_serializer=FeedParamsSerializer,
+        query_serializer=FeedGetSerializer,
     )
     def get(self, request: Request):
-        serializer = FeedParamsSerializer(
+        serializer = FeedGetSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
         )
         serializer.is_valid(raise_exception=True)
 
-        url = cast(str, url_normalize(serializer.data["url"]))
+        url = cast(str, url_normalize(serializer.validated_data["url"]))
 
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
         feed: Feed
         try:
@@ -56,7 +62,7 @@ class FeedView(APIView):
             except QueryException as e:
                 return Response(e.message, status=e.httpcode)
 
-        ret_obj = query_utils.generate_return_object(field_maps, feed, request)
+        ret_obj = fieldutils.generate_return_object(field_maps, feed, request)
 
         return Response(ret_obj)
 
@@ -67,22 +73,22 @@ class FeedsQueryView(APIView):
     @swagger_auto_schema(
         operation_summary="Query for Feeds",
         operation_description="Query for Feeds",
-        query_serializer=GetMultipleSerializer,
+        query_serializer=GetManySerializer,
     )
     def post(self, request: Request):
-        serializer = GetMultipleSerializer(
+        serializer = GetManySerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
         )
         serializer.is_valid(raise_exception=True)
 
-        count: int = serializer.data["count"]
-        skip: int = serializer.data["skip"]
-        sort: list[OrderBy] = serializer.data["sort"]
-        search: list[Q] = serializer.get_filter_args(request)
-        field_maps: list[FieldMap] = serializer.data["my_fields"]
-        return_objects: bool = serializer.data["return_objects"]
-        return_total_count: bool = serializer.data["return_total_count"]
+        count: int = serializer.validated_data["count"]
+        skip: int = serializer.validated_data["skip"]
+        sort: list[OrderBy] = serializer.validated_data["sort"]
+        search: list[Q] = serializer.validated_data["search"]
+        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        return_objects: bool = serializer.validated_data["return_objects"]
+        return_total_count: bool = serializer.validated_data["return_total_count"]
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data(
@@ -95,7 +101,7 @@ class FeedsQueryView(APIView):
         if return_objects:
             objs: list[dict[str, Any]] = []
             for feed in feeds.order_by(*sort)[skip : skip + count]:
-                obj = query_utils.generate_return_object(field_maps, feed, request)
+                obj = fieldutils.generate_return_object(field_maps, feed, request)
                 objs.append(obj)
 
             ret_obj["objects"] = objs
@@ -109,17 +115,18 @@ class FeedsQueryView(APIView):
 class FeedSubscribeView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_summary="Subscribe to feed",
+        operation_description="Subscribe to feed",
+        request_body=FeedSubscribeSerializer,
+    )
     def post(self, request: Request):
         user = cast(User, request.user)
 
-        url = request.data.get("url")
-        if not url:
-            raise ValidationError({"url": "missing"})
+        serializer = FeedSubscribeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not isinstance(url, str):
-            raise ValidationError({"url": "must be string"})
-
-        url = cast(str, url_normalize(url))
+        url = cast(str, url_normalize(serializer.validated_data["url"]))
 
         feed: Feed
         try:
@@ -130,7 +137,7 @@ class FeedSubscribeView(APIView):
             except QueryException as e:
                 return Response(e.message, status=e.httpcode)
 
-        custom_title = request.data.get("customTitle")
+        custom_title: str | None = serializer.validated_data.get("custom_title")
         if custom_title is not None and not isinstance(custom_title, str):
             raise ValidationError({"customTitle": "must be string or null"})
 
@@ -162,19 +169,21 @@ class FeedSubscribeView(APIView):
 
         return Response(status=204)
 
+    @swagger_auto_schema(
+        operation_summary="Update subscription metadata",
+        operation_description="Update subscription metadata",
+        request_body=FeedSubscribeSerializer,
+    )
     def put(self, request: Request):
         user = cast(User, request.user)
 
+        serializer = FeedSubscribeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         url = request.data.get("url")
-        if not url:
-            raise ValidationError({"url": "missing"})
 
-        if not isinstance(url, str):
-            raise ValidationError({"url": "must be string"})
+        url = url_normalize(serializer.validated_data["url"])
 
-        url = url_normalize(url)
-
-        custom_title = request.data.get("customTitle")
+        custom_title: str | None = serializer.validated_data.get("custom_title")
         if custom_title is not None and not isinstance(custom_title, str):
             raise ValidationError({"customTitle": "must be string or null"})
 
@@ -201,15 +210,16 @@ class FeedSubscribeView(APIView):
 
         return Response(status=204)
 
+    @swagger_auto_schema(
+        operation_summary="Unsubscribe from feed",
+        operation_description="Unsubscribe from feed",
+        request_body=FeedGetSerializer,
+    )
     def delete(self, request: Request):
-        url = request.data.get("url")
-        if not url:
-            raise ValidationError({"url": "missing"})
+        serializer = FeedGetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not isinstance(url, str):
-            raise ValidationError({"url": "must be string"})
-
-        url = url_normalize(url)
+        url = url_normalize(serializer.validated_data["url"])
 
         count, _ = SubscribedFeedUserMapping.objects.filter(
             user=cast(User, request.user), feed__feed_url=url
