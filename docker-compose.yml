@@ -4,7 +4,7 @@ services:
   redis:
     image: redis
   postgresql:
-    image: postgres:13
+    image: postgres:15
     shm_size: '256m'
     env_file:
       - .env
