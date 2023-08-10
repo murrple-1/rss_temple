@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar
+from typing import ClassVar, cast
 from unittest.mock import Mock
 
 from django.http import HttpRequest
@@ -35,8 +35,13 @@ class GetSingleSerializerTestCase(SimpleTestCase):
         )
         serializer.is_valid(raise_exception=True)
         self.assertEqual(
-            serializer.validated_data["fields"],
-            fieldutils.get_default_field_maps("feed"),
+            sorted(
+                serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
+            ),
+            sorted(
+                fieldutils.get_default_field_maps("feed"),
+                key=lambda fm: fm["field_name"],
+            ),
         )
 
         serializer = GetSingleSerializer(
@@ -44,8 +49,15 @@ class GetSingleSerializerTestCase(SimpleTestCase):
         )
         serializer.is_valid(raise_exception=True)
         self.assertEqual(
-            serializer.validated_data["fields"],
-            [fieldutils.to_field_map("feed", "uuid")],
+            sorted(
+                serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
+            ),
+            sorted(
+                cast(
+                    list[fieldutils.FieldMap], [fieldutils.to_field_map("feed", "uuid")]
+                ),
+                key=lambda fm: fm["field_name"],
+            ),
         )
 
         serializer = GetSingleSerializer(
@@ -53,11 +65,19 @@ class GetSingleSerializerTestCase(SimpleTestCase):
         )
         serializer.is_valid(raise_exception=True)
         self.assertEqual(
-            serializer.validated_data["fields"],
-            [
-                fieldutils.to_field_map("feed", "uuid"),
-                fieldutils.to_field_map("feed", "title"),
-            ],
+            sorted(
+                serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
+            ),
+            sorted(
+                cast(
+                    list[fieldutils.FieldMap],
+                    [
+                        fieldutils.to_field_map("feed", "uuid"),
+                        fieldutils.to_field_map("feed", "title"),
+                    ],
+                ),
+                key=lambda fm: fm["field_name"],
+            ),
         )
 
         with self.settings(DEBUG=True):
@@ -66,8 +86,13 @@ class GetSingleSerializerTestCase(SimpleTestCase):
             )
             serializer.is_valid(raise_exception=True)
             self.assertEqual(
-                serializer.validated_data["fields"],
-                fieldutils.get_all_field_maps("feed"),
+                sorted(
+                    serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
+                ),
+                sorted(
+                    fieldutils.get_all_field_maps("feed"),
+                    key=lambda fm: fm["field_name"],
+                ),
             )
 
         serializer = GetSingleSerializer(
@@ -75,8 +100,13 @@ class GetSingleSerializerTestCase(SimpleTestCase):
         )
         serializer.is_valid(raise_exception=True)
         self.assertEqual(
-            serializer.validated_data["fields"],
-            fieldutils.get_default_field_maps("feed"),
+            sorted(
+                serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
+            ),
+            sorted(
+                fieldutils.get_default_field_maps("feed"),
+                key=lambda fm: fm["field_name"],
+            ),
         )
 
     def test_fields_typeerror(self):
