@@ -151,4 +151,4 @@ TODO: for the time being, this will just be static data (based on my personal OP
                     }
                 )
 
-        return Response(ExploreSerializer(data=ret_obj).data)
+        return Response(ExploreSerializer(ret_obj, many=True).data)

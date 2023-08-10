@@ -73,7 +73,7 @@ class FeedsQueryView(APIView):
     )
     def post(self, request: Request):
         serializer = GetManySerializer(
-            data=request.query_params,
+            data=request.data,
             context={"object_name": _OBJECT_NAME, "request": request},
         )
         serializer.is_valid(raise_exception=True)

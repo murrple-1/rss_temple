@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 feed_entry.is_archived = True
                 newly_archived.append(feed_entry)
 
-        FeedEntry.objects.bulk_update(newly_archived, ["is_archived"])
+        FeedEntry.objects.bulk_update(newly_archived, ["is_archived"], batch_size=512)
 
         ReadFeedEntryUserMapping.objects.filter(feed_entry__in=newly_archived).delete()
 
