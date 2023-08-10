@@ -229,7 +229,7 @@ class _FieldsField(serializers.ListField):
     def to_internal_value(self, data: Any):
         data = super().to_internal_value(data)
 
-        data = list(frozenset(data))
+        data = sorted(frozenset(data))
 
         object_name: str | None = self.context.get("object_name")
         if not object_name:
