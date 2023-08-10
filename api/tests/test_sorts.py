@@ -5,7 +5,6 @@ from django.db.models.manager import BaseManager
 from django.test import TestCase
 
 from api import sorts
-from api.exceptions import QueryException
 from api.models import Feed, FeedEntry, User, UserCategory
 
 
@@ -93,11 +92,11 @@ class SortsTestCase(TestCase):
         self.assertEqual(order_by_args, [F("uuid").asc(), F("title").desc()])
 
     def test_sort_malformed(self):
-        with self.assertRaises(QueryException):
+        with self.assertRaises(ValueError):
             sorts.to_sort_list("feed", "bad sort string", True)
 
     def test_bad_sort_list(self):
-        with self.assertRaises(QueryException):
+        with self.assertRaises(AttributeError):
             sorts.sort_list_to_order_by_args(
                 "feed",
                 [

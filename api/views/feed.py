@@ -14,7 +14,6 @@ from url_normalize import url_normalize
 from api import feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
-from api.exceptions import QueryException
 from api.fields import FieldMap
 from api.models import (
     Feed,
@@ -57,10 +56,7 @@ class FeedView(APIView):
                 Feed.objects.all(), cast(User, request.user)
             ).get(feed_url=url)
         except Feed.DoesNotExist:
-            try:
-                feed = _save_feed(url)
-            except QueryException as e:
-                return Response(e.message, status=e.httpcode)
+            feed = _save_feed(url)
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request)
 
@@ -132,10 +128,7 @@ class FeedSubscribeView(APIView):
         try:
             feed = Feed.objects.get(feed_url=url)
         except Feed.DoesNotExist:
-            try:
-                feed = _save_feed(url)
-            except QueryException as e:
-                return Response(e.message, status=e.httpcode)
+            feed = _save_feed(url)
 
         custom_title: str | None = serializer.validated_data.get("custom_title")
         if custom_title is not None and not isinstance(custom_title, str):
@@ -237,7 +230,7 @@ def _save_feed(url: str):
         response = rss_requests.get(url)
         response.raise_for_status()
     except requests.exceptions.RequestException:
-        raise QueryException("feed not found", 404)
+        raise NotFound("feed not found")
 
     with transaction.atomic():
         d = feed_handler.text_2_d(response.text)

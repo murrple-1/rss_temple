@@ -9,7 +9,6 @@ from django.http import HttpRequest
 from django.test import TestCase
 
 from api import searches
-from api.exceptions import QueryException
 from api.models import Feed, FeedEntry, User, UserCategory
 
 
@@ -38,18 +37,18 @@ class SearchesTestCase(TestCase):
         )
 
     def test_malformed(self):
-        with self.assertRaises(QueryException):
+        with self.assertRaises(ValueError):
             searches.to_filter_args("feed", Mock(HttpRequest), "")
 
-        with self.assertRaises(QueryException):
+        with self.assertRaises(ValueError):
             searches.to_filter_args("feed", Mock(HttpRequest), '((title:"test")')
 
     def test_unknown_field(self):
-        with self.assertRaises(QueryException):
+        with self.assertRaises(AttributeError):
             searches.to_filter_args("feed", Mock(HttpRequest), 'unknownfield:"test"')
 
     def test_malformed_value(self):
-        with self.assertRaises(QueryException):
+        with self.assertRaises(ValueError):
             searches.to_filter_args("feed", Mock(HttpRequest), 'uuid:"bad uuid"')
 
     def test_and(self):

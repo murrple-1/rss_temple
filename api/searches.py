@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.http import HttpRequest
 from pyparsing import ParseException, ParseResults
 
-from api.exceptions import QueryException
 from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
 from api.search.convertto import (
     Bool,
@@ -196,7 +195,7 @@ def to_filter_args(object_name: str, request: HttpRequest, search: str):
         parse_results = parser().parseString(search, True)
     except ParseException as e:
         _logger.warning("Parsing of '%s' failed: %s", search, e)
-        raise QueryException("'search' malformed", 400)
+        raise ValueError("search malformed")
 
     object_search_fns = _search_fns[object_name]
 
@@ -276,6 +275,6 @@ def _q(
             try:
                 return object_search_fn(request, search_obj)
             except ValueError:
-                raise QueryException(f"'{field_name}' search malformed", 400)
+                raise ValueError(f"'{field_name}' search malformed")
     else:
-        raise QueryException(f"'{field_name}' field not recognized", 400)
+        raise AttributeError(field_name)

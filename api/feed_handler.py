@@ -6,10 +6,13 @@ import feedparser
 import validators
 
 from api import content_sanitize
-from api.exceptions import QueryException
 from api.models import Feed, FeedEntry
 
 _logger: logging.Logger | None = None
+
+
+class FeedHandlerError(Exception):
+    pass
 
 
 def logger() -> logging.Logger:  # pragma: no cover
@@ -26,7 +29,7 @@ def text_2_d(text: str):
     logger().info("feed info: %s", pprint.pformat(d))
 
     if "bozo" in d and d.bozo == 1:
-        raise QueryException("feed malformed", 422) from d.bozo_exception
+        raise FeedHandlerError from d.bozo_exception
 
     return d
 

@@ -3,8 +3,6 @@ from typing import Callable, Literal, TypedDict, cast
 
 from django.db.models import F, OrderBy
 
-from api.exceptions import QueryException
-
 
 class _DefaultDescriptor:
     direction: Literal["ASC", "DESC"]
@@ -83,7 +81,7 @@ def to_sort_list(object_name: str, sort: str | None, default_sort_enabled: bool)
                     }
                 )
             else:
-                raise QueryException("'sort' malformed", 400)
+                raise ValueError("sort malformed")
 
     if default_sort_enabled:
         default_sort_list = _to_default_sort_list(object_name)
@@ -132,7 +130,7 @@ def sort_list_to_order_by_args(object_name: str, sort_list: list[_SortConfigDict
             for db_sort_field_accessor_fn in db_sort_field_accessor_fns:
                 db_sort_list.append(db_sort_field_accessor_fn(direction))
         else:
-            raise QueryException(f"'{field_name}' field not recognized for 'sort'", 400)
+            raise AttributeError(field_name)
 
     return db_sort_list
 

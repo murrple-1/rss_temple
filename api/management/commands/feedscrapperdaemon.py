@@ -15,7 +15,6 @@ from django.db.utils import OperationalError
 from django.utils import timezone
 
 from api import feed_handler, rss_requests
-from api.exceptions import QueryException
 from api.models import Feed, FeedEntry
 
 
@@ -80,7 +79,7 @@ class Command(BaseCommand):
                                 )
                             except (
                                 requests.exceptions.RequestException,
-                                QueryException,
+                                feed_handler.FeedHandlerError,
                             ):
                                 self.stderr.write(
                                     self.style.ERROR(

@@ -20,7 +20,6 @@ from rest_framework.request import Request
 from api import fields as fieldutils
 from api import searches as searchutils
 from api import sorts as sortutils
-from api.exceptions import QueryException
 
 try:
     from allauth.account import app_settings as allauth_account_settings
@@ -291,8 +290,8 @@ class _SortField(serializers.Field):
         try:
             sort_list = sortutils.to_sort_list(object_name, data, default_sort_enabled)
             return sortutils.sort_list_to_order_by_args(object_name, sort_list)
-        except QueryException:
-            raise serializers.ValidationError("sort malformed")
+        except (ValueError, AttributeError) as e:
+            raise serializers.ValidationError("sort malformed") from e
 
     def to_representation(self, value: list[OrderBy]):
         return value
@@ -318,8 +317,8 @@ class _SearchField(serializers.Field):
 
         try:
             return searchutils.to_filter_args(object_name, request, data)
-        except QueryException:
-            raise serializers.ValidationError("search malformed")
+        except (ValueError, AttributeError) as e:
+            raise serializers.ValidationError("search malformed") from e
 
     def to_representation(self, value: list[Q]):
         return value

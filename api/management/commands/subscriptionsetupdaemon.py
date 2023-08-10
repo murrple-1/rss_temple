@@ -10,7 +10,6 @@ from django.db import transaction
 from django.db.utils import OperationalError
 
 from api import feed_handler, rss_requests
-from api.exceptions import QueryException
 from api.models import (
     Feed,
     FeedEntry,
@@ -50,6 +49,8 @@ class Command(BaseCommand):
             raise CommandError("db went away") from e
         except Exception as e:
             raise CommandError("loop stooped unexpectedly") from e
+
+        return None
 
     def _setup_exit_event(self):
         exit = Event()
@@ -121,7 +122,10 @@ class Command(BaseCommand):
                 except Feed.DoesNotExist:
                     try:
                         feed = self._generate_feed(feed_url)
-                    except (requests.exceptions.RequestException, QueryException):
+                    except (
+                        requests.exceptions.RequestException,
+                        feed_handler.FeedHandlerError,
+                    ):
                         self.stderr.write(
                             f"could not load feed for '{feed_url}'\n{traceback.format_exc()}"
                         )

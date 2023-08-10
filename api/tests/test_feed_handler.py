@@ -4,7 +4,6 @@ from typing import ClassVar
 from django.test import TestCase
 
 from api import feed_handler
-from api.exceptions import QueryException
 from api.models import FeedEntry
 
 
@@ -47,7 +46,7 @@ class FeedHandlerTestCase(TestCase):
             with open(f"api/tests/test_files/{feed_type}/malformed.xml", "r") as f:
                 text = f.read()
 
-            with self.assertRaises(QueryException):
+            with self.assertRaises(feed_handler.FeedHandlerError):
                 feed_handler.text_2_d(text)
 
     def test_d_feed_2_feed(self):
