@@ -51,7 +51,11 @@ class ContentSanitizerTestCase(TestCase):
             ('<a href="https://test.com/entry"></a>', ""),
             (
                 '<a href="https://test.com/entry">Link</a>',
-                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
+            ),
+            (
+                '<a href="https://test.com/entry" target="_self">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>',
@@ -59,7 +63,7 @@ class ContentSanitizerTestCase(TestCase):
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>',
-                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
             ),
             ("<iframe></iframe>", ""),
             ('<iframe src="https://slashdot.org/post1.html"></iframe>', ""),
@@ -119,7 +123,11 @@ class ContentSanitizerTestCase(TestCase):
             ('<a href="https://test.com/entry"></a>', ""),
             (
                 '<a href="https://test.com/entry">Link</a>',
-                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
+            ),
+            (
+                '<a href="https://test.com/entry" target="_self">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>',
@@ -127,7 +135,7 @@ class ContentSanitizerTestCase(TestCase):
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>',
-                '<a href="https://test.com/entry">Link</a>',
+                '<a href="https://test.com/entry" target="_blank">Link</a>',
             ),
             ("Some Text", "Some Text"),
             ("Some Text\nSome More Text", "Some Text<br>Some More Text"),

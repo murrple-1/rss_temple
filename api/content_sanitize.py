@@ -123,6 +123,15 @@ class BadIFrameFilter(HTML5LibFilter):
                 yield token
 
 
+class AnchorsOpenNewTabFilter(HTML5LibFilter):
+    def __iter__(self):
+        for token in super().__iter__():
+            if token["type"] == "StartTag" and token["name"] == "a":
+                token["data"][(None, "target")] = "_blank"
+
+            yield token
+
+
 _my_bleach_filter_kwargs_: dict[str, Any] | None = None
 
 
@@ -144,6 +153,7 @@ def _html_sanitizer_stream(source: TreeWalker):
             "height",
             "allowfullscreen",
         ]
+        allowed_attributes["a"] = ["href", "title", "target"]
 
         allowed_protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
 
@@ -170,6 +180,7 @@ def _html_sanitizer_stream(source: TreeWalker):
     filtered = HTTPSOnlyImgFilter(source=filtered)
     filtered = EmptyAnchorFilter(source=filtered)
     filtered = BadIFrameFilter(source=filtered)
+    filtered = AnchorsOpenNewTabFilter(source=filtered)
     filtered = bleach.sanitizer.BleachSanitizerFilter(
         source=filtered, **_my_bleach_filter_kwargs_
     )
@@ -191,7 +202,9 @@ def sanitize(text: str):
         return sanitize_plain(text)
 
 
-_html_serializer = html5lib.serializer.HTMLSerializer(resolve_entities=False)
+_html_serializer = html5lib.serializer.HTMLSerializer(
+    resolve_entities=False, quote_attr_values="always", alphabetical_attributes=True
+)
 
 
 def sanitize_html(text: str):
