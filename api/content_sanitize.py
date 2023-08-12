@@ -1,4 +1,3 @@
-import html
 import re
 from typing import Any, Callable
 from urllib.parse import ParseResult, urlparse
@@ -186,31 +185,26 @@ def _html_sanitizer_stream(source: TreeWalker):
     return filtered
 
 
-_is_html_regex = re.compile(r"<\/?[a-z][\s\S]*>", re.IGNORECASE)
+_has_tags = re.compile(r"<\/?[a-z][\s\S]*>", re.IGNORECASE)
 
 
-def is_html(text: str):
-    return _is_html_regex.search(text) is not None
-
-
-def sanitize(text: str):
-    if is_html(text):
-        return sanitize_html(text)
+def sanitize(text: str) -> str:
+    if _has_tags.search(text) is not None:
+        return _sanitize_html(text)
     else:
-        return sanitize_plain(text)
+        return _sanitize_html("<br>".join(text.splitlines()))
 
 
 _html_serializer = html5lib.serializer.HTMLSerializer(
-    resolve_entities=False, quote_attr_values="always", alphabetical_attributes=True
+    resolve_entities=False,
+    quote_attr_values="always",
+    alphabetical_attributes=True,
+    strip_whitespace=True,
 )
 
 
-def sanitize_html(text: str):
+def _sanitize_html(text: str) -> str:
     dom = html5lib.parse(text, treebuilder="lxml")
     walker = html5lib.getTreeWalker("lxml")
     stream = _html_sanitizer_stream(walker(dom))
     return _html_serializer.render(stream)
-
-
-def sanitize_plain(text: str):
-    return "<br>".join(html.escape(text).splitlines())
