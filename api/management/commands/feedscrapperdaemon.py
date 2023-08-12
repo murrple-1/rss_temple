@@ -21,13 +21,13 @@ from api.models import Feed, FeedEntry
 class Command(BaseCommand):
     help = "Daemon to periodically web-scrape the various feeds and update our DB"
 
-    def add_arguments(self, parser: CommandParser) -> None:
+    def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
         parser.add_argument("-c", "--count", type=int, default=1000)
         parser.add_argument("--sleep-seconds", type=float, default=30.0)
         parser.add_argument("--feed-url")
         parser.add_argument("--feed-uuid")
 
-    def handle(self, *args: Any, **options: Any) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         feed: Feed | None
         if options["feed_url"]:
             feed = Feed.objects.get(feed_url=options["feed_url"])

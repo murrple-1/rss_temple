@@ -137,6 +137,11 @@ class UserCategoryTestCase(TestCase):
 
         self.assertEqual(user_category.feeds.count(), 1)
 
+    def test_str(self):
+        user_category = UserCategory(text="Category")
+
+        self.assertEqual(str(user_category), "Category")
+
 
 class FeedTestCase(TestCase):
     def test_with_subscription_data(self):
@@ -236,6 +241,20 @@ class FeedTestCase(TestCase):
 
         self.assertEqual(feed.unread_count(user), 1)
         self.assertEqual(feed.read_count(user), 1)
+
+    def test_str(self):
+        feed = Feed(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        self.assertEqual(
+            str(feed), f"Sample Feed - http://example.com/rss.xml - {feed.uuid}"
+        )
 
 
 class FeedEntryTestCase(TestCase):
@@ -487,3 +506,11 @@ class FeedEntryTestCase(TestCase):
         self.assertNotEqual(feed_entry1.updated_at, feed_entry2.updated_at)
         self.assertNotEqual(feed_entry2.updated_at, feed_entry3.updated_at)
         self.assertNotEqual(feed_entry1.updated_at, feed_entry3.updated_at)
+
+    def test_str(self):
+        feed_entry = FeedEntry(
+            url="http://example.com/entry1.html",
+            title="Title",
+        )
+
+        self.assertEqual(str(feed_entry), "Title - http://example.com/entry1.html")

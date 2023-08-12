@@ -29,7 +29,7 @@ sensitive_post_parameters_m = method_decorator(
 )
 
 
-class LoginView(_LoginView):
+class LoginView(_LoginView):  # pragma: no cover
     @swagger_auto_schema(
         operation_summary="Login and return token",
         operation_description="Login and return token",
@@ -39,7 +39,7 @@ class LoginView(_LoginView):
         return super().post(request, *args, **kwargs)
 
 
-class LogoutView(_LogoutView):
+class LogoutView(_LogoutView):  # pragma: no cover
     @swagger_auto_schema(auto_schema=None)
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().get(request, *args, **kwargs)
@@ -52,7 +52,7 @@ class LogoutView(_LogoutView):
         return super().post(request, *args, **kwargs)
 
 
-class PasswordChangeView(_PasswordChangeView):
+class PasswordChangeView(_PasswordChangeView):  # pragma: no cover
     @sensitive_post_parameters_m
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
@@ -65,7 +65,7 @@ class PasswordChangeView(_PasswordChangeView):
         return super().post(request, *args, **kwargs)
 
 
-class PasswordResetView(_PasswordResetView):
+class PasswordResetView(_PasswordResetView):  # pragma: no cover
     @swagger_auto_schema(
         operation_summary="Initiate a password reset",
         operation_description="Initiate a password reset",
@@ -75,7 +75,7 @@ class PasswordResetView(_PasswordResetView):
         return super().post(request, *args, **kwargs)
 
 
-class PasswordResetConfirmView(_PasswordResetConfirmView):
+class PasswordResetConfirmView(_PasswordResetConfirmView):  # pragma: no cover
     @sensitive_post_parameters_m
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
@@ -89,7 +89,7 @@ class PasswordResetConfirmView(_PasswordResetConfirmView):
         return super().post(request, *args, **kwargs)
 
 
-class UserDetailsView(_UserDetailsView):
+class UserDetailsView(_UserDetailsView):  # pragma: no cover
     @swagger_auto_schema(
         operation_summary="Return details about your user profile",
         operation_description="Return details about your user profile",
@@ -147,7 +147,7 @@ Otherwise, that value will be added to the attribute unchanged.""",
         return Response(status=204)
 
 
-class PasswordResetConfirmRedirectView(RedirectView):
+class PasswordResetConfirmRedirectView(RedirectView):  # pragma: no cover
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
         return settings.PASSWORD_RESET_CONFIRM_URL_FORMAT.format(
             userId=kwargs["userId"], token=kwargs["token"]

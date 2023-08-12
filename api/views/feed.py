@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import OrderBy, Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +14,7 @@ from url_normalize import url_normalize
 from api import feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
+from api.exceptions import Conflict
 from api.fields import FieldMap
 from api.models import (
     Feed,
@@ -131,8 +132,6 @@ class FeedSubscribeView(APIView):
             feed = _save_feed(url)
 
         custom_title: str | None = serializer.validated_data.get("custom_title")
-        if custom_title is not None and not isinstance(custom_title, str):
-            raise ValidationError({"customTitle": "must be string or null"})
 
         existing_subscription_list = list(
             SubscribedFeedUserMapping.objects.filter(user=user).values_list(
@@ -146,10 +145,10 @@ class FeedSubscribeView(APIView):
         )
 
         if custom_title is not None and custom_title in existing_custom_titles:
-            return Response("custom title already used", status=409)
+            raise Conflict("custom title already used")
 
         if feed.feed_url in existing_feed_urls:
-            return Response("user already subscribed", status=409)
+            raise Conflict("user already subscribed")
 
         read_mappings = grace_period_util.generate_grace_period_read_entries(feed, user)
 
@@ -177,8 +176,6 @@ class FeedSubscribeView(APIView):
         url = url_normalize(serializer.validated_data["url"])
 
         custom_title: str | None = serializer.validated_data.get("custom_title")
-        if custom_title is not None and not isinstance(custom_title, str):
-            raise ValidationError({"customTitle": "must be string or null"})
 
         subscribed_feed_mapping: SubscribedFeedUserMapping
         try:
@@ -196,7 +193,7 @@ class FeedSubscribeView(APIView):
                 .filter(user=user, custom_feed_title=custom_title)
                 .exists()
             ):
-                return Response("custom title already used", status=409)
+                raise Conflict("custom title already used")
 
         subscribed_feed_mapping.custom_feed_title = custom_title
         subscribed_feed_mapping.save(update_fields=["custom_feed_title"])

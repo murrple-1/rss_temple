@@ -249,13 +249,7 @@ class FeedEntryReadView(APIView):
         operation_description="Unmark a feed entry as 'read'",
     )
     def delete(self, request: Request, **kwargs: Any):
-        feed_entry: FeedEntry
-        try:
-            feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
-        except FeedEntry.DoesNotExist:
-            return Response(status=204)
-
-        cast(User, request.user).read_feed_entries.remove(feed_entry)
+        cast(User, request.user).read_feed_entries.filter(uuid=kwargs["uuid"]).delete()
 
         return Response(status=204)
 

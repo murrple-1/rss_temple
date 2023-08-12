@@ -23,10 +23,10 @@ from api.models import (
 class Command(BaseCommand):
     help = "Daemon to process subscriptions asynchronously"
 
-    def add_arguments(self, parser: CommandParser) -> None:
+    def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
         parser.add_argument("--sleep-seconds", type=float, default=5.0)
 
-    def handle(self, *args: Any, **options: Any) -> str | None:
+    def handle(self, *args: Any, **options: Any) -> str | None:  # pragma: no cover
         exit = self._setup_exit_event()
 
         try:

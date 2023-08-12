@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import fields as fieldutils
+from api.exceptions import Conflict
 from api.fields import FieldMap
 from api.models import Feed, User, UserCategory
 from api.serializers import (
@@ -82,7 +83,7 @@ class UserCategoryView(APIView):
         try:
             serializer.save()
         except IntegrityError:
-            return Response("user category already exists", status=409)
+            raise Conflict("user category already exists")
 
         return Response(status=204)
 
@@ -124,7 +125,7 @@ class UserCategoryCreateView(APIView):
         try:
             user_category.save()
         except IntegrityError:
-            return Response("user category already exists", status=409)
+            raise Conflict("user category already exists")
 
         ret_obj = fieldutils.generate_return_object(field_maps, user_category, request)
 

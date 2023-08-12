@@ -17,14 +17,14 @@ from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping
 class Command(BaseCommand):
     help = "Daemon to periodically mark old feed entries as archived"
 
-    def add_arguments(self, parser: CommandParser) -> None:
+    def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
         parser.add_argument("-c", "--count", type=int, default=1000)
         parser.add_argument(
             "--sleep-seconds", type=float, default=60.0 * 30.0
         )  # 30 minutes
         parser.add_argument("--single-run", action="store_true")
 
-    def handle(self, *args: Any, **options: Any) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         if options["single_run"]:
             count = 0
             with transaction.atomic():

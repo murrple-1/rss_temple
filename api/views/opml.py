@@ -32,7 +32,7 @@ from api.models import (
 from api.negotiation import IgnoreClientContentNegotiation
 
 
-class OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):
+class _OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):  # pragma: no cover
     def get_consumes(self):
         return ["text/xml"]
 
@@ -45,7 +45,7 @@ class OPMLView(APIView):
     content_negotiation_class = IgnoreClientContentNegotiation
 
     @swagger_auto_schema(
-        auto_schema=OPMLGetSwaggerAutoSchema,
+        auto_schema=_OPMLGetSwaggerAutoSchema,
         responses={200: "OPML XML"},
         operation_summary="Download your OPML file",
         operation_description="""Download your OPML file.

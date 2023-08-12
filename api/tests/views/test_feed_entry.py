@@ -2,7 +2,6 @@ import logging
 import uuid
 from typing import ClassVar
 
-from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -145,13 +144,41 @@ class FeedEntryTestCase(APITestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
 
-        with transaction.atomic():
-            response = self.client.post(
-                f"/api/feedentry/{feed_entry.uuid}/read",
-            )
-            self.assertEqual(response.status_code, 200, response.content)
+        response = self.client.post(
+            f"/api/feedentry/{feed_entry.uuid}/read",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
 
         self.assertTrue(
+            ReadFeedEntryUserMapping.objects.filter(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry
+            ).exists()
+        )
+
+    def test_FeedEntryReadView_post_archived(self):
+        feed_entry = FeedEntry.objects.create(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=True,
+        )
+
+        response = self.client.post(
+            f"/api/feedentry/{feed_entry.uuid}/read",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIsInstance(json_, str)
+        self.assertEqual(json_, "")
+
+        self.assertFalse(
             ReadFeedEntryUserMapping.objects.filter(
                 user=FeedEntryTestCase.user, feed_entry=feed_entry
             ).exists()

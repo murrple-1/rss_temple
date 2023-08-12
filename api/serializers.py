@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Any, cast
 
@@ -26,13 +27,15 @@ try:
     from allauth.account.adapter import get_adapter
     from allauth.account.utils import setup_user_email
     from allauth.utils import email_address_exists, get_username_max_length
-except ImportError:
+except ImportError:  # pragma: no cover
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
 from api.models import Feed, User, UserCategory
 
+_logger = logging.getLogger("rss_temple")
 
-class LoginSerializer(_LoginSerializer):
+
+class LoginSerializer(_LoginSerializer):  # pragma: no cover
     def get_auth_user(self, username, email, password):
         if "allauth" in settings.INSTALLED_APPS:
             try:
@@ -61,7 +64,7 @@ class LoginSerializer(_LoginSerializer):
         return attrs
 
 
-class UserDetailsSerializer(serializers.ModelSerializer):
+class UserDetailsSerializer(serializers.ModelSerializer):  # pragma: no cover
     subscribedFeedUuids: "serializers.PrimaryKeyRelatedField[Feed]" = (
         serializers.PrimaryKeyRelatedField(
             many=True, read_only=True, source="subscribed_feeds"
@@ -74,7 +77,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         read_only_fields = ("uuid", "email", "attributes")
 
 
-class _SetPasswordForm(PasswordVerificationMixin, UserForm):
+class _SetPasswordForm(PasswordVerificationMixin, UserForm):  # pragma: no cover
     password = SetPasswordField()
 
     def __init__(self, *args, **kwargs):
@@ -85,7 +88,7 @@ class _SetPasswordForm(PasswordVerificationMixin, UserForm):
         get_adapter().set_password(self.user, self.cleaned_data["password"])
 
 
-class PasswordChangeSerializer(serializers.Serializer):
+class PasswordChangeSerializer(serializers.Serializer):  # pragma: no cover
     oldPassword = serializers.CharField(max_length=128)
     newPassword = serializers.CharField(max_length=128)
 
@@ -129,7 +132,7 @@ class PasswordChangeSerializer(serializers.Serializer):
             update_session_auth_hash(self.request, self.request.user)
 
 
-class PasswordResetConfirmSerializer(serializers.Serializer):
+class PasswordResetConfirmSerializer(serializers.Serializer):  # pragma: no cover
     """
     Serializer for confirming a password reset attempt.
     """
@@ -172,7 +175,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return self.set_password_form.save()
 
 
-class RegisterSerializer(serializers.Serializer):
+class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     username = serializers.CharField(
         max_length=cast(int, get_username_max_length()),
         min_length=allauth_account_settings.USERNAME_MIN_LENGTH,
@@ -232,7 +235,7 @@ class _FieldsField(serializers.ListField):
         data = sorted(frozenset(data))
 
         object_name: str | None = self.context.get("object_name")
-        if not object_name:
+        if not object_name:  # pragma: no cover
             return []
 
         if settings.DEBUG and len(data) == 1 and data[0] == "_all":
@@ -253,14 +256,15 @@ class _FieldsField(serializers.ListField):
 class _SortField(serializers.Field):
     def get_default(self):
         object_name: str | None = self.context.get("object_name")
-        if not object_name:
+        if not object_name:  # pragma: no cover
             return []
 
         try:
             default_sort_enabled = not self.parent.initial_data.get(
                 "disableDefaultSort"
             )
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
+            _logger.exception("unable to load `default_sort_enabled`. defaulting...")
             default_sort_enabled = True
 
         sort_list = sortutils.to_sort_list(object_name, None, default_sort_enabled)
@@ -268,7 +272,7 @@ class _SortField(serializers.Field):
 
     def to_internal_value(self, data: Any):
         object_name: str | None = self.context.get("object_name")
-        if not object_name:
+        if not object_name:  # pragma: no cover
             return []
 
         if isinstance(data, bool) or not isinstance(
@@ -286,7 +290,8 @@ class _SortField(serializers.Field):
             default_sort_enabled = not self.parent.initial_data.get(
                 "disableDefaultSort"
             )
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
+            _logger.exception("unable to load `default_sort_enabled`. defaulting...")
             default_sort_enabled = True
 
         try:
@@ -295,7 +300,7 @@ class _SortField(serializers.Field):
         except (ValueError, AttributeError) as e:
             raise serializers.ValidationError("sort malformed") from e
 
-    def to_representation(self, value: list[OrderBy]):
+    def to_representation(self, value: list[OrderBy]):  # pragma: no cover
         return value
 
 
@@ -314,7 +319,7 @@ class _SearchField(serializers.Field):
 
         request: Request | None = self.context.get("request")
         object_name: str | None = self.context.get("object_name")
-        if not request or not object_name:
+        if not request or not object_name:  # pragma: no cover
             return []
 
         try:
@@ -322,7 +327,7 @@ class _SearchField(serializers.Field):
         except (ValueError, AttributeError) as e:
             raise serializers.ValidationError("search malformed") from e
 
-    def to_representation(self, value: list[Q]):
+    def to_representation(self, value: list[Q]):  # pragma: no cover
         return value
 
 

@@ -6,11 +6,7 @@ plugins =
 omit =
     api/tests/*
     api/migrations/*
-    daemons/tests/*
-    daemons/*/__main__.py
 
 [coverage:coverage_conditional_plugin]
 rules =
-    "not {'TEST_REMOTE', 'TEST_FACEBOOK_TOKEN'}.issubset(frozenset(os_environ.keys()))": testing-facebook
-    "not {'TEST_REMOTE', 'TEST_GOOGLE_TOKEN', 'GOOGLE_CLIENT_ID'}.issubset(frozenset(os_environ.keys()))": testing-google
     "{'TEST_SUBSCRIPTION_SETUP_DAEMON_DO_SUBSCRIPTION', 'CI'}.isdisjoint(frozenset(os_environ.keys()))": testing-subscription-setup-daemon-do-subscription
