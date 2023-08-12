@@ -1,10 +1,6 @@
-import logging
-
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connections
 from django.db.utils import OperationalError
-
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -15,11 +11,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if not options["no_db_test"]:
-            logger.info("testing DB...")
+            self.stderr.write(self.style.NOTICE("testing DB..."))
             self._test_db()
-            logger.info("success")
+            self.stderr.write(self.style.NOTICE("success"))
         else:
-            logger.info("DB test skipped")
+            self.stderr.write(self.style.NOTICE("DB test skipped"))
 
     def _test_db(self) -> None:
         db_conn = connections["default"]
