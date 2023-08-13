@@ -342,10 +342,10 @@ class GetManySerializer(serializers.Serializer):
         max_value=1000, min_value=0, default=50, required=False
     )
     skip = serializers.IntegerField(min_value=0, default=0, required=False)
-    returnObjects = serializers.BooleanField(
+    objects = serializers.BooleanField(
         default=True, required=False, source="return_objects"
     )
-    returnTotalCount = serializers.BooleanField(
+    totalCount = serializers.BooleanField(
         default=True, required=False, source="return_total_count"
     )
     sort = _SortField(required=False)
@@ -382,10 +382,10 @@ class StableQueryMultipleSerializer(serializers.Serializer):
         max_value=1000, min_value=0, default=50, required=False
     )
     skip = serializers.IntegerField(min_value=0, default=0, required=False)
-    returnObjects = serializers.BooleanField(
+    objects = serializers.BooleanField(
         default=True, required=False, source="return_objects"
     )
-    returnTotalCount = serializers.BooleanField(
+    totalCount = serializers.BooleanField(
         default=True, required=False, source="return_total_count"
     )
     sort = _SortField(required=False)
