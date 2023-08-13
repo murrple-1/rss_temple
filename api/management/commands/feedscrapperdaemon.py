@@ -1,14 +1,11 @@
 import datetime
-import signal
 import traceback
 import uuid
-from threading import Event
-from types import FrameType
 from typing import Any, cast
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
 from django.db.models.functions import Now
 from django.db.utils import OperationalError
@@ -17,8 +14,10 @@ from django.utils import timezone
 from api import feed_handler, rss_requests
 from api.models import Feed, FeedEntry
 
+from ._daemoncommand import DaemonCommand
 
-class Command(BaseCommand):
+
+class Command(DaemonCommand):
     help = "Daemon to periodically web-scrape the various feeds and update our DB"
 
     def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
@@ -105,16 +104,6 @@ class Command(BaseCommand):
                 raise CommandError("db went away") from e
             except Exception as e:
                 raise CommandError("render loop stopped unexpectedly") from e
-
-    def _setup_exit_event(self):
-        exit = Event()
-
-        def _quit(signo: int, frame: FrameType | None):
-            exit.set()
-
-        signal.signal(signal.SIGTERM, _quit)
-
-        return exit
 
     def _scrape_feed(self, feed: Feed, response_text: str):
         d = feed_handler.text_2_d(response_text)

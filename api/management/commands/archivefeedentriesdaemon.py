@@ -1,11 +1,8 @@
 import datetime
-import signal
-from threading import Event
-from types import FrameType
 from typing import Any, cast
 
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
 from django.db.models.functions import Now
 from django.db.utils import OperationalError
@@ -13,8 +10,10 @@ from django.utils import timezone
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping
 
+from ._daemoncommand import DaemonCommand
 
-class Command(BaseCommand):
+
+class Command(DaemonCommand):
     help = "Daemon to periodically mark old feed entries as archived"
 
     def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
@@ -75,16 +74,6 @@ class Command(BaseCommand):
                 raise CommandError("db went away") from e
             except Exception as e:
                 raise CommandError("loop stopped unexpectedly") from e
-
-    def _setup_exit_event(self):
-        exit = Event()
-
-        def _quit(signo: int, frame: FrameType | None):
-            exit.set()
-
-        signal.signal(signal.SIGTERM, _quit)
-
-        return exit
 
     def _handle_feed(
         self,

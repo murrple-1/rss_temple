@@ -1,11 +1,8 @@
-import signal
 import traceback
-from threading import Event
-from types import FrameType
 from typing import Any, Iterable, cast
 
 import requests
-from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
 from django.db.utils import OperationalError
 
@@ -19,8 +16,10 @@ from api.models import (
     UserCategory,
 )
 
+from ._daemoncommand import DaemonCommand
 
-class Command(BaseCommand):
+
+class Command(DaemonCommand):
     help = "Daemon to process subscriptions asynchronously"
 
     def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
@@ -51,16 +50,6 @@ class Command(BaseCommand):
             raise CommandError("loop stooped unexpectedly") from e
 
         return None
-
-    def _setup_exit_event(self):
-        exit = Event()
-
-        def _quit(signo: int, frame: FrameType | None):
-            exit.set()
-
-        signal.signal(signal.SIGTERM, _quit)
-
-        return exit
 
     def _get_first_entry(self):
         with transaction.atomic():
