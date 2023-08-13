@@ -70,7 +70,7 @@ class FeedsQueryView(APIView):
     @swagger_auto_schema(
         operation_summary="Query for Feeds",
         operation_description="Query for Feeds",
-        query_serializer=GetManySerializer,
+        request_body=GetManySerializer,
     )
     def post(self, request: Request):
         serializer = GetManySerializer(
