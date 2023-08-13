@@ -6,6 +6,13 @@ plugins =
 omit =
     api/tests/*
     api/migrations/*
+dynamic_context = test_function
+
+[coverage:report]
+skip_empty = True
+
+[coverage:html]
+show_contexts = True
 
 [coverage:coverage_conditional_plugin]
 rules =
