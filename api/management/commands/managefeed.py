@@ -1,4 +1,3 @@
-import logging
 import traceback
 from typing import Any
 
@@ -20,33 +19,7 @@ class Command(BaseCommand):
         parser.add_argument("-e", "--print-entries", action="store_true")
         parser.add_argument("-c", "--with-content", action="store_true")
 
-    def _monkey_patch_feed_handler_logging(self):
-        _logger: logging.Logger | None = None
-
-        def logger():  # pragma: no cover
-            nonlocal _logger
-            if _logger is None:
-                _logger = logging.getLogger(__name__)
-                _logger.setLevel(logging.DEBUG)
-
-                stream_handler = logging.StreamHandler(self.stderr)
-                stream_handler.setLevel(logging.DEBUG)
-                stream_handler.setFormatter(
-                    logging.Formatter(
-                        fmt="%(asctime)s (%(levelname)s): %(message)s",
-                        datefmt="%Y-%m-%d %H:%M:%S",
-                    )
-                )
-                _logger.addHandler(stream_handler)
-
-            return _logger
-
-        # monkey-patch the feed_handler logging
-        feed_handler.logger = logger
-
     def handle(self, *args: Any, **options: Any):
-        self._monkey_patch_feed_handler_logging()
-
         response = rss_requests.get(options["feed_url"])
         response.raise_for_status()
 
