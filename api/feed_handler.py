@@ -102,7 +102,7 @@ def d_entry_2_feed_entry(d_entry):
     if url is None:
         raise ValueError("url not set")
 
-    if not validators.url(url, public=True):
+    if not validators.url(url):
         raise ValueError("url malformed")
 
     feed_entry.url = url
