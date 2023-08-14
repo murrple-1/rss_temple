@@ -169,15 +169,18 @@ class Feed(models.Model):
         self.is_subscribed = False
 
     @staticmethod
-    def _generate_counts(feed, user):
+    def _generate_counts(feed: "Feed", user: User):
         total_feed_entry_count = feed.feed_entries.count()
-        read_count = (
-            ReadFeedEntryUserMapping.objects.filter(
-                feed_entry__feed=feed, user=user
-            ).count()
-            + feed.feed_entries.filter(is_archived=True).count()
+        unread_count = (
+            feed.feed_entries.filter(is_archived=False)
+            .exclude(
+                uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                    user=user, feed_entry__feed=feed
+                ).values("feed_entry_id")
+            )
+            .count()
         )
-        unread_count = total_feed_entry_count - read_count
+        read_count = total_feed_entry_count - unread_count
 
         counts = {
             "unread_count": unread_count,
@@ -186,7 +189,7 @@ class Feed(models.Model):
 
         return counts
 
-    def _counts(self, user):
+    def _counts(self, user: User):
         counts = getattr(self, "_counts_", None)
         if counts is None:
             counts = Feed._generate_counts(self, user)
@@ -194,10 +197,10 @@ class Feed(models.Model):
 
         return counts
 
-    def unread_count(self, user):
+    def unread_count(self, user: User):
         return self._counts(user)["unread_count"]
 
-    def read_count(self, user):
+    def read_count(self, user: User):
         return self._counts(user)["read_count"]
 
     def __str__(self) -> str:
