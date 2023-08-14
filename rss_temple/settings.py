@@ -65,8 +65,10 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django_cprofile_middleware.middleware.ProfilerMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE.append("api.middleware.profiler.ProfilerMiddleware")
 
 ROOT_URLCONF = "rss_temple.urls"
 
@@ -318,6 +320,7 @@ elif _test_runner_type == "timed":
     TEST_SLOW_TEST_THRESHOLD = float(os.environ.get("TEST_SLOW_TEST_THRESHOLD", "0.5"))
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
+
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
