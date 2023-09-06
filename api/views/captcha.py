@@ -5,6 +5,7 @@ from typing import Any
 from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
 from django.conf import settings
+from django.core.cache import BaseCache, caches
 from django.core.signals import setting_changed
 from django.db.models.functions import Now
 from django.dispatch import receiver
@@ -72,17 +73,25 @@ class CaptchaImageView(APIView):
         operation_description="Download an image captcha",
     )
     def get(self, request: Request, *, key: str) -> HttpResponse:
+        cache: BaseCache = caches["captcha"]
+
         captcha: Captcha
         try:
             captcha = Captcha.objects.get(key=key, expires_at__gte=Now())
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 
-        out = _image_captcha.generate(captcha.secret_phrase)
+        cache_key = f"captcha_png_{key}"
+        bytes_: bytes | None = cache.get(cache_key)
+        cache_hit = True
+        if bytes_ is None:
+            cache_hit = False
+            bytes_ = _image_captcha.generate(captcha.secret_phrase).getvalue()
+            cache.set(cache_key, bytes_)
 
-        response = HttpResponse(content_type="image/png")
-        response.write(out.read())
-        response["Content-Length"] = out.tell()
+        response = HttpResponse(bytes_, content_type="image/png")
+        response["Content-Length"] = len(bytes_)
+        response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
 
         return response
 
@@ -96,15 +105,24 @@ class CaptchaAudioView(APIView):
         operation_description="Download an audio captcha",
     )
     def get(self, request: Request, *, key: str) -> HttpResponse:
+        cache: BaseCache = caches["captcha"]
+
         captcha: Captcha
         try:
             captcha = Captcha.objects.get(key=key, expires_at__gte=Now())
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 
-        out = bytes(_audio_captcha.generate(captcha.secret_phrase))
+        cache_key = f"captcha_wav_{key}"
+        bytes_: bytes | None = cache.get(cache_key)
+        cache_hit = True
+        if bytes_ is None:
+            cache_hit = False
+            bytes_ = bytes(_audio_captcha.generate(captcha.secret_phrase))
+            cache.set(cache_key, bytes_)
 
-        response = HttpResponse(out, content_type="audio/wav")
-        response["Content-Length"] = len(out)
+        response = HttpResponse(bytes_, content_type="audio/wav")
+        response["Content-Length"] = len(bytes_)
+        response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
 
         return response

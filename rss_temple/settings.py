@@ -214,6 +214,12 @@ if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             "TIMEOUT": 60 * 60,  # 1 hour
         },
+        "captcha": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"{REDIS_URL}/3",
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+            "TIMEOUT": 60 * 5,  # 5 minutes
+        },
     }
 else:
     CACHES = {
@@ -226,6 +232,11 @@ else:
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "stable-query-cache",
             "TIMEOUT": 60 * 60,  # 1 hour
+        },
+        "captcha": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "default-cache",
+            "TIMEOUT": 60 * 5,  # 5 minutes
         },
     }
 
