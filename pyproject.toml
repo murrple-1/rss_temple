@@ -17,5 +17,6 @@ module = [
     "url_normalize",
     "allauth.*",
     "dj_rest_auth.*",
+    "drf_yasg.*",
 ]
 ignore_missing_imports = true
