@@ -33,6 +33,9 @@ services:
   rss_temple_archivefeedentriesdaemon:
     env_file:
       - .env
+  rss_temple_expireddatapurgedaemon:
+    env_file:
+      - .env
 volumes:
   db_data:
   caddy_data:
