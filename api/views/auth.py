@@ -148,9 +148,9 @@ Otherwise, that value will be added to the attribute unchanged.""",
 
 
 class PasswordResetConfirmRedirectView(RedirectView):  # pragma: no cover
-    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+    def get_redirect_url(self, *, userId: str, token: str) -> str | None:
         return settings.PASSWORD_RESET_CONFIRM_URL_FORMAT.format(
-            userId=kwargs["userId"], token=kwargs["token"]
+            userId=userId, token=token
         )
 
 

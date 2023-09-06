@@ -1,5 +1,4 @@
-import re
-import uuid
+import uuid as uuid_
 from typing import Any, cast
 
 from django.conf import settings
@@ -50,7 +49,7 @@ class FeedEntryView(APIView):
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -58,7 +57,7 @@ class FeedEntryView(APIView):
         operation_description="Get Single Feed Entry",
         query_serializer=GetSingleSerializer,
     )
-    def get(self, request: Request, **kwargs: Any):
+    def get(self, request: Request, uuid: uuid_.UUID):
         serializer = GetSingleSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -69,7 +68,7 @@ class FeedEntryView(APIView):
 
         feed_entry: FeedEntry
         try:
-            feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
+            feed_entry = FeedEntry.objects.get(uuid=uuid)
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
@@ -139,7 +138,7 @@ class FeedEntriesQueryStableCreateView(APIView):
         sort: list[OrderBy] = serializer.validated_data["sort"]
         search: list[Q] = serializer.validated_data["search"]
 
-        token = f"feedentry-{uuid.uuid4().int}"
+        token = f"feedentry-{uuid_.uuid4().int}"
 
         cache.set(
             token,
@@ -213,19 +212,19 @@ class FeedEntryReadView(APIView):
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Mark a feed entry as 'read'",
         operation_description="Mark a feed entry as 'read'",
     )
-    def post(self, request: Request, **kwargs: Any):
+    def post(self, request: Request, *, uuid: uuid_.UUID):
         read_feed_entry_user_mapping: ReadFeedEntryUserMapping
         with transaction.atomic():
             feed_entry: FeedEntry
             try:
-                feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
+                feed_entry = FeedEntry.objects.get(uuid=uuid)
             except FeedEntry.DoesNotExist:
                 raise NotFound("feed entry not found")
 
@@ -248,8 +247,8 @@ class FeedEntryReadView(APIView):
         operation_summary="Unmark a feed entry as 'read'",
         operation_description="Unmark a feed entry as 'read'",
     )
-    def delete(self, request: Request, **kwargs: Any):
-        cast(User, request.user).read_feed_entries.filter(uuid=kwargs["uuid"]).delete()
+    def delete(self, request: Request, *, uuid: uuid_.UUID):
+        cast(User, request.user).read_feed_entries.filter(uuid=uuid).delete()
 
         return Response(status=204)
 
@@ -305,7 +304,7 @@ class FeedEntriesReadView(APIView):
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
+        feed_entry_uuids: frozenset[uuid_.UUID] = frozenset(
             serializer.validated_data["feed_entry_uuids"]
         )
 
@@ -325,17 +324,17 @@ class FeedEntryFavoriteView(APIView):
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Mark a feed entry as 'favorite'",
         operation_description="Mark a feed entry as 'favorite'",
     )
-    def post(self, request: Request, **kwargs: Any):
+    def post(self, request: Request, *, uuid: uuid_.UUID):
         feed_entry: FeedEntry
         try:
-            feed_entry = FeedEntry.objects.get(uuid=kwargs["uuid"])
+            feed_entry = FeedEntry.objects.get(uuid=uuid)
         except FeedEntry.DoesNotExist:
             return Response("feed entry not found", status=404)
 
@@ -371,7 +370,7 @@ class FeedEntriesFavoriteView(APIView):
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
+        feed_entry_uuids: frozenset[uuid_.UUID] = frozenset(
             serializer.validated_data["feed_entry_uuids"]
         )
 
@@ -397,7 +396,7 @@ class FeedEntriesFavoriteView(APIView):
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        feed_entry_uuids: frozenset[uuid.UUID] = frozenset(
+        feed_entry_uuids: frozenset[uuid_.UUID] = frozenset(
             serializer.validated_data["feed_entry_uuids"]
         )
 

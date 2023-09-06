@@ -1,4 +1,4 @@
-import uuid
+import uuid as uuid_
 from typing import Any, cast
 
 from django.http.request import HttpRequest
@@ -23,19 +23,19 @@ class FeedSubscriptionProgressView(APIView):
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Check on the progress of your subscription queue entry",
         operation_description="Check on the progress of your subscription queue entry",
     )
-    def get(self, request: Request, **kwargs: Any):
+    def get(self, request: Request, *, uuid: uuid_.UUID):
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry
         try:
             feed_subscription_progress_entry = (
                 FeedSubscriptionProgressEntry.objects.get(
-                    uuid=kwargs["uuid"], user=cast(User, request.user)
+                    uuid=uuid, user=cast(User, request.user)
                 )
             )
         except FeedSubscriptionProgressEntry.DoesNotExist:

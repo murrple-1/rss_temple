@@ -1,4 +1,4 @@
-import uuid
+import uuid as uuid_
 from typing import Any, cast
 
 from django.db import IntegrityError, transaction
@@ -33,7 +33,7 @@ class UserCategoryView(APIView):
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        kwargs["uuid"] = uuid.UUID(kwargs["uuid"])
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -41,7 +41,7 @@ class UserCategoryView(APIView):
         operation_description="Get Single User Category",
         query_serializer=GetSingleSerializer,
     )
-    def get(self, request: Request, **kwargs: Any):
+    def get(self, request: Request, *, uuid: uuid_.UUID):
         serializer = GetSingleSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -53,7 +53,7 @@ class UserCategoryView(APIView):
         user_category: UserCategory
         try:
             user_category = UserCategory.objects.get(
-                uuid=kwargs["uuid"], user=cast(User, request.user)
+                uuid=uuid, user=cast(User, request.user)
             )
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
@@ -67,11 +67,11 @@ class UserCategoryView(APIView):
         operation_description="Update a User Category",
         request_body=UserCategorySerializer,
     )
-    def put(self, request: Request, **kwargs: Any):
+    def put(self, request: Request, *, uuid: uuid_.UUID):
         user_category: UserCategory
         try:
             user_category = UserCategory.objects.get(
-                uuid=kwargs["uuid"], user=cast(User, request.user)
+                uuid=uuid, user=cast(User, request.user)
             )
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
@@ -91,9 +91,9 @@ class UserCategoryView(APIView):
         operation_summary="Delete a User Category",
         operation_description="Delete a User Category",
     )
-    def delete(self, request: Request, **kwargs: Any):
+    def delete(self, request: Request, *, uuid: uuid_.UUID):
         count, _ = UserCategory.objects.filter(
-            uuid=kwargs["uuid"], user=cast(User, request.user)
+            uuid=uuid, user=cast(User, request.user)
         ).delete()
 
         if count < 1:
@@ -183,15 +183,15 @@ class UserCategoriesApplyView(APIView):
         request_body=openapi.Schema(type="object"),
     )
     def put(self, request: Request):
-        all_feed_uuids: set[uuid.UUID] = set()
-        all_user_category_uuids: set[uuid.UUID] = set()
+        all_feed_uuids: set[uuid_.UUID] = set()
+        all_user_category_uuids: set[uuid_.UUID] = set()
 
-        mappings: dict[uuid.UUID, frozenset[uuid.UUID]] = {}
+        mappings: dict[uuid_.UUID, frozenset[uuid_.UUID]] = {}
 
         for feed_uuid, user_category_uuids in request.data.items():
-            feed_uuid_: uuid.UUID
+            feed_uuid_: uuid_.UUID
             try:
-                feed_uuid_ = uuid.UUID(feed_uuid)
+                feed_uuid_ = uuid_.UUID(feed_uuid)
             except ValueError:
                 raise ValidationError({".[]": "key malformed"})
 
@@ -202,7 +202,7 @@ class UserCategoriesApplyView(APIView):
 
             try:
                 user_category_uuids = frozenset(
-                    uuid.UUID(s) for s in user_category_uuids
+                    uuid_.UUID(s) for s in user_category_uuids
                 )
             except (ValueError, TypeError):
                 raise ValidationError({".[]": "malformed"})
