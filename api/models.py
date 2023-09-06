@@ -1,3 +1,5 @@
+import random
+import string
 import uuid
 from collections import defaultdict
 from functools import cached_property
@@ -332,3 +334,36 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
     custom_feed_title = models.TextField(null=True)
     user_category_text = models.TextField(null=True)
     is_finished = models.BooleanField(default=False)
+
+
+class Captcha(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    key = models.CharField(max_length=64, unique=True)
+    seed = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+
+    _random: random.Random | None = None
+    _secret_phrase: str | None = None
+
+    def _setup(self) -> None:
+        self._random = random.Random(self.seed)
+        self._secret_phrase = "".join(
+            self._random.choice(
+                string.digits  # TODO include string.ascii_letters when WAV files are ready
+            )
+            for _ in range(6)
+        )
+
+    @property
+    def rng(self) -> random.Random:
+        if self._random is None:
+            self._setup()
+        assert self._random is not None
+        return self._random
+
+    @property
+    def secret_phrase(self) -> str:
+        if self._secret_phrase is None:
+            self._setup()
+        assert self._secret_phrase is not None
+        return self._secret_phrase

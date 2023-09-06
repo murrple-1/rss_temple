@@ -28,6 +28,7 @@ django-redis = "*"
 drf-yasg = "*"
 dj-rest-auth = {version = "*", extras = ["with_social"]}
 drf_ujson2 = "*"
+captcha = "*"
 
 [dev-packages]
 coverage = "*"

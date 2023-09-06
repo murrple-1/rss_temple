@@ -8,6 +8,7 @@ from .auth import (
     UserAttributesView,
     UserDetailsView,
 )
+from .captcha import CaptchaAudioView, CaptchaImageView, NewCaptchaView
 from .explore import ExploreView
 from .feed import FeedsQueryView, FeedSubscribeView, FeedView
 from .feed_entry import (
@@ -45,6 +46,9 @@ __all__ = [
     "PasswordChangeView",
     "PasswordResetView",
     "PasswordResetConfirmView",
+    "NewCaptchaView",
+    "CaptchaImageView",
+    "CaptchaAudioView",
     "UserDetailsView",
     "UserAttributesView",
     "PasswordResetConfirmRedirectView",

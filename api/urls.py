@@ -75,6 +75,13 @@ urlpatterns = [
         RedirectView.as_view(url=settings.SOCIAL_CONNECTIONS_URL, query_string=True),
         name="socialaccount_connections",
     ),
+    re_path(r"^captcha/?$", views.NewCaptchaView.as_view()),
+    re_path(
+        r"^captcha/image/(?P<key>[A-Za-z0-9_\-]+)/?$", views.CaptchaImageView.as_view()
+    ),
+    re_path(
+        r"^captcha/audio/(?P<key>[A-Za-z0-9_\-]+)/?$", views.CaptchaAudioView.as_view()
+    ),
     re_path(r"^feed/?$", views.FeedView.as_view()),
     re_path(r"^feeds/query/?$", views.FeedsQueryView.as_view()),
     re_path(r"^feed/subscribe/?$", views.FeedSubscribeView.as_view()),

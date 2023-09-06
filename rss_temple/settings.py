@@ -321,6 +321,17 @@ elif _test_runner_type == "timed":
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
+_captcha_data_path = Path(__file__).parent / "../api/captcha/"
+
+CAPTCHA_EXPIRY_INTERVAL = datetime.timedelta(minutes=5)
+CAPTCHA_IMAGE_WIDTH = 160
+CAPTCHA_IMAGE_HEIGHT = 60
+CAPTCHA_IMAGE_FONTS_DIR = [  # TODO this should have more options
+    str(_captcha_data_path / "fonts/Vera.ttf"),
+    str(_captcha_data_path / "fonts/DroidSansMono.ttf"),
+]
+CAPTCHA_IMAGE_FONT_SIZES = (42, 50, 56)
+CAPTCHA_AUDIO_VOICES_DIR = str(_captcha_data_path / "voices/")
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
