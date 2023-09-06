@@ -203,7 +203,9 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     def get_cleaned_data(self):
         return {
             "username": self.validated_data.get("username", ""),
-            "password": self.validated_data.get("password", ""),
+            "password1": self.validated_data.get(  # `password1` is used by the adapter
+                "password", ""
+            ),
             "email": self.validated_data.get("email", ""),
         }
 

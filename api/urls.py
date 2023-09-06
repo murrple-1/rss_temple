@@ -71,7 +71,7 @@ urlpatterns = [
         views.FacebookDisconnect.as_view(),
     ),
     re_path(
-        r"^social/redirect/socialaccountconnections",
+        r"^social/redirect/socialaccountconnections/?$",
         RedirectView.as_view(url=settings.SOCIAL_CONNECTIONS_URL, query_string=True),
         name="socialaccount_connections",
     ),
