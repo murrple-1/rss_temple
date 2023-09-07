@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -6,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import (
+    Captcha,
     Feed,
     FeedEntry,
     ReadFeedEntryUserMapping,
@@ -514,3 +516,18 @@ class FeedEntryTestCase(TestCase):
         )
 
         self.assertEqual(str(feed_entry), "Title - http://example.com/entry1.html")
+
+
+class CaptchaTestCase(TestCase):
+    def _generate_captcha(self):
+        return Captcha(
+            seed="testseed",
+        )
+
+    def test_rng(self):
+        captcha = self._generate_captcha()
+        self.assertIs(type(captcha.rng), random.Random)
+
+    def test_secret_phrase(self):
+        captcha = self._generate_captcha()
+        self.assertEqual(captcha.secret_phrase, "445657")
