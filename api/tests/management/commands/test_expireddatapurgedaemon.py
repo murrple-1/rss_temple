@@ -1,5 +1,6 @@
 import datetime
 import logging
+import secrets
 from io import StringIO
 from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
@@ -59,13 +60,13 @@ class DaemonTestCase(TestCase):
         now = timezone.now()
 
         Captcha.objects.create(
-            key="testkey1",
-            seed="testseed1",
+            key=secrets.token_urlsafe(32),
+            seed=secrets.token_hex(32),
             expires_at=(now + datetime.timedelta(days=1)),
         )
         Captcha.objects.create(
-            key="testkey2",
-            seed="testseed2",
+            key=secrets.token_urlsafe(32),
+            seed=secrets.token_hex(32),
             expires_at=(now + datetime.timedelta(days=-1)),
         )
 

@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import Captcha
+from api.tests.utils import reusable_captcha_key, reusable_captcha_seed
 
 
 class CaptchaTestCase(TestCase):
@@ -44,8 +45,8 @@ class CaptchaTestCase(TestCase):
         cache: BaseCache = caches["captcha"]
 
         captcha = Captcha.objects.create(
-            key="testkey",
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
             expires_at=(timezone.now() + datetime.timedelta(days=1)),
         )
         cache_key = f"captcha_png_{captcha.key}"
@@ -75,8 +76,8 @@ class CaptchaTestCase(TestCase):
         cache: BaseCache = caches["captcha"]
 
         captcha = Captcha.objects.create(
-            key="testkey",
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
             expires_at=(timezone.now() + datetime.timedelta(days=1)),
         )
         cache_key = f"captcha_wav_{captcha.key}"

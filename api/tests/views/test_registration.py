@@ -8,7 +8,11 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from api.models import Captcha, User
-from api.tests.utils import debug_print_last_email
+from api.tests.utils import (
+    debug_print_last_email,
+    reusable_captcha_key,
+    reusable_captcha_seed,
+)
 
 
 class RegistrationTestCase(APITestCase):
@@ -32,8 +36,8 @@ class RegistrationTestCase(APITestCase):
         initial_outbox_count = len(getattr(mail, "outbox", []))
 
         captcha = Captcha.objects.create(
-            key="testkey",
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
             expires_at=(timezone.now() + datetime.timedelta(days=1)),
         )
 
@@ -42,8 +46,7 @@ class RegistrationTestCase(APITestCase):
             {
                 "email": "test@test.com",
                 "password": "aC0mplic?tedTestPassword",
-                "captchaKey": captcha.key,
-                "captchaSecretPhrase": captcha.secret_phrase,
+                "captcha": f"{captcha.key}:{captcha.secret_phrase}",
             },
         )
         self.assertEqual(response.status_code, 201, response.content)
@@ -59,8 +62,8 @@ class RegistrationTestCase(APITestCase):
 
     def test_RegisterView_post_weak_password(self):
         captcha = Captcha.objects.create(
-            key="testkey",
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
             expires_at=(timezone.now() + datetime.timedelta(days=1)),
         )
 
@@ -69,8 +72,7 @@ class RegistrationTestCase(APITestCase):
             {
                 "email": "test@test.com",
                 "password": "password",
-                "captchaKey": captcha.key,
-                "captchaSecretPhrase": captcha.secret_phrase,
+                "captcha": f"{captcha.key}:{captcha.secret_phrase}",
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -81,15 +83,14 @@ class RegistrationTestCase(APITestCase):
             {
                 "email": "test@test.com",
                 "password": "aC0mplic?tedTestPassword",
-                "captchaKey": "a" * 32,
-                "captchaSecretPhrase": "badsecretphrase",
+                "captcha": ("a" * 43) + ":badsecretphrase",
             },
         )
         self.assertEqual(response.status_code, 404, response.content)
 
         captcha = Captcha.objects.create(
-            key="testkey",
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
             expires_at=(timezone.now() + datetime.timedelta(days=1)),
         )
 
@@ -98,8 +99,7 @@ class RegistrationTestCase(APITestCase):
             {
                 "email": "test@test.com",
                 "password": "aC0mplic?tedTestPassword",
-                "captchaKey": captcha.key,
-                "captchaSecretPhrase": "badsecretphrase",
+                "captcha": f"{captcha.key}:badsecretphrase",
             },
         )
         self.assertEqual(response.status_code, 422, response.content)

@@ -15,6 +15,7 @@ from api.models import (
     User,
     UserCategory,
 )
+from api.tests.utils import reusable_captcha_key, reusable_captcha_seed
 
 
 class UserTestCase(TestCase):
@@ -521,7 +522,9 @@ class FeedEntryTestCase(TestCase):
 class CaptchaTestCase(TestCase):
     def _generate_captcha(self):
         return Captcha(
-            seed="testseed",
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
+            expires_at=(timezone.now() + datetime.timedelta(minutes=5)),
         )
 
     def test_rng(self):
@@ -530,4 +533,4 @@ class CaptchaTestCase(TestCase):
 
     def test_secret_phrase(self):
         captcha = self._generate_captcha()
-        self.assertEqual(captcha.secret_phrase, "445657")
+        self.assertEqual(captcha.secret_phrase, "649290")
