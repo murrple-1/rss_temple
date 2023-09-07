@@ -147,13 +147,6 @@ Otherwise, that value will be added to the attribute unchanged.""",
         return Response(status=204)
 
 
-class PasswordResetConfirmRedirectView(RedirectView):  # pragma: no cover
-    def get_redirect_url(self, *, userId: str, token: str) -> str | None:
-        return settings.PASSWORD_RESET_CONFIRM_URL_FORMAT.format(
-            userId=userId, token=token
-        )
-
-
 __all__ = [
     "LoginView",
     "LogoutView",
@@ -162,5 +155,4 @@ __all__ = [
     "PasswordResetConfirmView",
     "UserDetailsView",
     "UserAttributesView",
-    "PasswordResetConfirmRedirectView",
 ]

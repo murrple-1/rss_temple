@@ -25,7 +25,9 @@ urlpatterns = [
     re_path(r"^auth/user/attributes/?$", views.UserAttributesView.as_view()),
     re_path(
         r"^auth/redirect/passwordresetconfirm/(?P<userId>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/?$",
-        views.PasswordResetConfirmRedirectView.as_view(),
+        RedirectView.as_view(
+            url=settings.PASSWORD_RESET_CONFIRM_URL_FORMAT, query_string=True
+        ),
         name="password_reset_confirm",
     ),
     re_path(r"^registration/?$", views.RegisterView.as_view(), name="rest_register"),
