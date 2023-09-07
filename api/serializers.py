@@ -12,15 +12,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import OrderBy, Q
+from django.db.models.functions import Now
 from django.http.request import HttpRequest
 from django.urls import exceptions as url_exceptions
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.request import Request
-
-from api import fields as fieldutils
-from api import searches as searchutils
-from api import sorts as sortutils
 
 try:
     from allauth.account import app_settings as allauth_account_settings
@@ -30,7 +27,11 @@ try:
 except ImportError:  # pragma: no cover
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
-from api.models import Feed, User, UserCategory
+from api import fields as fieldutils
+from api import searches as searchutils
+from api import sorts as sortutils
+from api.exceptions import UnprocessableContent
+from api.models import Captcha, Feed, User, UserCategory
 
 _logger = logging.getLogger("rss_temple")
 
@@ -183,6 +184,10 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     )
     email = serializers.EmailField(required=allauth_account_settings.EMAIL_REQUIRED)
     password = serializers.CharField(write_only=True)
+    captchaKey = serializers.CharField(write_only=True, source="captcha_key")
+    captchaSecretPhrase = serializers.CharField(
+        write_only=True, source="captcha_secret_phrase"
+    )
 
     def validate_username(self, username):
         username = get_adapter().clean_username(username)
@@ -199,6 +204,22 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
 
     def validate_password(self, password):
         return get_adapter().clean_password(password)
+
+    def validate(self, attrs: Any) -> Any:
+        captcha_key = attrs.get("captcha_key")
+        captcha_secret_phrase = attrs.get("captcha_secret_phrase")
+
+        captcha: Captcha
+        try:
+            captcha = Captcha.objects.get(key=captcha_key, expires_at__gte=Now())
+        except Captcha.DoesNotExist:
+            raise NotFound("captcha not found")
+
+        if captcha.secret_phrase != captcha_secret_phrase:
+            captcha.delete()
+            raise UnprocessableContent({"captchaSecretPhrase": "incorrect"})
+
+        return super().validate(attrs)
 
     def get_cleaned_data(self):
         return {
