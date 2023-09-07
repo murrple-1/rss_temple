@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover
 from api import fields as fieldutils
 from api import searches as searchutils
 from api import sorts as sortutils
-from api.exceptions import UnprocessableContent
+from api.exceptions import Conflict, UnprocessableContent
 from api.models import Captcha, Feed, User, UserCategory
 
 _logger = logging.getLogger("rss_temple")
@@ -184,10 +184,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     )
     email = serializers.EmailField(required=allauth_account_settings.EMAIL_REQUIRED)
     password = serializers.CharField(write_only=True)
-    captchaKey = serializers.CharField(write_only=True, source="captcha_key")
-    captchaSecretPhrase = serializers.CharField(
-        write_only=True, source="captcha_secret_phrase"
-    )
+    captcha = serializers.CharField(write_only=True)
 
     def validate_username(self, username):
         username = get_adapter().clean_username(username)
@@ -197,7 +194,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         email = get_adapter().clean_email(email)
         if allauth_account_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
-                raise serializers.ValidationError(
+                raise Conflict(
                     "A user is already registered with this e-mail address.",
                 )
         return email
@@ -205,9 +202,14 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     def validate_password(self, password):
         return get_adapter().clean_password(password)
 
-    def validate(self, attrs: Any) -> Any:
-        captcha_key = attrs.get("captcha_key")
-        captcha_secret_phrase = attrs.get("captcha_secret_phrase")
+    def validate_captcha(self, captcha_str):
+        if (
+            match := re.search(r"^([A-Za-z0-9_\-]{43}):([A-Za-z0-9]+)$", captcha_str)
+        ) is None:
+            raise serializers.ValidationError({"captcha": "malformed"})
+
+        captcha_key: str = match.group(1)
+        captcha_secret_phrase: str = match.group(2)
 
         captcha: Captcha
         try:
@@ -219,7 +221,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
             captcha.delete()
             raise UnprocessableContent({"captchaSecretPhrase": "incorrect"})
 
-        return super().validate(attrs)
+        return captcha_str
 
     def get_cleaned_data(self):
         return {
