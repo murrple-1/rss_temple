@@ -202,11 +202,13 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(feed1.uuid): [str(user_category1.uuid)],
-                str(feed2.uuid): [
-                    str(user_category1.uuid),
-                    str(user_category2.uuid),
-                ],
+                "mappings": {
+                    str(feed1.uuid): [str(user_category1.uuid)],
+                    str(feed2.uuid): [
+                        str(user_category1.uuid),
+                        str(user_category2.uuid),
+                    ],
+                },
             },
         )
         self.assertEqual(response.status_code, 204, response.content)
@@ -221,12 +223,14 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(feed1.uuid): [str(user_category1.uuid)],
-                str(feed2.uuid): [
-                    str(user_category1.uuid),
-                    str(user_category2.uuid),
-                    str(user_category1.uuid),
-                ],
+                "mappings": {
+                    str(feed1.uuid): [str(user_category1.uuid)],
+                    str(feed2.uuid): [
+                        str(user_category1.uuid),
+                        str(user_category2.uuid),
+                        str(user_category1.uuid),
+                    ],
+                },
             },
         )
         self.assertEqual(response.status_code, 204, response.content)
@@ -243,7 +247,9 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                "test": [],
+                "mappings": {
+                    "test": [],
+                }
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -251,7 +257,9 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(uuid.uuid4()): "test",
+                "mappings": {
+                    str(uuid.uuid4()): "test",
+                },
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -259,7 +267,9 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(uuid.uuid4()): ["test"],
+                "mappings": {
+                    str(uuid.uuid4()): ["test"],
+                },
             },
         )
         self.assertEqual(response.status_code, 400, response.content)
@@ -277,7 +287,9 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(uuid.uuid4()): [],
+                "mappings": {
+                    str(uuid.uuid4()): [],
+                },
             },
         )
         self.assertEqual(response.status_code, 404, response.content)
@@ -285,7 +297,9 @@ class UserCategoryTestCase(APITestCase):
         response = self.client.put(
             "/api/usercategories/apply",
             {
-                str(feed.uuid): [str(uuid.uuid4())],
+                "mappings": {
+                    str(feed.uuid): [str(uuid.uuid4())],
+                },
             },
         )
         self.assertEqual(response.status_code, 404, response.content)

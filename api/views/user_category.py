@@ -5,10 +5,9 @@ from django.db import IntegrityError, transaction
 from django.db.models import OrderBy, Q
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +19,7 @@ from api.models import Feed, User, UserCategory
 from api.serializers import (
     GetManySerializer,
     GetSingleSerializer,
+    UserCategoryApplySerializer,
     UserCategoryCreateSerializer,
     UserCategorySerializer,
 )
@@ -182,45 +182,30 @@ class UserCategoriesApplyView(APIView):
     @swagger_auto_schema(
         operation_summary="Add Feeds to a User Category",
         operation_description="Add Feeds to a User Category",
-        request_body=openapi.Schema(type="object"),
+        request_body=UserCategoryApplySerializer,
     )
     def put(self, request: Request):
-        all_feed_uuids: set[uuid_.UUID] = set()
+        serializer = UserCategoryApplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        mappings: dict[uuid_.UUID, frozenset[uuid_.UUID]] = serializer.validated_data[
+            "mappings"
+        ]
+
+        all_feed_uuids: frozenset[uuid_.UUID] = frozenset(mappings.keys())
         all_user_category_uuids: set[uuid_.UUID] = set()
 
-        mappings: dict[uuid_.UUID, frozenset[uuid_.UUID]] = {}
-
-        for feed_uuid, user_category_uuids in request.data.items():
-            feed_uuid_: uuid_.UUID
-            try:
-                feed_uuid_ = uuid_.UUID(feed_uuid)
-            except ValueError:
-                raise ValidationError({".[]": "key malformed"})
-
-            all_feed_uuids.add(feed_uuid_)
-
-            if type(user_category_uuids) is not list:
-                raise ValidationError({".[]": "must be array"})
-
-            try:
-                user_category_uuids = frozenset(
-                    uuid_.UUID(s) for s in user_category_uuids
-                )
-            except (ValueError, TypeError):
-                raise ValidationError({".[]": "malformed"})
-
+        for user_category_uuids in mappings.values():
             all_user_category_uuids.update(user_category_uuids)
 
-            mappings[feed_uuid_] = user_category_uuids
-
-        feeds = {
+        feeds: dict[uuid_.UUID, Feed] = {
             feed.uuid: feed for feed in Feed.objects.filter(uuid__in=all_feed_uuids)
         }
 
         if len(feeds) < len(all_feed_uuids):
             raise NotFound("feed not found")
 
-        user_categories = {
+        user_categories: dict[uuid_.UUID, UserCategory] = {
             user_category.uuid: user_category
             for user_category in UserCategory.objects.filter(
                 uuid__in=all_user_category_uuids, user=cast(User, request.user)
@@ -231,15 +216,12 @@ class UserCategoriesApplyView(APIView):
             raise NotFound("user category not found")
 
         with transaction.atomic():
-            for feed_uuid_, user_category_uuids in mappings.items():
-                feed = feeds[feed_uuid_]
-                feed.user_categories.clear()
-
-                feed.user_categories.add(
-                    *(
+            for feed_uuid, user_category_uuids in mappings.items():
+                feeds[feed_uuid].user_categories.set(
+                    [
                         user_categories[user_category_uuid]
                         for user_category_uuid in user_category_uuids
-                    )
+                    ]
                 )
 
         return Response(status=204)

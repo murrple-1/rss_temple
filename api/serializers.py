@@ -1,5 +1,6 @@
 import logging
 import re
+import uuid
 from typing import Any, cast
 
 from allauth.account.adapter import get_adapter
@@ -464,6 +465,25 @@ class UserCategorySerializer(serializers.ModelSerializer[UserCategory]):
     class Meta:
         model = UserCategory
         fields = ("text",)
+
+
+class UserCategoryApplySerializer(serializers.Serializer):
+    mappings = serializers.DictField(
+        child=serializers.ListField(child=serializers.UUIDField())
+    )
+
+    def validate_mappings(self, mappings: dict[str, list[uuid.UUID]]):
+        validated_mappings: dict[uuid.UUID, frozenset[uuid.UUID]] = {}
+        for feed_uuid, user_category_uuids in mappings.items():
+            feed_uuid_: uuid.UUID
+            try:
+                feed_uuid_ = uuid.UUID(feed_uuid)
+            except ValueError:
+                raise serializers.ValidationError("key malformed")
+
+            validated_mappings[feed_uuid_] = frozenset(user_category_uuids)
+
+        return validated_mappings
 
 
 class _ExploreFeedSerializer(serializers.Serializer):
