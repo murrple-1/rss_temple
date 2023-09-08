@@ -260,7 +260,9 @@ class FeedEntryReadView(APIView):
         user = cast(User, request.user)
 
         with transaction.atomic():
-            _, deletes = user.read_feed_entries.filter(uuid=uuid).delete()
+            _, deletes = ReadFeedEntryUserMapping.objects.filter(
+                user=user, feed_entry_id=uuid
+            ).delete()
             deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
             if deleted_count > 0:
                 User.objects.filter(uuid=user.uuid).update(
@@ -345,8 +347,8 @@ class FeedEntriesReadView(APIView):
             return Response(status=204)
 
         with transaction.atomic():
-            _, deletes = user.read_feed_entries.filter(
-                uuid__in=feed_entry_uuids
+            _, deletes = ReadFeedEntryUserMapping.objects.filter(
+                user=user, feed_entry_id__in=feed_entry_uuids
             ).delete()
             deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
             if deleted_count > 0:
@@ -442,8 +444,8 @@ class FeedEntriesFavoriteView(APIView):
         if len(feed_entry_uuids) < 1:
             return Response(status=204)
 
-        cast(User, request.user).favorite_feed_entries.filter(
-            uuid__in=feed_entry_uuids
+        User.favorite_feed_entries.through.objects.filter(
+            user=cast(User, request.user), feedentry_id__in=feed_entry_uuids
         ).delete()
 
         return Response(status=204)
