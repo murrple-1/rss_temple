@@ -378,7 +378,7 @@ class FeedEntryFavoriteView(APIView):
         try:
             feed_entry = FeedEntry.objects.get(uuid=uuid)
         except FeedEntry.DoesNotExist:
-            return Response("feed entry not found", status=404)
+            raise NotFound("feed entry not found")
 
         cast(User, request.user).favorite_feed_entries.add(feed_entry)
 
