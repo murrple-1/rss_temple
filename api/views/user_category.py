@@ -149,7 +149,9 @@ class UserCategoriesQueryView(APIView):
         count: int = serializer.validated_data["count"]
         skip: int = serializer.validated_data["skip"]
         sort: list[OrderBy] = serializer.validated_data["sort"]
-        search: list[Q] = serializer.validated_data["search"]
+        search: list[Q] = [
+            Q(user=cast(User, request.user))
+        ] + serializer.validated_data["search"]
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
