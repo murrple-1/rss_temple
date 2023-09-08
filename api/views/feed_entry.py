@@ -388,7 +388,7 @@ class FeedEntryFavoriteView(APIView):
         operation_summary="Unmark a feed entry as 'favorite'",
         operation_description="Unmark a feed entry as 'favorite'",
     )
-    def delete(self, request: Request, *uuid: uuid_.UUID):
+    def delete(self, request: Request, *, uuid: uuid_.UUID):
         User.favorite_feed_entries.through.objects.filter(
             user=cast(User, request.user), feedentry_id=uuid
         ).delete()
