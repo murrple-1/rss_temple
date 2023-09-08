@@ -84,6 +84,7 @@ urlpatterns = [
     re_path(
         r"^captcha/audio/(?P<key>[A-Za-z0-9_\-]+)/?$", views.CaptchaAudioView.as_view()
     ),
+    re_path(r"^user/meta/readcount/?$", views.ReadCountView.as_view()),
     re_path(r"^feed/?$", views.FeedView.as_view()),
     re_path(r"^feeds/query/?$", views.FeedsQueryView.as_view()),
     re_path(r"^feed/subscribe/?$", views.FeedSubscribeView.as_view()),

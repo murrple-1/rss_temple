@@ -7,7 +7,7 @@ from api.models import FeedEntry
 
 
 class Command(BaseCommand):
-    help = "Command to rerun sanitization of the feed entry content"
+    help = "Rerun sanitization of the feed entry content"
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--dry-run", action="store_true")

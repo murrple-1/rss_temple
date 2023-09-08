@@ -6,11 +6,9 @@ from dj_rest_auth.views import PasswordChangeView as _PasswordChangeView
 from dj_rest_auth.views import PasswordResetConfirmView as _PasswordResetConfirmView
 from dj_rest_auth.views import PasswordResetView as _PasswordResetView
 from dj_rest_auth.views import UserDetailsView as _UserDetailsView
-from django.conf import settings
 from django.http.response import HttpResponseBase
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
-from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions

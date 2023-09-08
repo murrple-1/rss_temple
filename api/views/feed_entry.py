@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.core.signals import setting_changed
 from django.db import transaction
-from django.db.models import OrderBy, Q
+from django.db.models import F, OrderBy, Q
 from django.dispatch import receiver
 from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
@@ -220,6 +220,8 @@ class FeedEntryReadView(APIView):
         operation_description="Mark a feed entry as 'read'",
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
+        user = cast(User, request.user)
+
         read_feed_entry_user_mapping: ReadFeedEntryUserMapping
         with transaction.atomic():
             feed_entry: FeedEntry
@@ -232,14 +234,20 @@ class FeedEntryReadView(APIView):
             if feed_entry.is_archived:
                 ret_obj = ""
             else:
-                (
-                    read_feed_entry_user_mapping,
-                    _,
-                ) = ReadFeedEntryUserMapping.objects.get_or_create(
-                    feed_entry=feed_entry, user=cast(User, request.user)
-                )
+                with transaction.atomic():
+                    (
+                        read_feed_entry_user_mapping,
+                        created,
+                    ) = ReadFeedEntryUserMapping.objects.get_or_create(
+                        feed_entry=feed_entry, user=user
+                    )
 
-                ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
+                    if created:
+                        User.objects.filter(uuid=user.uuid).update(
+                            read_feed_entries_counter=F("read_feed_entries_counter") + 1
+                        )
+
+                    ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
         return Response(ret_obj)
 
@@ -248,7 +256,16 @@ class FeedEntryReadView(APIView):
         operation_description="Unmark a feed entry as 'read'",
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
-        cast(User, request.user).read_feed_entries.filter(uuid=uuid).delete()
+        user = cast(User, request.user)
+
+        with transaction.atomic():
+            _, deletes = user.read_feed_entries.filter(uuid=uuid).delete()
+            deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
+            if deleted_count > 0:
+                User.objects.filter(uuid=user.uuid).update(
+                    read_feed_entries_counter=F("read_feed_entries_counter")
+                    - deleted_count
+                )
 
         return Response(status=204)
 
@@ -262,6 +279,8 @@ class FeedEntriesReadView(APIView):
         request_body=FeedEntriesMarkReadSerializer,
     )
     def post(self, request: Request):
+        user = cast(User, request.user)
+
         serializer = FeedEntriesMarkReadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -281,17 +300,23 @@ class FeedEntriesReadView(APIView):
         if q is None:
             raise ValidationError("no entries to mark read")
 
-        q = Q(is_archived=False) & q
-
-        ReadFeedEntryUserMapping.objects.bulk_create(
-            [
-                ReadFeedEntryUserMapping(
-                    feed_entry=feed_entry, user=cast(User, request.user)
-                )
-                for feed_entry in FeedEntry.objects.filter(q).iterator()
-            ],
-            ignore_conflicts=True,
+        q = (
+            Q(is_archived=False)
+            & ~Q(uuid__in=user.read_feed_entries.values("uuid"))
+            & q
         )
+
+        with transaction.atomic():
+            created_mappings = ReadFeedEntryUserMapping.objects.bulk_create(
+                ReadFeedEntryUserMapping(feed_entry=feed_entry, user=user)
+                for feed_entry in FeedEntry.objects.filter(q).iterator()
+            )
+            if len(created_mappings) > 0:
+                User.objects.filter(uuid=user.uuid).update(
+                    read_feed_entries_counter=(
+                        F("read_feed_entries_counter") + len(created_mappings)
+                    )
+                )
 
         return Response(status=204)
 
@@ -301,6 +326,8 @@ class FeedEntriesReadView(APIView):
         request_body=FeedEntriesMarkSerializer,
     )
     def delete(self, request: Request):
+        user = cast(User, request.user)
+
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -311,9 +338,16 @@ class FeedEntriesReadView(APIView):
         if len(feed_entry_uuids) < 1:
             return Response(status=204)
 
-        cast(User, request.user).read_feed_entries.filter(
-            uuid__in=feed_entry_uuids
-        ).delete()
+        with transaction.atomic():
+            _, deletes = user.read_feed_entries.filter(
+                uuid__in=feed_entry_uuids
+            ).delete()
+            deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
+            if deleted_count > 0:
+                User.objects.filter(uuid=user.uuid).update(
+                    read_feed_entries_counter=F("read_feed_entries_counter")
+                    - deleted_count
+                )
 
         return Response(status=204)
 

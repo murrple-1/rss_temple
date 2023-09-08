@@ -38,6 +38,7 @@ from .user_category import (
     UserCategoryCreateView,
     UserCategoryView,
 )
+from .user_meta import ReadCountView
 
 __all__ = [
     "LoginView",
@@ -60,6 +61,7 @@ __all__ = [
     "GoogleLogin",
     "GoogleConnect",
     "GoogleDisconnect",
+    "ReadCountView",
     "FeedView",
     "FeedsQueryView",
     "FeedSubscribeView",

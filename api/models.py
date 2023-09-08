@@ -50,6 +50,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     read_feed_entries = models.ManyToManyField(
         "FeedEntry", through="ReadFeedEntryUserMapping", related_name="read_user_set"
     )
+    read_feed_entries_counter = models.PositiveIntegerField(default=0)
     favorite_feed_entries = models.ManyToManyField(
         "FeedEntry", related_name="favorite_user_set"
     )

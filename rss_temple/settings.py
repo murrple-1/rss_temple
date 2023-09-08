@@ -235,7 +235,7 @@ else:
         },
         "captcha": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "default-cache",
+            "LOCATION": "captcha-cache",
             "TIMEOUT": 60 * 5,  # 5 minutes
         },
     }

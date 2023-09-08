@@ -49,6 +49,8 @@ class FeedEntryTestCase(APITestCase):
     def setUp(self):
         super().setUp()
 
+        FeedEntryTestCase.user.refresh_from_db(fields=("read_feed_entries_counter",))
+
         self.client.force_authenticate(user=FeedEntryTestCase.user)
 
     def test_FeedEntryView_get(self):
@@ -144,6 +146,9 @@ class FeedEntryTestCase(APITestCase):
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
 
+        FeedEntryTestCase.user.read_feed_entries_counter = 1
+        FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
+
         response = self.client.post(
             f"/api/feedentry/{feed_entry.uuid}/read",
         )
@@ -200,6 +205,9 @@ class FeedEntryTestCase(APITestCase):
         ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry
         )
+
+        FeedEntryTestCase.user.read_feed_entries_counter = 1
+        FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
 
         response = self.client.delete(
             f"/api/feedentry/{feed_entry.uuid}/read",
@@ -372,6 +380,9 @@ class FeedEntryTestCase(APITestCase):
             feed_entry=feed_entry, user=FeedEntryTestCase.user
         )
 
+        FeedEntryTestCase.user.read_feed_entries_counter = 1
+        FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
+
         response = self.client.post(
             "/api/feedentries/read",
             {
@@ -412,6 +423,9 @@ class FeedEntryTestCase(APITestCase):
         ReadFeedEntryUserMapping.objects.create(
             user=FeedEntryTestCase.user, feed_entry=feed_entry2
         )
+
+        FeedEntryTestCase.user.read_feed_entries_counter = 2
+        FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
 
         response = self.client.delete(
             "/api/feedentries/read",

@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   redis:
-    image: redis
+    image: redis:7
   postgresql:
     image: postgres:15
     shm_size: '256m'
