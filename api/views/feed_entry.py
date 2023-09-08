@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import fields as fieldutils
+from api.django_extensions import bulk_create_iter
 from api.fields import FieldMap
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
@@ -307,14 +308,19 @@ class FeedEntriesReadView(APIView):
         )
 
         with transaction.atomic():
-            created_mappings = ReadFeedEntryUserMapping.objects.bulk_create(
-                ReadFeedEntryUserMapping(feed_entry=feed_entry, user=user)
-                for feed_entry in FeedEntry.objects.filter(q).iterator()
+            created_count = bulk_create_iter(
+                (
+                    ReadFeedEntryUserMapping(feed_entry_id=feed_entry_uuid, user=user)
+                    for feed_entry_uuid in FeedEntry.objects.filter(q)
+                    .values_list("uuid", flat=True)
+                    .iterator()
+                ),
+                ReadFeedEntryUserMapping,
             )
-            if len(created_mappings) > 0:
+            if created_count > 0:
                 User.objects.filter(uuid=user.uuid).update(
                     read_feed_entries_counter=(
-                        F("read_feed_entries_counter") + len(created_mappings)
+                        F("read_feed_entries_counter") + created_count
                     )
                 )
 
@@ -416,8 +422,7 @@ class FeedEntriesFavoriteView(APIView):
         if len(feed_entries) != len(feed_entry_uuids):
             raise NotFound("feed entry not found")
 
-        for feed_entry in feed_entries:
-            cast(User, request.user).favorite_feed_entries.add(feed_entry)
+        cast(User, request.user).favorite_feed_entries.add(*feed_entries)
 
         return Response(status=204)
 
