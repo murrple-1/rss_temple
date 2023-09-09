@@ -7,7 +7,7 @@ _Model = TypeVar("_Model", bound=Model)
 
 
 def bulk_create_iter(
-    iterable: Iterable[_Model], model_type: Type[_Model], batch_size=10000
+    iterable: Iterable[_Model], model_type: Type[_Model], batch_size=2000
 ):
     created = 0
     while True:
