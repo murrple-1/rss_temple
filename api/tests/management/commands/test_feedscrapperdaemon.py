@@ -65,13 +65,13 @@ class DaemonTestCase(TestCase):
         with open("api/tests/test_files/atom_1.0/well_formed.xml", "r") as f:
             text = f.read()
 
-        self.command._scrape_feed(feed, text, 0.45)
+        self.command._scrape_feed(feed, text)
 
         feed_count = Feed.objects.count()
         feed_entry_count = FeedEntry.objects.count()
 
         # do it twice to make sure duplicate entries aren't added
-        self.command._scrape_feed(feed, text, 0.45)
+        self.command._scrape_feed(feed, text)
 
         self.assertEqual(feed_count, Feed.objects.count())
         self.assertEqual(feed_entry_count, FeedEntry.objects.count())

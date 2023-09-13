@@ -263,8 +263,8 @@ class FeedEntry(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
     is_archived = models.BooleanField(default=False)
-    languages = models.ManyToManyField(
-        Language, related_name="feed_entries", through="FeedEntryLanguageMapping"
+    language = models.ForeignKey(
+        Language, related_name="feed_entries", null=True, on_delete=models.SET_NULL
     )
 
     @staticmethod
@@ -305,13 +305,6 @@ class FeedEntry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} - {self.url}"
-
-
-class FeedEntryLanguageMapping(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE)
-    confidence = models.FloatField()
 
 
 class ReadFeedEntryUserMapping(models.Model):

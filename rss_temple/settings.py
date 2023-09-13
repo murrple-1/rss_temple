@@ -371,7 +371,7 @@ SOCIAL_CONNECTIONS_URL = os.getenv(
     "APP_SOCIAL_CONNECTIONS_URL", "http://localhost:4200/main/profile"
 )
 
-LINGUA_CONFIDENCE_THRESHOLD = 0.45
+LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
 try:
     from .local_settings import *

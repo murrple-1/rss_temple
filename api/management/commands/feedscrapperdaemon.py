@@ -12,8 +12,8 @@ from django.db.utils import OperationalError
 from django.utils import timezone
 
 from api import feed_handler, rss_requests
-from api.models import Feed, FeedEntry, FeedEntryLanguageMapping
-from api.text_classifier.lang_detector import detect_thresholded_iso639_3s
+from api.models import Feed, FeedEntry
+from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
 from ._daemoncommand import DaemonCommand
@@ -27,11 +27,6 @@ class Command(DaemonCommand):
         parser.add_argument("--sleep-seconds", type=float, default=30.0)
         parser.add_argument("--feed-url")
         parser.add_argument("--feed-uuid")
-        parser.add_argument(
-            "--lingua-confidence-threshold",
-            type=float,
-            default=settings.LINGUA_CONFIDENCE_THRESHOLD,
-        )
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         feed: Feed | None
@@ -48,7 +43,6 @@ class Command(DaemonCommand):
             self._scrape_feed(
                 feed,
                 response.text,
-                options["lingua_confidence_threshold"],
             )
         else:
             exit = self._setup_exit_event()
@@ -73,7 +67,6 @@ class Command(DaemonCommand):
                                 self._scrape_feed(
                                     feed,
                                     response.text,
-                                    options["lingua_confidence_threshold"],
                                 )
 
                                 self.stderr.write(
@@ -120,9 +113,7 @@ class Command(DaemonCommand):
             except Exception as e:
                 raise CommandError("render loop stopped unexpectedly") from e
 
-    def _scrape_feed(
-        self, feed: Feed, response_text: str, lingua_confidence_threshold: float
-    ):
+    def _scrape_feed(self, feed: Feed, response_text: str):
         d = feed_handler.text_2_d(response_text)
 
         new_feed_entries: list[FeedEntry] = []
@@ -167,23 +158,13 @@ class Command(DaemonCommand):
                 )
             else:
                 feed_entry.feed = feed
+
+                content = prep_for_lang_detection(feed_entry.content)
+                feed_entry.language_id = detect_iso639_3(content)
+
                 new_feed_entries.append(feed_entry)
 
         FeedEntry.objects.bulk_create(new_feed_entries)
-
-        for feed_entry in new_feed_entries:
-            content = prep_for_lang_detection(feed_entry.content)
-            detected_languages = detect_thresholded_iso639_3s(
-                content, lingua_confidence_threshold
-            )
-            FeedEntryLanguageMapping.objects.bulk_create(
-                FeedEntryLanguageMapping(
-                    language_id=lang,
-                    feed_entry=feed_entry,
-                    confidence=confidence,
-                )
-                for lang, confidence in detected_languages.items()
-            )
 
         feed.db_updated_at = timezone.now()
 

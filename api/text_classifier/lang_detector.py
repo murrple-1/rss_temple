@@ -1,53 +1,47 @@
-from lingua import IsoCode639_3, Language, LanguageDetectorBuilder
+from typing import Any
 
-_detector = LanguageDetectorBuilder.from_languages(
-    # based on https://www.isocfoundation.org/2023/05/what-are-the-most-used-languages-on-the-internet/
-    Language.ENGLISH,
-    Language.SPANISH,
-    Language.RUSSIAN,
-    Language.GERMAN,
-    Language.FRENCH,
-    Language.JAPANESE,
-    Language.PORTUGUESE,
-    Language.TURKISH,
-    Language.ITALIAN,
-    Language.PERSIAN,
-    Language.DUTCH,
-    Language.CHINESE,
-    # additional known
-    Language.ROMANIAN,
-    # TODO which languages to support? maybe all?
-).build()
+from django.conf import settings
+from django.core.signals import setting_changed
+from django.dispatch import receiver
+from lingua import Language, LanguageDetector, LanguageDetectorBuilder
+
+_detector: LanguageDetector
 
 
-def detect_thresholded_iso639_3s(
-    text: str, confidence_threshold: float
-) -> dict[str, float]:
-    detected_languages = detect_iso639_3s(text)
-    remove_langs = [
-        lang
-        for lang, confidence in detected_languages.items()
-        if confidence < confidence_threshold
-    ]
-    for lang in remove_langs:
-        del detected_languages[lang]
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _detector
 
-    if not detected_languages:
-        detected_languages["UND"] = 1.0
+    _detector = _detector = (
+        LanguageDetectorBuilder.from_languages(
+            # based on https://www.isocfoundation.org/2023/05/what-are-the-most-used-languages-on-the-internet/
+            Language.ENGLISH,
+            Language.SPANISH,
+            Language.RUSSIAN,
+            Language.GERMAN,
+            Language.FRENCH,
+            Language.JAPANESE,
+            Language.PORTUGUESE,
+            Language.TURKISH,
+            Language.ITALIAN,
+            Language.PERSIAN,
+            Language.DUTCH,
+            Language.CHINESE,
+            # additional known
+            Language.ROMANIAN,
+            # TODO which languages to support? maybe all?
+        )
+        .with_minimum_relative_distance(settings.LINGUA_MINIMUM_RELATIVE_DISTANCE)
+        .build()
+    )
 
-    new_confidence_sum = sum(detected_languages.values())
-    return {
-        lang: (confidence / new_confidence_sum)
-        for lang, confidence in detected_languages.items()
-    }
+
+_load_global_settings()
 
 
-def detect_iso639_3s(text: str) -> dict[str, float]:
-    confidence_values = _detector.compute_language_confidence_values(text)
-    return {cv.language.iso_code_639_3.name: cv.value for cv in confidence_values}
-
-
-def iso639_3_to_human_readable(iso639_3_str: str) -> str | None:
-    iso639_3 = IsoCode639_3[iso639_3_str]
-    language = Language.from_iso_code_639_3(iso639_3)
-    return language.name
+def detect_iso639_3(text: str) -> str:
+    detected_language = _detector.detect_language_of(text)
+    if detected_language is None:
+        return "UND"  # from https://en.wikipedia.org/wiki/ISO_639-3#Special_codes
+    else:
+        return detected_language.iso_code_639_3.name

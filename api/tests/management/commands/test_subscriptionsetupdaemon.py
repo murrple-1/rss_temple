@@ -175,7 +175,7 @@ class DaemonTestCase(TestFileServerTestCase):
             FeedSubscriptionProgressEntry.STARTED,
         )
 
-        self.command._do_subscription(feed_subscription_progress_entry, 0.45)
+        self.command._do_subscription(feed_subscription_progress_entry)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,

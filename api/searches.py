@@ -7,13 +7,7 @@ from django.http import HttpRequest
 from lingua import IsoCode639_3
 from pyparsing import ParseException, ParseResults
 
-from api.models import (
-    Feed,
-    FeedEntryLanguageMapping,
-    ReadFeedEntryUserMapping,
-    SubscribedFeedUserMapping,
-    User,
-)
+from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
 from api.search.convertto import (
     Bool,
     CustomConvertTo,
@@ -30,12 +24,17 @@ _logger = logging.getLogger("rss_temple")
 class LanguageSet(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str):
-        try:
-            return frozenset(
-                IsoCode639_3[l.upper()].name for l in search_obj.split(",")
-            )
-        except KeyError:
-            raise ValueError("lang malformed")
+        langs: set[str] = set()
+        for l in search_obj.split(","):
+            l = l.upper()
+            if l == "UND":
+                langs.add("UND")
+            else:
+                try:
+                    langs.add(IsoCode639_3[l].name)
+                except KeyError:
+                    raise ValueError("lang malformed")
+        return langs
 
 
 def _feedentry_subscribed(request: HttpRequest, search_obj: str):
@@ -183,10 +182,8 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "isArchived": lambda request, search_obj: Q(
             is_archived=Bool.convertto(search_obj)
         ),
-        "languages": lambda request, search_obj: Q(
-            uuid__in=FeedEntryLanguageMapping.objects.filter(
-                language__iso639_3__in=LanguageSet.convertto(search_obj)
-            ).values("feed_entry_id")
+        "language": lambda request, search_obj: Q(
+            language_id__in=LanguageSet.convertto(search_obj)
         ),
     },
 }

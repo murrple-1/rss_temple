@@ -1,14 +1,13 @@
 import traceback
 from typing import Any
 
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
 from tabulate import tabulate
 
 from api import feed_handler, rss_requests
-from api.models import FeedEntry, FeedEntryLanguageMapping
-from api.text_classifier.lang_detector import detect_thresholded_iso639_3s
+from api.models import FeedEntry
+from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
 
@@ -21,11 +20,6 @@ class Command(BaseCommand):
         parser.add_argument("-f", "--print-feed", action="store_true")
         parser.add_argument("-e", "--print-entries", action="store_true")
         parser.add_argument("-c", "--with-content", action="store_true")
-        parser.add_argument(
-            "--lingua-confidence-threshold",
-            type=float,
-            default=settings.LINGUA_CONFIDENCE_THRESHOLD,
-        )
 
     def handle(self, *args: Any, **options: Any):
         response = rss_requests.get(options["feed_url"])
@@ -50,6 +44,9 @@ class Command(BaseCommand):
                 continue
 
             feed_entry.feed = feed
+
+            content = prep_for_lang_detection(feed_entry.content)
+            feed_entry.language_id = detect_iso639_3(content)
 
             feed_entries.append(feed_entry)
 
@@ -123,17 +120,3 @@ class Command(BaseCommand):
                 feed.save()
 
                 FeedEntry.objects.bulk_create(feed_entries)
-
-                for feed_entry in feed_entries:
-                    content = prep_for_lang_detection(feed_entry.content)
-                    detected_languages = detect_thresholded_iso639_3s(
-                        content, options["lingua_confidence_threshold"]
-                    )
-                    FeedEntryLanguageMapping.objects.bulk_create(
-                        FeedEntryLanguageMapping(
-                            language_id=lang,
-                            feed_entry=feed_entry,
-                            confidence=confidence,
-                        )
-                        for lang, confidence in detected_languages.items()
-                    )

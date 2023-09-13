@@ -2,7 +2,6 @@ import traceback
 from typing import Any, Iterable, cast
 
 import requests
-from django.conf import settings
 from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
 from django.db.utils import OperationalError
@@ -11,13 +10,12 @@ from api import feed_handler, rss_requests
 from api.models import (
     Feed,
     FeedEntry,
-    FeedEntryLanguageMapping,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
     SubscribedFeedUserMapping,
     UserCategory,
 )
-from api.text_classifier.lang_detector import detect_thresholded_iso639_3s
+from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
 from ._daemoncommand import DaemonCommand
@@ -27,11 +25,6 @@ class Command(DaemonCommand):
     help = "Daemon to process subscriptions asynchronously"
 
     def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
-        parser.add_argument(
-            "--lingua-confidence-threshold",
-            type=float,
-            default=settings.LINGUA_CONFIDENCE_THRESHOLD,
-        )
         parser.add_argument("--sleep-seconds", type=float, default=5.0)
 
     def handle(self, *args: Any, **options: Any) -> str | None:  # pragma: no cover
@@ -46,7 +39,6 @@ class Command(DaemonCommand):
                     )
                     self._do_subscription(
                         feed_subscription_progress_entry,
-                        options["lingua_confidence_threshold"],
                     )
                 else:
                     self.stderr.write(
@@ -84,7 +76,6 @@ class Command(DaemonCommand):
     def _do_subscription(
         self,
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
-        lingua_confidence_threshold: float,
     ):  # pragma: testing-subscription-setup-daemon-do-subscription
         feeds: dict[str, Feed] = {}
         subscriptions: set[str] = set()
@@ -123,9 +114,7 @@ class Command(DaemonCommand):
                     feed = Feed.objects.get(feed_url=feed_url)
                 except Feed.DoesNotExist:
                     try:
-                        feed = self._generate_feed(
-                            feed_url, lingua_confidence_threshold
-                        )
+                        feed = self._generate_feed(feed_url)
                     except (
                         requests.exceptions.RequestException,
                         feed_handler.FeedHandlerError,
@@ -201,7 +190,7 @@ class Command(DaemonCommand):
         feed_subscription_progress_entry.save()
 
     def _generate_feed(
-        self, url: str, lingua_confidence_threshold: float
+        self, url: str
     ):  # pragma: testing-subscription-setup-daemon-do-subscription
         response = rss_requests.get(url)
         response.raise_for_status()
@@ -220,22 +209,12 @@ class Command(DaemonCommand):
                 continue
 
             feed_entry.feed = feed
+
+            content = prep_for_lang_detection(feed_entry.content)
+            feed_entry.language_id = detect_iso639_3(content)
+
             feed_entries.append(feed_entry)
 
         FeedEntry.objects.bulk_create(feed_entries)
-
-        for feed_entry in feed_entries:
-            content = prep_for_lang_detection(feed_entry.content)
-            detected_languages = detect_thresholded_iso639_3s(
-                content, lingua_confidence_threshold
-            )
-            FeedEntryLanguageMapping.objects.bulk_create(
-                FeedEntryLanguageMapping(
-                    language_id=lang,
-                    feed_entry=feed_entry,
-                    confidence=confidence,
-                )
-                for lang, confidence in detected_languages.items()
-            )
 
         return feed

@@ -157,7 +157,7 @@ class AllSearchesTestCase(TestCase):
                 "readAt_exact": ["2018-11-26 00:00:00+0000"],
                 "readAt_delta": ["older_than:10h"],
                 "isArchived": ["true", "false"],
-                "languages": ["ENG", "eng"],
+                "language": ["ENG", "eng", "eng,deu"],
             },
         },
     }
@@ -217,6 +217,8 @@ class LanguageSetTestCase(SimpleTestCase):
             ("eng", ["ENG"]),
             ("eng,eng", ["ENG"]),
             ("eng,DEU", ["ENG", "DEU"]),
+            ("und", ["UND"]),
+            ("und,eng", ["UND", "ENG"]),
         ]:
             with self.subTest(input=input_, expected=expected):
                 self.assertEqual(
