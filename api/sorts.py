@@ -46,12 +46,15 @@ _sort_configs: dict[str, dict[str, _SortConfig]] = {
         ),
     },
     "feedentry": {
-        "uuid": _SortConfig([_standard_sort("uuid")], _DefaultDescriptor(0, "ASC")),
+        "uuid": _SortConfig([_standard_sort("uuid")], None),
         "createdAt": _SortConfig([_standard_sort("created_at")], None),
-        "publishedAt": _SortConfig([_standard_sort("published_at")], None),
+        "publishedAt": _SortConfig(
+            [_standard_sort("published_at")], _DefaultDescriptor(0, "DESC")
+        ),
         "updatedAt": _SortConfig([_standard_sort("updated_at")], None),
         "title": _SortConfig([_standard_sort("title")], None),
         "isArchived": _SortConfig([_standard_sort("is_archived")], None),
+        "language": _SortConfig([_standard_sort("language_id")], None),
     },
 }
 
