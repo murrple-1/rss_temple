@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
                 if not dry_run:
                     feed_entry.language_id = detected_language
-                    feed_entry.save(update_fields=("language",))
+                    feed_entry.save(update_fields=("language_id",))
 
                 if verbosity >= 2:
                     self.stderr.write(self.style.NOTICE(f"{i + 1}/{total}"))
