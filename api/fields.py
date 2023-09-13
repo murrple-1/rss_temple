@@ -103,6 +103,12 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "readAt": _FieldConfig(_feedentry_readAt, False),
         "isArchived": _FieldConfig(lambda request, db_obj: db_obj.is_archived, False),
+        "languages": _FieldConfig(
+            lambda request, db_obj: [
+                l.iso639_3.lower() for l in db_obj.languages.all()
+            ],
+            False,
+        ),
     },
 }
 

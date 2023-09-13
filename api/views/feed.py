@@ -1,8 +1,11 @@
 from typing import Any, cast
 
 import requests
+from django.conf import settings
+from django.core.signals import setting_changed
 from django.db import transaction
 from django.db.models import OrderBy, Q
+from django.dispatch import receiver
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
@@ -19,6 +22,8 @@ from api.fields import FieldMap
 from api.models import (
     Feed,
     FeedEntry,
+    FeedEntryLanguageMapping,
+    Language,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
     User,
@@ -28,6 +33,20 @@ from api.serializers import (
     FeedSubscribeSerializer,
     GetManySerializer,
 )
+from api.text_classifier.lang_detector import detect_thresholded_iso639_3s
+from api.text_classifier.prep_content import prep_for_lang_detection
+
+_LINGUA_CONFIDENCE_THRESHOLD: float
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _LINGUA_CONFIDENCE_THRESHOLD
+
+    _LINGUA_CONFIDENCE_THRESHOLD = settings.LINGUA_CONFIDENCE_THRESHOLD
+
+
+_load_global_settings()
 
 _OBJECT_NAME = "feed"
 
@@ -247,5 +266,19 @@ def _save_feed(url: str):
             feed_entries.append(feed_entry)
 
         FeedEntry.objects.bulk_create(feed_entries)
+
+        for feed_entry in feed_entries:
+            content = prep_for_lang_detection(feed_entry.content)
+            detected_languages = detect_thresholded_iso639_3s(
+                content, _LINGUA_CONFIDENCE_THRESHOLD
+            )
+            FeedEntryLanguageMapping.objects.bulk_create(
+                FeedEntryLanguageMapping(
+                    language_id=lang,
+                    feed_entry=feed_entry,
+                    confidence=confidence,
+                )
+                for lang, confidence in detected_languages.items()
+            )
 
         return feed

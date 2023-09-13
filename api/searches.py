@@ -4,11 +4,19 @@ from typing import Callable, cast
 from django.db import connection
 from django.db.models import Q
 from django.http import HttpRequest
+from lingua import IsoCode639_3
 from pyparsing import ParseException, ParseResults
 
-from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
+from api.models import (
+    Feed,
+    FeedEntryLanguageMapping,
+    ReadFeedEntryUserMapping,
+    SubscribedFeedUserMapping,
+    User,
+)
 from api.search.convertto import (
     Bool,
+    CustomConvertTo,
     DateTime,
     DateTimeDeltaRange,
     DateTimeRange,
@@ -17,6 +25,17 @@ from api.search.convertto import (
 from api.search.parser import parser
 
 _logger = logging.getLogger("rss_temple")
+
+
+class LanguageSet(CustomConvertTo):
+    @staticmethod
+    def convertto(search_obj: str):
+        try:
+            return frozenset(
+                IsoCode639_3[l.upper()].name for l in search_obj.split(",")
+            )
+        except KeyError:
+            raise ValueError("lang malformed")
 
 
 def _feedentry_subscribed(request: HttpRequest, search_obj: str):
@@ -163,6 +182,11 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         ),
         "isArchived": lambda request, search_obj: Q(
             is_archived=Bool.convertto(search_obj)
+        ),
+        "languages": lambda request, search_obj: Q(
+            uuid__in=FeedEntryLanguageMapping.objects.filter(
+                language__iso639_3__in=LanguageSet.convertto(search_obj)
+            ).values("feed_entry_id")
         ),
     },
 }

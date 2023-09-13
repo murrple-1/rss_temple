@@ -16,6 +16,7 @@ from api.models import (
     UserCategory,
 )
 from api.tests import TestFileServerTestCase
+from api.tests.utils import db_migrations_state
 
 if TYPE_CHECKING:
     from unittest.mock import _Mock, _patch
@@ -55,6 +56,8 @@ class DaemonTestCase(TestFileServerTestCase):
 
         self.stdout_patcher.start()
         self.stderr_patcher.start()
+
+        db_migrations_state()
 
     def tearDown(self):
         super().tearDown()
@@ -172,7 +175,7 @@ class DaemonTestCase(TestFileServerTestCase):
             FeedSubscriptionProgressEntry.STARTED,
         )
 
-        self.command._do_subscription(feed_subscription_progress_entry)
+        self.command._do_subscription(feed_subscription_progress_entry, 0.45)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,

@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from api.management.commands.feedscrapperdaemon import Command
 from api.models import Feed, FeedEntry
+from api.tests.utils import db_migrations_state
 
 if TYPE_CHECKING:
     from unittest.mock import _Mock, _patch
@@ -39,6 +40,8 @@ class DaemonTestCase(TestCase):
         self.stdout_patcher.start()
         self.stderr_patcher.start()
 
+        db_migrations_state()
+
     def tearDown(self):
         super().tearDown()
 
@@ -62,13 +65,13 @@ class DaemonTestCase(TestCase):
         with open("api/tests/test_files/atom_1.0/well_formed.xml", "r") as f:
             text = f.read()
 
-        self.command._scrape_feed(feed, text)
+        self.command._scrape_feed(feed, text, 0.45)
 
         feed_count = Feed.objects.count()
         feed_entry_count = FeedEntry.objects.count()
 
         # do it twice to make sure duplicate entries aren't added
-        self.command._scrape_feed(feed, text)
+        self.command._scrape_feed(feed, text, 0.45)
 
         self.assertEqual(feed_count, Feed.objects.count())
         self.assertEqual(feed_entry_count, FeedEntry.objects.count())

@@ -100,9 +100,11 @@ class FeedEntriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        feed_entries = FeedEntry.annotate_search_vectors(
-            FeedEntry.objects.all()
-        ).filter(*search)
+        feed_entries = (
+            FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
+            .prefetch_related("languages")
+            .filter(*search)
+        )
 
         ret_obj: dict[str, Any] = {}
 
@@ -187,7 +189,9 @@ class FeedEntriesQueryStableView(APIView):
 
             feed_entries = {
                 feed_entry.uuid: feed_entry
-                for feed_entry in FeedEntry.objects.filter(uuid__in=current_uuids)
+                for feed_entry in FeedEntry.objects.prefetch_related(
+                    "languages"
+                ).filter(uuid__in=current_uuids)
             }
 
             objs: list[dict[str, Any]] = []

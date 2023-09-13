@@ -6,7 +6,7 @@ from unittest.mock import Mock
 from django.db.models import QuerySet
 from django.db.models.manager import BaseManager
 from django.http import HttpRequest
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from api import searches
 from api.models import Feed, FeedEntry, User, UserCategory
@@ -157,6 +157,7 @@ class AllSearchesTestCase(TestCase):
                 "readAt_exact": ["2018-11-26 00:00:00+0000"],
                 "readAt_delta": ["older_than:10h"],
                 "isArchived": ["true", "false"],
+                "languages": ["ENG", "eng"],
             },
         },
     }
@@ -208,3 +209,22 @@ class AllSearchesTestCase(TestCase):
                             result = list(queryset.filter(q))
 
                             self.assertIsNotNone(result)
+
+
+class LanguageSetTestCase(SimpleTestCase):
+    def test_convertto(self):
+        for input_, expected in [
+            ("eng", ["ENG"]),
+            ("eng,eng", ["ENG"]),
+            ("eng,DEU", ["ENG", "DEU"]),
+        ]:
+            with self.subTest(input=input_, expected=expected):
+                self.assertEqual(
+                    searches.LanguageSet.convertto(input_), frozenset(expected)
+                )
+
+    def test_convertto_bad(self):
+        for input_ in ["", "abc", "ABC", "badlang", "eng,abc"]:
+            with self.subTest(input=input_):
+                with self.assertRaises(ValueError):
+                    searches.LanguageSet.convertto(input_)

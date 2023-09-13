@@ -7,6 +7,7 @@ from django.utils import timezone
 from api import fields
 from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
+from api.tests.utils import db_migrations_state
 
 
 class FeedTestCase(TestFileServerTestCase):
@@ -29,6 +30,11 @@ class FeedTestCase(TestFileServerTestCase):
 
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
+
+    def setUp(self):
+        super().setUp()
+
+        db_migrations_state()
 
     def generate_credentials(self):
         user = User.objects.create_user("test@test.com", None)
