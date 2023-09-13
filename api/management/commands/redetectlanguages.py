@@ -19,10 +19,6 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         show_detected_lang = options["show_detected_lang"]
 
-        language_dict: dict[str, Language] = {
-            l.iso639_3: l for l in Language.objects.all()
-        }
-
         qs = FeedEntry.objects.filter(language__isnull=True)
         total = qs.count()
 
@@ -32,17 +28,16 @@ class Command(BaseCommand):
                 detected_language = detect_iso639_3(content)
 
                 if not dry_run:
-                    feed_entry.language = language_dict[detected_language]
+                    feed_entry.language_id = detected_language
                     feed_entry.save(update_fields=("language",))
 
                 if verbosity >= 2:
                     self.stderr.write(self.style.NOTICE(f"{i + 1}/{total}"))
 
                 if show_detected_lang:
+                    language = Language.objects.get(iso639_3=detected_language)
                     self.stderr.write(
-                        self.style.SUCCESS(
-                            f"{detected_language}: {language_dict[detected_language].name}"
-                        )
+                        self.style.SUCCESS(f"{detected_language}: {language.name}")
                     )
         except KeyboardInterrupt:
             pass
