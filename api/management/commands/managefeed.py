@@ -45,7 +45,7 @@ class Command(BaseCommand):
 
             feed_entry.feed = feed
 
-            content = prep_for_lang_detection(feed_entry.content)
+            content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
             feed_entry.language_id = detect_iso639_3(content)
 
             feed_entries.append(feed_entry)

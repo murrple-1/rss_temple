@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
         try:
             for i, feed_entry in enumerate(qs.order_by("-published_at").iterator()):
-                content = prep_for_lang_detection(feed_entry.content)
+                content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
                 detected_language = detect_iso639_3(content)
 
                 if not dry_run:
