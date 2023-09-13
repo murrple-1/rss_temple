@@ -23,7 +23,7 @@ def reusable_captcha_seed() -> str:
 
 def db_migrations_state():
     "Setup the DB as if the various RunPython migration scripts were run"
-    Language_.objects.create(iso639_3="UND", name="UNDEFINED")
+    Language_.objects.get_or_create(iso639_3="UND", defaults={"name": "UNDEFINED"})
     Language_.objects.bulk_create(
         (
             Language_(
