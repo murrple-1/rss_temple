@@ -278,6 +278,13 @@ class _FieldsField(serializers.ListField):
 
         return field_maps
 
+    def get_default(self):
+        object_name: str | None = self.context.get("object_name")
+        if not object_name:  # pragma: no cover
+            return []
+
+        return fieldutils.get_default_field_maps(object_name)
+
 
 class _SortField(serializers.Field):
     def get_default(self):
@@ -360,7 +367,7 @@ class _SearchField(serializers.Field):
 class GetSingleSerializer(serializers.Serializer):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 class GetManySerializer(serializers.Serializer):
@@ -382,7 +389,7 @@ class GetManySerializer(serializers.Serializer):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 class StableQueryCreateSerializer(serializers.Serializer):
@@ -394,7 +401,7 @@ class StableQueryCreateSerializer(serializers.Serializer):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 def _token_validate(data: Any):
@@ -422,7 +429,7 @@ class StableQueryMultipleSerializer(serializers.Serializer):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 class FeedGetSerializer(serializers.Serializer):
@@ -430,7 +437,7 @@ class FeedGetSerializer(serializers.Serializer):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 class FeedSubscribeSerializer(serializers.Serializer):
@@ -443,7 +450,7 @@ class UserCategoryCreateSerializer(serializers.Serializer):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.fields["fields"] = _FieldsField(required=False, default=[])
+        self.fields["fields"] = _FieldsField(required=False)
 
 
 class FeedEntriesMarkSerializer(serializers.Serializer):
