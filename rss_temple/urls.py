@@ -1,8 +1,19 @@
+from typing import Any
+
 from django.contrib import admin
 from django.urls import include, path
 from drf_yasg import openapi
+from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+
+
+class _MyOpenAPISchemaGenerator(OpenAPISchemaGenerator):
+    def get_schema(self, *args: Any, **kwargs: Any):
+        schema = super().get_schema(*args, **kwargs)
+        schema.schemes = ["http", "https"]
+        return schema
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -11,6 +22,7 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    generator_class=_MyOpenAPISchemaGenerator,
 )
 
 urlpatterns = [
