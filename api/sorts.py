@@ -54,7 +54,9 @@ _sort_configs: dict[str, dict[str, _SortConfig]] = {
         "updatedAt": _SortConfig([_standard_sort("updated_at")], None),
         "title": _SortConfig([_standard_sort("title")], None),
         "isArchived": _SortConfig([_standard_sort("is_archived")], None),
-        "language": _SortConfig([_standard_sort("language_id")], None),
+        "languageIso639_3": _SortConfig([_standard_sort("language_id")], None),
+        "languageIso639_1": _SortConfig([_standard_sort("language__iso639_1")], None),
+        "language_name": _SortConfig([_standard_sort("language__name")], None),
     },
 }
 

@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
+from api.tests.utils import throttling_monkey_patch
 
 
 class FeedEntryTestCase(APITestCase):
@@ -24,6 +25,8 @@ class FeedEntryTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):
@@ -763,17 +766,42 @@ class FeedEntryTestCase(APITestCase):
         self.assertIsInstance(json_["objects"], list)
 
     def test_FeedEntryLanguagesView_get(self):
-        response = self.client.get(
-            f"/api/feedentry/languages",
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+        cache: BaseCache = caches["default"]
 
-        json_ = response.json()
-        self.assertIsInstance(json_, dict)
-        self.assertIn("languages", json_)
-        self.assertIsInstance(json_["languages"], list)
-        self.assertEqual(len(json_["languages"]), 0)
-        self.assertEqual(frozenset(json_["languages"]), frozenset([]))
+        for data, expected in [
+            (None, []),
+            (
+                {
+                    "kind": "iso639_3",
+                },
+                [],
+            ),
+            (
+                {
+                    "kind": "iso639_1",
+                },
+                [],
+            ),
+            (
+                {
+                    "kind": "name",
+                },
+                [],
+            ),
+        ]:
+            with self.subTest(data=data, expected=expected):
+                response = self.client.get(
+                    f"/api/feedentry/languages",
+                    data,
+                )
+                self.assertEqual(response.status_code, 200, response.content)
+
+                json_ = response.json()
+                self.assertIsInstance(json_, dict)
+                self.assertIn("languages", json_)
+                self.assertIsInstance(json_["languages"], list)
+                self.assertEqual(len(json_["languages"]), len(expected))
+                self.assertEqual(frozenset(json_["languages"]), frozenset(expected))
 
         FeedEntry.objects.create(
             id=None,
@@ -788,20 +816,42 @@ class FeedEntryTestCase(APITestCase):
             language_id="ENG",
         )
 
-        cache: BaseCache = caches["default"]
-        cache.delete("feed_entry_languages")
+        cache.clear()
 
-        response = self.client.get(
-            f"/api/feedentry/languages",
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+        for data, expected in [
+            (None, ["ENG"]),
+            (
+                {
+                    "kind": "iso639_3",
+                },
+                ["ENG"],
+            ),
+            (
+                {
+                    "kind": "iso639_1",
+                },
+                ["EN"],
+            ),
+            (
+                {
+                    "kind": "name",
+                },
+                ["ENGLISH"],
+            ),
+        ]:
+            with self.subTest(data=data, expected=expected):
+                response = self.client.get(
+                    f"/api/feedentry/languages",
+                    data,
+                )
+                self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = response.json()
-        self.assertIsInstance(json_, dict)
-        self.assertIn("languages", json_)
-        self.assertIsInstance(json_["languages"], list)
-        self.assertEqual(len(json_["languages"]), 1)
-        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG"]))
+                json_ = response.json()
+                self.assertIsInstance(json_, dict)
+                self.assertIn("languages", json_)
+                self.assertIsInstance(json_["languages"], list)
+                self.assertEqual(len(json_["languages"]), len(expected))
+                self.assertEqual(frozenset(json_["languages"]), frozenset(expected))
 
         FeedEntry.objects.create(
             id=None,
@@ -816,19 +866,42 @@ class FeedEntryTestCase(APITestCase):
             language_id="JPN",
         )
 
-        cache.delete("feed_entry_languages")
+        cache.clear()
 
-        response = self.client.get(
-            f"/api/feedentry/languages",
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+        for data, expected in [
+            (None, ["ENG", "JPN"]),
+            (
+                {
+                    "kind": "iso639_3",
+                },
+                ["ENG", "JPN"],
+            ),
+            (
+                {
+                    "kind": "iso639_1",
+                },
+                ["EN", "JA"],
+            ),
+            (
+                {
+                    "kind": "name",
+                },
+                ["ENGLISH", "JAPANESE"],
+            ),
+        ]:
+            with self.subTest(data=data, expected=expected):
+                response = self.client.get(
+                    f"/api/feedentry/languages",
+                    data,
+                )
+                self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = response.json()
-        self.assertIsInstance(json_, dict)
-        self.assertIn("languages", json_)
-        self.assertIsInstance(json_["languages"], list)
-        self.assertEqual(len(json_["languages"]), 2)
-        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG", "JPN"]))
+                json_ = response.json()
+                self.assertIsInstance(json_, dict)
+                self.assertIn("languages", json_)
+                self.assertIsInstance(json_["languages"], list)
+                self.assertEqual(len(json_["languages"]), len(expected))
+                self.assertEqual(frozenset(json_["languages"]), frozenset(expected))
 
         FeedEntry.objects.create(
             id=None,
@@ -843,16 +916,39 @@ class FeedEntryTestCase(APITestCase):
             language_id="ENG",
         )
 
-        cache.delete("feed_entry_languages")
+        cache.clear()
 
-        response = self.client.get(
-            f"/api/feedentry/languages",
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+        for data, expected in [
+            (None, ["ENG", "JPN"]),
+            (
+                {
+                    "kind": "iso639_3",
+                },
+                ["ENG", "JPN"],
+            ),
+            (
+                {
+                    "kind": "iso639_1",
+                },
+                ["EN", "JA"],
+            ),
+            (
+                {
+                    "kind": "name",
+                },
+                ["ENGLISH", "JAPANESE"],
+            ),
+        ]:
+            with self.subTest(data=data, expected=expected):
+                response = self.client.get(
+                    f"/api/feedentry/languages",
+                    data,
+                )
+                self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = response.json()
-        self.assertIsInstance(json_, dict)
-        self.assertIn("languages", json_)
-        self.assertIsInstance(json_["languages"], list)
-        self.assertEqual(len(json_["languages"]), 2)
-        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG", "JPN"]))
+                json_ = response.json()
+                self.assertIsInstance(json_, dict)
+                self.assertIn("languages", json_)
+                self.assertIsInstance(json_["languages"], list)
+                self.assertEqual(len(json_["languages"]), len(expected))
+                self.assertEqual(frozenset(json_["languages"]), frozenset(expected))

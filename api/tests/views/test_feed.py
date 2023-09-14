@@ -7,7 +7,7 @@ from django.utils import timezone
 from api import fields
 from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
-from api.tests.utils import db_migrations_state
+from api.tests.utils import db_migrations_state, throttling_monkey_patch
 
 
 class FeedTestCase(TestFileServerTestCase):
@@ -23,6 +23,8 @@ class FeedTestCase(TestFileServerTestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

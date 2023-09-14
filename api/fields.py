@@ -103,9 +103,21 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "readAt": _FieldConfig(_feedentry_readAt, False),
         "isArchived": _FieldConfig(lambda request, db_obj: db_obj.is_archived, False),
-        "language": _FieldConfig(
-            lambda request, db_obj: db_obj.language_id.lower()
-            if db_obj.language_id is not None
+        "languageIso639_3": _FieldConfig(
+            lambda request, db_obj: db_obj.language.iso639_3
+            if db_obj.language is not None
+            else None,
+            False,
+        ),
+        "languageIso639_1": _FieldConfig(
+            lambda request, db_obj: db_obj.language.iso639_1
+            if db_obj.language is not None
+            else None,
+            False,
+        ),
+        "languageName": _FieldConfig(
+            lambda request, db_obj: db_obj.language.name
+            if db_obj.language is not None
             else None,
             False,
         ),

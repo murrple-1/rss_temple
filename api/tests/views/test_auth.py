@@ -7,7 +7,7 @@ from django.core import mail
 from rest_framework.test import APITestCase
 
 from api.models import User
-from api.tests.utils import debug_print_last_email
+from api.tests.utils import debug_print_last_email, throttling_monkey_patch
 
 
 class AuthTestCase(APITestCase):
@@ -20,6 +20,8 @@ class AuthTestCase(APITestCase):
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
 
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

@@ -23,13 +23,32 @@ def reusable_captcha_seed() -> str:
 
 def db_migrations_state():
     "Setup the DB as if the various RunPython migration scripts were run"
-    Language_.objects.get_or_create(iso639_3="UND", defaults={"name": "UNDEFINED"})
+    Language_.objects.get_or_create(
+        iso639_3="UND", defaults={"iso639_1": "UN", "name": "UNDEFINED"}
+    )
     Language_.objects.bulk_create(
         (
             Language_(
-                iso639_3=iso639_3.name, name=Language.from_iso_code_639_3(iso639_3).name
+                iso639_3=iso639_3.name,
+                iso639_1=lang.iso_code_639_1.name,
+                name=lang.name,
             )
-            for iso639_3 in IsoCode639_3
+            for iso639_3, lang in zip(
+                (iso639_3_ for iso639_3_ in IsoCode639_3),
+                (
+                    Language.from_iso_code_639_3(iso639_3__)
+                    for iso639_3__ in IsoCode639_3
+                ),
+            )
         ),
         ignore_conflicts=True,
     )
+
+
+def throttling_monkey_patch():
+    from rest_framework.throttling import SimpleRateThrottle
+
+    def _allow_request(self, request, view):
+        return True
+
+    SimpleRateThrottle.allow_request = _allow_request

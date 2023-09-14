@@ -21,6 +21,7 @@ from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
     FeedEntriesMarkReadSerializer,
     FeedEntriesMarkSerializer,
+    FeedEntryLanguagesQuerySerializer,
     FeedEntryLanguagesSerializer,
     GetManySerializer,
     GetSingleSerializer,
@@ -69,7 +70,7 @@ class FeedEntryView(APIView):
 
         feed_entry: FeedEntry
         try:
-            feed_entry = FeedEntry.objects.get(uuid=uuid)
+            feed_entry = FeedEntry.objects.select_related("language").get(uuid=uuid)
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
@@ -98,9 +99,11 @@ class FeedEntriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        feed_entries = FeedEntry.annotate_search_vectors(
-            FeedEntry.objects.all()
-        ).filter(*search)
+        feed_entries = (
+            FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
+            .filter(*search)
+            .select_related("language")
+        )
 
         ret_obj: dict[str, Any] = {}
 
@@ -181,7 +184,9 @@ class FeedEntriesQueryStableView(APIView):
 
             feed_entries = {
                 feed_entry.uuid: feed_entry
-                for feed_entry in FeedEntry.objects.filter(uuid__in=current_uuids)
+                for feed_entry in FeedEntry.objects.filter(
+                    uuid__in=current_uuids
+                ).select_related("language")
             }
 
             objs: list[dict[str, Any]] = []
@@ -433,21 +438,35 @@ class FeedEntryLanguagesView(APIView):
     @swagger_auto_schema(
         operation_summary="Get List of Languages in the system",
         operation_description="Get List of Languages in the system",
+        query_serializer=FeedEntryLanguagesQuerySerializer,
         responses={200: FeedEntryLanguagesSerializer},
     )
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
 
-        languages: list[str] | None = cache.get("feed_entry_languages")
+        serializer = FeedEntryLanguagesQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        kind: str = serializer.validated_data["kind"]
+
+        cache_key = f"feed_entry_languages__{kind}"
+        languages: list[str] | None = cache.get(cache_key)
         if languages is None:
+            field: str
+            if kind == "iso639_3":
+                field = "language_id"
+            elif kind == "iso639_1":
+                field = "language__iso639_1"
+            elif kind == "name":
+                field = "language__name"
+            else:  # pragma: no cover
+                raise NotFound("kind not found")
+
             languages = [
-                l
-                for l in FeedEntry.objects.values_list(
-                    "language_id", flat=True
-                ).distinct()
+                l for l in FeedEntry.objects.values_list(field, flat=True).distinct()
             ]
             cache.set(
-                "feed_entry_languages",
+                cache_key,
                 languages,
                 _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS,
             )

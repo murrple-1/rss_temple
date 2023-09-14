@@ -10,6 +10,7 @@ from api.models import (
     FeedSubscriptionProgressEntryDescriptor,
     User,
 )
+from api.tests.utils import throttling_monkey_patch
 
 
 class ProgressTestCase(APITestCase):
@@ -26,6 +27,8 @@ class ProgressTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

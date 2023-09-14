@@ -7,7 +7,11 @@ from django.test import TestCase
 from django.utils import timezone
 
 from api.models import Captcha
-from api.tests.utils import reusable_captcha_key, reusable_captcha_seed
+from api.tests.utils import (
+    reusable_captcha_key,
+    reusable_captcha_seed,
+    throttling_monkey_patch,
+)
 
 
 class CaptchaTestCase(TestCase):
@@ -23,6 +27,8 @@ class CaptchaTestCase(TestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

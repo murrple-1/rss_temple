@@ -4,6 +4,7 @@ from typing import ClassVar
 from rest_framework.test import APITestCase
 
 from api.models import User
+from api.tests.utils import throttling_monkey_patch
 
 
 class UserMetaTestCase(APITestCase):
@@ -20,6 +21,8 @@ class UserMetaTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

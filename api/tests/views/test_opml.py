@@ -5,6 +5,7 @@ from django.core.management import call_command
 from rest_framework.test import APITestCase
 
 from api.models import SubscribedFeedUserMapping, User
+from api.tests.utils import throttling_monkey_patch
 
 
 class OPMLTestCase(APITestCase):
@@ -20,6 +21,8 @@ class OPMLTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

@@ -4,7 +4,7 @@ from typing import Callable, cast
 from django.db import connection
 from django.db.models import Q
 from django.http import HttpRequest
-from lingua import IsoCode639_3
+from lingua import IsoCode639_1, IsoCode639_3, Language
 from pyparsing import ParseException, ParseResults
 
 from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
@@ -21,7 +21,7 @@ from api.search.parser import parser
 _logger = logging.getLogger("rss_temple")
 
 
-class LanguageSet(CustomConvertTo):
+class LanguageIso639_3Set(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str):
         langs: set[str] = set()
@@ -33,7 +33,39 @@ class LanguageSet(CustomConvertTo):
                 try:
                     langs.add(IsoCode639_3[l].name)
                 except KeyError:
-                    raise ValueError("lang malformed")
+                    raise ValueError("malformed")
+        return langs
+
+
+class LanguageIso639_1Set(CustomConvertTo):
+    @staticmethod
+    def convertto(search_obj: str):
+        langs: set[str] = set()
+        for l in search_obj.split(","):
+            l = l.upper()
+            if l == "UN":
+                langs.add("UN")
+            else:
+                try:
+                    langs.add(IsoCode639_1[l].name)
+                except KeyError:
+                    raise ValueError("malformed")
+        return langs
+
+
+class LanguageNameSet(CustomConvertTo):
+    @staticmethod
+    def convertto(search_obj: str):
+        langs: set[str] = set()
+        for l in search_obj.split(","):
+            l = l.upper()
+            if l == "UNDEFINED":
+                langs.add("UNDEFINED")
+            else:
+                try:
+                    langs.add(Language[l].name)
+                except KeyError:
+                    raise ValueError("malformed")
         return langs
 
 
@@ -182,8 +214,14 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "isArchived": lambda request, search_obj: Q(
             is_archived=Bool.convertto(search_obj)
         ),
-        "language": lambda request, search_obj: Q(
-            language_id__in=LanguageSet.convertto(search_obj)
+        "languageIso639_3": lambda request, search_obj: Q(
+            language__iso639_3__in=LanguageIso639_3Set.convertto(search_obj)
+        ),
+        "languageIso639_1": lambda request, search_obj: Q(
+            language__iso639_1__in=LanguageIso639_1Set.convertto(search_obj)
+        ),
+        "languageName": lambda request, search_obj: Q(
+            language__name__in=LanguageNameSet.convertto(search_obj)
         ),
     },
 }

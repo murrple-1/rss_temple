@@ -468,6 +468,12 @@ class FeedEntriesMarkReadSerializer(serializers.Serializer):
     )
 
 
+class FeedEntryLanguagesQuerySerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(
+        ("iso639_1", "iso639_3", "name"), default="iso639_3", required=False
+    )
+
+
 class FeedEntryLanguagesSerializer(serializers.Serializer):
     languages = serializers.ListField(child=serializers.CharField())
 

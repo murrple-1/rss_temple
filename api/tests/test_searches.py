@@ -157,7 +157,9 @@ class AllSearchesTestCase(TestCase):
                 "readAt_exact": ["2018-11-26 00:00:00+0000"],
                 "readAt_delta": ["older_than:10h"],
                 "isArchived": ["true", "false"],
-                "language": ["ENG", "eng", "eng,deu"],
+                "languageIso639_3": ["ENG", "eng", "eng,deu"],
+                "languageIso639_1": ["EN", "en", "en,de"],
+                "languageName": ["ENGLISH", "english", "english,german"],
             },
         },
     }
@@ -211,7 +213,7 @@ class AllSearchesTestCase(TestCase):
                             self.assertIsNotNone(result)
 
 
-class LanguageSetTestCase(SimpleTestCase):
+class LanguageIso639_3SetTestCase(SimpleTestCase):
     def test_convertto(self):
         for input_, expected in [
             ("eng", ["ENG"]),
@@ -222,11 +224,53 @@ class LanguageSetTestCase(SimpleTestCase):
         ]:
             with self.subTest(input=input_, expected=expected):
                 self.assertEqual(
-                    searches.LanguageSet.convertto(input_), frozenset(expected)
+                    searches.LanguageIso639_3Set.convertto(input_), frozenset(expected)
                 )
 
     def test_convertto_bad(self):
         for input_ in ["", "abc", "ABC", "badlang", "eng,abc"]:
             with self.subTest(input=input_):
                 with self.assertRaises(ValueError):
-                    searches.LanguageSet.convertto(input_)
+                    searches.LanguageIso639_3Set.convertto(input_)
+
+
+class LanguageIso639_1SetTestCase(SimpleTestCase):
+    def test_convertto(self):
+        for input_, expected in [
+            ("en", ["EN"]),
+            ("en,en", ["EN"]),
+            ("en,DE", ["EN", "DE"]),
+            ("un", ["UN"]),
+            ("un,en", ["UN", "EN"]),
+        ]:
+            with self.subTest(input=input_, expected=expected):
+                self.assertEqual(
+                    searches.LanguageIso639_1Set.convertto(input_), frozenset(expected)
+                )
+
+    def test_convertto_bad(self):
+        for input_ in ["", "xx", "XX", "badlang", "en,xx"]:
+            with self.subTest(input=input_):
+                with self.assertRaises(ValueError):
+                    searches.LanguageIso639_1Set.convertto(input_)
+
+
+class LanguageNameSetTestCase(SimpleTestCase):
+    def test_convertto(self):
+        for input_, expected in [
+            ("english", ["ENGLISH"]),
+            ("english,english", ["ENGLISH"]),
+            ("english,GERMAN", ["ENGLISH", "GERMAN"]),
+            ("undefined", ["UNDEFINED"]),
+            ("undefined,english", ["UNDEFINED", "ENGLISH"]),
+        ]:
+            with self.subTest(input=input_, expected=expected):
+                self.assertEqual(
+                    searches.LanguageNameSet.convertto(input_), frozenset(expected)
+                )
+
+    def test_convertto_bad(self):
+        for input_ in ["", "xx", "XX", "badlang", "en,xx"]:
+            with self.subTest(input=input_):
+                with self.assertRaises(ValueError):
+                    searches.LanguageNameSet.convertto(input_)

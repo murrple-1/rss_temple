@@ -131,6 +131,7 @@ class UserCategory(models.Model):
 
 class Language(models.Model):
     iso639_3 = models.CharField(primary_key=True, max_length=3)
+    iso639_1 = models.CharField(max_length=2)
     name = models.CharField(max_length=64)
 
 

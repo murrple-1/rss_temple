@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from api.models import Feed, User, UserCategory
+from api.tests.utils import throttling_monkey_patch
 
 
 class UserCategoryTestCase(APITestCase):
@@ -22,6 +23,8 @@ class UserCategoryTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
+
+        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):
