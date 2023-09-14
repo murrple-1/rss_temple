@@ -3,10 +3,8 @@ from typing import Any, cast
 
 from django.db import IntegrityError, transaction
 from django.db.models import OrderBy, Q
-from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,11 +26,7 @@ _OBJECT_NAME = "usercategory"
 
 
 class UserCategoryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def dispatch(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -103,8 +97,6 @@ class UserCategoryView(APIView):
 
 
 class UserCategoryCreateView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Create a User Category",
         operation_description="Create a User Category",
@@ -133,8 +125,6 @@ class UserCategoryCreateView(APIView):
 
 
 class UserCategoriesQueryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Query for User Categories",
         operation_description="Query for User Categories",
@@ -177,8 +167,6 @@ class UserCategoriesQueryView(APIView):
 
 
 class UserCategoriesApplyView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Add Feeds to a User Category",
         operation_description="Add Feeds to a User Category",

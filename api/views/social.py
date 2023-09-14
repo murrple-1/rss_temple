@@ -13,7 +13,6 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -52,7 +51,6 @@ class GoogleConnect(SocialConnectView):
 
 class GoogleDisconnect(GenericAPIView):
     serializer_class = SocialConnectSerializer
-    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return SocialAccount.objects.filter(user=self.request.user)
@@ -106,7 +104,6 @@ class FacebookConnect(SocialConnectView):
 
 class FacebookDisconnect(GenericAPIView):
     serializer_class = SocialConnectSerializer
-    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return SocialAccount.objects.filter(user=self.request.user)

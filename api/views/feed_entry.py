@@ -7,10 +7,8 @@ from django.core.signals import setting_changed
 from django.db import transaction
 from django.db.models import F, OrderBy, Q
 from django.dispatch import receiver
-from django.http.request import HttpRequest
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -45,11 +43,7 @@ _OBJECT_NAME = "feedentry"
 
 
 class FeedEntryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def dispatch(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -79,8 +73,6 @@ class FeedEntryView(APIView):
 
 
 class FeedEntriesQueryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Query for Feed Entries",
         operation_description="Query for Feed Entries",
@@ -121,8 +113,6 @@ class FeedEntriesQueryView(APIView):
 
 
 class FeedEntriesQueryStableCreateView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Stable Query Creation for Feed Entries",
         operation_description="Stable Query Creation for Feed Entries",
@@ -155,8 +145,6 @@ class FeedEntriesQueryStableCreateView(APIView):
 
 
 class FeedEntriesQueryStableView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Stable Query for Feed Entries",
         operation_description="Stable Query for Feed Entries",
@@ -208,11 +196,7 @@ class FeedEntriesQueryStableView(APIView):
 
 
 class FeedEntryReadView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def dispatch(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -274,8 +258,6 @@ class FeedEntryReadView(APIView):
 
 
 class FeedEntriesReadView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Mark multiple feed entries as 'read'",
         operation_description="Mark multiple feed entries as 'read'",
@@ -361,11 +343,7 @@ class FeedEntriesReadView(APIView):
 
 
 class FeedEntryFavoriteView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def dispatch(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -397,8 +375,6 @@ class FeedEntryFavoriteView(APIView):
 
 
 class FeedEntriesFavoriteView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Mark multiple feed entries as 'favorite'",
         operation_description="Mark multiple feed entries as 'favorite'",

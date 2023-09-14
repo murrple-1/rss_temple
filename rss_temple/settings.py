@@ -220,6 +220,11 @@ if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             "TIMEOUT": 60 * 5,  # 5 minutes
         },
+        "throttle": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"{REDIS_URL}/4",
+            "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        },
     }
 else:
     CACHES = {
@@ -237,6 +242,10 @@ else:
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "captcha-cache",
             "TIMEOUT": 60 * 5,  # 5 minutes
+        },
+        "throttle": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "throttle-cache",
         },
     }
 
@@ -266,12 +275,19 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
     "DEFAULT_PARSER_CLASSES": (
         "drf_ujson.parsers.UJSONParser",
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ),
+    "DEFAULT_THROTTLE_CLASSES": ("api.throttling.UserRateThrottle",),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "50/minute",
+        "dj_rest_auth": "100/day",
+    },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "TEST_REQUEST_RENDERER_CLASSES": (
         "drf_ujson.renderers.UJSONRenderer",

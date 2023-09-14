@@ -13,12 +13,13 @@ from django.http import HttpResponse
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions, throttling
+from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api import throttling
 from api.models import Captcha
 
 _CAPTCHA_EXPIRY_INTERVAL: datetime.timedelta

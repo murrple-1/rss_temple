@@ -11,7 +11,6 @@ from django.http.response import HttpResponse
 from drf_yasg import openapi
 from drf_yasg.inspectors import SwaggerAutoSchema
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions
 from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -41,7 +40,6 @@ class _OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):  # pragma: no cover
 
 
 class OPMLView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
     content_negotiation_class = IgnoreClientContentNegotiation
 
     @swagger_auto_schema(

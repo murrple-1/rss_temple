@@ -11,6 +11,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from api import throttling
+
 sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters("password"),
 )
@@ -31,6 +33,8 @@ class RegisterView(_RegisterView):
 
 
 class VerifyEmailView(_VerifyEmailView):
+    throttle_classes = (throttling.AnonRateThrottle,)
+
     @swagger_auto_schema(
         operation_summary="Verify your account",
         operation_description="""Verify your account
@@ -43,6 +47,8 @@ The link to access this URL most likely came through an email""",
 
 
 class ResendEmailVerificationView(_ResendEmailVerificationView):
+    throttle_classes = (throttling.AnonRateThrottle,)
+
     @swagger_auto_schema(
         operation_summary="Request the verification email be re-sent",
         operation_description="Request the verification email be re-sent",

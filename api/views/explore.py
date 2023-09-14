@@ -1,7 +1,6 @@
 from typing import Any, TypedDict, cast
 
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,8 +20,6 @@ class _Section(TypedDict):
 
 
 class ExploreView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         responses={200: ExploreSerializer(many=True)},
         operation_summary="Return a list of feeds, with example headlines, which are tailored to you",

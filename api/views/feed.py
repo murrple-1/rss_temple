@@ -4,7 +4,6 @@ import requests
 from django.db import transaction
 from django.db.models import OrderBy, Q
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -35,8 +34,6 @@ _OBJECT_NAME = "feed"
 
 
 class FeedView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Get Single Feed",
         operation_description="Get Single Feed",
@@ -67,8 +64,6 @@ class FeedView(APIView):
 
 
 class FeedsQueryView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Query for Feeds",
         operation_description="Query for Feeds",
@@ -112,8 +107,6 @@ class FeedsQueryView(APIView):
 
 
 class FeedSubscribeView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
     @swagger_auto_schema(
         operation_summary="Subscribe to feed",
         operation_description="Subscribe to feed",
