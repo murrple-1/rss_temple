@@ -2,7 +2,7 @@ import uuid as uuid_
 from typing import Any, cast
 
 from django.conf import settings
-from django.core.cache import caches
+from django.core.cache import BaseCache, caches
 from django.core.signals import setting_changed
 from django.db import transaction
 from django.db.models import F, OrderBy, Q
@@ -21,6 +21,7 @@ from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
     FeedEntriesMarkReadSerializer,
     FeedEntriesMarkSerializer,
+    FeedEntryLanguagesSerializer,
     GetManySerializer,
     GetSingleSerializer,
     StableQueryCreateSerializer,
@@ -28,13 +29,18 @@ from api.serializers import (
 )
 
 _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT: int
+_FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS: float
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
     global _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT
+    global _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS
 
     _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT = settings.MAX_FEED_ENTRIES_STABLE_QUERY_COUNT
+    _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS = (
+        settings.FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS
+    )
 
 
 _load_global_settings()
@@ -119,7 +125,7 @@ class FeedEntriesQueryStableCreateView(APIView):
         request_body=StableQueryCreateSerializer,
     )
     def post(self, request: Request):
-        cache = caches["stable_query"]
+        cache: BaseCache = caches["stable_query"]
 
         serializer = StableQueryCreateSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
@@ -151,7 +157,7 @@ class FeedEntriesQueryStableView(APIView):
         request_body=StableQueryMultipleSerializer,
     )
     def post(self, request: Request):
-        cache = caches["stable_query"]
+        cache: BaseCache = caches["stable_query"]
 
         serializer = StableQueryMultipleSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
@@ -421,3 +427,35 @@ class FeedEntriesFavoriteView(APIView):
         ).delete()
 
         return Response(status=204)
+
+
+class FeedEntryLanguagesView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Get List of Languages in the system",
+        operation_description="Get List of Languages in the system",
+        responses={200: FeedEntryLanguagesSerializer},
+    )
+    def get(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        languages: list[str] | None = cache.get("feed_entry_languages")
+        if languages is None:
+            languages = [
+                l
+                for l in FeedEntry.objects.values_list(
+                    "language_id", flat=True
+                ).distinct()
+            ]
+            cache.set(
+                "feed_entry_languages",
+                languages,
+                _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS,
+            )
+
+        return Response(
+            FeedEntryLanguagesSerializer(
+                {
+                    "languages": languages,
+                }
+            ).data
+        )

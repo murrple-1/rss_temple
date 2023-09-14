@@ -17,6 +17,7 @@ from .feed_entry import (
     FeedEntriesQueryView,
     FeedEntriesReadView,
     FeedEntryFavoriteView,
+    FeedEntryLanguagesView,
     FeedEntryReadView,
     FeedEntryView,
 )
@@ -73,6 +74,7 @@ __all__ = [
     "FeedEntriesReadView",
     "FeedEntryFavoriteView",
     "FeedEntriesFavoriteView",
+    "FeedEntryLanguagesView",
     "UserCategoryView",
     "UserCategoryCreateView",
     "UserCategoriesQueryView",

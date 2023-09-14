@@ -103,6 +103,7 @@ urlpatterns = [
         rf"^feedentry/{_uuid_regex}/favorite/?$", views.FeedEntryFavoriteView.as_view()
     ),
     re_path(r"^feedentries/favorite/?$", views.FeedEntriesFavoriteView.as_view()),
+    re_path(r"^feedentry/languages/?$", views.FeedEntryLanguagesView.as_view()),
     re_path(rf"^usercategory/?$", views.UserCategoryCreateView.as_view()),
     re_path(rf"^usercategory/{_uuid_regex}/?$", views.UserCategoryView.as_view()),
     re_path(r"^usercategories/query/?$", views.UserCategoriesQueryView.as_view()),

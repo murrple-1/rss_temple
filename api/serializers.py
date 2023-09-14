@@ -468,6 +468,10 @@ class FeedEntriesMarkReadSerializer(serializers.Serializer):
     )
 
 
+class FeedEntryLanguagesSerializer(serializers.Serializer):
+    languages = serializers.ListField(child=serializers.CharField())
+
+
 class UserCategorySerializer(serializers.ModelSerializer[UserCategory]):
     class Meta:
         model = UserCategory

@@ -2,6 +2,7 @@ import logging
 import uuid
 from typing import ClassVar
 
+from django.core.cache import BaseCache, caches
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -760,3 +761,98 @@ class FeedEntryTestCase(APITestCase):
         self.assertIsInstance(json_, dict)
         self.assertIn("objects", json_)
         self.assertIsInstance(json_["objects"], list)
+
+    def test_FeedEntryLanguagesView_get(self):
+        response = self.client.get(
+            f"/api/feedentry/languages",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIsInstance(json_, dict)
+        self.assertIn("languages", json_)
+        self.assertIsInstance(json_["languages"], list)
+        self.assertEqual(len(json_["languages"]), 0)
+        self.assertEqual(frozenset(json_["languages"]), frozenset([]))
+
+        FeedEntry.objects.create(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry 1 Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content 1",
+            author_name="John Doe",
+            db_updated_at=None,
+            language_id="ENG",
+        )
+
+        cache: BaseCache = caches["default"]
+        cache.delete("feed_entry_languages")
+
+        response = self.client.get(
+            f"/api/feedentry/languages",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIsInstance(json_, dict)
+        self.assertIn("languages", json_)
+        self.assertIsInstance(json_["languages"], list)
+        self.assertEqual(len(json_["languages"]), 1)
+        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG"]))
+
+        FeedEntry.objects.create(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry 2 Title",
+            url="http://example.com/entry2.html",
+            content="Some Entry content 2",
+            author_name="John Doe",
+            db_updated_at=None,
+            language_id="JPN",
+        )
+
+        cache.delete("feed_entry_languages")
+
+        response = self.client.get(
+            f"/api/feedentry/languages",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIsInstance(json_, dict)
+        self.assertIn("languages", json_)
+        self.assertIsInstance(json_["languages"], list)
+        self.assertEqual(len(json_["languages"]), 2)
+        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG", "JPN"]))
+
+        FeedEntry.objects.create(
+            id=None,
+            feed=FeedEntryTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry 3 Title",
+            url="http://example.com/entry3.html",
+            content="Some Entry content 3",
+            author_name="John Doe",
+            db_updated_at=None,
+            language_id="ENG",
+        )
+
+        cache.delete("feed_entry_languages")
+
+        response = self.client.get(
+            f"/api/feedentry/languages",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIsInstance(json_, dict)
+        self.assertIn("languages", json_)
+        self.assertIsInstance(json_["languages"], list)
+        self.assertEqual(len(json_["languages"]), 2)
+        self.assertEqual(frozenset(json_["languages"]), frozenset(["ENG", "JPN"]))
