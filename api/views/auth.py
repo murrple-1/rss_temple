@@ -50,11 +50,11 @@ class LogoutView(_LogoutView):  # pragma: no cover
         return super().post(request, *args, **kwargs)
 
     def logout(self, request: Request):
-        assert isinstance(request.user, User)
-        try:
-            request.user.token.delete()
-        except (AttributeError, ObjectDoesNotExist):
-            pass
+        if isinstance(request.user, User):
+            try:
+                request.user.token.delete()
+            except (AttributeError, ObjectDoesNotExist):
+                pass
 
         return super().logout(request)
 

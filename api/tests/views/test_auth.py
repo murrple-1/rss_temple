@@ -1,12 +1,14 @@
+import datetime
 import logging
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core import mail
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from api.models import User
+from api.models import Token, User
 from api.tests.utils import debug_print_last_email, throttling_monkey_patch
 
 
@@ -79,6 +81,9 @@ class AuthTestCase(APITestCase):
 
     def test_LogoutView_post(self):
         user = User.objects.create_user("test@test.com", None)
+        user.token = Token.objects.create(
+            user=user, expires_at=timezone.now() + datetime.timedelta(days=14)
+        )
 
         self.client.force_authenticate(user=user)
 
