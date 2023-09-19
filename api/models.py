@@ -1,3 +1,5 @@
+import binascii
+import os
 import random
 import string
 import uuid
@@ -55,6 +57,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         "FeedEntry", related_name="favorite_user_set"
     )
 
+    # can't use `auth_token`, as that's already defined via the `rest_framework.authtoken.models.Token`'s OneToOneField `user`
+    token: "Token"
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
@@ -106,6 +111,29 @@ class User(AbstractBaseUser, PermissionsMixin):
     @cached_property
     def favorite_feed_entry_uuids(self):
         return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
+
+
+class Token(models.Model):
+    # based heavily on `rest_framework.authtoken.models.Token`
+
+    key = models.CharField(_("Key"), max_length=40, primary_key=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
+    )
+    created = models.DateTimeField(_("Created"), auto_now_add=True)
+    expires_at = models.DateTimeField(null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_key(cls):
+        return binascii.hexlify(os.urandom(20)).decode()
+
+    def __str__(self):
+        return self.key
 
 
 class UserCategory(models.Model):

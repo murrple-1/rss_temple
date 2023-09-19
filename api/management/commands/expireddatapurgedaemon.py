@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models.functions import Now
 from django.db.utils import OperationalError
 
-from api.models import Captcha
+from api.models import Captcha, Token
 
 from ._daemoncommand import DaemonCommand
 
@@ -43,5 +43,9 @@ class Command(DaemonCommand):
             _, deletes = Captcha.objects.filter(expires_at__lte=Now()).delete()
             captcha_count = deletes.get("api.Captcha", 0)
             msgs.append(f"removed {captcha_count} captchas")
+
+            _, deletes = Token.objects.filter(expires_at__lte=Now()).delete()
+            token_count = deletes.get("api.Token", 0)
+            msgs.append(f"removed {token_count} tokens")
 
         return msgs

@@ -272,7 +272,7 @@ else:
 # DRF
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.TokenAuthentication",
+        "api.authentication.ExpiringTokenAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
@@ -316,6 +316,8 @@ REST_AUTH = {
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "api.serializers.PasswordResetConfirmSerializer",
     "REGISTER_SERIALIZER": "api.serializers.RegisterSerializer",
     "LOGIN_SERIALIZER": "api.serializers.LoginSerializer",
+    "TOKEN_CREATOR": "api.token_creator.create_token",
+    "TOKEN_MODEL": "api.models.Token",
 }
 
 # drf-yasg
@@ -359,6 +361,8 @@ CAPTCHA_IMAGE_FONTS_DIR = [  # TODO this should have more options
 ]
 CAPTCHA_IMAGE_FONT_SIZES = (42, 50, 56)
 CAPTCHA_AUDIO_VOICES_DIR = str(_captcha_data_path / "voices/")
+
+TOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=14)
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
