@@ -81,8 +81,12 @@ class AuthTestCase(APITestCase):
 
     def test_LogoutView_post(self):
         user = User.objects.create_user("test@test.com", None)
-        user.token = Token.objects.create(
-            user=user, expires_at=timezone.now() + datetime.timedelta(days=14)
+        setattr(
+            user,
+            "_token",
+            Token.objects.create(
+                user=user, expires_at=timezone.now() + datetime.timedelta(days=14)
+            ),
         )
 
         self.client.force_authenticate(user=user)

@@ -214,7 +214,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
 
         captcha: Captcha
         try:
-            captcha = Captcha.objects.get(key=captcha_key, expires_at__gte=Now())
+            captcha = Captcha.objects.get(key=captcha_key, expires_at__gt=Now())
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 

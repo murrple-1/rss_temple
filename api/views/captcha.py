@@ -78,7 +78,7 @@ class CaptchaImageView(APIView):
 
         captcha: Captcha
         try:
-            captcha = Captcha.objects.get(key=key, expires_at__gte=Now())
+            captcha = Captcha.objects.get(key=key, expires_at__gt=Now())
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 
@@ -110,7 +110,7 @@ class CaptchaAudioView(APIView):
 
         captcha: Captcha
         try:
-            captcha = Captcha.objects.get(key=key, expires_at__gte=Now())
+            captcha = Captcha.objects.get(key=key, expires_at__gt=Now())
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 

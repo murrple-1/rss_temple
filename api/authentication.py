@@ -43,12 +43,11 @@ class ExpiringTokenAuthentication(TokenAuthentication):
             if token.expires_at is not None:
                 now = timezone.now()
                 if token.expires_at <= now:
-                    token.delete()
                     raise exceptions.AuthenticationFailed("Token expired")
 
                 token.expires_at = now + _TOKEN_EXPIRY_INTERVAL
                 token.save(update_fields=("expires_at",))
 
-            user.token = token
+            setattr(user, "_token", token)
 
         return auth_tuple

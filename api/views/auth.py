@@ -6,7 +6,6 @@ from dj_rest_auth.views import PasswordChangeView as _PasswordChangeView
 from dj_rest_auth.views import PasswordResetConfirmView as _PasswordResetConfirmView
 from dj_rest_auth.views import PasswordResetView as _PasswordResetView
 from dj_rest_auth.views import UserDetailsView as _UserDetailsView
-from django.core.exceptions import ObjectDoesNotExist
 from django.http.response import HttpResponseBase
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
@@ -50,11 +49,9 @@ class LogoutView(_LogoutView):  # pragma: no cover
         return super().post(request, *args, **kwargs)
 
     def logout(self, request: Request):
-        if isinstance(request.user, User):
-            try:
-                request.user.token.delete()
-            except (AttributeError, ObjectDoesNotExist):
-                pass
+        if (token := getattr(request.user, "_token", None)) is not None:
+            token.delete()
+            delattr(request.user, "_token")
 
         return super().logout(request)
 
