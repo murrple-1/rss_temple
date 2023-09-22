@@ -24,8 +24,9 @@ try:
     from allauth.account import app_settings as allauth_account_settings
     from allauth.account.adapter import get_adapter
     from allauth.account.utils import setup_user_email
-    from allauth.utils import email_address_exists, get_username_max_length
-except ImportError:  # pragma: no cover
+    from allauth.socialaccount.models import EmailAddress
+    from allauth.utils import get_username_max_length
+except ImportError:
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
 from api import fields as fieldutils
@@ -66,7 +67,7 @@ class LoginSerializer(_LoginSerializer):  # pragma: no cover
         return attrs
 
 
-class UserDetailsSerializer(serializers.ModelSerializer):  # pragma: no cover
+class UserDetailsSerializer(serializers.ModelSerializer[User]):  # pragma: no cover
     subscribedFeedUuids: "serializers.PrimaryKeyRelatedField[Feed]" = (
         serializers.PrimaryKeyRelatedField(
             many=True, read_only=True, source="subscribed_feeds"
@@ -194,7 +195,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     def validate_email(self, email):
         email = get_adapter().clean_email(email)
         if allauth_account_settings.UNIQUE_EMAIL:
-            if email and email_address_exists(email):
+            if email and EmailAddress.objects.is_verified(email):
                 raise Conflict(
                     "A user is already registered with this e-mail address.",
                 )
