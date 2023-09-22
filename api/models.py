@@ -244,6 +244,7 @@ class FeedEntry(models.Model):
             models.Index(fields=["-created_at"]),
             models.Index(fields=["-updated_at"]),
             models.Index(fields=["is_archived"]),
+            models.Index(fields=["has_top_image_been_processed"]),
         ]
 
         constraints = [
@@ -276,6 +277,8 @@ class FeedEntry(models.Model):
     language = models.ForeignKey(
         Language, related_name="feed_entries", null=True, on_delete=models.SET_NULL
     )
+    has_top_image_been_processed = models.BooleanField(default=False)
+    top_image_src = models.TextField(default="")
 
     @staticmethod
     def annotate_search_vectors(qs):

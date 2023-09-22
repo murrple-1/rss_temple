@@ -223,6 +223,9 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "languageName": lambda request, search_obj: Q(
             language__name__in=LanguageNameSet.convertto(search_obj)
         ),
+        "hasTopImageBeenProcessed": lambda request, search_obj: Q(
+            has_top_image_been_processed=Bool.convertto(search_obj)
+        ),
     },
 }
 

@@ -31,6 +31,7 @@ drf_ujson2 = "*"
 captcha = "*"
 lingua-language-detector = "*"
 beautifulsoup4 = "*"
+goose3 = "*"
 
 [dev-packages]
 coverage = "*"

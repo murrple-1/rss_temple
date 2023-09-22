@@ -121,6 +121,12 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             else None,
             False,
         ),
+        "hasTopImageBeenProcessed": _FieldConfig(
+            lambda request, db_obj: db_obj.has_top_image_been_processed, False
+        ),
+        "topImageSrc": _FieldConfig(
+            lambda request, db_obj: db_obj.top_image_src, False
+        ),
     },
 }
 
