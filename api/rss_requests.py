@@ -4,7 +4,10 @@ import requests
 
 
 def get(
-    url, headers: Mapping[str, str | bytes] | None = None, *args: Any, **kwargs: Any
+    url: str | bytes,
+    headers: Mapping[str, str | bytes] | None = None,
+    *args: Any,
+    **kwargs: Any
 ):
     headers = headers or {}
     return requests.get(
@@ -17,5 +20,26 @@ def get(
             },
         },
         *args,
-        **kwargs
+        **kwargs,
+    )
+
+
+def head(
+    url: str | bytes,
+    headers: Mapping[str, str | bytes] | None = None,
+    *args: Any,
+    **kwargs: Any
+):
+    headers = headers or {}
+    return requests.head(
+        url,
+        timeout=30,
+        headers={
+            **headers,
+            **{
+                "User-Agent": "RSS Temple",
+            },
+        },
+        *args,
+        **kwargs,
     )
