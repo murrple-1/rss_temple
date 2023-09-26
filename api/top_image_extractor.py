@@ -24,11 +24,9 @@ def extract_top_image_src(
     min_image_width=256,
     min_image_height=256,
 ) -> str | None:
-    """
-    Currently, the top image is just the OpenGraph image (if it exists).
-    However, in the future, this might be expanded to do some `goose3`-like
-    smart-parsing of the webpage.
-    """
+    # TODO Currently, the top image is just the OpenGraph image (if it exists).
+    # However, in the future, this might be expanded to do some `goose3`-like
+    # smart-parsing of the webpage
     r: Response
     try:
         r = rss_requests.get(url)
