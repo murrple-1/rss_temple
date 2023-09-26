@@ -160,6 +160,7 @@ class AllSearchesTestCase(TestCase):
                 "languageIso639_3": ["ENG", "eng", "eng,deu"],
                 "languageIso639_1": ["EN", "en", "en,de"],
                 "languageName": ["ENGLISH", "english", "english,german"],
+                "hasTopImageBeenProcessed": ["true", "false"],
             },
         },
     }
