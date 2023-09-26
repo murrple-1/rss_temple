@@ -279,6 +279,7 @@ class FeedEntry(models.Model):
     )
     has_top_image_been_processed = models.BooleanField(default=False)
     top_image_src = models.TextField(default="")
+    top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
 
     @staticmethod
     def annotate_search_vectors(qs):

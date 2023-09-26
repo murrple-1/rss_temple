@@ -3,11 +3,12 @@ import traceback
 from typing import Any, Iterable
 
 from django.core.management.base import CommandError, CommandParser
+from django.db.models import F
 from django.db.utils import OperationalError
 from django.utils import timezone
 
 from api.models import FeedEntry
-from api.top_image_extractor import extract_top_image_src, is_top_image_needed
+from api.top_image_extractor import TryAgain, extract_top_image_src, is_top_image_needed
 
 from ._daemoncommand import DaemonCommand
 
@@ -21,9 +22,11 @@ class Command(DaemonCommand):
         parser.add_argument("--since")
         parser.add_argument("--loop-count", type=int, default=50)
         parser.add_argument("--image-min-bytes", type=int, default=20000)
+        parser.add_argument("--max-processing-attempts", type=int, default=3)
 
     def handle(self, *args: Any, **options: Any) -> None:
         verbosity = options["verbosity"]
+        max_processing_attempts = options["max_processing_attempts"]
         since = (
             datetime.datetime.fromisoformat(since_str)
             if (since_str := options["since"]) is not None
@@ -42,6 +45,7 @@ class Command(DaemonCommand):
                 .filter(published_at__gte=since)
                 .order_by("-published_at")
                 .iterator(),
+                max_processing_attempts,
             )
             self.stderr.write(f"updated {count}/{total_remaining}")
         else:
@@ -53,9 +57,10 @@ class Command(DaemonCommand):
                         FeedEntry.objects.filter(has_top_image_been_processed=False)
                         .filter(published_at__gte=since)
                         .order_by("-published_at")[: options["loop_count"]],
+                        max_processing_attempts,
+                        verbosity=verbosity,
                     )
-                    if verbosity >= 2:
-                        self.stderr.write(self.style.NOTICE(f"updated {count}"))
+                    self.stderr.write(self.style.NOTICE(f"updated {count}"))
 
                     exit.wait(options["sleep_seconds"])
             except OperationalError as e:
@@ -66,6 +71,8 @@ class Command(DaemonCommand):
     def _find_top_images(
         self,
         feed_entry_queryset: Iterable[FeedEntry],
+        max_processing_attempts: int,
+        verbosity=1,
     ) -> int:
         count = 0
         for feed_entry in feed_entry_queryset:
@@ -83,10 +90,39 @@ class Command(DaemonCommand):
                 )
 
                 count += 1
+            except TryAgain:
+                if (
+                    feed_entry.top_image_processing_attempt_count
+                    < max_processing_attempts
+                ):
+                    FeedEntry.objects.filter(uuid=feed_entry.uuid).update(
+                        top_image_processing_attempt_count=F(
+                            "top_image_processing_attempt_count"
+                        )
+                        + 1
+                    )
+                    if verbosity >= 2:
+                        self.stderr.write(
+                            self.style.WARNING(
+                                f"feed entry '{feed_entry.url}' transient error. try again later\n{traceback.format_exc()}"
+                            )
+                        )
+                else:
+                    FeedEntry.objects.filter(uuid=feed_entry.uuid).update(
+                        top_image_src="", has_top_image_been_processed=True
+                    )
+                    count += 1
+
+                    if verbosity >= 2:
+                        self.stderr.write(
+                            self.style.WARNING(
+                                f"feed entry '{feed_entry.url}' transient error. no more attempts\n{traceback.format_exc()}"
+                            )
+                        )
             except Exception:
                 self.stderr.write(
                     self.style.ERROR(
-                        f"failed to scrap feed '{feed_entry.url}'\n{traceback.format_exc()}"
+                        f"failed to find top image for '{feed_entry.url}'\n{traceback.format_exc()}"
                     )
                 )
         return count
