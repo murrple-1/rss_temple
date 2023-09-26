@@ -41,6 +41,7 @@ def extract_top_image_src(
         else:
             raise TryAgain from e
 
+    # TODO investigate what errors this can throw (if any), and handle them
     soup = BeautifulSoup(r.content, "lxml")
 
     og_image = soup.find("meta", property="og:image")
