@@ -23,10 +23,17 @@ class Command(DaemonCommand):
         parser.add_argument("--loop-count", type=int, default=50)
         parser.add_argument("--image-min-bytes", type=int, default=20000)
         parser.add_argument("--max-processing-attempts", type=int, default=3)
+        parser.add_argument("--min-image-byte-count", type=int, default=4500)
+        parser.add_argument("--min-image-width", type=int, default=256)
+        parser.add_argument("--min-image-height", type=int, default=256)
 
     def handle(self, *args: Any, **options: Any) -> None:
         verbosity = options["verbosity"]
         max_processing_attempts = options["max_processing_attempts"]
+        min_image_byte_count = options["min_image_byte_count"]
+        min_image_width = options["min_image_width"]
+        min_image_height = options["min_image_height"]
+
         since = (
             datetime.datetime.fromisoformat(since_str)
             if (since_str := options["since"]) is not None
@@ -46,6 +53,10 @@ class Command(DaemonCommand):
                 .order_by("-published_at")
                 .iterator(),
                 max_processing_attempts,
+                min_image_byte_count,
+                min_image_width,
+                min_image_height,
+                verbosity=verbosity,
             )
             self.stderr.write(f"updated {count}/{total_remaining}")
         else:
@@ -58,6 +69,9 @@ class Command(DaemonCommand):
                         .filter(published_at__gte=since)
                         .order_by("-published_at")[: options["loop_count"]],
                         max_processing_attempts,
+                        min_image_byte_count,
+                        min_image_width,
+                        min_image_height,
                         verbosity=verbosity,
                     )
                     self.stderr.write(self.style.NOTICE(f"updated {count}"))
@@ -72,6 +86,9 @@ class Command(DaemonCommand):
         self,
         feed_entry_queryset: Iterable[FeedEntry],
         max_processing_attempts: int,
+        min_image_byte_count: int,
+        min_image_width: int,
+        min_image_height: int,
         verbosity=1,
     ) -> int:
         count = 0
@@ -79,7 +96,13 @@ class Command(DaemonCommand):
             try:
                 if is_top_image_needed(feed_entry.content):
                     feed_entry.top_image_src = (
-                        extract_top_image_src(feed_entry.url) or ""
+                        extract_top_image_src(
+                            feed_entry.url,
+                            min_image_byte_count=min_image_byte_count,
+                            min_image_width=min_image_width,
+                            min_image_height=min_image_height,
+                        )
+                        or ""
                     )
                 else:
                     feed_entry.top_image_src = ""

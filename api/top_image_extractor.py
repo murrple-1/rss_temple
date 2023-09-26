@@ -54,6 +54,8 @@ def extract_top_image_src(
 
     og_image_src = urljoin(url, og_image_src)
 
+    # TODO do a HEAD request first, to check the byte count
+
     image_r: Response
     try:
         image_r = rss_requests.get(og_image_src)
