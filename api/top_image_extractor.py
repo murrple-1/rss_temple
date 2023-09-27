@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, UnidentifiedImageError
 from requests import Response
-from requests.exceptions import HTTPError, ReadTimeout
+from requests.exceptions import HTTPError, Timeout
 
 from api import rss_requests
 
@@ -30,13 +30,13 @@ def extract_top_image_src(
     r: Response
     try:
         r = rss_requests.get(url)
-    except ReadTimeout as e:
+    except Timeout as e:
         raise TryAgain from e
 
     try:
         r.raise_for_status()
     except HTTPError as e:
-        if r.status_code == 404:
+        if r.status_code in (404,):
             return None
         else:
             raise TryAgain from e
@@ -55,25 +55,53 @@ def extract_top_image_src(
 
     og_image_src = urljoin(url, og_image_src)
 
-    # TODO do a HEAD request first, to check the byte count
+    content_length: int | None = None
+
+    image_head_r: Response | None
+    try:
+        image_head_r = rss_requests.head(og_image_src)
+    except Timeout:
+        # if HEAD fails, just continue on to GET
+        image_head_r = None
+
+    if image_head_r is not None:
+        try:
+            image_head_r.raise_for_status()
+        except HTTPError:
+            image_head_r = None
+
+    if image_head_r is not None:
+        content_length_str = image_head_r.headers.get("content-length")
+        if content_length_str is not None:
+            try:
+                content_length = int(content_length_str)
+            except ValueError:
+                pass
+
+    if content_length is not None:
+        if content_length < min_image_byte_count:
+            return None
 
     image_r: Response
     try:
         image_r = rss_requests.get(og_image_src)
-    except ReadTimeout as e:
+    except Timeout as e:
         raise TryAgain from e
 
     try:
         image_r.raise_for_status()
     except HTTPError as e:
-        if image_r.status_code == 404:
+        if image_r.status_code in (404,):
             return None
         else:
             raise TryAgain from e
 
     content = image_r.content
-    if len(content) < min_image_byte_count:
-        return None
+
+    if content_length is None:
+        content_length = len(content)
+        if content_length < min_image_byte_count:
+            return None
 
     try:
         with io.BytesIO(content) as f:
