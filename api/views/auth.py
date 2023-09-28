@@ -11,6 +11,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import throttling
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,6 +28,8 @@ sensitive_post_parameters_m = method_decorator(
 
 
 class LoginView(_LoginView):  # pragma: no cover
+    throttle_classes = (throttling.ScopedRateThrottle,)
+
     @swagger_auto_schema(
         operation_summary="Login and return token",
         operation_description="Login and return token",
@@ -37,6 +40,8 @@ class LoginView(_LoginView):  # pragma: no cover
 
 
 class LogoutView(_LogoutView):  # pragma: no cover
+    throttle_classes = (throttling.ScopedRateThrottle,)
+
     @swagger_auto_schema(auto_schema=None)
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().get(request, *args, **kwargs)
@@ -57,6 +62,8 @@ class LogoutView(_LogoutView):  # pragma: no cover
 
 
 class PasswordChangeView(_PasswordChangeView):  # pragma: no cover
+    throttle_classes = (throttling.ScopedRateThrottle,)
+
     @sensitive_post_parameters_m
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
@@ -70,6 +77,8 @@ class PasswordChangeView(_PasswordChangeView):  # pragma: no cover
 
 
 class PasswordResetView(_PasswordResetView):  # pragma: no cover
+    throttle_classes = (throttling.ScopedRateThrottle,)
+
     @swagger_auto_schema(
         operation_summary="Initiate a password reset",
         operation_description="Initiate a password reset",
@@ -80,6 +89,8 @@ class PasswordResetView(_PasswordResetView):  # pragma: no cover
 
 
 class PasswordResetConfirmView(_PasswordResetConfirmView):  # pragma: no cover
+    throttle_classes = (throttling.ScopedRateThrottle,)
+
     @sensitive_post_parameters_m
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
