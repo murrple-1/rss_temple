@@ -286,6 +286,7 @@ REST_FRAMEWORK = {
         "anon": "100/day",
         "user": "50/minute",
         "dj_rest_auth": "100/day",
+        "user_delete": "3/minute",
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "TEST_REQUEST_RENDERER_CLASSES": (

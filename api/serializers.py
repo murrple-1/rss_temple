@@ -251,6 +251,10 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         return user
 
 
+class UserDeleteSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+
 class _FieldsField(serializers.ListField):
     def __init__(self, *args, **kwargs):
         kwargs["child"] = serializers.CharField()

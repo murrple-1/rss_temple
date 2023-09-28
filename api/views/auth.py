@@ -1,3 +1,4 @@
+import logging
 from typing import Any, cast
 
 from dj_rest_auth.views import LoginView as _LoginView
@@ -6,17 +7,22 @@ from dj_rest_auth.views import PasswordChangeView as _PasswordChangeView
 from dj_rest_auth.views import PasswordResetConfirmView as _PasswordResetConfirmView
 from dj_rest_auth.views import PasswordResetView as _PasswordResetView
 from dj_rest_auth.views import UserDetailsView as _UserDetailsView
+from django.contrib.auth import authenticate
 from django.http.response import HttpResponseBase
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import throttling
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import User
+from api.serializers import UserDeleteSerializer
+
+_logger = logging.getLogger("rss_temple")
 
 sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters(
@@ -156,6 +162,38 @@ Otherwise, that value will be added to the attribute unchanged.""",
             del user.attributes[key]
 
         user.save(update_fields=["attributes"])
+
+        return Response(status=204)
+
+
+class UserDeleteView(APIView):
+    throttle_classes = (throttling.ScopedRateThrottle,)
+    throttle_scope = "user_delete"
+
+    @sensitive_post_parameters_m
+    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
+        return super().dispatch(*args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={204: ""},
+        request_body=UserDeleteSerializer,
+        operation_summary="Delete your user permanently",
+        operation_description="Delete your user permanently",
+    )
+    def post(self, request: Request):
+        user = cast(User, request.user)
+
+        serializer = UserDeleteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_ = authenticate(
+            email=user.email, password=serializer.validated_data["password"]
+        )
+        if not user_:
+            raise AuthenticationFailed
+
+        _logger.warn(f"DELETE USER: {user.uuid} ({user.email})")
+        user.delete()
 
         return Response(status=204)
 

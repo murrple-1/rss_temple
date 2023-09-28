@@ -30,6 +30,7 @@ urlpatterns = [
         ),
         name="password_reset_confirm",
     ),
+    re_path(r"^auth/user/delete/?$", views.UserDeleteView.as_view()),
     re_path(r"^registration/?$", views.RegisterView.as_view(), name="rest_register"),
     re_path(
         r"^registration/verifyemail/?$",

@@ -5,6 +5,7 @@ from .auth import (
     PasswordResetConfirmView,
     PasswordResetView,
     UserAttributesView,
+    UserDeleteView,
     UserDetailsView,
 )
 from .captcha import CaptchaAudioView, CaptchaImageView, NewCaptchaView
@@ -52,6 +53,7 @@ __all__ = [
     "CaptchaAudioView",
     "UserDetailsView",
     "UserAttributesView",
+    "UserDeleteView",
     "RegisterView",
     "ResendEmailVerificationView",
     "VerifyEmailView",
