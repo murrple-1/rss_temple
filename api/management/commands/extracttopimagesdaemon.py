@@ -16,7 +16,7 @@ from ._daemoncommand import DaemonCommand
 class Command(DaemonCommand):
     help = "Daemon to find so-called 'top images' for entries without images"
 
-    def add_arguments(self, parser: CommandParser) -> None:
+    def add_arguments(self, parser: CommandParser) -> None:  # pragma: no cover
         parser.add_argument("--sleep-seconds", type=float, default=30.0)  # 30 seconds
         parser.add_argument("--single-run", action="store_true")
         parser.add_argument("--since")
@@ -27,7 +27,7 @@ class Command(DaemonCommand):
         parser.add_argument("--min-image-width", type=int, default=256)
         parser.add_argument("--min-image-height", type=int, default=256)
 
-    def handle(self, *args: Any, **options: Any) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         verbosity = options["verbosity"]
         max_processing_attempts = options["max_processing_attempts"]
         min_image_byte_count = options["min_image_byte_count"]
@@ -113,7 +113,7 @@ class Command(DaemonCommand):
                 )
 
                 count += 1
-            except TryAgain:
+            except TryAgain:  # pragma: no cover
                 if (
                     feed_entry.top_image_processing_attempt_count
                     < max_processing_attempts
@@ -142,7 +142,7 @@ class Command(DaemonCommand):
                                 f"feed entry '{feed_entry.url}' transient error. no more attempts\n{traceback.format_exc()}"
                             )
                         )
-            except Exception:
+            except Exception:  # pragma: no cover
                 self.stderr.write(
                     self.style.ERROR(
                         f"failed to find top image for '{feed_entry.url}'\n{traceback.format_exc()}"

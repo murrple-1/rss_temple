@@ -4,17 +4,17 @@ from io import StringIO
 from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import patch
 
+from django.test import TestCase
 from django.utils import timezone
 
 from api.management.commands.archivefeedentriesdaemon import Command
 from api.models import Feed, FeedEntry
-from api.tests import TestFileServerTestCase
 
 if TYPE_CHECKING:
     from unittest.mock import _Mock, _patch
 
 
-class DaemonTestCase(TestFileServerTestCase):
+class DaemonTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
 

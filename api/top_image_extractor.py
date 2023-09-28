@@ -30,7 +30,7 @@ def extract_top_image_src(
     r: Response
     try:
         r = rss_requests.get(url)
-    except Timeout as e:
+    except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
     try:
@@ -38,7 +38,7 @@ def extract_top_image_src(
     except HTTPError as e:
         if r.status_code in (404,):
             return None
-        else:
+        else:  # pragma: no cover
             raise TryAgain from e
 
     # TODO investigate what errors this can throw (if any), and handle them
@@ -60,17 +60,17 @@ def extract_top_image_src(
     image_head_r: Response | None
     try:
         image_head_r = rss_requests.head(og_image_src)
-    except Timeout:
+    except Timeout:  # pragma: no cover
         # if HEAD fails, just continue on to GET
         image_head_r = None
 
-    if image_head_r is not None:
+    if image_head_r is not None:  # pragma: no cover
         try:
             image_head_r.raise_for_status()
         except HTTPError:
             image_head_r = None
 
-    if image_head_r is not None:
+    if image_head_r is not None:  # pragma: no cover
         content_length_str = image_head_r.headers.get("content-length")
         if content_length_str is not None:
             try:
@@ -78,14 +78,14 @@ def extract_top_image_src(
             except ValueError:
                 pass
 
-    if content_length is not None:
+    if content_length is not None:  # pragma: no cover
         if content_length < min_image_byte_count:
             return None
 
     image_r: Response
     try:
         image_r = rss_requests.get(og_image_src)
-    except Timeout as e:
+    except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
     try:
@@ -93,7 +93,7 @@ def extract_top_image_src(
     except HTTPError as e:
         if image_r.status_code in (404,):
             return None
-        else:
+        else:  # pragma: no cover
             raise TryAgain from e
 
     content = image_r.content

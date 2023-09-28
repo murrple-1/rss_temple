@@ -26,7 +26,7 @@ try:
     from allauth.account.utils import setup_user_email
     from allauth.socialaccount.models import EmailAddress
     from allauth.utils import get_username_max_length
-except ImportError:
+except ImportError:  # pragma: no cover
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
 from api import fields as fieldutils

@@ -13,14 +13,17 @@ from api.tests.utils import debug_print_last_email, throttling_monkey_patch
 
 
 class AuthTestCase(APITestCase):
+    old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
+        cls.old_app_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
 
+        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
 
         throttling_monkey_patch()
@@ -29,6 +32,7 @@ class AuthTestCase(APITestCase):
     def tearDownClass(cls):
         super().tearDownClass()
 
+        logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def test_LoginView_post(self):
@@ -302,3 +306,40 @@ class AuthTestCase(APITestCase):
 
         user.refresh_from_db()
         self.assertNotIn("test", user.attributes)
+
+    def test_UserDeleteView_post(self):
+        user = User.objects.create_user("test@test.com", "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            "/api/auth/user/delete",
+            {
+                "password": "password",
+            },
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+    def test_UserDeleteView_post_badpassword(self):
+        user = User.objects.create_user("test@test.com", "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            "/api/auth/user/delete",
+            {
+                "password": "badpassword",
+            },
+        )
+        self.assertEqual(response.status_code, 401, response.content)
+
+    def test_UserDeleteView_post_password_missing(self):
+        user = User.objects.create_user("test@test.com", "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            "/api/auth/user/delete",
+            {},
+        )
+        self.assertEqual(response.status_code, 400, response.content)

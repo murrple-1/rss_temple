@@ -82,7 +82,7 @@ TEMPLATES = [
             ],
         },
         "APP_DIRS": True,
-        "DIRS": [],
+        "DIRS": ["api/templates/"],
     },
 ]
 
