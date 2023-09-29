@@ -2,6 +2,7 @@ import random
 import string
 import uuid
 from collections import defaultdict
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Collection
 
@@ -9,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
-from django.db.models.query_utils import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token as _Token
@@ -61,7 +61,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    def category_dict(self):
+    def category_dict(self) -> dict["uuid.UUID | None", list["Feed"]]:
         category_dict: dict[uuid.UUID | None, list[Feed]] | None = getattr(
             self, "_category_dict", None
         )
@@ -97,15 +97,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         return category_dict
 
     @cached_property
-    def subscribed_feed_uuids(self):
+    def subscribed_feed_uuids(self) -> frozenset["uuid.UUID"]:
         return frozenset(self.subscribed_feeds.values_list("uuid", flat=True))
 
     @cached_property
-    def read_feed_entry_uuids(self):
+    def read_feed_entry_uuids(self) -> frozenset["uuid.UUID"]:
         return frozenset(self.read_feed_entries.values_list("uuid", flat=True))
 
     @cached_property
-    def favorite_feed_entry_uuids(self):
+    def favorite_feed_entry_uuids(self) -> frozenset["uuid.UUID"]:
         return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
 
 
@@ -131,7 +131,7 @@ class UserCategory(models.Model):
     feeds = models.ManyToManyField("Feed", related_name="user_categories")
 
     @cached_property
-    def feed_uuids(self):
+    def feed_uuids(self) -> list["uuid.UUID"]:
         return self.feeds.values_list("uuid", flat=True)
 
     def __str__(self) -> str:
@@ -161,8 +161,11 @@ class Feed(models.Model):
     update_backoff_until = models.DateTimeField(default=timezone.now)
     archive_update_backoff_until = models.DateTimeField(default=timezone.now)
 
+    custom_title: str | None
+    is_subscribed: bool
+
     @staticmethod
-    def annotate_search_vectors(qs: models.QuerySet["Feed"]):
+    def annotate_search_vectors(qs: models.QuerySet["Feed"]) -> models.QuerySet["Feed"]:
         if connection.vendor == "postgresql":  # pragma: no cover
             from django.contrib.postgres.search import SearchVector
 
@@ -171,7 +174,9 @@ class Feed(models.Model):
         return qs
 
     @staticmethod
-    def annotate_subscription_data(qs: models.QuerySet["Feed"], user: User):
+    def annotate_subscription_data(
+        qs: models.QuerySet["Feed"], user: User
+    ) -> models.QuerySet["Feed"]:
         subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
             user=user, feed_id=models.OuterRef("uuid")
         )
@@ -182,13 +187,19 @@ class Feed(models.Model):
             is_subscribed=models.Exists(subscribed_user_feed_mappings),
         )
 
-    def with_subscription_data(self):
+    def with_subscription_data(self) -> None:
         self.custom_title = None
         self.is_subscribed = False
 
+    @dataclass(slots=True)
+    class _CountsDescriptor:
+        unread_count: int
+        read_count: int
+
     @staticmethod
-    def _generate_counts(feed: "Feed", user: User):
-        total_feed_entry_count = feed.feed_entries.count()
+    def _generate_counts(feed: "Feed", user: User) -> _CountsDescriptor:
+        total_count = feed.feed_entries.count()
+
         unread_count = (
             feed.feed_entries.filter(is_archived=False)
             .exclude(
@@ -198,16 +209,12 @@ class Feed(models.Model):
             )
             .count()
         )
-        read_count = total_feed_entry_count - unread_count
 
-        counts = {
-            "unread_count": unread_count,
-            "read_count": read_count,
-        }
+        read_count = total_count - unread_count
 
-        return counts
+        return Feed._CountsDescriptor(unread_count, read_count)
 
-    def _counts(self, user: User):
+    def _counts(self, user: User) -> _CountsDescriptor:
         counts = getattr(self, "_counts_", None)
         if counts is None:
             counts = Feed._generate_counts(self, user)
@@ -215,11 +222,11 @@ class Feed(models.Model):
 
         return counts
 
-    def unread_count(self, user: User):
-        return self._counts(user)["unread_count"]
+    def unread_count(self, user: User) -> int:
+        return self._counts(user).unread_count
 
-    def read_count(self, user: User):
-        return self._counts(user)["read_count"]
+    def read_count(self, user: User) -> int:
+        return self._counts(user).read_count
 
     def __str__(self) -> str:
         return f"{self.title} - {self.feed_url} - {self.uuid}"
@@ -251,7 +258,7 @@ class FeedEntry(models.Model):
             models.UniqueConstraint(
                 fields=["feed", "url"],
                 name="unique__feed__url__when__updated_at__null",
-                condition=Q(updated_at__isnull=True),
+                condition=models.Q(updated_at__isnull=True),
             ),
             models.UniqueConstraint(
                 fields=["feed", "url", "updated_at"],
@@ -282,7 +289,9 @@ class FeedEntry(models.Model):
     top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
 
     @staticmethod
-    def annotate_search_vectors(qs):
+    def annotate_search_vectors(
+        qs: models.QuerySet["FeedEntry"],
+    ) -> models.QuerySet["FeedEntry"]:
         if connection.vendor == "postgresql":  # pragma: no cover
             from django.contrib.postgres.search import SearchVector
 
@@ -293,7 +302,7 @@ class FeedEntry(models.Model):
 
         return qs
 
-    def from_subscription(self, user):
+    def from_subscription(self, user: User) -> bool:
         from_subscription = getattr(self, "_from_subscription", None)
         if from_subscription is None:
             from_subscription = self.feed_id in user.subscribed_feed_uuids
@@ -301,7 +310,7 @@ class FeedEntry(models.Model):
 
         return from_subscription
 
-    def is_read(self, user):
+    def is_read(self, user: User) -> bool:
         is_read = getattr(self, "_is_read", None)
         if is_read is None:
             is_read = self.is_archived or self.uuid in user.read_feed_entry_uuids
@@ -309,7 +318,7 @@ class FeedEntry(models.Model):
 
         return is_read
 
-    def is_favorite(self, user):
+    def is_favorite(self, user: User) -> bool:
         is_favorite = getattr(self, "_is_favorite", None)
         if is_favorite is None:
             is_favorite = self.uuid in user.favorite_feed_entry_uuids

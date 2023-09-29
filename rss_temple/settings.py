@@ -188,6 +188,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": os.getenv("APP_DJANGO_LOG_LEVEL", "INFO"),
         },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": os.getenv("APP_DJANGO_DB_BACKEND_LOG_LEVEL", "INFO"),
+        },
         "rss_temple": {
             "handlers": ["console"],
             "level": os.getenv("APP_LOG_LEVEL", "INFO"),
