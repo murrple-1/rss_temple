@@ -198,17 +198,23 @@ class Feed(models.Model):
 
     @staticmethod
     def _generate_counts(feed: "Feed", user: User) -> _CountsDescriptor:
-        total_count = feed.feed_entries.count()
-
-        unread_count = (
-            feed.feed_entries.filter(is_archived=False)
-            .exclude(
-                uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                    user=user, feed_entry__feed=feed
-                ).values("feed_entry_id")
-            )
-            .count()
+        counts = FeedEntry.objects.aggregate(
+            total_count=models.Count("uuid", filter=models.Q(feed=feed)),
+            unread_count=models.Count(
+                "uuid",
+                filter=(
+                    models.Q(feed=feed)
+                    & models.Q(is_archived=False)
+                    & ~models.Q(
+                        uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                            user=user, feed_entry__feed=feed
+                        ).values("feed_entry_id")
+                    )
+                ),
+            ),
         )
+        total_count = counts["total_count"]
+        unread_count = counts["unread_count"]
 
         read_count = total_count - unread_count
 
