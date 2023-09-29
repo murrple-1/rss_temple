@@ -2,21 +2,13 @@ from typing import Any, Callable, TypedDict, cast
 
 from django.http import HttpRequest
 
-from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
+from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 
 
 class _FieldConfig:
     def __init__(self, accessor: Callable[[HttpRequest, Any], Any], default: bool):
         self.accessor = accessor
         self.default = default
-
-
-def _feed_userCategoryUuids(request: HttpRequest, db_obj: Feed):
-    return [
-        str(uuid_)
-        for uuid_, feeds in cast(User, request.user).category_dict().items()
-        if uuid_ is not None and db_obj.uuid in {f.uuid for f in feeds}
-    ]
 
 
 def _feedentry_readAt(request: HttpRequest, db_obj: FeedEntry):
@@ -61,7 +53,11 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             False,
         ),
         "userCategoryUuids": _FieldConfig(
-            _feed_userCategoryUuids,
+            lambda request, db_obj: [
+                str(uuid_)
+                for uuid_, feeds in cast(User, request.user).category_dict().items()
+                if uuid_ is not None and db_obj.uuid in {f.uuid for f in feeds}
+            ],
             False,
         ),
         "readCount": _FieldConfig(
