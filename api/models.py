@@ -9,7 +9,7 @@ from typing import Collection
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.db import connection, models
+from django.db import connection, connections, models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token as _Token
@@ -198,23 +198,30 @@ class Feed(models.Model):
 
     @staticmethod
     def _generate_counts(feed: "Feed", user: User) -> _CountsDescriptor:
-        counts = FeedEntry.objects.aggregate(
-            total_count=models.Count("uuid", filter=models.Q(feed=feed)),
-            unread_count=models.Count(
-                "uuid",
-                filter=(
-                    models.Q(feed=feed)
-                    & models.Q(is_archived=False)
-                    & ~models.Q(
-                        uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                            user=user, feed_entry__feed=feed
-                        ).values("feed_entry_id")
-                    )
-                ),
-            ),
-        )
-        total_count = counts["total_count"]
-        unread_count = counts["unread_count"]
+        with connections["default"].cursor() as cursor:
+            cursor.execute(
+                """SELECT (
+                    SELECT COUNT(*)
+                    FROM "api_feedentry" AS "t1"
+                    WHERE "t1"."feed_id" = %(feed_uuid)s
+                ) AS total_count, (
+                    SELECT COUNT(*)
+                    FROM "api_feedentry" AS "t2"
+                    WHERE "t2"."feed_id" = %(feed_uuid)s
+                        AND "t2"."is_archived" = FALSE
+                        AND "t2"."uuid" NOT IN (
+                            SELECT "t3"."feed_entry_id"
+                            FROM "api_readfeedentryusermapping" AS "t3"
+                            JOIN "api_feedentry" AS "t4" ON "t4"."uuid" = "t3"."feed_entry_id"
+                            WHERE "t3"."user_id" = %(user_uuid)s
+                                AND "t4"."feed_id" = %(feed_uuid)s
+                        )
+                ) AS unread_count""",
+                {"feed_uuid": feed.uuid, "user_uuid": user.uuid},
+            )
+            row = cursor.fetchone()
+            total_count = row[0]
+            unread_count = row[1]
 
         read_count = total_count - unread_count
 
