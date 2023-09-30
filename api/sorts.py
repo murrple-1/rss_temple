@@ -1,25 +1,20 @@
 import re
+from dataclasses import dataclass
 from typing import Callable, Literal, TypedDict, cast
 
 from django.db.models import F, OrderBy
 
 
+@dataclass(slots=True)
 class _DefaultDescriptor:
+    sort_key: int
     direction: Literal["ASC", "DESC"]
 
-    def __init__(self, sort_key: int, direction: Literal["ASC", "DESC"]):
-        self.sort_key = sort_key
-        self.direction = direction
 
-
+@dataclass(slots=True)
 class _SortConfig:
-    def __init__(
-        self,
-        field_accessor_fns: list[Callable[[str], OrderBy]],
-        default_descriptor: _DefaultDescriptor | None,
-    ):
-        self.field_accessor_fns = field_accessor_fns
-        self.default_descriptor = default_descriptor
+    field_accessor_fns: list[Callable[[str], OrderBy]]
+    default_descriptor: _DefaultDescriptor | None
 
 
 def _standard_sort(field_name: str):
