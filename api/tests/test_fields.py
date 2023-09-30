@@ -238,14 +238,183 @@ class AllFieldsTestCase(TestCase):
 
 
 class FieldFnsTestCase(TestCase):
-    def test_feedentry_isRead(self):
-        user = User.objects.create_user("test_fields@test.com", None)
+    user: ClassVar[User]
 
-        class MockRequest(Mock):
-            def __init__(self):
-                super().__init__(HttpRequest)
-                self.user = user
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
 
+        cls.user = User.objects.create_user("test_fields@test.com", None)
+
+    class MockRequest(Mock):
+        def __init__(self):
+            super().__init__(HttpRequest)
+            self.user = FieldFnsTestCase.user
+
+    def test__usercategory_feedUuids(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        user_category = UserCategory.objects.create(
+            user=FieldFnsTestCase.user,
+            text="Test Category",
+        )
+        user_category.feeds.add(feed)
+
+        for queryset in [None, UserCategory.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                feed_uuids = fields._usercategory_feedUuids(
+                    FieldFnsTestCase.MockRequest(), user_category, queryset
+                )
+                self.assertIsInstance(feed_uuids, list)
+                self.assertEqual(len(feed_uuids), 1)
+
+    def test__feed_userCategoryUuids(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        user_category = UserCategory.objects.create(
+            user=FieldFnsTestCase.user,
+            text="Test Category",
+        )
+        user_category.feeds.add(feed)
+
+        for queryset in [None, Feed.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                user_category_uuids = fields._feed_userCategoryUuids(
+                    FieldFnsTestCase.MockRequest(), feed, queryset
+                )
+                self.assertIsInstance(user_category_uuids, list)
+                self.assertEqual(len(user_category_uuids), 1)
+
+    def test_feed_readCount(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry1.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+        FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry2.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+
+        FieldFnsTestCase.user.read_feed_entries.add(feed.feed_entries.first())
+
+        for queryset in [None, Feed.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertEqual(
+                    fields._feed_readCount(
+                        FieldFnsTestCase.MockRequest(), feed, queryset
+                    ),
+                    1,
+                )
+
+    def test_feed_unreadCount(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry1.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+        FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry2.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+
+        FieldFnsTestCase.user.read_feed_entries.add(feed.feed_entries.first())
+
+        for queryset in [None, Feed.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertEqual(
+                    fields._feed_unreadCount(
+                        FieldFnsTestCase.MockRequest(), feed, queryset
+                    ),
+                    1,
+                )
+
+    def test_feedentry_fromSubscription(self):
+        feed1 = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed2 = Feed.objects.create(
+            feed_url="http://example2.com/rss.xml",
+            title="Sample Feed 2",
+            home_url="http://example2.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed_entry1 = FeedEntry.objects.create(
+            feed=feed1,
+            url="http://example.com/entry1.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+        feed_entry2 = FeedEntry.objects.create(
+            feed=feed2,
+            url="http://example.com/entry2.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+
+        FieldFnsTestCase.user.subscribed_feeds.add(feed2)
+
+        for queryset in [None, FeedEntry.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertFalse(
+                    fields._feedentry_fromSubscription(
+                        FieldFnsTestCase.MockRequest(), feed_entry1, queryset
+                    )
+                )
+                self.assertTrue(
+                    fields._feedentry_fromSubscription(
+                        FieldFnsTestCase.MockRequest(), feed_entry2, queryset
+                    )
+                )
+
+    def test_feedentry_isFavorite(self):
         feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Sample Feed",
@@ -268,12 +437,97 @@ class FieldFnsTestCase(TestCase):
             author_name="John Doe",
         )
 
-        ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
+        FieldFnsTestCase.user.favorite_feed_entries.add(feed_entry2)
 
         for queryset in [None, FeedEntry.objects.all()]:
-            self.assertIsNone(
-                fields._feedentry_readAt(MockRequest(), feed_entry1, queryset)
-            )
-            self.assertIsNotNone(
-                fields._feedentry_readAt(MockRequest(), feed_entry2, queryset)
-            )
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertFalse(
+                    fields._feedentry_isFavorite(
+                        FieldFnsTestCase.MockRequest(), feed_entry1, queryset
+                    )
+                )
+                self.assertTrue(
+                    fields._feedentry_isFavorite(
+                        FieldFnsTestCase.MockRequest(), feed_entry2, queryset
+                    )
+                )
+
+    def test_feedentry_isRead(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed_entry1 = FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry1.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+        feed_entry2 = FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry2.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+
+        ReadFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry2, user=FieldFnsTestCase.user
+        )
+
+        for queryset in [None, FeedEntry.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertFalse(
+                    fields._feedentry_isRead(
+                        FieldFnsTestCase.MockRequest(), feed_entry1, queryset
+                    )
+                )
+                self.assertTrue(
+                    fields._feedentry_isRead(
+                        FieldFnsTestCase.MockRequest(), feed_entry2, queryset
+                    )
+                )
+
+    def test_feedentry_readAt(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed_entry1 = FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry1.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+        feed_entry2 = FeedEntry.objects.create(
+            feed=feed,
+            url="http://example.com/entry2.html",
+            content="<b>Some HTML Content</b>",
+            author_name="John Doe",
+        )
+
+        ReadFeedEntryUserMapping.objects.create(
+            feed_entry=feed_entry2, user=FieldFnsTestCase.user
+        )
+
+        for queryset in [None, FeedEntry.objects.all()]:
+            with self.subTest(queryset_type=type(queryset)):
+                self.assertIsNone(
+                    fields._feedentry_readAt(
+                        FieldFnsTestCase.MockRequest(), feed_entry1, queryset
+                    )
+                )
+                self.assertIsNotNone(
+                    fields._feedentry_readAt(
+                        FieldFnsTestCase.MockRequest(), feed_entry2, queryset
+                    )
+                )

@@ -34,8 +34,6 @@ def _usercategory_feedUuids(
             ):
                 feed_uuids_dict[t.usercategory_id].append(t.feed_id)
 
-            feed_uuids_dict = dict(feed_uuids_dict)
-
             setattr(request, "_usercategory_feedUuids", feed_uuids_dict)
 
         return [str(uuid_) for uuid_ in feed_uuids_dict[db_obj.uuid]]
@@ -46,9 +44,8 @@ def _feed_userCategoryUuids(
 ) -> list[str]:
     if queryset is None:
         return [
-            str(uuid_)
-            for uuid_, feeds in cast(User, request.user).category_dict().items()
-            if uuid_ is not None and db_obj.uuid in {f.uuid for f in feeds}
+            str(uc.uuid)
+            for uc in db_obj.user_categories.filter(user=cast(User, request.user))
         ]
     else:
         user_category_uuids_dict: dict[uuid.UUID, list[uuid.UUID]] | None
@@ -63,8 +60,6 @@ def _feed_userCategoryUuids(
                 feed_id__in=user_category_uuids_dict.keys(),
             ):
                 user_category_uuids_dict[t.feed_id].append(t.usercategory_id)
-
-            user_category_uuids_dict = dict(user_category_uuids_dict)
 
             setattr(request, "_feed_userCategoryUuids", user_category_uuids_dict)
 
