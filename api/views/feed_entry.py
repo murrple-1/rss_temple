@@ -74,7 +74,9 @@ class FeedEntryView(APIView):
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
-        ret_obj = fieldutils.generate_return_object(field_maps, feed_entry, request)
+        ret_obj = fieldutils.generate_return_object(
+            field_maps, feed_entry, request, None
+        )
 
         return Response(ret_obj)
 
@@ -110,7 +112,9 @@ class FeedEntriesQueryView(APIView):
         if return_objects:
             objs: list[dict[str, Any]] = []
             for feed_entry in feed_entries.order_by(*sort)[skip : skip + count]:
-                obj = fieldutils.generate_return_object(field_maps, feed_entry, request)
+                obj = fieldutils.generate_return_object(
+                    field_maps, feed_entry, request, feed_entries
+                )
                 objs.append(obj)
 
             ret_obj["objects"] = objs
@@ -182,7 +186,7 @@ class FeedEntriesQueryStableView(APIView):
         if return_objects:
             current_uuids = uuids[skip : skip + count]
 
-            feed_entries = {
+            feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
                 for feed_entry in FeedEntry.objects.filter(
                     uuid__in=current_uuids
@@ -191,10 +195,10 @@ class FeedEntriesQueryStableView(APIView):
 
             objs: list[dict[str, Any]] = []
             if len(current_uuids) == len(feed_entries):
-                for uuid_ in current_uuids:
-                    feed_entry = feed_entries[uuid_]
+                for uuid in current_uuids:
+                    feed_entry = feed_entries[uuid]
                     obj = fieldutils.generate_return_object(
-                        field_maps, feed_entry, request
+                        field_maps, feed_entry, request, feed_entries.values()
                     )
                     objs.append(obj)
 

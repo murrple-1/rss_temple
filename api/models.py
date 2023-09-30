@@ -227,13 +227,12 @@ class Feed(models.Model):
                 total_count = row[0]
                 unread_count = row[1]
         else:
-            counts = FeedEntry.objects.aggregate(
-                total_count=models.Count("uuid", filter=models.Q(feed=feed)),
+            counts = FeedEntry.objects.filter(feed=feed).aggregate(
+                total_count=models.Count("uuid"),
                 unread_count=models.Count(
                     "uuid",
                     filter=(
-                        models.Q(feed=feed)
-                        & models.Q(is_archived=False)
+                        models.Q(is_archived=False)
                         & ~models.Q(
                             uuid__in=ReadFeedEntryUserMapping.objects.filter(
                                 user=user, feed_entry__feed=feed

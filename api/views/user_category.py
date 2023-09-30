@@ -46,13 +46,15 @@ class UserCategoryView(APIView):
 
         user_category: UserCategory
         try:
-            user_category = UserCategory.objects.get(
+            user_category = UserCategory.objects.prefetch_related("feeds").get(
                 uuid=uuid, user=cast(User, request.user)
             )
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
 
-        ret_obj = fieldutils.generate_return_object(field_maps, user_category, request)
+        ret_obj = fieldutils.generate_return_object(
+            field_maps, user_category, request, None
+        )
 
         return Response(ret_obj)
 
@@ -119,7 +121,9 @@ class UserCategoryCreateView(APIView):
         except IntegrityError:
             raise Conflict("user category already exists")
 
-        ret_obj = fieldutils.generate_return_object(field_maps, user_category, request)
+        ret_obj = fieldutils.generate_return_object(
+            field_maps, user_category, request, None
+        )
 
         return Response(ret_obj)
 
@@ -152,9 +156,11 @@ class UserCategoriesQueryView(APIView):
 
         if return_objects:
             objs: list[dict[str, Any]] = []
-            for user_category in user_categories.order_by(*sort)[skip : skip + count]:
+            for user_category in user_categories.prefetch_related("feeds").order_by(
+                *sort
+            )[skip : skip + count]:
                 obj = fieldutils.generate_return_object(
-                    field_maps, user_category, request
+                    field_maps, user_category, request, user_categories
                 )
                 objs.append(obj)
 

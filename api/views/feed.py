@@ -58,7 +58,7 @@ class FeedView(APIView):
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
-        ret_obj = fieldutils.generate_return_object(field_maps, feed, request)
+        ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
         return Response(ret_obj)
 
@@ -95,7 +95,9 @@ class FeedsQueryView(APIView):
         if return_objects:
             objs: list[dict[str, Any]] = []
             for feed in feeds.order_by(*sort)[skip : skip + count]:
-                obj = fieldutils.generate_return_object(field_maps, feed, request)
+                obj = fieldutils.generate_return_object(
+                    field_maps, feed, request, feeds
+                )
                 objs.append(obj)
 
             ret_obj["objects"] = objs

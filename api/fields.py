@@ -1,130 +1,290 @@
-from typing import Any, Callable, TypedDict, cast
+import datetime
+import uuid
+from dataclasses import dataclass
+from typing import Any, Callable, Collection, TypedDict, cast
 
+from django.db.models import Q
+from django.db.models.aggregates import Count
 from django.http import HttpRequest
 
-from api.models import FeedEntry, ReadFeedEntryUserMapping, User
+from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User, UserCategory
 
 
+@dataclass(slots=True)
 class _FieldConfig:
-    def __init__(self, accessor: Callable[[HttpRequest, Any], Any], default: bool):
-        self.accessor = accessor
-        self.default = default
+    accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
+    default: bool
 
 
-def _feedentry_readAt(request: HttpRequest, db_obj: FeedEntry):
-    try:
-        read_mapping = ReadFeedEntryUserMapping.objects.get(
-            user=cast(User, request.user), feed_entry=db_obj
+def _usercategory_feedUuids(
+    request: HttpRequest,
+    db_obj: UserCategory,
+    queryset: Collection[UserCategory] | None,
+) -> list[str]:
+    if queryset is None:
+        return [str(uuid_) for uuid_ in db_obj.feed_uuids]
+    else:
+        feed_uuids_dict: dict[uuid.UUID, list[uuid.UUID]] | None
+        if (
+            feed_uuids_dict := getattr(request, "_usercategory_feedUuids", None)
+        ) is None:
+            feed_uuids_dict = {uc.uuid: [] for uc in queryset}
+            for t in UserCategory.feeds.through.objects.filter(
+                usercategory_id__in=feed_uuids_dict.keys()
+            ):
+                feed_uuids_dict[t.usercategory_id].append(t.feed_id)
+
+            feed_uuids_dict = dict(feed_uuids_dict)
+
+            setattr(request, "_usercategory_feedUuids", feed_uuids_dict)
+
+        return [str(uuid_) for uuid_ in feed_uuids_dict[db_obj.uuid]]
+
+
+def _feed_userCategoryUuids(
+    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+) -> list[str]:
+    if queryset is None:
+        return [
+            str(uuid_)
+            for uuid_, feeds in cast(User, request.user).category_dict().items()
+            if uuid_ is not None and db_obj.uuid in {f.uuid for f in feeds}
+        ]
+    else:
+        user_category_uuids_dict: dict[uuid.UUID, list[uuid.UUID]] | None
+        if (
+            user_category_uuids_dict := getattr(
+                request, "_feed_userCategoryUuids", None
+            )
+        ) is None:
+            user_category_uuids_dict = {f.uuid: [] for f in queryset}
+            for t in UserCategory.feeds.through.objects.filter(
+                usercategory__user=cast(User, request.user),
+                feed_id__in=user_category_uuids_dict.keys(),
+            ):
+                user_category_uuids_dict[t.feed_id].append(t.usercategory_id)
+
+            user_category_uuids_dict = dict(user_category_uuids_dict)
+
+            setattr(request, "_feed_userCategoryUuids", user_category_uuids_dict)
+
+        return [str(uuid_) for uuid_ in user_category_uuids_dict[db_obj.uuid]]
+
+
+def _feed__generate_counts(
+    request: HttpRequest, queryset: Collection[Feed]
+) -> dict[uuid.UUID, Feed._CountsDescriptor]:
+    counts: dict[uuid.UUID, Feed._CountsDescriptor] | None
+    if (counts := getattr(request, "_feed__generate_counts", None)) is None:
+        counts = {
+            r["uuid"]: Feed._CountsDescriptor(
+                r["unread_count"], r["total_count"] - r["unread_count"]
+            )
+            for r in Feed.objects.filter(uuid__in=(f.uuid for f in queryset))
+            .values("uuid")
+            .annotate(
+                total_count=Count("feed_entries__uuid"),
+                unread_count=Count(
+                    "feed_entries__uuid",
+                    filter=(
+                        Q(feed_entries__is_archived=False)
+                        & ~Q(
+                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                user=cast(User, request.user)
+                            ).values(
+                                "feed_entry_id"
+                            )
+                        )
+                    ),
+                ),
+            )
+            .values("uuid", "total_count", "unread_count")
+        }
+
+        setattr(request, "_feed__generate_counts", counts)
+
+    return counts
+
+
+def _feed_readCount(
+    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+) -> int:
+    if queryset is None:
+        return db_obj.read_count(cast(User, request.user))
+    else:
+        counts = _feed__generate_counts(request, queryset)
+        return counts[db_obj.uuid].read_count
+
+
+def _feed_unreadCount(
+    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+) -> int:
+    if queryset is None:
+        return db_obj.unread_count(cast(User, request.user))
+    else:
+        counts = _feed__generate_counts(request, queryset)
+        return counts[db_obj.uuid].unread_count
+
+
+def _feedentry_readAt(
+    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
+) -> str | None:
+    if queryset is None:
+        try:
+            read_mapping = ReadFeedEntryUserMapping.objects.get(
+                user=cast(User, request.user), feed_entry=db_obj
+            )
+            return read_mapping.read_at.isoformat()
+        except ReadFeedEntryUserMapping.DoesNotExist:
+            return None
+    else:
+        read_at_dict: dict[uuid.UUID, datetime.datetime] | None
+        if (read_at_dict := getattr(request, "_feedentry_readAt", None)) is None:
+            read_at_dict = {
+                mapping.feed_entry_id: mapping.read_at
+                for mapping in ReadFeedEntryUserMapping.objects.filter(
+                    user=cast(User, request.user),
+                    feed_entry_id__in=(fe.uuid for fe in queryset),
+                )
+            }
+            setattr(request, "_feedentry_readAt", read_at_dict)
+
+        return (
+            read_at.isoformat()
+            if (read_at := read_at_dict.get(db_obj.uuid)) is not None
+            else None
         )
-        return read_mapping.read_at.isoformat()
-    except ReadFeedEntryUserMapping.DoesNotExist:
-        return None
+
+
+def _feedentry_fromSubscription(
+    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
+) -> bool:
+    # at time of writing, this is already pretty optimized
+    return db_obj.from_subscription(cast(User, request.user))
+
+
+def _feedentry_isFavorite(
+    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
+) -> bool:
+    # at time of writing, this is already pretty optimized
+    return db_obj.is_favorite(cast(User, request.user))
+
+
+def _feedentry_isRead(
+    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
+) -> bool:
+    # at time of writing, this is already pretty optimized
+    return db_obj.is_read(cast(User, request.user))
 
 
 _field_configs: dict[str, dict[str, _FieldConfig]] = {
     "usercategory": {
-        "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
-        "text": _FieldConfig(lambda request, db_obj: db_obj.text, True),
+        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
+        "text": _FieldConfig(lambda request, db_obj, queryset: db_obj.text, True),
         "feedUuids": _FieldConfig(
-            lambda request, db_obj: [str(uuid_) for uuid_ in db_obj.feed_uuids],
+            _usercategory_feedUuids,
             False,
         ),
     },
     "feed": {
-        "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
-        "title": _FieldConfig(lambda request, db_obj: db_obj.title, False),
-        "feedUrl": _FieldConfig(lambda request, db_obj: db_obj.feed_url, False),
-        "homeUrl": _FieldConfig(lambda request, db_obj: db_obj.home_url, False),
+        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
+        "title": _FieldConfig(lambda request, db_obj, queryset: db_obj.title, False),
+        "feedUrl": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.feed_url, False
+        ),
+        "homeUrl": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.home_url, False
+        ),
         "publishedAt": _FieldConfig(
-            lambda request, db_obj: db_obj.published_at.isoformat(), False
+            lambda request, db_obj, queryset: db_obj.published_at.isoformat(), False
         ),
         "updatedAt": _FieldConfig(
-            lambda request, db_obj: db_obj.updated_at.isoformat()
+            lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
             if db_obj.updated_at is not None
             else None,
             False,
         ),
-        "subscribed": _FieldConfig(lambda request, db_obj: db_obj.is_subscribed, False),
-        "customTitle": _FieldConfig(lambda request, db_obj: db_obj.custom_title, False),
+        "subscribed": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.is_subscribed, False
+        ),
+        "customTitle": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.custom_title, False
+        ),
         "calculatedTitle": _FieldConfig(
-            lambda request, db_obj: db_obj.custom_title
+            lambda request, db_obj, queryset: db_obj.custom_title
             if db_obj.custom_title is not None
             else db_obj.title,
             False,
         ),
         "userCategoryUuids": _FieldConfig(
-            lambda request, db_obj: [
-                str(uuid_)
-                for uuid_, feeds in cast(User, request.user).category_dict().items()
-                if uuid_ is not None and db_obj.uuid in {f.uuid for f in feeds}
-            ],
+            _feed_userCategoryUuids,
             False,
         ),
-        "readCount": _FieldConfig(
-            lambda request, db_obj: db_obj.read_count(request.user), False
-        ),
-        "unreadCount": _FieldConfig(
-            lambda request, db_obj: db_obj.unread_count(request.user), False
-        ),
+        "readCount": _FieldConfig(_feed_readCount, False),
+        "unreadCount": _FieldConfig(_feed_unreadCount, False),
     },
     "feedentry": {
-        "uuid": _FieldConfig(lambda request, db_obj: str(db_obj.uuid), True),
-        "id": _FieldConfig(lambda request, db_obj: db_obj.id, False),
+        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
+        "id": _FieldConfig(lambda request, db_obj, queryset: db_obj.id, False),
         "createdAt": _FieldConfig(
-            lambda request, db_obj: db_obj.created_at.isoformat()
+            lambda request, db_obj, queryset: db_obj.created_at.isoformat()
             if db_obj.created_at is not None
             else None,
             False,
         ),
         "publishedAt": _FieldConfig(
-            lambda request, db_obj: db_obj.published_at.isoformat(), False
+            lambda request, db_obj, queryset: db_obj.published_at.isoformat(), False
         ),
         "updatedAt": _FieldConfig(
-            lambda request, db_obj: db_obj.updated_at.isoformat()
+            lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
             if db_obj.updated_at is not None
             else None,
             False,
         ),
-        "title": _FieldConfig(lambda request, db_obj: db_obj.title, False),
-        "url": _FieldConfig(lambda request, db_obj: db_obj.url, False),
-        "content": _FieldConfig(lambda request, db_obj: db_obj.content, False),
-        "authorName": _FieldConfig(lambda request, db_obj: db_obj.author_name, False),
-        "feedUuid": _FieldConfig(lambda request, db_obj: str(db_obj.feed_id), False),
+        "title": _FieldConfig(lambda request, db_obj, queryset: db_obj.title, False),
+        "url": _FieldConfig(lambda request, db_obj, queryset: db_obj.url, False),
+        "content": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.content, False
+        ),
+        "authorName": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.author_name, False
+        ),
+        "feedUuid": _FieldConfig(
+            lambda request, db_obj, queryset: str(db_obj.feed_id), False
+        ),
         "fromSubscription": _FieldConfig(
-            lambda request, db_obj: db_obj.from_subscription(request.user),
+            _feedentry_fromSubscription,
             False,
         ),
-        "isRead": _FieldConfig(
-            lambda request, db_obj: db_obj.is_read(request.user), False
-        ),
-        "isFavorite": _FieldConfig(
-            lambda request, db_obj: db_obj.is_favorite(request.user), False
-        ),
+        "isRead": _FieldConfig(_feedentry_isRead, False),
+        "isFavorite": _FieldConfig(_feedentry_isFavorite, False),
         "readAt": _FieldConfig(_feedentry_readAt, False),
-        "isArchived": _FieldConfig(lambda request, db_obj: db_obj.is_archived, False),
+        "isArchived": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.is_archived, False
+        ),
         "languageIso639_3": _FieldConfig(
-            lambda request, db_obj: db_obj.language.iso639_3
+            lambda request, db_obj, queryset: db_obj.language.iso639_3
             if db_obj.language is not None
             else None,
             False,
         ),
         "languageIso639_1": _FieldConfig(
-            lambda request, db_obj: db_obj.language.iso639_1
+            lambda request, db_obj, queryset: db_obj.language.iso639_1
             if db_obj.language is not None
             else None,
             False,
         ),
         "languageName": _FieldConfig(
-            lambda request, db_obj: db_obj.language.name
+            lambda request, db_obj, queryset: db_obj.language.name
             if db_obj.language is not None
             else None,
             False,
         ),
         "hasTopImageBeenProcessed": _FieldConfig(
-            lambda request, db_obj: db_obj.has_top_image_been_processed, False
+            lambda request, db_obj, queryset: db_obj.has_top_image_been_processed, False
         ),
         "topImageSrc": _FieldConfig(
-            lambda request, db_obj: db_obj.top_image_src, False
+            lambda request, db_obj, queryset: db_obj.top_image_src, False
         ),
     },
 }
@@ -132,7 +292,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
 
 class FieldMap(TypedDict):
     field_name: str
-    accessor: Callable[[HttpRequest, Any], Any]
+    accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
 
 
 def get_default_field_maps(object_name: str):
@@ -183,11 +343,14 @@ def field_list(object_name: str):
 
 
 def generate_return_object(
-    field_maps: list[FieldMap], db_obj: Any, request: HttpRequest
+    field_maps: list[FieldMap],
+    db_obj: Any,
+    request: HttpRequest,
+    queryset: Collection[Any] | None,
 ):
     return_obj: dict[str, Any] = {}
     for field_map in field_maps:
         field_name = field_map["field_name"]
-        return_obj[field_name] = field_map["accessor"](request, db_obj)
+        return_obj[field_name] = field_map["accessor"](request, db_obj, queryset)
 
     return return_obj

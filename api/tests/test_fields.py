@@ -67,9 +67,11 @@ class FieldsTestCase(TestCase):
                 self.assertTrue(callable(field_map["accessor"]))
 
     def test_fieldconfig(self):
-        fc = fields._FieldConfig(lambda request, db_obj: "test", True)
+        fc = fields._FieldConfig(lambda request, db_obj, queryset: "test", True)
 
-        self.assertEqual(fc.accessor(Mock(HttpRequest), object()), "test")
+        db_obj = object()
+        queryset = [db_obj]
+        self.assertEqual(fc.accessor(Mock(HttpRequest), db_obj, queryset), "test")
         self.assertTrue(fc.default)
 
     def test_to_field_map(self):
@@ -84,7 +86,10 @@ class FieldsTestCase(TestCase):
                 def __init__(self):
                     self.uuid = uuid.uuid4()
 
-            field_map["accessor"](Mock(HttpRequest), TestObject())
+            db_obj = TestObject()
+            queryset = [db_obj]
+
+            field_map["accessor"](Mock(HttpRequest), db_obj, queryset)
 
             field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
             self.assertIsNone(field_map)
@@ -93,15 +98,19 @@ class FieldsTestCase(TestCase):
         field_maps: list[fields.FieldMap] = [
             {
                 "field_name": "uuid",
-                "accessor": lambda request, db_obj: db_obj.uuid,
+                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
             }
         ]
 
         db_obj = Mock()
         db_obj.uuid = "test string"
 
+        queryset = [db_obj]
+
         self.assertEqual(
-            fields.generate_return_object(field_maps, db_obj, Mock(HttpRequest)),
+            fields.generate_return_object(
+                field_maps, db_obj, Mock(HttpRequest), queryset
+            ),
             {
                 "uuid": "test string",
             },
@@ -218,7 +227,14 @@ class AllFieldsTestCase(TestCase):
 
                 for db_obj in db_objs:
                     for field_config in fields_dict.values():
-                        field_config.accessor(AllFieldsTestCase.MockRequest(), db_obj)
+                        self.assertEqual(
+                            field_config.accessor(
+                                AllFieldsTestCase.MockRequest(), db_obj, db_objs
+                            ),
+                            field_config.accessor(
+                                AllFieldsTestCase.MockRequest(), db_obj, None
+                            ),
+                        )
 
 
 class FieldFnsTestCase(TestCase):
@@ -229,8 +245,6 @@ class FieldFnsTestCase(TestCase):
             def __init__(self):
                 super().__init__(HttpRequest)
                 self.user = user
-
-        request = MockRequest()
 
         feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -256,5 +270,10 @@ class FieldFnsTestCase(TestCase):
 
         ReadFeedEntryUserMapping.objects.create(feed_entry=feed_entry2, user=user)
 
-        self.assertIsNone(fields._feedentry_readAt(request, feed_entry1))
-        self.assertIsNotNone(fields._feedentry_readAt(request, feed_entry2))
+        for queryset in [None, FeedEntry.objects.all()]:
+            self.assertIsNone(
+                fields._feedentry_readAt(MockRequest(), feed_entry1, queryset)
+            )
+            self.assertIsNotNone(
+                fields._feedentry_readAt(MockRequest(), feed_entry2, queryset)
+            )
