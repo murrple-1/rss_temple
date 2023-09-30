@@ -198,51 +198,22 @@ class Feed(models.Model):
 
     @staticmethod
     def _generate_counts(feed: "Feed", user: User) -> _CountsDescriptor:
-        total_count: int
-        unread_count: int
-        if connection.vendor == "postgresql":  # pragma: no cover
-            # optimized version for Postgres...below version is surprisingly slower
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """SELECT (
-                        SELECT COUNT(*)
-                        FROM "api_feedentry" AS "t1"
-                        WHERE "t1"."feed_id" = %(feed_uuid)s
-                    ) AS total_count, (
-                        SELECT COUNT(*)
-                        FROM "api_feedentry" AS "t2"
-                        WHERE "t2"."feed_id" = %(feed_uuid)s
-                            AND "t2"."is_archived" = FALSE
-                            AND "t2"."uuid" NOT IN (
-                                SELECT "t3"."feed_entry_id"
-                                FROM "api_readfeedentryusermapping" AS "t3"
-                                JOIN "api_feedentry" AS "t4" ON "t4"."uuid" = "t3"."feed_entry_id"
-                                WHERE "t3"."user_id" = %(user_uuid)s
-                                    AND "t4"."feed_id" = %(feed_uuid)s
-                            )
-                    ) AS unread_count""",
-                    {"feed_uuid": feed.uuid, "user_uuid": user.uuid},
-                )
-                row = cursor.fetchone()
-                total_count = row[0]
-                unread_count = row[1]
-        else:
-            counts = FeedEntry.objects.filter(feed=feed).aggregate(
-                total_count=models.Count("uuid"),
-                unread_count=models.Count(
-                    "uuid",
-                    filter=(
-                        models.Q(is_archived=False)
-                        & ~models.Q(
-                            uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                user=user, feed_entry__feed=feed
-                            ).values("feed_entry_id")
-                        )
-                    ),
+        counts = Feed.objects.filter(uuid=feed.uuid).aggregate(
+            total_count=models.Count("feed_entries__uuid"),
+            unread_count=models.Count(
+                "feed_entries__uuid",
+                filter=(
+                    models.Q(feed_entries__is_archived=False)
+                    & ~models.Q(
+                        feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                            user=user, feed_entry__feed=feed
+                        ).values("feed_entry_id")
+                    )
                 ),
-            )
-            total_count = counts["total_count"]
-            unread_count = counts["unread_count"]
+            ),
+        )
+        total_count: int = counts["total_count"]
+        unread_count: int = counts["unread_count"]
 
         read_count = total_count - unread_count
 

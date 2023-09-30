@@ -76,11 +76,12 @@ def _feed__generate_counts(
 ) -> dict[uuid.UUID, Feed._CountsDescriptor]:
     counts: dict[uuid.UUID, Feed._CountsDescriptor] | None
     if (counts := getattr(request, "_feed__generate_counts", None)) is None:
+        feed_uuids = frozenset(f.uuid for f in queryset)
         counts = {
             r["uuid"]: Feed._CountsDescriptor(
                 r["unread_count"], r["total_count"] - r["unread_count"]
             )
-            for r in Feed.objects.filter(uuid__in=(f.uuid for f in queryset))
+            for r in Feed.objects.filter(uuid__in=feed_uuids)
             .values("uuid")
             .annotate(
                 total_count=Count("feed_entries__uuid"),
@@ -90,7 +91,8 @@ def _feed__generate_counts(
                         Q(feed_entries__is_archived=False)
                         & ~Q(
                             feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                user=cast(User, request.user)
+                                user=cast(User, request.user),
+                                feed_entry__feed_id__in=feed_uuids,
                             ).values(
                                 "feed_entry_id"
                             )
