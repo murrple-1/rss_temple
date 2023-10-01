@@ -5,7 +5,6 @@ import time
 
 import feedparser
 import validators
-from django.utils import timezone
 
 from api import content_sanitize
 from api.models import Feed, FeedEntry
@@ -44,7 +43,7 @@ def d_feed_2_feed(d_feed, url: str):
     if "published_parsed" in d_feed:
         time_tuple = d_feed.published_parsed
 
-        feed.published_at = _time_tuple_to_datetime(time_tuple)
+        feed.published_at = _parsed_time_tuple_to_datetime(time_tuple)
     else:
         # field auto-filled by DB
         pass
@@ -52,7 +51,7 @@ def d_feed_2_feed(d_feed, url: str):
     if "updated_parsed" in d_feed:
         time_tuple = d_feed.updated_parsed
 
-        feed.updated_at = _time_tuple_to_datetime(time_tuple)
+        feed.updated_at = _parsed_time_tuple_to_datetime(time_tuple)
     else:
         feed.updated_at = None
 
@@ -66,7 +65,7 @@ def d_entry_2_feed_entry(d_entry):
         time_tuple = d_entry.created_parsed
 
         if time_tuple is not None:
-            feed_entry.created_at = _time_tuple_to_datetime(time_tuple)
+            feed_entry.created_at = _parsed_time_tuple_to_datetime(time_tuple)
         else:  # pragma: no cover
             feed_entry.created_at = None
     else:
@@ -76,7 +75,7 @@ def d_entry_2_feed_entry(d_entry):
         time_tuple = d_entry.published_parsed
 
         if time_tuple is not None:
-            feed_entry.published_at = _time_tuple_to_datetime(time_tuple)
+            feed_entry.published_at = _parsed_time_tuple_to_datetime(time_tuple)
         else:  # pragma: no cover
             # field auto-filled by DB
             pass
@@ -88,7 +87,7 @@ def d_entry_2_feed_entry(d_entry):
         time_tuple = d_entry.updated_parsed
 
         if time_tuple is not None:
-            feed_entry.updated_at = _time_tuple_to_datetime(time_tuple)
+            feed_entry.updated_at = _parsed_time_tuple_to_datetime(time_tuple)
         else:  # pragma: no cover
             feed_entry.updated_at = None
     else:
@@ -154,5 +153,5 @@ def d_entry_2_entry_tags(d_entry):
     return entry_tags
 
 
-def _time_tuple_to_datetime(t: time.struct_time):
-    return timezone.make_aware(datetime.datetime.fromtimestamp(time.mktime(t)))
+def _parsed_time_tuple_to_datetime(t: time.struct_time):
+    return datetime.datetime.fromtimestamp(time.mktime(t), datetime.timezone.utc)
