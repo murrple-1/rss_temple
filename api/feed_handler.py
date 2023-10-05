@@ -35,7 +35,7 @@ def text_2_d(text: str):
     return d
 
 
-def d_feed_2_feed(d_feed, url: str):
+def d_feed_2_feed(d_feed, url: str, now: datetime.datetime):
     feed = Feed(
         feed_url=url, title=d_feed.get("title", url), home_url=d_feed.get("link")
     )
@@ -43,7 +43,8 @@ def d_feed_2_feed(d_feed, url: str):
     if "published_parsed" in d_feed:
         time_tuple = d_feed.published_parsed
 
-        feed.published_at = _parsed_time_tuple_to_datetime(time_tuple)
+        if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+            feed.published_at = dt
     else:
         # field auto-filled by DB
         pass
@@ -51,21 +52,27 @@ def d_feed_2_feed(d_feed, url: str):
     if "updated_parsed" in d_feed:
         time_tuple = d_feed.updated_parsed
 
-        feed.updated_at = _parsed_time_tuple_to_datetime(time_tuple)
+        if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+            feed.updated_at = dt
+        else:  # pragma: no cover
+            feed.updated_at = None
     else:
         feed.updated_at = None
 
     return feed
 
 
-def d_entry_2_feed_entry(d_entry):
+def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
     feed_entry = FeedEntry(id=d_entry.get("id"))
 
     if "created_parsed" in d_entry:
         time_tuple = d_entry.created_parsed
 
         if time_tuple is not None:
-            feed_entry.created_at = _parsed_time_tuple_to_datetime(time_tuple)
+            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+                feed_entry.created_at = dt
+            else:  # pragma: no cover
+                feed_entry.created_at = None
         else:  # pragma: no cover
             feed_entry.created_at = None
     else:
@@ -75,7 +82,8 @@ def d_entry_2_feed_entry(d_entry):
         time_tuple = d_entry.published_parsed
 
         if time_tuple is not None:
-            feed_entry.published_at = _parsed_time_tuple_to_datetime(time_tuple)
+            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+                feed_entry.published_at = dt
         else:  # pragma: no cover
             # field auto-filled by DB
             pass
@@ -87,7 +95,10 @@ def d_entry_2_feed_entry(d_entry):
         time_tuple = d_entry.updated_parsed
 
         if time_tuple is not None:
-            feed_entry.updated_at = _parsed_time_tuple_to_datetime(time_tuple)
+            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+                feed_entry.updated_at = dt
+            else:  # pragma: no cover
+                feed_entry.updated_at = None
         else:  # pragma: no cover
             feed_entry.updated_at = None
     else:

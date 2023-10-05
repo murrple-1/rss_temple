@@ -5,6 +5,7 @@ import requests
 from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
 from django.db.utils import OperationalError
+from django.utils import timezone
 
 from api import feed_handler, rss_requests
 from api.models import (
@@ -195,8 +196,10 @@ class Command(DaemonCommand):
         response = rss_requests.get(url)
         response.raise_for_status()
 
+        now = timezone.now()
+
         d = feed_handler.text_2_d(response.text)
-        feed = feed_handler.d_feed_2_feed(d.feed, url)
+        feed = feed_handler.d_feed_2_feed(d.feed, url, now)
         feed.save()
 
         feed_entries: list[FeedEntry] = []
@@ -204,14 +207,15 @@ class Command(DaemonCommand):
         for d_entry in d.get("entries", []):
             feed_entry: FeedEntry
             try:
-                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
             except ValueError:
                 continue
 
             feed_entry.feed = feed
 
-            content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
-            feed_entry.language_id = detect_iso639_3(content)
+            feed_entry.language_id = detect_iso639_3(
+                prep_for_lang_detection(feed_entry.title, feed_entry.content)
+            )
 
             feed_entries.append(feed_entry)
 

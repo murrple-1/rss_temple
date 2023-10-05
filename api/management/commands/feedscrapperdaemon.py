@@ -118,10 +118,12 @@ class Command(DaemonCommand):
 
         new_feed_entries: list[FeedEntry] = []
 
+        now = timezone.now()
+
         for d_entry in d.get("entries", []):
             feed_entry: FeedEntry
             try:
-                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
             except ValueError:  # pragma: no cover
                 continue
 
@@ -146,6 +148,9 @@ class Command(DaemonCommand):
                 old_feed_entry.author_name = feed_entry.author_name
                 old_feed_entry.created_at = feed_entry.created_at
                 old_feed_entry.updated_at = feed_entry.updated_at
+                old_feed_entry.language_id = detect_iso639_3(
+                    prep_for_lang_detection(feed_entry.title, feed_entry.content)
+                )
 
                 old_feed_entry.save(
                     update_fields=[
@@ -159,14 +164,15 @@ class Command(DaemonCommand):
             else:
                 feed_entry.feed = feed
 
-                content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
-                feed_entry.language_id = detect_iso639_3(content)
+                feed_entry.language_id = detect_iso639_3(
+                    prep_for_lang_detection(feed_entry.title, feed_entry.content)
+                )
 
                 new_feed_entries.append(feed_entry)
 
         FeedEntry.objects.bulk_create(new_feed_entries)
 
-        feed.db_updated_at = timezone.now()
+        feed.db_updated_at = now
 
     def _success_update_backoff_until(
         self, feed: Feed, success_backoff_seconds: int

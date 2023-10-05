@@ -1,3 +1,4 @@
+import datetime
 import logging
 from typing import ClassVar
 
@@ -9,6 +10,7 @@ from api.models import FeedEntry
 
 class FeedHandlerTestCase(TestCase):
     old_logger_level: ClassVar[int]
+    now: ClassVar[datetime.datetime]
 
     FEED_TYPES = [
         "atom_0.3",
@@ -25,6 +27,8 @@ class FeedHandlerTestCase(TestCase):
         cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+
+        cls.now = datetime.datetime(2020, 1, 1, 0, 0, 0, 0, datetime.timezone.utc)
 
     @classmethod
     def tearDownClass(cls):
@@ -59,7 +63,7 @@ class FeedHandlerTestCase(TestCase):
 
             url = "http://www.example.com"
 
-            feed = feed_handler.d_feed_2_feed(d.feed, url)
+            feed = feed_handler.d_feed_2_feed(d.feed, url, FeedHandlerTestCase.now)
 
             self.assertEqual(feed.feed_url, url)
             self.assertEqual(feed.title, d.feed.get("title"))
@@ -73,7 +77,9 @@ class FeedHandlerTestCase(TestCase):
 
             d = feed_handler.text_2_d(text)
 
-            feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
+            feed_entry = feed_handler.d_entry_2_feed_entry(
+                d.entries[0], FeedHandlerTestCase.now
+            )
             self.assertIsInstance(feed_entry, FeedEntry)
 
     def test_d_feed_2_feed_tags(self):
@@ -115,7 +121,9 @@ class FeedHandlerTestCase(TestCase):
 
         d = feed_handler.text_2_d(text)
 
-        feed_entry = feed_handler.d_entry_2_feed_entry(d.entries[0])
+        feed_entry = feed_handler.d_entry_2_feed_entry(
+            d.entries[0], FeedHandlerTestCase.now
+        )
         self.assertIsInstance(feed_entry, FeedEntry)
 
     def test_d_feed_2_feed_entry_no_title(self):
@@ -126,7 +134,7 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         with self.assertRaises(ValueError):
-            feed_handler.d_entry_2_feed_entry(d.entries[0])
+            feed_handler.d_entry_2_feed_entry(d.entries[0], FeedHandlerTestCase.now)
 
     def test_d_feed_2_feed_entry_no_url(self):
         text: str
@@ -136,7 +144,7 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         with self.assertRaises(ValueError):
-            feed_handler.d_entry_2_feed_entry(d.entries[0])
+            feed_handler.d_entry_2_feed_entry(d.entries[0], FeedHandlerTestCase.now)
 
     def test_d_feed_2_feed_entry_url_is_id(self):
         text: str
@@ -146,7 +154,7 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         with self.assertRaises(ValueError):
-            feed_handler.d_entry_2_feed_entry(d.entries[0])
+            feed_handler.d_entry_2_feed_entry(d.entries[0], FeedHandlerTestCase.now)
 
     def test_d_feed_2_feed_entry_no_content(self):
         text: str
@@ -156,4 +164,4 @@ class FeedHandlerTestCase(TestCase):
         d = feed_handler.text_2_d(text)
 
         with self.assertRaises(ValueError):
-            feed_handler.d_entry_2_feed_entry(d.entries[0])
+            feed_handler.d_entry_2_feed_entry(d.entries[0], FeedHandlerTestCase.now)

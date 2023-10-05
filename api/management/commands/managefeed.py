@@ -3,6 +3,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
+from django.utils import timezone
 from tabulate import tabulate
 
 from api import feed_handler, rss_requests
@@ -27,14 +28,16 @@ class Command(BaseCommand):
 
         d = feed_handler.text_2_d(response.text)
 
-        feed = feed_handler.d_feed_2_feed(d.feed, options["feed_url"])
+        now = timezone.now()
+
+        feed = feed_handler.d_feed_2_feed(d.feed, options["feed_url"], now)
 
         feed_entries: list[FeedEntry] = []
 
         for index, d_entry in enumerate(d.get("entries", [])):
             feed_entry: FeedEntry
             try:
-                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
             except ValueError:  # pragma: no cover
                 self.stderr.write(
                     self.style.ERROR(
@@ -45,8 +48,9 @@ class Command(BaseCommand):
 
             feed_entry.feed = feed
 
-            content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
-            feed_entry.language_id = detect_iso639_3(content)
+            feed_entry.language_id = detect_iso639_3(
+                prep_for_lang_detection(feed_entry.title, feed_entry.content)
+            )
 
             feed_entries.append(feed_entry)
 
@@ -90,6 +94,7 @@ class Command(BaseCommand):
                 ]
                 if options["with_content"]:
                     row.append(feed_entry.content)
+                row.append(feed_entry.language_id)
 
                 table.append(row)
 
@@ -102,9 +107,9 @@ class Command(BaseCommand):
                 "URL",
                 "Author Name",
             ]
-
             if options["with_content"]:
                 headers.append("Content")
+            headers.append("Language")
 
             self.stdout.write(
                 tabulate(

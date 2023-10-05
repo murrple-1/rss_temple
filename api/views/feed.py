@@ -3,6 +3,7 @@ from typing import Any, cast
 import requests
 from django.db import transaction
 from django.db.models import OrderBy, Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -226,9 +227,11 @@ def _save_feed(url: str):
     except requests.exceptions.RequestException:
         raise NotFound("feed not found")
 
+    now = timezone.now()
+
     with transaction.atomic():
         d = feed_handler.text_2_d(response.text)
-        feed = feed_handler.d_feed_2_feed(d.feed, url)
+        feed = feed_handler.d_feed_2_feed(d.feed, url, now)
         feed.with_subscription_data()
         feed.save()
 
@@ -236,14 +239,15 @@ def _save_feed(url: str):
         for d_entry in d.get("entries", []):
             feed_entry: FeedEntry
             try:
-                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry)
+                feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
             except ValueError:  # pragma: no cover
                 continue
 
             feed_entry.feed = feed
 
-            content = prep_for_lang_detection(feed_entry.title, feed_entry.content)
-            feed_entry.language_id = detect_iso639_3(content)
+            feed_entry.language_id = detect_iso639_3(
+                prep_for_lang_detection(feed_entry.title, feed_entry.content)
+            )
 
             feed_entries.append(feed_entry)
 
