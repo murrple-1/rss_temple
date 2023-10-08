@@ -78,6 +78,11 @@ urlpatterns = [
         RedirectView.as_view(url=settings.SOCIAL_CONNECTIONS_URL, query_string=True),
         name="socialaccount_connections",
     ),
+    re_path(
+        r"^social/redirect/socialaccountsignup/?$",
+        RedirectView.as_view(url=settings.SOCIAL_SIGNUP_URL, query_string=True),
+        name="socialaccount_signup",
+    ),
     re_path(r"^captcha/?$", views.NewCaptchaView.as_view()),
     re_path(
         r"^captcha/image/(?P<key>[A-Za-z0-9_\-]+)/?$", views.CaptchaImageView.as_view()

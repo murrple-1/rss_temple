@@ -407,6 +407,7 @@ PASSWORD_RESET_CONFIRM_URL_FORMAT = os.getenv(
 SOCIAL_CONNECTIONS_URL = os.getenv(
     "APP_SOCIAL_CONNECTIONS_URL", "http://localhost:4200/main/profile"
 )
+SOCIAL_SIGNUP_URL = os.getenv("APP_SOCIAL_SIGNUP_URL", "http://localhost:4200/register")
 
 LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
