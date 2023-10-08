@@ -126,16 +126,28 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 6,
+        },
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": "api.password_validation.HasLowercaseValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": "api.password_validation.HasUppercaseValidator",
+    },
+    {
+        "NAME": "api.password_validation.HasDigitValidator",
+    },
+    {
+        "NAME": "api.password_validation.HasSpecialCharacterValidator",
+    },
+    {
+        "NAME": "api.password_validation.ElevatedCommonPasswordValidator",
+    },
+    {
+        "NAME": "api.password_validation.ElevatedUserAttributeSimilarityValidator",
     },
 ]
 

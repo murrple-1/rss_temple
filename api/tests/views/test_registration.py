@@ -78,7 +78,7 @@ class RegistrationTestCase(APITestCase):
                 "captcha": f"{captcha.key}:{captcha.secret_phrase}",
             },
         )
-        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.status_code, 422, response.content)
 
     def test_RegisterView_post_badcaptcha(self):
         response = self.client.post(

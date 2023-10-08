@@ -157,7 +157,7 @@ class AuthTestCase(APITestCase):
                 "newPassword": "password2",
             },
         )
-        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.status_code, 422, response.content)
 
     def test_PasswordResetView_post(self):
         initial_outbox_count = len(getattr(mail, "outbox", []))
@@ -248,11 +248,11 @@ class AuthTestCase(APITestCase):
             "/api/auth/password/reset/confirm",
             {
                 "newPassword": "password2",
-                "userId": str(user.uuid),
+                "userUuid": str(user.uuid),
                 "token": default_token_generator.make_token(user),
             },
         )
-        self.assertEqual(response.status_code, 400, response.content)
+        self.assertEqual(response.status_code, 422, response.content)
 
     def test_UserDetailsView_get(self):
         user = User.objects.create_user("test@test.com", None)
