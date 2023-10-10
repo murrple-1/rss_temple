@@ -404,7 +404,7 @@ ACCOUNT_EMAIL_VERIFICATION_SENT_URL = os.getenv(
 )
 PASSWORD_RESET_CONFIRM_URL_FORMAT = os.getenv(
     "APP_PASSWORD_RESET_CONFIRM_URL_FORMAT",
-    "http://localhost:4200/resetpassword?token={token}&userId={userId}",
+    "http://localhost:4200/resetpassword?token=%(token)s&userId=%(userId)s",
 )
 SOCIAL_CONNECTIONS_URL = os.getenv(
     "APP_SOCIAL_CONNECTIONS_URL", "http://localhost:4200/main/profile"
