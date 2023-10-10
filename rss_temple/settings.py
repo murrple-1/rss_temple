@@ -284,6 +284,8 @@ else:
         None if (timeout := os.getenv("APP_EMAIL_TIMEOUT")) is None else float(timeout)
     )
 
+DEFAULT_FROM_EMAIL = os.getenv("APP_DEFAULT_FROM_EMAIL", "webmaster@localhost")
+
 # DRF
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
