@@ -16,6 +16,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from api.serializers import SocialLoginSerializer
+
 
 class SocialAccountListView(_SocialAccountListView):
     @swagger_auto_schema(
@@ -28,6 +30,7 @@ class SocialAccountListView(_SocialAccountListView):
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+    serializer_class = SocialLoginSerializer
 
     @swagger_auto_schema(
         operation_summary="Login or create account via Google",
@@ -81,6 +84,7 @@ class GoogleDisconnect(GenericAPIView):
 
 class FacebookLogin(SocialLoginView):
     adapter_class = FacebookOAuth2Adapter
+    serializer_class = SocialLoginSerializer
 
     @swagger_auto_schema(
         operation_summary="Login or create account via Facebook",
