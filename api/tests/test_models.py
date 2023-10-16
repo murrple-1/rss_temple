@@ -533,4 +533,4 @@ class CaptchaTestCase(TestCase):
 
     def test_secret_phrase(self):
         captcha = self._generate_captcha()
-        self.assertEqual(captcha.secret_phrase, "649290")
+        self.assertEqual(captcha.secret_phrase, "Keraxs")
