@@ -12,6 +12,8 @@ FROM python:3.11 as production
 
 ENV PYTHONUNBUFFERED=1
 
+RUN apt-get update && apt-get install -y ffmpeg espeak && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /venv/ /venv/
 WORKDIR /code
 COPY . /code/

@@ -1,5 +1,4 @@
 import random
-import string
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
@@ -13,6 +12,8 @@ from django.db import connection, models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token as _Token
+
+from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 
 class UserManager(BaseUserManager["User"]):
@@ -385,10 +386,7 @@ class Captcha(models.Model):
     def _setup(self) -> None:
         self._random = random.Random(self.seed)
         self._secret_phrase = "".join(
-            self._random.choice(
-                string.digits  # TODO include string.ascii_letters when WAV files are ready
-            )
-            for _ in range(6)
+            self._random.choice(CAPTCHA_ALPHABET) for _ in range(6)
         )
 
     @property

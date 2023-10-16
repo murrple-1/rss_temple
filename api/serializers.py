@@ -229,7 +229,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         except Captcha.DoesNotExist:
             raise NotFound("captcha not found")
 
-        if captcha.secret_phrase != captcha_secret_phrase:
+        if captcha.secret_phrase.lower() != captcha_secret_phrase.lower():
             captcha.delete()
             raise UnprocessableContent({"captchaSecretPhrase": "incorrect"})
 
