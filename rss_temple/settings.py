@@ -373,12 +373,13 @@ _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 CAPTCHA_EXPIRY_INTERVAL = datetime.timedelta(minutes=5)
 CAPTCHA_IMAGE_WIDTH = 160
 CAPTCHA_IMAGE_HEIGHT = 60
-CAPTCHA_IMAGE_FONTS_DIR = [  # TODO this should have more options
-    str(_captcha_data_path / "fonts/Vera.ttf"),
-    str(_captcha_data_path / "fonts/DroidSansMono.ttf"),
+CAPTCHA_IMAGE_FONTS_DIR = [
+    str(_captcha_data_path / "fonts/Moms_typewriter.ttf"),
+    str(_captcha_data_path / "fonts/Sears_Tower.ttf"),
 ]
-CAPTCHA_IMAGE_FONT_SIZES = (42, 50, 56)
+CAPTCHA_IMAGE_FONT_SIZES = (44, 50, 56)
 CAPTCHA_AUDIO_VOICES_DIR = str(_captcha_data_path / "voices/")
+CAPTCHA_SEND_ANSWER = os.getenv("APP_CAPTCHA_SEND_ANSWER") == "true"
 
 TOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=14)
 

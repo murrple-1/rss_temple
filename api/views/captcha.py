@@ -25,6 +25,7 @@ from api.models import Captcha
 _CAPTCHA_EXPIRY_INTERVAL: datetime.timedelta
 _image_captcha: ImageCaptcha
 _audio_captcha: AudioCaptcha
+_CAPTCHA_SEND_ANSWER: bool
 
 
 @receiver(setting_changed)
@@ -32,6 +33,7 @@ def _load_global_settings(*args: Any, **kwargs: Any):
     global _CAPTCHA_EXPIRY_INTERVAL
     global _image_captcha
     global _audio_captcha
+    global _CAPTCHA_SEND_ANSWER
 
     _CAPTCHA_EXPIRY_INTERVAL = settings.CAPTCHA_EXPIRY_INTERVAL
     _image_captcha = ImageCaptcha(
@@ -41,6 +43,7 @@ def _load_global_settings(*args: Any, **kwargs: Any):
         font_sizes=settings.CAPTCHA_IMAGE_FONT_SIZES,
     )
     _audio_captcha = AudioCaptcha(voicedir=settings.CAPTCHA_AUDIO_VOICES_DIR)
+    _CAPTCHA_SEND_ANSWER = settings.CAPTCHA_SEND_ANSWER
 
 
 _load_global_settings()
@@ -94,6 +97,9 @@ class CaptchaImageView(APIView):
         response["Content-Length"] = len(bytes_)
         response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
 
+        if _CAPTCHA_SEND_ANSWER:
+            response["X-Answer"] = captcha.secret_phrase
+
         return response
 
 
@@ -125,5 +131,8 @@ class CaptchaAudioView(APIView):
         response = HttpResponse(bytes_, content_type="audio/wav")
         response["Content-Length"] = len(bytes_)
         response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
+
+        if _CAPTCHA_SEND_ANSWER:
+            response["X-Answer"] = captcha.secret_phrase
 
         return response
