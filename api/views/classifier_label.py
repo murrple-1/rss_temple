@@ -89,7 +89,7 @@ class ClassifierLabelListView(APIView):
                     *whens,
                     default=0,
                 )
-            ).order_by("-vote_count")
+            ).order_by("-vote_count", "text")
         else:
             classifier_labels = classifier_labels.order_by("text")
 
