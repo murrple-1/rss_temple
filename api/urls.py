@@ -120,4 +120,5 @@ urlpatterns = [
         views.FeedSubscriptionProgressView.as_view(),
     ),
     re_path(r"^explore/?$", views.ExploreView.as_view()),
+    re_path(r"^classififerlabels/?$", views.ClassifierLabelListView.as_view()),
 ]

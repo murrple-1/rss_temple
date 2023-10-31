@@ -9,6 +9,7 @@ from .auth import (
     UserDetailsView,
 )
 from .captcha import CaptchaAudioView, CaptchaImageView, NewCaptchaView
+from .classifier_label import ClassifierLabelListView
 from .explore import ExploreView
 from .feed import FeedsQueryView, FeedSubscribeView, FeedView
 from .feed_entry import (
@@ -84,4 +85,5 @@ __all__ = [
     "OPMLView",
     "FeedSubscriptionProgressView",
     "ExploreView",
+    "ClassifierLabelListView",
 ]

@@ -40,7 +40,7 @@ from api import fields as fieldutils
 from api import searches as searchutils
 from api import sorts as sortutils
 from api.exceptions import Conflict, UnprocessableContent
-from api.models import Captcha, Feed, User, UserCategory
+from api.models import Captcha, ClassifierLabel, Feed, User, UserCategory
 
 _logger = logging.getLogger("rss_temple")
 
@@ -656,3 +656,13 @@ class _ExploreFeedSerializer(serializers.Serializer):
 class ExploreSerializer(serializers.Serializer):
     tagName = serializers.CharField()
     feeds = _ExploreFeedSerializer(many=True)
+
+
+class ClassifierLabelListQuerySerializer(serializers.Serializer):
+    feedEntryUuid = serializers.UUIDField(required=False, source="feed_entry_uuid")
+
+
+class ClassifierLabelSerializer(serializers.ModelSerializer[ClassifierLabel]):
+    class Meta:
+        model = ClassifierLabel
+        fields = "__all__"
