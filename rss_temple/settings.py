@@ -414,6 +414,8 @@ SOCIAL_SIGNUP_URL = os.getenv("APP_SOCIAL_SIGNUP_URL", "http://localhost:4200/re
 
 LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
+CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS = 60.0 * 60.0 * 2.0  # 2 hours
+
 try:
     from .local_settings import *
 except ImportError:
