@@ -1,12 +1,7 @@
 import uuid
-from collections import Counter
-from typing import Any
 
-from django.conf import settings
-from django.core.cache import BaseCache, caches
-from django.core.signals import setting_changed
-from django.db.models import Case, When
-from django.dispatch import receiver
+from django.db.models import Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -24,20 +19,6 @@ from api.serializers import (
     ClassifierLabelSerializer,
 )
 
-_CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS: float
-
-
-@receiver(setting_changed)
-def _load_global_settings(*args: Any, **kwargs: Any):
-    global _CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS
-
-    _CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS = (
-        settings.CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS
-    )
-
-
-_load_global_settings()
-
 
 class ClassifierLabelListView(APIView):
     @swagger_auto_schema(
@@ -47,8 +28,6 @@ class ClassifierLabelListView(APIView):
         operation_description="Return a list of classifier labels",
     )
     def get(self, request: Request):
-        cache: BaseCache = caches["default"]
-
         serializer = ClassifierLabelListQuerySerializer(
             data=request.query_params,
         )
@@ -63,32 +42,31 @@ class ClassifierLabelListView(APIView):
             if not FeedEntry.objects.filter(uuid=feed_entry_uuid).exists():
                 raise NotFound("feed entry not found")
 
-            cache_key = f"classifier_label_votes__{feed_entry_uuid}"
-            counter: Counter | None = cache.get(cache_key)
-            if counter is None:
-                counter = Counter(
-                    ClassifierLabelFeedEntryCalculated.objects.filter(
-                        feed_entry_id=feed_entry_uuid
-                    ).values_list("classifier_label__text", flat=True)
-                ) + Counter(
-                    ClassifierLabelFeedEntryVote.objects.filter(
-                        feed_entry_id=feed_entry_uuid
-                    )
-                    .values_list("classifier_label__text", flat=True)
-                    .iterator()
-                )
-                cache.set(
-                    cache_key, counter, _CLASSIFIER_LABEL_VOTES_CACHE_TIMEOUT_SECONDS
-                )
-
-            whens = [
-                When(text=value, then=count) for value, count in counter.most_common()
-            ]
             classifier_labels = classifier_labels.annotate(
-                vote_count=Case(
-                    *whens,
-                    default=0,
+                vote_count=Coalesce(
+                    Subquery(
+                        ClassifierLabelFeedEntryVote.objects.filter(
+                            feed_entry_id=feed_entry_uuid,
+                            classifier_label_id=OuterRef("uuid"),
+                        )
+                        .values("feed_entry")
+                        .annotate(c1=Count("uuid"))
+                        .values("c1")
+                    ),
+                    0,
                 )
+                + Coalesce(
+                    Subquery(
+                        ClassifierLabelFeedEntryCalculated.objects.filter(
+                            feed_entry_id=feed_entry_uuid,
+                            classifier_label_id=OuterRef("uuid"),
+                        )
+                        .values("feed_entry")
+                        .annotate(c2=Count("uuid"))
+                        .values("c2")
+                    ),
+                    0,
+                ),
             ).order_by("-vote_count", "text")
         else:
             classifier_labels = classifier_labels.order_by("text")

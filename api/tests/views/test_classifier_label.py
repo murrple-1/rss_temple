@@ -1,7 +1,7 @@
 import logging
+import uuid
 from typing import ClassVar
 
-from django.core.cache import BaseCache, caches
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -74,8 +74,6 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertGreaterEqual(len(json_), 1)
 
     def test_ClassifierLabelListView_get_feed_entry(self):
-        cache: BaseCache = caches["default"]
-
         label1 = ClassifierLabel.objects.create(text="Label 1")
         label2 = ClassifierLabel.objects.create(text="Label 2")
 
@@ -91,8 +89,6 @@ class ClassifierLabelTestCase(APITestCase):
             db_updated_at=None,
         )
 
-        cache_key = f"classifier_label_votes__{feed_entry.uuid}"
-
         response = self.client.get(
             f"/api/classififerlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
@@ -101,8 +97,6 @@ class ClassifierLabelTestCase(APITestCase):
         json_ = response.json()
         self.assertIs(type(json_), list)
         self.assertGreaterEqual(len(json_), 1)
-
-        self.assertTrue(cache.delete(cache_key))
 
         ClassifierLabelFeedEntryVote.objects.create(
             classifier_label=label1,
@@ -120,8 +114,6 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertGreaterEqual(len(json_), 1)
         self.assertIn("text", json_[0])
         self.assertEqual(json_[0]["text"], "Label 1")
-
-        self.assertTrue(cache.delete(cache_key))
 
         user2 = User.objects.create_user("test2@test.com", None)
 
@@ -143,4 +135,8 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertIn("text", json_[0])
         self.assertEqual(json_[0]["text"], "Label 2")
 
-        self.assertTrue(cache.delete(cache_key))
+    def test_ClassifierLabelListView_get_feed_entry_notfound(self):
+        response = self.client.get(
+            f"/api/classififerlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
+        )
+        self.assertEqual(response.status_code, 404, response.content)
