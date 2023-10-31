@@ -1,7 +1,11 @@
 from django.db import migrations
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.migrations.state import StateApps
 
 
-def _forward_func_add_feed_entry_search_vector(apps, schema_editor):
+def _forward_func_add_feed_entry_search_vector(
+    apps: StateApps, schema_editor: BaseDatabaseSchemaEditor
+):
     if schema_editor.connection.vendor != "postgresql":
         return
 
@@ -18,7 +22,9 @@ def _forward_func_add_feed_entry_search_vector(apps, schema_editor):
         )
 
 
-def _reverse_func_add_feed_entry_search_vector(apps, schema_editor):
+def _reverse_func_add_feed_entry_search_vector(
+    apps: StateApps, schema_editor: BaseDatabaseSchemaEditor
+):
     if schema_editor.connection.vendor != "postgresql":
         return
 

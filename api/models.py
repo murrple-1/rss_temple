@@ -10,7 +10,6 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token as _Token
 
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
@@ -19,7 +18,7 @@ from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 class UserManager(BaseUserManager["User"]):
     def create_user(self, email, password, **extra_fields):
         if not email:
-            raise ValueError(_("The Email must be set"))
+            raise ValueError("The Email must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -32,9 +31,9 @@ class UserManager(BaseUserManager["User"]):
         extra_fields.setdefault("is_active", True)
 
         if extra_fields.get("is_staff") is not True:
-            raise ValueError(_("Superuser must have is_staff=True."))
+            raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError(_("Superuser must have is_superuser=True."))
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
 
@@ -120,7 +119,11 @@ class Token(_Token):
 
 class UserCategory(models.Model):
     class Meta:
-        unique_together = (("user", "text"),)
+        constraints = (
+            models.UniqueConstraint(
+                fields=("user", "text"), name="usercategory__unique__user__text"
+            ),
+        )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.ForeignKey(
@@ -137,6 +140,48 @@ class UserCategory(models.Model):
 
     def __str__(self) -> str:
         return f"{self.text}"
+
+
+class ClassifierLabel(models.Model):
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("text",),
+                name="classifierlabel__unique__text",
+            ),
+        )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    text = models.CharField(max_length=128)
+
+
+class ClassifierLabelFeedEntryVote(models.Model):
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("classifier_label", "feed_entry", "user"),
+                name="classifierlabelfeedentryvote__unique__classifier_label__feed_entry__user",
+            ),
+        )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
+    feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class ClassifierLabelFeedEntryCalculated(models.Model):
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=("classifier_label", "feed_entry"),
+                name="classifierlabelfeedentrycalculated__unique__classifier_label__feed_entry",
+            ),
+        )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
+    feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
 
 
 class Language(models.Model):
@@ -240,7 +285,13 @@ class Feed(models.Model):
 
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
-        unique_together = (("user", "feed"), ("user", "custom_feed_title"))
+        constraints = (
+            models.UniqueConstraint(fields=("user", "feed"), name="unique__user__feed"),
+            models.UniqueConstraint(
+                fields=("user", "custom_feed_title"),
+                name="subscribedfeedusermapping__unique__user__custom_feed_title",
+            ),
+        )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
@@ -262,13 +313,13 @@ class FeedEntry(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=["feed", "url"],
-                name="unique__feed__url__when__updated_at__null",
+                fields=("feed", "url"),
+                name="feedentry__unique__feed__url__when__updated_at__null",
                 condition=models.Q(updated_at__isnull=True),
             ),
             models.UniqueConstraint(
-                fields=["feed", "url", "updated_at"],
-                name="unique__feed__url__when__updated_at__not_null",
+                fields=("feed", "url", "updated_at"),
+                name="feedentry__unique__feed__url__when__updated_at__not_null",
             ),
         ]
 
@@ -338,7 +389,12 @@ class FeedEntry(models.Model):
 
 class ReadFeedEntryUserMapping(models.Model):
     class Meta:
-        unique_together = ("feed_entry", "user")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("feed_entry", "user"),
+                name="readfeedentryusermapping__unique__feed_entry__user",
+            ),
+        )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
