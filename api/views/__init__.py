@@ -9,7 +9,7 @@ from .auth import (
     UserDetailsView,
 )
 from .captcha import CaptchaAudioView, CaptchaImageView, NewCaptchaView
-from .classifier_label import ClassifierLabelListView
+from .classifier_label import ClassifierLabelFeedEntryVotesView, ClassifierLabelListView
 from .explore import ExploreView
 from .feed import FeedsQueryView, FeedSubscribeView, FeedView
 from .feed_entry import (
@@ -86,4 +86,5 @@ __all__ = [
     "FeedSubscriptionProgressView",
     "ExploreView",
     "ClassifierLabelListView",
+    "ClassifierLabelFeedEntryVotesView",
 ]

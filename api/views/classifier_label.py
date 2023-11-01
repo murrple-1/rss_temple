@@ -1,7 +1,10 @@
-import uuid
+import uuid as uuid_
+from typing import Any, cast
 
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
+from django.http.request import HttpRequest
+from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -13,6 +16,7 @@ from api.models import (
     ClassifierLabelFeedEntryCalculated,
     ClassifierLabelFeedEntryVote,
     FeedEntry,
+    User,
 )
 from api.serializers import (
     ClassifierLabelListQuerySerializer,
@@ -35,7 +39,7 @@ class ClassifierLabelListView(APIView):
 
         classifier_labels = ClassifierLabel.objects.all()
 
-        feed_entry_uuid: uuid.UUID | None = serializer.validated_data.get(
+        feed_entry_uuid: uuid_.UUID | None = serializer.validated_data.get(
             "feed_entry_uuid"
         )
         if feed_entry_uuid is not None:
@@ -70,5 +74,32 @@ class ClassifierLabelListView(APIView):
             ).order_by("-vote_count", "text")
         else:
             classifier_labels = classifier_labels.order_by("text")
+
+        return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
+
+
+class ClassifierLabelFeedEntryVotesView(APIView):
+    def dispatch(
+        self, request: HttpRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
+        kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
+        return super().dispatch(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        responses={200: ClassifierLabelSerializer(many=True)},
+        operation_summary="Return a list of classifier labels voted for by current user on feed entry",
+        operation_description="Return a list of classifier labels voted for by current user on feed entry",
+    )
+    def get(self, request: Request, *, uuid: uuid_.UUID):
+        user = cast(User, request.user)
+
+        if not FeedEntry.objects.filter(uuid=uuid).exists():
+            raise NotFound("feed entry not found")
+
+        classifier_labels = ClassifierLabel.objects.filter(
+            uuid__in=ClassifierLabelFeedEntryVote.objects.filter(
+                feed_entry_id=uuid, user=user
+            ).values("classifier_label_id")
+        )
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)

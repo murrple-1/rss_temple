@@ -140,3 +140,66 @@ class ClassifierLabelTestCase(APITestCase):
             f"/api/classififerlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
         )
         self.assertEqual(response.status_code, 404, response.content)
+
+    def test_ClassifierLabelFeedEntryVotesView_get(self):
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        feed_entry = FeedEntry.objects.create(
+            id=None,
+            feed=ClassifierLabelTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        user2 = User.objects.create_user("test2@test.com", None)
+
+        response = self.client.get(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), list)
+        self.assertEqual(len(json_), 0)
+
+        ClassifierLabelFeedEntryVote.objects.create(
+            classifier_label=label1,
+            feed_entry=feed_entry,
+            user=user2,
+        )
+
+        response = self.client.get(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), list)
+        self.assertEqual(len(json_), 0)
+
+        ClassifierLabelFeedEntryVote.objects.create(
+            classifier_label=label1,
+            feed_entry=feed_entry,
+            user=ClassifierLabelTestCase.user,
+        )
+
+        response = self.client.get(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), list)
+        self.assertEqual(len(json_), 1)
+
+    def test_ClassifierLabelFeedEntryVotesView_get_notfound(self):
+        response = self.client.get(
+            f"/api/classififerlabels/votes/{uuid.UUID(int=0)}",
+        )
+        self.assertEqual(response.status_code, 404, response.content)
