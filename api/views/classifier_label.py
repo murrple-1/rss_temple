@@ -21,6 +21,8 @@ from api.models import (
 from api.serializers import (
     ClassifierLabelListQuerySerializer,
     ClassifierLabelSerializer,
+    ClassifierLabelVotesListQuerySerializer,
+    ClassifierLabelVotesListSerializer,
 )
 
 
@@ -103,3 +105,60 @@ class ClassifierLabelFeedEntryVotesView(APIView):
         )
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
+
+
+class ClassifierLabelVotesListView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Query for Classifier Label votes",
+        operation_description="Query for Classifier Label votes",
+        query_serializer=ClassifierLabelVotesListQuerySerializer,
+    )
+    def get(self, request: Request):
+        user = cast(User, request.user)
+
+        serializer = ClassifierLabelVotesListQuerySerializer(
+            data=request.query_params,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+
+        count: int = serializer.validated_data["count"]
+        skip: int = serializer.validated_data["skip"]
+
+        feed_entries = FeedEntry.objects.filter(
+            uuid__in=ClassifierLabelFeedEntryVote.objects.filter(user=user).values(
+                "feed_entry_id"
+            )
+        )
+
+        ret_obj: dict[str, Any] = {
+            "totalCount": feed_entries.count(),
+        }
+
+        feed_entry_vote_mappings: dict[uuid_.UUID, list[uuid_.UUID]] = {
+            uuid: []
+            for uuid in feed_entries.order_by("uuid")
+            .values_list("uuid", flat=True)[skip : skip + count]
+            .iterator()
+        }
+
+        for classifier_label_vote_dict in (
+            ClassifierLabelFeedEntryVote.objects.filter(
+                user=user, feed_entry_id__in=feed_entry_vote_mappings.keys()
+            )
+            .values("feed_entry_id", "classifier_label_id")
+            .iterator()
+        ):
+            feed_entry_vote_mappings[
+                classifier_label_vote_dict["feed_entry_id"]
+            ].append(classifier_label_vote_dict["classifier_label_id"])
+
+        ret_obj["objects"] = [
+            {
+                "feedEntryUuid": feed_entry_uuid,
+                "classifierLabelUuids": classifier_label_uuids,
+            }
+            for feed_entry_uuid, classifier_label_uuids in feed_entry_vote_mappings.items()
+        ]
+
+        return Response(ClassifierLabelVotesListSerializer(ret_obj).data)

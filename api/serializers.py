@@ -666,3 +666,22 @@ class ClassifierLabelSerializer(serializers.ModelSerializer[ClassifierLabel]):
     class Meta:
         model = ClassifierLabel
         fields = "__all__"
+
+
+class ClassifierLabelVotesListQuerySerializer(serializers.Serializer):
+    count = serializers.IntegerField(
+        max_value=1000, min_value=0, default=50, required=False
+    )
+    skip = serializers.IntegerField(min_value=0, default=0, required=False)
+
+
+class _ClassifierLabelVotesSerializer(serializers.Serializer):
+    feedEntryUuid = serializers.UUIDField(read_only=True)
+    classifierLabelUuids = serializers.ListField(
+        read_only=True, child=serializers.UUIDField()
+    )
+
+
+class ClassifierLabelVotesListSerializer(serializers.Serializer):
+    objects = _ClassifierLabelVotesSerializer(many=True, read_only=True)
+    totalCount = serializers.IntegerField(read_only=True)
