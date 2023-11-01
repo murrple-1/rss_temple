@@ -675,6 +675,13 @@ class ClassifierLabelVotesListQuerySerializer(serializers.Serializer):
     skip = serializers.IntegerField(min_value=0, default=0, required=False)
 
 
+class ClassifierLabelVotesSerializer(serializers.Serializer):
+    feedEntryUuid = serializers.UUIDField(read_only=True, source="feed_entry_uuid")
+    classifierLabelUuids = serializers.ListField(
+        child=serializers.UUIDField(), source="classifier_label_uuids"
+    )
+
+
 class _ClassifierLabelVotesSerializer(serializers.Serializer):
     feedEntryUuid = serializers.UUIDField(read_only=True)
     classifierLabelUuids = serializers.ListField(

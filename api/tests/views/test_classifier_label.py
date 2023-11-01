@@ -204,6 +204,77 @@ class ClassifierLabelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
+    def test_ClassifierLabelFeedEntryVotesView_post(self):
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        feed_entry = FeedEntry.objects.create(
+            id=None,
+            feed=ClassifierLabelTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        response = self.client.post(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            {
+                "classifierLabelUuids": [str(label1.uuid), str(label2.uuid)],
+            },
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        self.assertEqual(
+            ClassifierLabelFeedEntryVote.objects.filter(feed_entry=feed_entry).count(),
+            2,
+        )
+
+        response = self.client.post(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            {
+                "classifierLabelUuids": [],
+            },
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        self.assertEqual(
+            ClassifierLabelFeedEntryVote.objects.filter(feed_entry=feed_entry).count(),
+            0,
+        )
+
+    def test_ClassifierLabelFeedEntryVotesView_post_notfound(self):
+        feed_entry = FeedEntry.objects.create(
+            id=None,
+            feed=ClassifierLabelTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        response = self.client.post(
+            f"/api/classififerlabels/votes/{uuid.UUID(int=0)}",
+            {
+                "classifierLabelUuids": [],
+            },
+        )
+        self.assertEqual(response.status_code, 404, response.content)
+
+        response = self.client.post(
+            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            {
+                "classifierLabelUuids": [str(uuid.UUID(int=0))],
+            },
+        )
+        self.assertEqual(response.status_code, 404, response.content)
+
     def test_ClassifierLabelVotesListView_get(self):
         label1 = ClassifierLabel.objects.create(text="Label 1")
         ClassifierLabel.objects.create(text="Label 2")

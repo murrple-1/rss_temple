@@ -1,6 +1,7 @@
 import uuid as uuid_
 from typing import Any, cast
 
+from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.http.request import HttpRequest
@@ -23,6 +24,7 @@ from api.serializers import (
     ClassifierLabelSerializer,
     ClassifierLabelVotesListQuerySerializer,
     ClassifierLabelVotesListSerializer,
+    ClassifierLabelVotesSerializer,
 )
 
 
@@ -106,6 +108,47 @@ class ClassifierLabelFeedEntryVotesView(APIView):
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
 
+    @swagger_auto_schema(
+        responses={204: ""},
+        request_body=ClassifierLabelVotesSerializer,
+        operation_summary="Submit Classifier Label votes for a feed entry",
+        operation_description="Submit Classifier Label votes for a feed entry",
+    )
+    def post(self, request: Request, *, uuid: uuid_.UUID):
+        user = cast(User, request.user)
+
+        serializer = ClassifierLabelVotesSerializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        classifier_label_uuids = frozenset(
+            serializer.validated_data["classifier_label_uuids"]
+        )
+
+        if not FeedEntry.objects.filter(uuid=uuid).exists():
+            raise NotFound("feed entry not found")
+
+        if ClassifierLabel.objects.filter(
+            uuid__in=classifier_label_uuids
+        ).count() < len(classifier_label_uuids):
+            raise NotFound("classifier label not found")
+
+        with transaction.atomic():
+            ClassifierLabelFeedEntryVote.objects.filter(
+                user=user, feed_entry_id=uuid
+            ).delete()
+            ClassifierLabelFeedEntryVote.objects.bulk_create(
+                ClassifierLabelFeedEntryVote(
+                    user=user,
+                    feed_entry_id=uuid,
+                    classifier_label_id=classifier_label_uuid,
+                )
+                for classifier_label_uuid in classifier_label_uuids
+            )
+
+        return Response(status=204)
+
 
 class ClassifierLabelVotesListView(APIView):
     @swagger_auto_schema(
@@ -118,7 +161,6 @@ class ClassifierLabelVotesListView(APIView):
 
         serializer = ClassifierLabelVotesListQuerySerializer(
             data=request.query_params,
-            context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
 
