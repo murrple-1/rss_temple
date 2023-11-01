@@ -50,9 +50,9 @@ _OBJECT_NAME = "feedentry"
 
 
 class FeedEntryView(APIView):
-    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Get Single Feed Entry",
@@ -211,9 +211,9 @@ class FeedEntriesQueryStableView(APIView):
 
 
 class FeedEntryReadView(APIView):
-    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Mark a feed entry as 'read'",
@@ -358,9 +358,9 @@ class FeedEntriesReadView(APIView):
 
 
 class FeedEntryFavoriteView(APIView):
-    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Mark a feed entry as 'favorite'",

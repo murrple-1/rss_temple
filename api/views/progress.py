@@ -16,9 +16,9 @@ from api.models import (
 
 
 class FeedSubscriptionProgressView(APIView):
-    def dispatch(self, request: Request, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Check on the progress of your subscription queue entry",
