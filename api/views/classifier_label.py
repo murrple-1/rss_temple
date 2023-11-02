@@ -74,9 +74,9 @@ class ClassifierLabelListView(APIView):
                     ),
                     0,
                 ),
-            ).order_by("-vote_count", "text")
+            ).order_by("-vote_count", "?")
         else:
-            classifier_labels = classifier_labels.order_by("text")
+            classifier_labels = classifier_labels.order_by("?")
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
 
