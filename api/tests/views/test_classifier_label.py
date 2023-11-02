@@ -65,7 +65,7 @@ class ClassifierLabelTestCase(APITestCase):
         ClassifierLabel.objects.create(text="Label 1")
 
         response = self.client.get(
-            f"/api/classififerlabels",
+            f"/api/classifierlabels",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -90,7 +90,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -105,7 +105,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -125,7 +125,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -137,7 +137,7 @@ class ClassifierLabelTestCase(APITestCase):
 
     def test_ClassifierLabelListView_get_feed_entry_notfound(self):
         response = self.client.get(
-            f"/api/classififerlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
+            f"/api/classifierlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -160,7 +160,7 @@ class ClassifierLabelTestCase(APITestCase):
         user2 = User.objects.create_user("test2@test.com", None)
 
         response = self.client.get(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -175,7 +175,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -190,7 +190,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -200,7 +200,7 @@ class ClassifierLabelTestCase(APITestCase):
 
     def test_ClassifierLabelFeedEntryVotesView_get_notfound(self):
         response = self.client.get(
-            f"/api/classififerlabels/votes/{uuid.UUID(int=0)}",
+            f"/api/classifierlabels/votes/{uuid.UUID(int=0)}",
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -221,7 +221,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.post(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
             {
                 "classifierLabelUuids": [str(label1.uuid), str(label2.uuid)],
             },
@@ -234,7 +234,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.post(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
             {
                 "classifierLabelUuids": [],
             },
@@ -260,7 +260,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.post(
-            f"/api/classififerlabels/votes/{uuid.UUID(int=0)}",
+            f"/api/classifierlabels/votes/{uuid.UUID(int=0)}",
             {
                 "classifierLabelUuids": [],
             },
@@ -268,7 +268,7 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
         response = self.client.post(
-            f"/api/classififerlabels/votes/{feed_entry.uuid}",
+            f"/api/classifierlabels/votes/{feed_entry.uuid}",
             {
                 "classifierLabelUuids": [str(uuid.UUID(int=0))],
             },
@@ -292,7 +292,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels/votes",
+            f"/api/classifierlabels/votes",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -309,7 +309,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classififerlabels/votes",
+            f"/api/classifierlabels/votes",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
