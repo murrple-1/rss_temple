@@ -55,6 +55,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     favorite_feed_entries = models.ManyToManyField(
         "FeedEntry", related_name="favorite_user_set"
     )
+    calculated_classifier_labels = models.ManyToManyField(
+        "ClassifierLabel",
+        through="ClassifierLabelUserCalculated",
+        related_name="calculated_user_set",
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -172,6 +177,7 @@ class ClassifierLabelFeedEntryVote(models.Model):
 
 class ClassifierLabelFeedEntryCalculated(models.Model):
     class Meta:
+        indexes = (models.Index(fields=["expires_at"]),)
         constraints = (
             models.UniqueConstraint(
                 fields=("classifier_label", "feed_entry"),
@@ -182,6 +188,39 @@ class ClassifierLabelFeedEntryCalculated(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
+    expires_at = models.DateTimeField()
+
+
+class ClassifierLabelFeedCalculated(models.Model):
+    class Meta:
+        indexes = (models.Index(fields=["expires_at"]),)
+        constraints = (
+            models.UniqueConstraint(
+                fields=("classifier_label", "feed"),
+                name="classifierlabelfeedcalculated__unique__classifier_label__feed",
+            ),
+        )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
+    feed = models.ForeignKey("Feed", on_delete=models.CASCADE)
+    expires_at = models.DateTimeField()
+
+
+class ClassifierLabelUserCalculated(models.Model):
+    class Meta:
+        indexes = (models.Index(fields=["expires_at"]),)
+        constraints = (
+            models.UniqueConstraint(
+                fields=("classifier_label", "user"),
+                name="classifierlabelusercalculated__unique__classifier_label__user",
+            ),
+        )
+
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    expires_at = models.DateTimeField()
 
 
 class Language(models.Model):
@@ -206,6 +245,11 @@ class Feed(models.Model):
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
     archive_update_backoff_until = models.DateTimeField(default=timezone.now)
+    calculated_classifier_labels = models.ManyToManyField(
+        ClassifierLabel,
+        through="ClassifierLabelFeedCalculated",
+        related_name="calculated_feed_set",
+    )
 
     custom_title: str | None
     is_subscribed: bool
@@ -301,7 +345,7 @@ class SubscribedFeedUserMapping(models.Model):
 
 class FeedEntry(models.Model):
     class Meta:
-        indexes = [
+        indexes = (
             models.Index(fields=["id"]),
             models.Index(fields=["url"]),
             models.Index(fields=["-published_at"]),
@@ -309,9 +353,9 @@ class FeedEntry(models.Model):
             models.Index(fields=["-updated_at"]),
             models.Index(fields=["is_archived"]),
             models.Index(fields=["has_top_image_been_processed"]),
-        ]
+        )
 
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=("feed", "url"),
                 name="feedentry__unique__feed__url__when__updated_at__null",
@@ -321,7 +365,7 @@ class FeedEntry(models.Model):
                 fields=("feed", "url", "updated_at"),
                 name="feedentry__unique__feed__url__when__updated_at__not_null",
             ),
-        ]
+        )
 
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
     id = models.TextField(null=True)
@@ -344,6 +388,16 @@ class FeedEntry(models.Model):
     has_top_image_been_processed = models.BooleanField(default=False)
     top_image_src = models.TextField(default="")
     top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
+    voted_classifier_labels = models.ManyToManyField(
+        ClassifierLabel,
+        through="ClassifierLabelFeedEntryVote",
+        related_name="voted_feed_entry_set",
+    )
+    calculated_classifier_labels = models.ManyToManyField(
+        ClassifierLabel,
+        through="ClassifierLabelFeedEntryCalculated",
+        related_name="calculated_feed_entry_set",
+    )
 
     @staticmethod
     def annotate_search_vectors(

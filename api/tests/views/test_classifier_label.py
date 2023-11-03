@@ -1,3 +1,4 @@
+import datetime
 import logging
 import uuid
 from typing import ClassVar
@@ -118,7 +119,9 @@ class ClassifierLabelTestCase(APITestCase):
         user2 = User.objects.create_user("test2@test.com", None)
 
         ClassifierLabelFeedEntryCalculated.objects.create(
-            classifier_label=label2, feed_entry=feed_entry
+            classifier_label=label2,
+            feed_entry=feed_entry,
+            expires_at=(timezone.now() + datetime.timedelta(days=7)),
         )
         ClassifierLabelFeedEntryVote.objects.create(
             classifier_label=label2, feed_entry=feed_entry, user=user2

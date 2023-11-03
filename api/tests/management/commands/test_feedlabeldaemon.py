@@ -7,8 +7,15 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 
-from api.management.commands.archivefeedentriesdaemon import Command
-from api.models import Feed, FeedEntry
+from api.management.commands.feedlabeldaemon import Command
+from api.models import (
+    ClassifierLabel,
+    ClassifierLabelFeedEntryCalculated,
+    ClassifierLabelFeedEntryVote,
+    Feed,
+    FeedEntry,
+    User,
+)
 
 if TYPE_CHECKING:
     from unittest.mock import _Mock, _patch
@@ -55,8 +62,13 @@ class DaemonTestCase(TestCase):
         self.stdout_patcher.stop()
         self.stderr_patcher.stop()
 
-    def test_handle_feed(self):
+    def test_label_loop(self):
         now = timezone.now()
+
+        user = User.objects.create_user("test@test.com", None)
+
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
 
         feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
@@ -81,20 +93,37 @@ class DaemonTestCase(TestCase):
             for i in range(1, 50, 1)
         )
 
-        DaemonTestCase.command._handle_feed(
-            feed, now, datetime.timedelta(days=-30), 5, 60 * 60 * 24
+        ClassifierLabelFeedEntryCalculated.objects.bulk_create(
+            ClassifierLabelFeedEntryCalculated(
+                feed_entry=feed_entry,
+                classifier_label=label1,
+                expires_at=(now + datetime.timedelta(days=7)),
+            )
+            for feed_entry in feed_entries[0:15]
+        )
+        ClassifierLabelFeedEntryCalculated.objects.bulk_create(
+            ClassifierLabelFeedEntryCalculated(
+                feed_entry=feed_entry,
+                classifier_label=label2,
+                expires_at=(now + datetime.timedelta(days=7)),
+            )
+            for feed_entry in feed_entries[10:30]
+        )
+        ClassifierLabelFeedEntryVote.objects.bulk_create(
+            ClassifierLabelFeedEntryVote(
+                feed_entry=feed_entry, classifier_label=label1, user=user
+            )
+            for feed_entry in feed_entries[15:25]
+        )
+        ClassifierLabelFeedEntryVote.objects.bulk_create(
+            ClassifierLabelFeedEntryVote(
+                feed_entry=feed_entry, classifier_label=label2, user=user
+            )
+            for feed_entry in feed_entries[20:40]
         )
 
-        for feed_entry in feed_entries:
-            feed_entry.refresh_from_db()
+        DaemonTestCase.command._label_loop(3)
 
-        feed.refresh_from_db()
-
-        self.assertTrue(any(fe.is_archived for fe in feed_entries))
-        self.assertTrue(any(not fe.is_archived for fe in feed_entries))
-
-        self.assertGreater(
-            feed.archive_update_backoff_until, now + datetime.timedelta(minutes=5)
-        )
+        self.assertGreaterEqual(feed.calculated_classifier_labels.count(), 1)
 
     # TODO write tests

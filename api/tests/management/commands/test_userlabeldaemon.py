@@ -7,8 +7,14 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 
-from api.management.commands.archivefeedentriesdaemon import Command
-from api.models import Feed, FeedEntry
+from api.management.commands.userlabeldaemon import Command
+from api.models import (
+    ClassifierLabel,
+    ClassifierLabelFeedCalculated,
+    Feed,
+    SubscribedFeedUserMapping,
+    User,
+)
 
 if TYPE_CHECKING:
     from unittest.mock import _Mock, _patch
@@ -55,46 +61,52 @@ class DaemonTestCase(TestCase):
         self.stdout_patcher.stop()
         self.stderr_patcher.stop()
 
-    def test_handle_feed(self):
+    def test_label_loop(self):
         now = timezone.now()
 
-        feed = Feed.objects.create(
-            feed_url="http://example.com/rss.xml",
-            title="Sample Feed",
-            home_url="http://example.com",
-            published_at=now + datetime.timedelta(days=-1),
-            updated_at=None,
-            db_updated_at=None,
-        )
+        user = User.objects.create_user("test@test.com", None)
 
-        feed_entries = FeedEntry.objects.bulk_create(
-            FeedEntry(
-                feed=feed,
-                published_at=now + datetime.timedelta(days=-i),
-                title=f"Feed Entry Title {i}",
-                url=f"http://example.com/entry{i}.html",
-                content=f"Some Entry content for {i}",
-                author_name="John Doe",
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        feeds = Feed.objects.bulk_create(
+            Feed(
+                feed_url=f"http://example{i}.com/rss.xml",
+                title=f"Sample Feed {i}",
+                home_url=f"http://example{i}.com",
+                published_at=now + datetime.timedelta(days=-1),
+                updated_at=None,
                 db_updated_at=None,
-                is_archived=False,
             )
-            for i in range(1, 50, 1)
+            for i in range(50)
         )
 
-        DaemonTestCase.command._handle_feed(
-            feed, now, datetime.timedelta(days=-30), 5, 60 * 60 * 24
+        SubscribedFeedUserMapping.objects.bulk_create(
+            SubscribedFeedUserMapping(
+                feed=feed,
+                user=user,
+            )
+            for feed in feeds[0:15]
+        )
+        ClassifierLabelFeedCalculated.objects.bulk_create(
+            ClassifierLabelFeedCalculated(
+                feed=feed,
+                classifier_label=label1,
+                expires_at=(now + datetime.timedelta(days=7)),
+            )
+            for feed in feeds[10:35]
+        )
+        ClassifierLabelFeedCalculated.objects.bulk_create(
+            ClassifierLabelFeedCalculated(
+                feed=feed,
+                classifier_label=label2,
+                expires_at=(now + datetime.timedelta(days=7)),
+            )
+            for feed in feeds[15:40]
         )
 
-        for feed_entry in feed_entries:
-            feed_entry.refresh_from_db()
+        DaemonTestCase.command._label_loop(3)
 
-        feed.refresh_from_db()
-
-        self.assertTrue(any(fe.is_archived for fe in feed_entries))
-        self.assertTrue(any(not fe.is_archived for fe in feed_entries))
-
-        self.assertGreater(
-            feed.archive_update_backoff_until, now + datetime.timedelta(minutes=5)
-        )
+        self.assertGreaterEqual(user.calculated_classifier_labels.count(), 1)
 
     # TODO write tests

@@ -123,3 +123,43 @@ services:
       APP_IN_DOCKER: 'true'
     volumes:
       - ./:/code/
+  rss_temple_feedlabeldaemon:
+    image: rss_temple
+    command: >
+      bash -c "while ! python ./manage.py checkready; do
+                 sleep 0.1
+               done
+
+               while ! python ./manage.py migrate --check; do
+                 sleep 5
+               done
+
+
+               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py feedlabeldaemon
+              "
+    build:
+      context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
+    volumes:
+      - ./:/code/
+  rss_temple_userlabeldaemon:
+    image: rss_temple
+    command: >
+      bash -c "while ! python ./manage.py checkready; do
+                 sleep 0.1
+               done
+
+               while ! python ./manage.py migrate --check; do
+                 sleep 5
+               done
+
+
+               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py userlabeldaemon
+              "
+    build:
+      context: ./
+    environment:
+      APP_IN_DOCKER: 'true'
+    volumes:
+      - ./:/code/
