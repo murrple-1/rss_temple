@@ -7,11 +7,26 @@ from django.db.migrations.state import StateApps
 _label_texts = [
     "Programming",
     "Anime & Manga",
-    "News",
-    "Linux",
+    "News & Weather",
     "Music",
     "Technology",
     "Gaming",
+    "Fashion & Beauty",
+    "Movies & TV",
+    "Celebrity Culture",
+    "Politics",
+    "Religion",
+    "Sport",
+    "Business & Finance",
+    "Arts & Craft",
+    "Books",
+    "Education",
+    "Health",
+    "Travel",
+    "Food & Drink",
+    "Photography",
+    "Automobile & Vehicles",
+    "Pets & Animals",
 ]
 
 
