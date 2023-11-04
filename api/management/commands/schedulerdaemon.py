@@ -80,11 +80,11 @@ def _purge_expired_data(*args: Any, **kwargs: Any):
     )
 
 
-def _scrape_feeds(*args: Any, **kwargs: Any):
+def _feed_scrape(*args: Any, **kwargs: Any):
     broker.enqueue(
         Message(
             queue_name="rss_temple",
-            actor_name="scrape_feeds",
+            actor_name="feed_scrape",
             args=args,
             kwargs=kwargs,
             options={},
@@ -135,8 +135,8 @@ class Command(BaseCommand):
         parser.add_argument("--label-users-crontab", default="0 0 * * *")
         parser.add_argument("--label-users-top-x", type=int, default=3)
 
-        parser.add_argument("--scrape-feeds-interval-seconds", type=int, default=30)
-        parser.add_argument("--scrape-feeds-db-limit", type=int, default=1000)
+        parser.add_argument("--feed-scrape-interval-seconds", type=int, default=30)
+        parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
 
         parser.add_argument(
             "--setup-subscriptions-interval-seconds", type=int, default=30
@@ -223,14 +223,14 @@ class Command(BaseCommand):
             coalesce=True,
         )
         scheduler.add_job(
-            _scrape_feeds,
-            trigger=IntervalTrigger(seconds=options["scrape_feeds_interval_seconds"]),
-            id="scrape_feed",
+            _feed_scrape,
+            trigger=IntervalTrigger(seconds=options["feed_scrape_interval_seconds"]),
+            id="feed_scrape",
             max_instances=1,
             replace_existing=True,
             coalesce=True,
             kwargs={
-                "db_limit": options["scrape_feeds_db_limit"],
+                "db_limit": options["feed_scrape_db_limit"],
             },
         )
         scheduler.add_job(
