@@ -1,26 +1,22 @@
 import datetime
 import logging
-from io import StringIO
-from typing import TYPE_CHECKING, ClassVar
-from unittest.mock import patch
+from typing import ClassVar
 
 from django.conf import settings
 from django.test import TestCase
 from django.utils import timezone
 
-from api.management.commands.feedscrapperdaemon import Command
 from api.models import Feed, FeedEntry
+from api.tasks.feed_scrape import (
+    error_update_backoff_until,
+    feed_scrape,
+    success_update_backoff_until,
+)
 from api.tests.utils import db_migrations_state
 
-if TYPE_CHECKING:
-    from unittest.mock import _Mock, _patch
 
-
-class DaemonTestCase(TestCase):
+class TaskTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
-    command: ClassVar[Command]
-    stdout_patcher: ClassVar["_patch[_Mock]"]
-    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):
@@ -30,29 +26,16 @@ class DaemonTestCase(TestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
 
-        cls.command = Command()
-        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
-        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
-
-    def setUp(self):
-        super().setUp()
-
-        self.stdout_patcher.start()
-        self.stderr_patcher.start()
-
-        db_migrations_state()
-
-    def tearDown(self):
-        super().tearDown()
-
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
+
+    def setUp(self):
+        super().setUp()
+
+        db_migrations_state()
 
     def test_scrape_feed(self):
         feed = Feed.objects.create(
@@ -65,13 +48,13 @@ class DaemonTestCase(TestCase):
         with open("api/tests/test_files/atom_1.0/well_formed.xml", "r") as f:
             text = f.read()
 
-        self.command._scrape_feed(feed, text)
+        feed_scrape(feed, text)
 
         feed_count = Feed.objects.count()
         feed_entry_count = FeedEntry.objects.count()
 
         # do it twice to make sure duplicate entries aren't added
-        self.command._scrape_feed(feed, text)
+        feed_scrape(feed, text)
 
         self.assertEqual(feed_count, Feed.objects.count())
         self.assertEqual(feed_entry_count, FeedEntry.objects.count())
@@ -93,7 +76,7 @@ class DaemonTestCase(TestCase):
 
             feed.db_updated_at = timezone.now()
 
-            feed.update_backoff_until = self.command._success_update_backoff_until(
+            feed.update_backoff_until = success_update_backoff_until(
                 feed, settings.SUCCESS_BACKOFF_SECONDS
             )
 
@@ -120,7 +103,7 @@ class DaemonTestCase(TestCase):
 
             feed.update_backoff_until = feed.db_created_at
 
-            feed.update_backoff_until = self.command._error_update_backoff_until(
+            feed.update_backoff_until = error_update_backoff_until(
                 feed,
                 settings.MIN_ERROR_BACKOFF_SECONDS,
                 settings.MAX_ERROR_BACKOFF_SECONDS,
@@ -131,7 +114,7 @@ class DaemonTestCase(TestCase):
                 delta=1,
             )
 
-            feed.update_backoff_until = self.command._error_update_backoff_until(
+            feed.update_backoff_until = error_update_backoff_until(
                 feed,
                 settings.MIN_ERROR_BACKOFF_SECONDS,
                 settings.MAX_ERROR_BACKOFF_SECONDS,
@@ -142,7 +125,7 @@ class DaemonTestCase(TestCase):
                 delta=1,
             )
 
-            feed.update_backoff_until = self.command._error_update_backoff_until(
+            feed.update_backoff_until = error_update_backoff_until(
                 feed,
                 settings.MIN_ERROR_BACKOFF_SECONDS,
                 settings.MAX_ERROR_BACKOFF_SECONDS,

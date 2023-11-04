@@ -7,7 +7,7 @@ from django.db.models import F
 from api.models import FeedEntry
 from api.top_image_extractor import TryAgain, extract_top_image_src, is_top_image_needed
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("rss_temple")
 
 
 def extract_top_images(

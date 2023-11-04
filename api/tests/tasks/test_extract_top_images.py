@@ -1,30 +1,21 @@
 import datetime
 import logging
 import os
-from io import StringIO
-from typing import TYPE_CHECKING, ClassVar, Generator
-from unittest.mock import patch
+from typing import ClassVar, Generator
 
 from bs4 import BeautifulSoup, Tag
 from django.template.loader import get_template
 from django.test import tag
 from django.utils import timezone
 
-from api.management.commands.extracttopimagesdaemon import Command
 from api.models import Feed, FeedEntry
+from api.tasks.extract_top_images import extract_top_images
 from api.tests import TestFileServerTestCase
 
-if TYPE_CHECKING:
-    from unittest.mock import _Mock, _patch
 
-
-class DaemonTestCase(TestFileServerTestCase):
+class TaskTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
-
-    command: ClassVar[Command]
-    stdout_patcher: ClassVar["_patch[_Mock]"]
-    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):
@@ -36,28 +27,12 @@ class DaemonTestCase(TestFileServerTestCase):
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
 
-        cls.command = Command()
-        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
-        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
-
-    def setUp(self):
-        super().setUp()
-
-        self.stdout_patcher.start()
-        self.stderr_patcher.start()
-
-    def tearDown(self):
-        super().tearDown()
-
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
 
     def _generate_feed_entry_descriptors(
         self,
@@ -90,7 +65,7 @@ class DaemonTestCase(TestFileServerTestCase):
                 rendered_content = template.render(
                     {
                         "i": i,
-                        "hostname": DaemonTestCase.live_server_url,
+                        "hostname": TaskTestCase.live_server_url,
                         "og_tag_filename": og_tag_filename,
                         "img_tag_filename": img_tag_filename,
                     }
@@ -116,7 +91,7 @@ class DaemonTestCase(TestFileServerTestCase):
 
                 yield (
                     i,
-                    f"{DaemonTestCase.live_server_url}/site/generated/{html_filename}",
+                    f"{TaskTestCase.live_server_url}/site/generated/{html_filename}",
                     title,
                     content,
                 )
@@ -138,7 +113,7 @@ class DaemonTestCase(TestFileServerTestCase):
 
             yield (
                 i,
-                f"{DaemonTestCase.live_server_url}/site/{html_filename}",
+                f"{TaskTestCase.live_server_url}/site/{html_filename}",
                 title,
                 content,
             )
@@ -147,20 +122,20 @@ class DaemonTestCase(TestFileServerTestCase):
 
         yield (
             i,
-            f"{DaemonTestCase.live_server_url}/site/entry_notexist.html",
+            f"{TaskTestCase.live_server_url}/site/entry_notexist.html",
             "Title",
             "<p>Content</p>",
         )
         i += 1
 
     @tag("slow")
-    def test_find_top_images(self):
+    def test_extract_top_images(self):
         now = timezone.now()
 
         feed = Feed.objects.create(
-            feed_url=f"{DaemonTestCase.live_server_url}/rss.xml",
+            feed_url=f"{TaskTestCase.live_server_url}/rss.xml",
             title="Sample Feed",
-            home_url=DaemonTestCase.live_server_url,
+            home_url=TaskTestCase.live_server_url,
             published_at=now + datetime.timedelta(days=-1),
             updated_at=None,
             db_updated_at=None,
@@ -178,9 +153,7 @@ class DaemonTestCase(TestFileServerTestCase):
                 is_archived=False,
             )
 
-        count = DaemonTestCase.command._find_top_images(
-            FeedEntry.objects.all(), 3, 2000, 256, 256, verbosity=3
-        )
+        count = extract_top_images(FeedEntry.objects.all(), 3, 2000, 256, 256)
 
         self.assertEqual(
             FeedEntry.objects.filter(has_top_image_been_processed=False).count(), 0

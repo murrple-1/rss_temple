@@ -5,7 +5,7 @@ from django.db.models.functions import Now
 
 from api.models import Captcha, Token
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("rss_temple")
 
 
 def purge_expired_data() -> None:

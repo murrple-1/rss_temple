@@ -17,7 +17,7 @@ from api.models import (
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("rss_temple")
 
 
 def setup_subscriptions(

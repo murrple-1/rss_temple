@@ -1,13 +1,10 @@
 import datetime
 import logging
-from io import StringIO
-from typing import TYPE_CHECKING, ClassVar
-from unittest.mock import patch
+from typing import ClassVar
 
 from django.test import TestCase
 from django.utils import timezone
 
-from api.management.commands.feedlabeldaemon import Command
 from api.models import (
     ClassifierLabel,
     ClassifierLabelFeedEntryCalculated,
@@ -16,18 +13,12 @@ from api.models import (
     FeedEntry,
     User,
 )
-
-if TYPE_CHECKING:
-    from unittest.mock import _Mock, _patch
+from api.tasks.label_feeds import label_feeds
 
 
-class DaemonTestCase(TestCase):
+class TaskTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
-
-    command: ClassVar[Command]
-    stdout_patcher: ClassVar["_patch[_Mock]"]
-    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):
@@ -39,10 +30,6 @@ class DaemonTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
 
-        cls.command = Command()
-        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
-        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -50,19 +37,7 @@ class DaemonTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
-    def setUp(self):
-        super().setUp()
-
-        self.stdout_patcher.start()
-        self.stderr_patcher.start()
-
-    def tearDown(self):
-        super().tearDown()
-
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
-
-    def test_label_loop(self):
+    def test_label_feeds(self):
         now = timezone.now()
 
         user = User.objects.create_user("test@test.com", None)
@@ -122,7 +97,7 @@ class DaemonTestCase(TestCase):
             for feed_entry in feed_entries[20:40]
         )
 
-        DaemonTestCase.command._label_loop(3)
+        label_feeds(3)
 
         self.assertGreaterEqual(feed.calculated_classifier_labels.count(), 1)
 

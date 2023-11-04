@@ -1,26 +1,17 @@
 import datetime
 import logging
-from io import StringIO
-from typing import TYPE_CHECKING, ClassVar
-from unittest.mock import patch
+from typing import ClassVar
 
 from django.test import TestCase
 from django.utils import timezone
 
-from api.management.commands.archivefeedentriesdaemon import Command
 from api.models import Feed, FeedEntry
-
-if TYPE_CHECKING:
-    from unittest.mock import _Mock, _patch
+from api.tasks.archive_feed_entries import archive_feed_entries
 
 
-class DaemonTestCase(TestCase):
+class TaskTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
-
-    command: ClassVar[Command]
-    stdout_patcher: ClassVar["_patch[_Mock]"]
-    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):
@@ -32,10 +23,6 @@ class DaemonTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
 
-        cls.command = Command()
-        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
-        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -43,19 +30,7 @@ class DaemonTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(cls.old_app_logger_level)
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
-    def setUp(self):
-        super().setUp()
-
-        self.stdout_patcher.start()
-        self.stderr_patcher.start()
-
-    def tearDown(self):
-        super().tearDown()
-
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
-
-    def test_handle_feed(self):
+    def test_archive_feed_entries(self):
         now = timezone.now()
 
         feed = Feed.objects.create(
@@ -81,9 +56,7 @@ class DaemonTestCase(TestCase):
             for i in range(1, 50, 1)
         )
 
-        DaemonTestCase.command._handle_feed(
-            feed, now, datetime.timedelta(days=-30), 5, 60 * 60 * 24
-        )
+        archive_feed_entries(feed, now, datetime.timedelta(days=-30), 5, 60 * 60 * 24)
 
         for feed_entry in feed_entries:
             feed_entry.refresh_from_db()

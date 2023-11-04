@@ -1,12 +1,9 @@
 import logging
-from io import StringIO
-from typing import TYPE_CHECKING, ClassVar
-from unittest.mock import patch
+from typing import ClassVar
 
 from django.test import tag
 from django.utils import timezone
 
-from api.management.commands.subscriptionsetupdaemon import Command
 from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
@@ -15,20 +12,14 @@ from api.models import (
     User,
     UserCategory,
 )
+from api.tasks.setup_subscriptions import get_first_entry, setup_subscriptions
 from api.tests import TestFileServerTestCase
 from api.tests.utils import db_migrations_state
 
-if TYPE_CHECKING:
-    from unittest.mock import _Mock, _patch
 
-
-class DaemonTestCase(TestFileServerTestCase):
+class TaskTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
-
-    command: ClassVar[Command]
-    stdout_patcher: ClassVar["_patch[_Mock]"]
-    stderr_patcher: ClassVar["_patch[_Mock]"]
 
     @classmethod
     def setUpClass(cls):
@@ -40,10 +31,6 @@ class DaemonTestCase(TestFileServerTestCase):
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
 
-        cls.command = Command()
-        cls.stdout_patcher = patch.object(cls.command, "stdout", new_callable=StringIO)
-        cls.stderr_patcher = patch.object(cls.command, "stderr", new_callable=StringIO)
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -54,16 +41,7 @@ class DaemonTestCase(TestFileServerTestCase):
     def setUp(self):
         super().setUp()
 
-        self.stdout_patcher.start()
-        self.stderr_patcher.start()
-
         db_migrations_state()
-
-    def tearDown(self):
-        super().tearDown()
-
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
 
     def generate_credentials(self):
         return User.objects.create_user("test@test.com", None)
@@ -71,7 +49,7 @@ class DaemonTestCase(TestFileServerTestCase):
     def test_get_first_entry(self):
         user = self.generate_credentials()
 
-        feed_subscription_progress_entry = self.command._get_first_entry()
+        feed_subscription_progress_entry = get_first_entry()
 
         self.assertIsNone(feed_subscription_progress_entry)
 
@@ -84,7 +62,7 @@ class DaemonTestCase(TestFileServerTestCase):
             FeedSubscriptionProgressEntry.NOT_STARTED,
         )
 
-        feed_subscription_progress_entry = self.command._get_first_entry()
+        feed_subscription_progress_entry = get_first_entry()
 
         self.assertIsNotNone(feed_subscription_progress_entry)
         assert feed_subscription_progress_entry is not None
@@ -98,18 +76,18 @@ class DaemonTestCase(TestFileServerTestCase):
         user = self.generate_credentials()
 
         feed1 = Feed.objects.create(
-            feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing",
+            feed_url=f"{TaskTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing",
             title="Sample Feed",
-            home_url=DaemonTestCase.live_server_url,
+            home_url=TaskTestCase.live_server_url,
             published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
         )
 
         feed2 = Feed.objects.create(
-            feed_url=f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title",
+            feed_url=f"{TaskTestCase.live_server_url}/rss_2.0/well_formed.xml?_=existing_with_custom_title",
             title="Sample Feed",
-            home_url=DaemonTestCase.live_server_url,
+            home_url=TaskTestCase.live_server_url,
             published_at=timezone.now(),
             updated_at=None,
             db_updated_at=None,
@@ -133,10 +111,10 @@ class DaemonTestCase(TestFileServerTestCase):
 
         count = 0
         for feed_url in [
-            f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml",
-            f"{DaemonTestCase.live_server_url}/rss_2.0/well_formed.xml?_={{s}}",
-            f"{DaemonTestCase.live_server_url}/rss_2.0/sample-404.xml",
-            f"{DaemonTestCase.live_server_url}/rss_2.0/sample-404.xml?_={{s}}",
+            f"{TaskTestCase.live_server_url}/rss_2.0/well_formed.xml",
+            f"{TaskTestCase.live_server_url}/rss_2.0/well_formed.xml?_={{s}}",
+            f"{TaskTestCase.live_server_url}/rss_2.0/sample-404.xml",
+            f"{TaskTestCase.live_server_url}/rss_2.0/sample-404.xml?_={{s}}",
         ]:
             for custom_feed_title in [
                 None,
@@ -167,7 +145,7 @@ class DaemonTestCase(TestFileServerTestCase):
 
                     count += 1
 
-        feed_subscription_progress_entry = self.command._get_first_entry()
+        feed_subscription_progress_entry = get_first_entry()
 
         assert feed_subscription_progress_entry is not None
         self.assertEqual(
@@ -175,7 +153,7 @@ class DaemonTestCase(TestFileServerTestCase):
             FeedSubscriptionProgressEntry.STARTED,
         )
 
-        self.command._do_subscription(feed_subscription_progress_entry)
+        setup_subscriptions(feed_subscription_progress_entry)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,
