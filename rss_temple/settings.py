@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "drf_yasg",
     "corsheaders",
+    "django_apscheduler",
     "api.apps.ApiConfig",
 ]
 

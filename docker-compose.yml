@@ -24,25 +24,10 @@ services:
       - .env
     volumes:
       - django_static:/code/_static/
-  rss_temple_feedscrapperdaemon:
+  rss_temple_dramatiq:
     env_file:
       - .env
-  rss_temple_subscriptionsetupdaemon:
-    env_file:
-      - .env
-  rss_temple_archivefeedentriesdaemon:
-    env_file:
-      - .env
-  rss_temple_expireddatapurgedaemon:
-    env_file:
-      - .env
-  rss_temple_extracttopimagesdaemon:
-    env_file:
-      - .env
-  rss_temple_feedlabeldaemon:
-    env_file:
-      - .env
-  rss_temple_userlabeldaemon:
+  rss_temple_schedulerdaemon:
     env_file:
       - .env
 volumes:

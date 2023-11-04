@@ -37,6 +37,9 @@ drf_ujson2 = "*"
 captcha = "*"
 lingua-language-detector = "*"
 beautifulsoup4 = "*"
+dramatiq = {version = "*", extras = ["redis", "watch"]}
+apscheduler = "*"
+django-apscheduler = "*"
 
 [dev-packages]
 coverage = "*"
