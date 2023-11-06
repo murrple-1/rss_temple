@@ -1,4 +1,5 @@
 import csv
+import json
 import sys
 from collections import Counter
 from typing import Any
@@ -13,11 +14,13 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--count", type=int, default=1000)
+        parser.add_argument("--most-common-count", type=int, default=3)
 
     def handle(self, *args: Any, **options: Any) -> None:
         count = options["count"]
+        most_common_count = options["most_common_count"]
 
-        writer = csv.DictWriter(sys.stdout, fieldnames=("title", "content", "label"))
+        writer = csv.DictWriter(sys.stdout, fieldnames=("title", "content", "labels"))
         writer.writeheader()
 
         output_count = 0
@@ -38,7 +41,7 @@ class Command(BaseCommand):
                 .values_list("classifier_label__text", flat=True)
                 .iterator()
             )
-            labels = counter.most_common(1)
+            labels = counter.most_common(most_common_count)
             if not labels:
                 continue
 
@@ -46,7 +49,7 @@ class Command(BaseCommand):
                 {
                     "title": feed_entry_dict["title"],
                     "content": feed_entry_dict["content"],
-                    "label": labels[0][0],
+                    "labels": json.dumps([l[0] for l in labels]),
                 }
             )
             output_count += 1
