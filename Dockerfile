@@ -1,4 +1,4 @@
-FROM python:3.11 as builder
+FROM python:3.12 as builder
 
 ARG BUILD_ENV
 ENV BUILD_ENV=${BUILD_ENV} PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
@@ -8,7 +8,7 @@ COPY Pipfile Pipfile.lock /venv/
 WORKDIR /venv
 RUN pipenv requirements $(test "$BUILD_ENV" != "production" && echo "--dev") > requirements.txt && /venv/bin/pip install -r requirements.txt
 
-FROM python:3.11 as production
+FROM python:3.12 as production
 
 ENV PYTHONUNBUFFERED=1
 
