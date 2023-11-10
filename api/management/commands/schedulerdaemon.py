@@ -130,21 +130,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--archive-feed-entries-crontab", default="*/30 * * * *"
         )  # every half-hour, on the half-hour
-        parser.add_argument(
-            "--archive-feed-entries-max-age",
-            type=int,
-            default=(1000 * 60 * 25),  # 25 minutes
-        )
         parser.add_argument("--archive-feed-entries-limit", type=int, default=1000)
 
         parser.add_argument(
             "--extract-top-images-crontab", default="0 * * * *"
         )  # every hour, on the first minute
-        parser.add_argument(
-            "--extract-top-images-max-age",
-            type=int,
-            default=(1000 * 60 * 55),  # 55 minutes
-        )
         parser.add_argument(
             "--extract-top-images-max-processing-attempts", type=int, default=3
         )
@@ -163,17 +153,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--label-feeds-crontab", default="0 0 * * *"
         )  # every midnight
-        parser.add_argument(
-            "--label-feeds-max-age", type=int, default=(1000 * 60 * 60 * 23)
-        )  # 23 hours
         parser.add_argument("--label-feeds-top-x", type=int, default=3)
 
         parser.add_argument(
             "--label-users-crontab", default="0 0 * * *"
         )  # every midnight
-        parser.add_argument(
-            "--label-users-max-age", type=int, default=(1000 * 60 * 60 * 23)
-        )  # 23 hours
         parser.add_argument("--label-users-top-x", type=int, default=3)
 
         parser.add_argument("--feed-scrape-interval-seconds", type=int, default=30)
@@ -192,9 +176,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "--purge-expired-data-crontab", default="0 0 */15 * *"
         )  # every 1st and 15th, at midnight
-        parser.add_argument(
-            "--purge-expired-data-max-age", type=int, default=(1000 * 60 * 60 * 24 * 14)
-        )  # 14 days
 
     def handle(self, *args: Any, **options: Any) -> None:
         dramatiq.set_encoder(UJSONEncoder())
@@ -221,9 +202,6 @@ class Command(BaseCommand):
             replace_existing=True,
             coalesce=True,
             kwargs={
-                "options": {
-                    "max_age": options["archive_feed_entries_max_age"],
-                },
                 "limit": options["archive_feed_entries_limit"],
             },
         )
@@ -235,9 +213,6 @@ class Command(BaseCommand):
             replace_existing=True,
             coalesce=True,
             kwargs={
-                "options": {
-                    "max_age": options["extract_top_images_max_age"],
-                },
                 "max_processing_attempts": options[
                     "extract_top_images_max_processing_attempts"
                 ],
@@ -258,9 +233,6 @@ class Command(BaseCommand):
             replace_existing=True,
             coalesce=True,
             kwargs={
-                "options": {
-                    "max_age": options["label_feeds_max_age"],
-                },
                 "top_x": options["label_feeds_top_x"],
             },
         )
@@ -272,9 +244,6 @@ class Command(BaseCommand):
             replace_existing=True,
             coalesce=True,
             kwargs={
-                "options": {
-                    "max_age": options["label_users_max_age"],
-                },
                 "top_x": options["label_users_top_x"],
             },
         )
@@ -285,11 +254,6 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
-            kwargs={
-                "options": {
-                    "max_age": options["purge_expired_data_max_age"],
-                },
-            },
         )
         scheduler.add_job(
             _feed_scrape,
