@@ -80,7 +80,7 @@ class TaskTestCase(TestCase):
             for feed in feeds[15:40]
         )
 
-        label_users(3)
+        label_users(3, datetime.timedelta(days=7))
 
         self.assertGreaterEqual(user.calculated_classifier_labels.count(), 1)
 

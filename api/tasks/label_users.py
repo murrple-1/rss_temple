@@ -14,11 +14,11 @@ from api.models import (
 )
 
 
-def label_users(top_x: int):
+def label_users(top_x: int, expiry_interval: datetime.timedelta):
     ClassifierLabelUserCalculated.objects.filter(expires_at__lte=Now()).delete()
 
     # TODO setting
-    expires_at = timezone.now() + datetime.timedelta(days=7)
+    expires_at = timezone.now() + expiry_interval
 
     for user_uuid in User.objects.exclude(
         uuid__in=ClassifierLabelUserCalculated.objects.values("user_id")

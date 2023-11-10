@@ -91,12 +91,12 @@ def extract_top_images(
 
 @dramatiq.actor(queue_name="rss_temple")
 def label_feeds(top_x=3) -> None:
-    label_feeds_(top_x)
+    label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
 
 
 @dramatiq.actor(queue_name="rss_temple")
 def label_users(top_x=10) -> None:
-    label_users_(top_x)
+    label_users_(top_x, settings.LABELING_EXPIRY_INTERVAL)
 
 
 @dramatiq.actor(queue_name="rss_temple")

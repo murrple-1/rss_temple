@@ -415,6 +415,8 @@ SOCIAL_SIGNUP_URL = os.getenv("APP_SOCIAL_SIGNUP_URL", "http://localhost:4200/re
 
 LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
+LABELING_EXPIRY_INTERVAL = datetime.timedelta(days=7)
+
 try:
     from .local_settings import *
 except ImportError:
