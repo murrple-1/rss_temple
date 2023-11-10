@@ -1,5 +1,5 @@
 import random
-import uuid
+import uuid as uuid_
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
@@ -39,23 +39,23 @@ class UserManager(BaseUserManager["User"]):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     attributes = models.JSONField(null=False, default=dict)
-    subscribed_feeds = models.ManyToManyField(
+    subscribed_feeds: models.ManyToManyField = models.ManyToManyField(
         "Feed", through="SubscribedFeedUserMapping", related_name="subscribed_user_set"
     )
-    read_feed_entries = models.ManyToManyField(
+    read_feed_entries: models.ManyToManyField = models.ManyToManyField(
         "FeedEntry", through="ReadFeedEntryUserMapping", related_name="read_user_set"
     )
     read_feed_entries_counter = models.PositiveIntegerField(default=0)
-    favorite_feed_entries = models.ManyToManyField(
+    favorite_feed_entries: models.ManyToManyField = models.ManyToManyField(
         "FeedEntry", related_name="favorite_user_set"
     )
-    calculated_classifier_labels = models.ManyToManyField(
+    calculated_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         "ClassifierLabel",
         through="ClassifierLabelUserCalculated",
         related_name="calculated_user_set",
@@ -66,8 +66,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    def category_dict(self) -> dict["uuid.UUID | None", list["Feed"]]:
-        category_dict: dict[uuid.UUID | None, list[Feed]] | None = getattr(
+    def category_dict(self) -> dict[uuid_.UUID | None, list["Feed"]]:
+        category_dict: dict[uuid_.UUID | None, list[Feed]] | None = getattr(
             self, "_category_dict", None
         )
         if category_dict is None:
@@ -84,7 +84,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                     )
                 )
 
-                keys: Collection[uuid.UUID | None]
+                keys: Collection[uuid_.UUID | None]
                 if len(user_category_uuids) > 0:
                     keys = user_category_uuids
                 else:
@@ -102,23 +102,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         return category_dict
 
     @cached_property
-    def subscribed_feed_uuids(self) -> frozenset["uuid.UUID"]:
+    def subscribed_feed_uuids(self) -> frozenset[uuid_.UUID]:
         return frozenset(self.subscribed_feeds.values_list("uuid", flat=True))
 
     @cached_property
-    def read_feed_entry_uuids(self) -> frozenset["uuid.UUID"]:
+    def read_feed_entry_uuids(self) -> frozenset[uuid_.UUID]:
         return frozenset(self.read_feed_entries.values_list("uuid", flat=True))
 
     @cached_property
-    def favorite_feed_entry_uuids(self) -> frozenset["uuid.UUID"]:
+    def favorite_feed_entry_uuids(self) -> frozenset[uuid_.UUID]:
         return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
 
 
 class Token(_Token):
     # overwrite OneToOneField with ForeignKey for multiple tokens per user
-    user: models.ForeignKey = models.ForeignKey(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
-    )
+    )  # type: ignore
     expires_at = models.DateTimeField(null=True)
 
 
@@ -130,18 +130,20 @@ class UserCategory(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="user_categories",
     )
     text = models.TextField()
-    feeds = models.ManyToManyField("Feed", related_name="user_categories")
+    feeds: models.ManyToManyField = models.ManyToManyField(
+        "Feed", related_name="user_categories"
+    )
 
     @cached_property
-    def feed_uuids(self) -> list["uuid.UUID"]:
-        return self.feeds.values_list("uuid", flat=True)
+    def feed_uuids(self) -> list[uuid_.UUID]:
+        return list(self.feeds.values_list("uuid", flat=True))
 
     def __str__(self) -> str:
         return f"{self.text}"
@@ -156,7 +158,7 @@ class ClassifierLabel(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     text = models.CharField(max_length=128)
 
 
@@ -169,7 +171,7 @@ class ClassifierLabelFeedEntryVote(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -185,7 +187,7 @@ class ClassifierLabelFeedEntryCalculated(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
@@ -201,7 +203,7 @@ class ClassifierLabelFeedCalculated(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
@@ -217,7 +219,7 @@ class ClassifierLabelUserCalculated(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
@@ -235,7 +237,7 @@ class Feed(models.Model):
             models.Index(fields=["update_backoff_until"]),
         ]
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_url = models.TextField(unique=True)
     title = models.TextField()
     home_url = models.TextField(null=True)
@@ -245,7 +247,7 @@ class Feed(models.Model):
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
     archive_update_backoff_until = models.DateTimeField(default=timezone.now)
-    calculated_classifier_labels = models.ManyToManyField(
+    calculated_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         ClassifierLabel,
         through="ClassifierLabelFeedCalculated",
         related_name="calculated_feed_set",
@@ -337,7 +339,7 @@ class SubscribedFeedUserMapping(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     custom_feed_title = models.TextField(null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -367,7 +369,7 @@ class FeedEntry(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     id = models.TextField(null=True)
     feed = models.ForeignKey(
         Feed, on_delete=models.CASCADE, related_name="feed_entries"
@@ -388,12 +390,12 @@ class FeedEntry(models.Model):
     has_top_image_been_processed = models.BooleanField(default=False)
     top_image_src = models.TextField(default="")
     top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
-    voted_classifier_labels = models.ManyToManyField(
+    voted_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         ClassifierLabel,
         through="ClassifierLabelFeedEntryVote",
         related_name="voted_feed_entry_set",
     )
-    calculated_classifier_labels = models.ManyToManyField(
+    calculated_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         ClassifierLabel,
         through="ClassifierLabelFeedEntryCalculated",
         related_name="calculated_feed_entry_set",
@@ -450,7 +452,7 @@ class ReadFeedEntryUserMapping(models.Model):
             ),
         )
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     read_at = models.DateTimeField(default=timezone.now)
@@ -461,7 +463,7 @@ class FeedSubscriptionProgressEntry(models.Model):
     STARTED = 1
     FINISHED = 2
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.IntegerField(
         default=NOT_STARTED,
@@ -474,7 +476,7 @@ class FeedSubscriptionProgressEntry(models.Model):
 
 
 class FeedSubscriptionProgressEntryDescriptor(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_subscription_progress_entry = models.ForeignKey(
         FeedSubscriptionProgressEntry, on_delete=models.CASCADE
     )
@@ -485,7 +487,7 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
 
 
 class Captcha(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     key = models.CharField(max_length=64, unique=True)
     seed = models.CharField(max_length=64)
     expires_at = models.DateTimeField()

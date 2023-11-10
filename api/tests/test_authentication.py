@@ -30,6 +30,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
         assert isinstance(auth_token, Token)
         self.assertEqual(auth_user.uuid, user.uuid)
         token.refresh_from_db()
+        assert token.expires_at is not None
         self.assertGreater(token.expires_at, expires_at)
 
         token = Token.objects.create(user=user, expires_at=None)

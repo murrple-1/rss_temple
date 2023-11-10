@@ -352,7 +352,9 @@ class SocialLoginSerializer(SocialLoginSerializer_):
             raise serializers.ValidationError(_("Incorrect value"))
 
         if isinstance(ret, HttpResponseBadRequest):
-            raise serializers.ValidationError(ret.content)
+            raise serializers.ValidationError(
+                ret.content.decode("utf-8", errors="replace")
+            )
 
         if not login.is_existing:
             # We have an account already signed up in a different flow

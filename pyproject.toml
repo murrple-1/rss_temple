@@ -18,5 +18,7 @@ module = [
     "allauth.*",
     "dj_rest_auth.*",
     "drf_yasg.*",
+    "apscheduler.*",
+    "django_apscheduler.*",
 ]
 ignore_missing_imports = true

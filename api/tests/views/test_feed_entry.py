@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import ClassVar
+from typing import ClassVar, Sequence
 
 from django.core.cache import BaseCache, caches
 from django.utils import timezone
@@ -768,6 +768,8 @@ class FeedEntryTestCase(APITestCase):
     def test_FeedEntryLanguagesView_get(self):
         cache: BaseCache = caches["default"]
 
+        data: dict[str, str] | None
+        expected: Sequence[str]
         for data, expected in [
             (None, []),
             (

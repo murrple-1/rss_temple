@@ -1,6 +1,6 @@
 import datetime
 import secrets
-from typing import Any
+from typing import Any, cast
 
 from captcha.audio import AudioCaptcha
 from captcha.image import ImageCaptcha
@@ -40,7 +40,7 @@ def _load_global_settings(*args: Any, **kwargs: Any):
         width=settings.CAPTCHA_IMAGE_WIDTH,
         height=settings.CAPTCHA_IMAGE_HEIGHT,
         fonts=settings.CAPTCHA_IMAGE_FONTS_DIR,
-        font_sizes=settings.CAPTCHA_IMAGE_FONT_SIZES,
+        font_sizes=cast(tuple[int], settings.CAPTCHA_IMAGE_FONT_SIZES),
     )
     _audio_captcha = AudioCaptcha(voicedir=settings.CAPTCHA_AUDIO_VOICES_DIR)
     _CAPTCHA_SEND_ANSWER = settings.CAPTCHA_SEND_ANSWER

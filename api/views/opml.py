@@ -84,6 +84,7 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
                 title = feed.title
                 custom_title = feed.custom_title
                 outline_name = custom_title if custom_title is not None else title
+                assert feed.home_url is not None
                 lxml_etree.SubElement(
                     outer_outline_element,
                     "outline",

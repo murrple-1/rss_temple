@@ -6,6 +6,7 @@ from django.contrib.auth.password_validation import (
     UserAttributeSimilarityValidator,
 )
 from django.core.exceptions import ValidationError
+from django.db.models import Model
 
 from api.exceptions import UnprocessableContent
 
@@ -67,7 +68,7 @@ class HasSpecialCharacterValidator:
 
 
 class ElevatedCommonPasswordValidator(CommonPasswordValidator):
-    def validate(self, password: str, user: AbstractBaseUser | None = None):
+    def validate(self, password: str, user: Model | None = None):
         try:
             super().validate(password, user)
         except ValidationError as e:
@@ -78,7 +79,7 @@ class ElevatedUserAttributeSimilarityValidator(UserAttributeSimilarityValidator)
     def __init__(self, user_attributes: tuple[str] = ("email",), **kwargs):
         super().__init__(user_attributes=user_attributes, **kwargs)
 
-    def validate(self, password: str, user: AbstractBaseUser | None = None):
+    def validate(self, password: str, user: Model | None = None):
         try:
             super().validate(password, user)
         except ValidationError as e:

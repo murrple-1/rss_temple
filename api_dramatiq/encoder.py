@@ -19,4 +19,4 @@ class UJSONEncoder(Encoder):
         try:
             return ujson.loads(data)
         except ujson.JSONDecodeError as e:
-            raise DecodeError(f"failed to decode message: {data}", data, e) from None
+            raise DecodeError(f"failed to decode message: {data!r}", data, e) from None

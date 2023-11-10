@@ -51,4 +51,4 @@ def throttling_monkey_patch():
     def _allow_request(self, request, view):
         return True
 
-    SimpleRateThrottle.allow_request = _allow_request
+    setattr(SimpleRateThrottle, "allow_request", _allow_request)
