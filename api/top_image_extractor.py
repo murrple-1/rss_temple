@@ -27,22 +27,22 @@ def extract_top_image_src(
     # TODO Currently, the top image is just the OpenGraph image (if it exists).
     # However, in the future, this might be expanded to do some `goose3`-like
     # smart-parsing of the webpage
-    r: Response
+    response: Response
     try:
-        r = rss_requests.get(url)
+        response = rss_requests.get(url)
     except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
     try:
-        r.raise_for_status()
+        response.raise_for_status()
     except HTTPError as e:
-        if r.status_code in (404,):
+        if response.status_code in (404,):
             return None
         else:  # pragma: no cover
             raise TryAgain from e
 
     # TODO investigate what errors this can throw (if any), and handle them
-    soup = BeautifulSoup(r.content, "lxml")
+    soup = BeautifulSoup(response.text, "lxml")
 
     og_image = soup.find("meta", property="og:image")
 

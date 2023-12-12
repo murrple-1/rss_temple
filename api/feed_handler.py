@@ -29,7 +29,7 @@ def text_2_d(text: str):
 
     logger().info("feed info: %s", pprint.pformat(d))
 
-    if "bozo" in d and d.bozo == 1:
+    if d.get("bozo", True):
         raise FeedHandlerError from d.bozo_exception
 
     return d

@@ -1,6 +1,5 @@
 from typing import Any
 
-import dramatiq
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -9,7 +8,6 @@ from django.core.management.base import BaseCommand, CommandParser
 from django_apscheduler import util
 from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
-from dramatiq import Message
 
 from api_dramatiq.broker import broker
 from api_dramatiq.encoder import UJSONEncoder
@@ -23,6 +21,8 @@ def _delete_old_job_executions(max_age=604_800):
 def _archive_feed_entries(
     *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
 ):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -38,6 +38,8 @@ def _archive_feed_entries(
 def _extract_top_images(
     *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
 ):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -51,6 +53,8 @@ def _extract_top_images(
 
 
 def _label_feeds(*args: Any, options: dict[str, Any] | None = None, **kwargs: Any):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -64,6 +68,8 @@ def _label_feeds(*args: Any, options: dict[str, Any] | None = None, **kwargs: An
 
 
 def _label_users(*args: Any, options: dict[str, Any] | None = None, **kwargs: Any):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -79,6 +85,8 @@ def _label_users(*args: Any, options: dict[str, Any] | None = None, **kwargs: An
 def _purge_expired_data(
     *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
 ):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -92,6 +100,8 @@ def _purge_expired_data(
 
 
 def _feed_scrape(*args: Any, options: dict[str, Any] | None = None, **kwargs: Any):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -107,6 +117,8 @@ def _feed_scrape(*args: Any, options: dict[str, Any] | None = None, **kwargs: An
 def _setup_subscriptions(
     *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
 ):
+    from dramatiq import Message
+
     options = options or {}
     broker.enqueue(
         Message(
@@ -178,6 +190,8 @@ class Command(BaseCommand):
         )  # every 1st and 15th, at midnight
 
     def handle(self, *args: Any, **options: Any) -> None:
+        import dramatiq
+
         dramatiq.set_encoder(UJSONEncoder())
 
         scheduler = BlockingScheduler(timezone=settings.TIME_ZONE)

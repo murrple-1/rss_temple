@@ -15,7 +15,7 @@ from .classifier_label import (
     ClassifierLabelVotesListView,
 )
 from .explore import ExploreView
-from .feed import FeedsQueryView, FeedSubscribeView, FeedView
+from .feed import FeedLookupView, FeedsQueryView, FeedSubscribeView, FeedView
 from .feed_entry import (
     FeedEntriesFavoriteView,
     FeedEntriesQueryStableCreateView,
@@ -72,6 +72,7 @@ __all__ = [
     "ReadCountView",
     "FeedView",
     "FeedsQueryView",
+    "FeedLookupView",
     "FeedSubscribeView",
     "FeedEntryView",
     "FeedEntriesQueryView",

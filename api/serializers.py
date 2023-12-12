@@ -580,6 +580,15 @@ class FeedGetSerializer(serializers.Serializer):
         self.fields["fields"] = _FieldsField(required=False)
 
 
+class FeedFindQuerySerializer(serializers.Serializer):
+    url = serializers.URLField(required=True)
+
+
+class FeedFindSerializer(serializers.Serializer):
+    title = serializers.CharField(read_only=True)
+    href = serializers.URLField(read_only=True)
+
+
 class FeedSubscribeSerializer(serializers.Serializer):
     url = serializers.URLField(required=True)
     customTitle = serializers.CharField(required=False, source="custom_title")

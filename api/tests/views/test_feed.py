@@ -1,6 +1,7 @@
 import logging
 from typing import ClassVar
 
+from django.core.cache import BaseCache, caches
 from django.test import tag
 from django.utils import timezone
 
@@ -99,6 +100,40 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertIn("objects", json_)
         self.assertIs(type(json_["objects"]), list)
         self.assertGreaterEqual(len(json_["objects"]), 1)
+
+    def test_FeedLookupView_get(self):
+        cache: BaseCache = caches["captcha"]
+
+        url = f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml"
+
+        cache_key = f"exposed_feeds_{url}"
+        self.assertFalse(cache.delete(cache_key))
+
+        self.generate_credentials()
+
+        response = self.client.get(
+            "/api/feed/lookup",
+            {"url": url},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+
+        self.assertIs(type(json_), list)
+        self.assertEqual(len(json_), 1)
+        self.assertEqual(response.headers["X-Cache-Hit"], "NO")
+
+        response = self.client.get(
+            "/api/feed/lookup",
+            {"url": url},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+
+        self.assertIs(type(json_), list)
+        self.assertEqual(len(json_), 1)
+        self.assertEqual(response.headers["X-Cache-Hit"], "YES")
 
     @tag("slow")
     def test_FeedSubscribeView_post(self):

@@ -93,6 +93,7 @@ urlpatterns = [
     re_path(r"^user/meta/readcount/?$", views.ReadCountView.as_view()),
     re_path(r"^feed/?$", views.FeedView.as_view()),
     re_path(r"^feeds/query/?$", views.FeedsQueryView.as_view()),
+    re_path(r"^feed/lookup/?$", views.FeedLookupView.as_view()),
     re_path(r"^feed/subscribe/?$", views.FeedSubscribeView.as_view()),
     re_path(rf"^feedentry/{_uuid_regex}/?$", views.FeedEntryView.as_view()),
     re_path(r"^feedentries/query/?$", views.FeedEntriesQueryView.as_view()),

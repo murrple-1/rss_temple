@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import requests
+from django.core.cache import BaseCache, caches
 from django.db import transaction
 from django.db.models import OrderBy, Q
 from django.utils import timezone
@@ -15,6 +16,7 @@ from api import feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
 from api.exceptions import Conflict
+from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.fields import FieldMap
 from api.models import (
     Feed,
@@ -24,6 +26,8 @@ from api.models import (
     User,
 )
 from api.serializers import (
+    FeedFindQuerySerializer,
+    FeedFindSerializer,
     FeedGetSerializer,
     FeedSubscribeSerializer,
     GetManySerializer,
@@ -107,6 +111,42 @@ class FeedsQueryView(APIView):
             ret_obj["totalCount"] = feeds.count()
 
         return Response(ret_obj)
+
+
+class FeedLookupView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Given a URL, return a list of the exposed RSS feeds",
+        operation_description="Given a URL, return a list of the exposed RSS feeds",
+        query_serializer=FeedFindQuerySerializer,
+        responses={200: FeedFindSerializer(many=True)},
+    )
+    def get(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        serializer = FeedFindQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        url = cast(str, url_normalize(serializer.validated_data["url"]))
+
+        cache_key = f"exposed_feeds_{url}"
+        exposed_feeds: list[ExposedFeed] | None = cache.get(cache_key)
+        cache_hit = True
+        if exposed_feeds is None:
+            cache_hit = False
+            exposed_feeds = extract_exposed_feeds(url)
+            cache.set(cache_key, exposed_feeds)
+
+        response = Response(
+            [
+                {
+                    "title": ef.title,
+                    "href": ef.href,
+                }
+                for ef in exposed_feeds
+            ]
+        )
+        response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
+        return response
 
 
 class FeedSubscribeView(APIView):
