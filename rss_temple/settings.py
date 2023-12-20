@@ -417,6 +417,8 @@ LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
 LABELING_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 
+EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None = 60.0 * 60.0 * 12.0  # 12 hours
+
 try:
     from .local_settings import *
 except ImportError:

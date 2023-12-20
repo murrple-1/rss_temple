@@ -106,34 +106,35 @@ class FeedTestCase(TestFileServerTestCase):
 
         url = f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml"
 
-        cache_key = f"exposed_feeds_{url}"
-        self.assertFalse(cache.delete(cache_key))
+        with self.settings(EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS=(60.0 * 5.0)):
+            cache_key = f"exposed_feeds_{url}"
+            self.assertFalse(cache.delete(cache_key))
 
-        self.generate_credentials()
+            self.generate_credentials()
 
-        response = self.client.get(
-            "/api/feed/lookup",
-            {"url": url},
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+            response = self.client.get(
+                "/api/feed/lookup",
+                {"url": url},
+            )
+            self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = response.json()
+            json_ = response.json()
 
-        self.assertIs(type(json_), list)
-        self.assertEqual(len(json_), 1)
-        self.assertEqual(response.headers["X-Cache-Hit"], "NO")
+            self.assertIs(type(json_), list)
+            self.assertEqual(len(json_), 1)
+            self.assertEqual(response.headers["X-Cache-Hit"], "NO")
 
-        response = self.client.get(
-            "/api/feed/lookup",
-            {"url": url},
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+            response = self.client.get(
+                "/api/feed/lookup",
+                {"url": url},
+            )
+            self.assertEqual(response.status_code, 200, response.content)
 
-        json_ = response.json()
+            json_ = response.json()
 
-        self.assertIs(type(json_), list)
-        self.assertEqual(len(json_), 1)
-        self.assertEqual(response.headers["X-Cache-Hit"], "YES")
+            self.assertIs(type(json_), list)
+            self.assertEqual(len(json_), 1)
+            self.assertEqual(response.headers["X-Cache-Hit"], "YES")
 
     @tag("slow")
     def test_FeedSubscribeView_post(self):

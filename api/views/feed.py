@@ -1,9 +1,12 @@
 from typing import Any, cast
 
 import requests
+from django.conf import settings
 from django.core.cache import BaseCache, caches
+from django.core.signals import setting_changed
 from django.db import transaction
 from django.db.models import OrderBy, Q
+from django.dispatch import receiver
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
@@ -34,6 +37,18 @@ from api.serializers import (
 )
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
+
+_EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
+
+    _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS = settings.EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
+
+
+_load_global_settings()
 
 _OBJECT_NAME = "feed"
 
@@ -134,7 +149,7 @@ class FeedLookupView(APIView):
         if exposed_feeds is None:
             cache_hit = False
             exposed_feeds = extract_exposed_feeds(url)
-            cache.set(cache_key, exposed_feeds)
+            cache.set(cache_key, exposed_feeds, _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS)
 
         response = Response(
             [
