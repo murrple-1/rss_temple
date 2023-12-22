@@ -43,6 +43,7 @@ services:
                  sleep 5
                done
 
+               python ./manage.py checkclassifierlabels
 
                exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py schedulerdaemon
               "
