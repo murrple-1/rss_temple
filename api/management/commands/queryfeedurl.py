@@ -25,4 +25,5 @@ class Command(BaseCommand):
             print_entries=options["print_entries"],
             with_content=options["with_content"],
             max_db_feed_entries=options["max_db_feed_entries"],
+            verbosity=options["verbosity"],
         )

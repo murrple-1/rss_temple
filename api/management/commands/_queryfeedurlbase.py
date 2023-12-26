@@ -1,5 +1,5 @@
 import traceback
-from typing import Any, Iterable
+from typing import Any, Collection
 
 import requests
 from django.core.management.base import BaseCommand as BaseCommand_
@@ -17,12 +17,13 @@ from api.text_classifier.prep_content import prep_for_lang_detection
 class BaseCommand(BaseCommand_):
     def _query_feed_url(
         self,
-        normalized_feed_urls: Iterable[str],
+        normalized_feed_urls: Collection[str],
         save=False,
         print_feeds=False,
         print_entries=False,
         with_content=False,
         max_db_feed_entries=20,
+        verbosity=1,
     ):
         now = timezone.now()
 
@@ -30,8 +31,18 @@ class BaseCommand(BaseCommand_):
         new_feeds: list[Feed] = []
         feed_entries: list[FeedEntry] = []
         new_feed_entries: list[FeedEntry] = []
+        failed_feed_urls: list[str] = []
         response: requests.Response
-        for feed_url in normalized_feed_urls:
+
+        url_count = len(normalized_feed_urls)
+        for i, feed_url in enumerate(normalized_feed_urls):
+            if url_count > 1:
+                self.stderr.write(
+                    self.style.NOTICE(
+                        f"querying feed {i + 1}/{url_count} ({feed_url})..."
+                    )
+                )
+
             try:
                 feed = Feed.objects.prefetch_related("feed_entries").get(
                     feed_url=feed_url
@@ -43,11 +54,13 @@ class BaseCommand(BaseCommand_):
                         response = rss_requests.get(feed_url)
                         response.raise_for_status()
                     except requests.exceptions.RequestException:
-                        self.stderr.write(
-                            self.style.ERROR(
-                                f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                        if verbosity >= 2:
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                                )
                             )
-                        )
+                        failed_feed_urls.append(feed_url)
                         continue
 
                     try:
@@ -71,39 +84,49 @@ class BaseCommand(BaseCommand_):
                     response = rss_requests.get(feed_url)
                     response.raise_for_status()
                 except requests.exceptions.RequestException:
-                    self.stderr.write(
-                        self.style.ERROR(
-                            f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                    if verbosity >= 2:
+                        self.stderr.write(
+                            self.style.ERROR(
+                                f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                            )
                         )
-                    )
+                    failed_feed_urls.append(feed_url)
                     continue
 
                 d: Any
                 try:
                     d = feed_handler.text_2_d(response.text)
                 except feed_handler.FeedHandlerError:
-                    self.stderr.write(
-                        self.style.ERROR(
-                            f"unable to parse '{feed_url}': {traceback.format_exc()}"
+                    if verbosity >= 2:
+                        self.stderr.write(
+                            self.style.ERROR(
+                                f"unable to parse '{feed_url}': {traceback.format_exc()}"
+                            )
                         )
-                    )
+                    failed_feed_urls.append(feed_url)
                     continue
 
                 feed = feed_handler.d_feed_2_feed(d.feed, feed_url, now)
                 feeds.append(feed)
                 new_feeds.append(feed)
 
+                seen_urls: set[str] = set()
                 for index, d_entry in enumerate(d.get("entries", [])):
                     feed_entry: FeedEntry
                     try:
                         feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
                     except ValueError:  # pragma: no cover
-                        self.stderr.write(
-                            self.style.ERROR(
-                                f"unable to parse d_entry {index}\n{traceback.format_exc()}"
+                        if verbosity >= 2:
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"unable to parse d_entry {index}\n{traceback.format_exc()}"
+                                )
                             )
-                        )
                         continue
+
+                    if feed_entry.url in seen_urls:
+                        continue
+                    seen_urls.add(feed_entry.url)
 
                     feed_entry.feed = feed
 
@@ -113,6 +136,11 @@ class BaseCommand(BaseCommand_):
 
                     feed_entries.append(feed_entry)
                     new_feed_entries.append(feed_entry)
+
+        if failed_feed_urls:
+            self.stderr.write(
+                self.style.ERROR(f"failed to query: {', '.join(failed_feed_urls)}")
+            )
 
         if save and new_feeds:
             with transaction.atomic():

@@ -15,12 +15,17 @@ def feed_scrape(feed: Feed, response_text: str):
 
     now = timezone.now()
 
+    seen_urls: set[str] = set()
     for d_entry in d.get("entries", []):
         feed_entry: FeedEntry
         try:
             feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
         except ValueError:  # pragma: no cover
             continue
+
+        if feed_entry.url in seen_urls:
+            continue
+        seen_urls.add(feed_entry.url)
 
         old_feed_entry: FeedEntry | None
         old_feed_entry_get_kwargs = {
