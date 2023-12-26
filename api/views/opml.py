@@ -110,13 +110,13 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
         opml_element: Element
         try:
             opml_element = defused_fromstring(request.body)
-        except defused_ParseError:
-            raise ParseError
+        except defused_ParseError as e:
+            raise ParseError(e.msg)
 
         try:
             opml_util.schema().validate(opml_element)
-        except xmlschema.XMLSchemaException:
-            raise ValidationError({".": "OPML not valid"})
+        except xmlschema.XMLSchemaException as e:
+            raise ValidationError({".": str(e)})
 
         grouped_entries = opml_util.get_grouped_entries(opml_element)
 

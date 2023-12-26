@@ -19,7 +19,7 @@ class HasLowercaseValidator:
                 code="password_no_lowercase",
             )
 
-    def get_help_text(self):
+    def get_help_text(self):  # pragma: no cover
         return "Your password must contain at least 1 lowercase letter"
 
 
@@ -31,7 +31,7 @@ class HasUppercaseValidator:
                 code="password_no_uppercase",
             )
 
-    def get_help_text(self):
+    def get_help_text(self):  # pragma: no cover
         return "Your password must contain at least 1 uppercase letter"
 
 
@@ -43,7 +43,7 @@ class HasDigitValidator:
                 code="password_no_digit",
             )
 
-    def get_help_text(self):
+    def get_help_text(self):  # pragma: no cover
         return "Your password must contain at least 1 digit"
 
 
@@ -63,7 +63,7 @@ class HasSpecialCharacterValidator:
                 # params={"special_characters": "".join(self.special_characters)},
             )
 
-    def get_help_text(self):
+    def get_help_text(self):  # pragma: no cover
         return f"Your password must contain at least 1 special character ({''.join(self.special_characters)})"
 
 

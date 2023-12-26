@@ -21,7 +21,7 @@ class Command(BaseCommand):
         self._query_feed_url(
             [cast(str, url_normalize(options["feed_url"]))],
             save=options["save"],
-            print_feed=options["print_feed"],
+            print_feeds=options["print_feed"],
             print_entries=options["print_entries"],
             with_content=options["with_content"],
             max_db_feed_entries=options["max_db_feed_entries"],

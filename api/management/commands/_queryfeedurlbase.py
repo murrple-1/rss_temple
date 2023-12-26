@@ -1,6 +1,7 @@
 import traceback
 from typing import Any, Iterable
 
+import requests
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -18,7 +19,7 @@ class BaseCommand(BaseCommand_):
         self,
         normalized_feed_urls: Iterable[str],
         save=False,
-        print_feed=False,
+        print_feeds=False,
         print_entries=False,
         with_content=False,
         max_db_feed_entries=20,
@@ -29,6 +30,7 @@ class BaseCommand(BaseCommand_):
         new_feeds: list[Feed] = []
         feed_entries: list[FeedEntry] = []
         new_feed_entries: list[FeedEntry] = []
+        response: requests.Response
         for feed_url in normalized_feed_urls:
             try:
                 feed = Feed.objects.prefetch_related("feed_entries").get(
@@ -37,8 +39,17 @@ class BaseCommand(BaseCommand_):
                 feeds.append(feed)
 
                 if save:
-                    response = rss_requests.get(feed_url)
-                    response.raise_for_status()
+                    try:
+                        response = rss_requests.get(feed_url)
+                        response.raise_for_status()
+                    except requests.exceptions.RequestException:
+                        self.stderr.write(
+                            self.style.ERROR(
+                                f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                            )
+                        )
+                        continue
+
                     try:
                         with transaction.atomic():
                             feed_scrape(feed, response.text)
@@ -56,10 +67,27 @@ class BaseCommand(BaseCommand_):
                     ]
                 )
             except Feed.DoesNotExist:
-                response = rss_requests.get(feed_url)
-                response.raise_for_status()
+                try:
+                    response = rss_requests.get(feed_url)
+                    response.raise_for_status()
+                except requests.exceptions.RequestException:
+                    self.stderr.write(
+                        self.style.ERROR(
+                            f"unable to load '{feed_url}'\n{traceback.format_exc()}"
+                        )
+                    )
+                    continue
 
-                d = feed_handler.text_2_d(response.text)
+                d: Any
+                try:
+                    d = feed_handler.text_2_d(response.text)
+                except feed_handler.FeedHandlerError:
+                    self.stderr.write(
+                        self.style.ERROR(
+                            f"unable to parse '{feed_url}': {traceback.format_exc()}"
+                        )
+                    )
+                    continue
 
                 feed = feed_handler.d_feed_2_feed(d.feed, feed_url, now)
                 feeds.append(feed)
@@ -95,7 +123,7 @@ class BaseCommand(BaseCommand_):
                 FeedEntry.objects.bulk_create(new_feed_entries)
 
         table: list[list[Any]]
-        if print_feed:
+        if print_feeds:
             self.stdout.write(
                 tabulate(
                     (

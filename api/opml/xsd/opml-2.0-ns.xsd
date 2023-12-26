@@ -18,6 +18,7 @@
     <complexType name="Head">
         <sequence>
             <element name="title" type="string" minOccurs="0" maxOccurs="1" />
+            <element name="url" type="xs:string" minOccurs="0" maxOccurs="1" />
             <element name="dateCreated" type="opml:RFC822Date" minOccurs="0" maxOccurs="1" />
             <element name="dateModified" type="opml:RFC822Date" minOccurs="0" maxOccurs="1" />
             <element name="ownerName" type="string" minOccurs="0" maxOccurs="1" />

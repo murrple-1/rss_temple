@@ -261,7 +261,7 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         return user
 
 
-class SocialLoginSerializer(SocialLoginSerializer_):
+class SocialLoginSerializer(SocialLoginSerializer_):  # pragma: no cover
     # copy-paste of `SocialLoginSerializer_.validate()`, but I wanted
     # the exception raised if `account_exists` to be different than
     # the original implementation

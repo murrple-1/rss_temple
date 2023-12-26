@@ -19,6 +19,7 @@
     <xs:complexType name="Head">
         <xs:sequence>
             <xs:element name="title" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="url" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="dateCreated" type="RFC822Date" minOccurs="0" maxOccurs="1" />
             <xs:element name="dateModified" type="RFC822Date" minOccurs="0" maxOccurs="1" />
             <xs:element name="ownerName" type="xs:string" minOccurs="0" maxOccurs="1" />
