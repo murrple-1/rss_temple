@@ -54,6 +54,7 @@ def feed_scrape(feed: Feed, response_text: str):
                     "author_name",
                     "created_at",
                     "updated_at",
+                    "language_id",
                 ]
             )
         else:

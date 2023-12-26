@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
+from django.db import transaction
 
 from api import rss_requests
 from api.models import Feed
@@ -27,4 +28,6 @@ class Command(BaseCommand):
 
         response = rss_requests.get(feed.feed_url)
         response.raise_for_status()
-        feed_scrape(feed, response.text)
+        with transaction.atomic():
+            feed_scrape(feed, response.text)
+            feed.save(update_fields=["db_updated_at"])

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import cast
+from typing import Iterable, NamedTuple, cast
 from xml.etree.ElementTree import Element
 
 import lxml.etree as lxml_etree
@@ -15,7 +15,6 @@ from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from url_normalize import url_normalize
 
 from api import grace_period_util
 from api import opml as opml_util
@@ -106,6 +105,8 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
 This will return [OPML](http://opml.org/spec2.opml) XML representing your subscribed feeds.""",
     )
     def post(self, request: Request):
+        user = cast(User, request.user)
+
         opml_element: Element
         try:
             opml_element = defused_fromstring(request.body)
@@ -117,138 +118,57 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
         except xmlschema.XMLSchemaException:
             raise ValidationError({".": "OPML not valid"})
 
-        outline_dict: dict[str, set[tuple[str, str]]] = {}
+        grouped_entries = opml_util.get_grouped_entries(opml_element)
 
-        for outer_outline_element in opml_element.findall("./body/outline"):
-            outer_outline_name = outer_outline_element.attrib["title"]
-
-            if outer_outline_name not in outline_dict:
-                outline_dict[outer_outline_name] = set()
-
-            for outline_element in outer_outline_element.findall("./outline"):
-                outline_name = outline_element.attrib["title"]
-                outline_xml_url = cast(
-                    str, url_normalize(outline_element.attrib["xmlUrl"])
-                )
-
-                outline_dict[outer_outline_name].add((outline_name, outline_xml_url))
-
-        existing_subscriptions = set(
-            SubscribedFeedUserMapping.objects.filter(
-                user=cast(User, request.user)
-            ).values_list("feed__feed_url", flat=True)
+        existing_subscriptions: set[str] = set(
+            user.subscribed_feeds.values_list("feed_url", flat=True)
         )
 
-        existing_categories = {
+        existing_user_categories: dict[str, UserCategory] = {
             user_category.text: user_category
-            for user_category in UserCategory.objects.filter(
-                user=cast(User, request.user)
-            )
+            for user_category in user.user_categories.all()
         }
 
-        user_category: UserCategory | None
-        feed: Feed | None
-
-        existing_category_mappings: dict[str, set[str]] = defaultdict(set)
-        for user_category in cast(User, request.user).user_categories.all():
-            for feed in user_category.feeds.all():
-                assert feed is not None
-                assert user_category is not None
-                existing_category_mappings[user_category.text].add(feed.feed_url)
-
-        feeds_dict: dict[str, Feed | None] = {}
-
-        feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None = None
-        feed_subscription_progress_entry_descriptors: list[
-            FeedSubscriptionProgressEntryDescriptor
-        ] = []
-
-        for outer_outline_name, outline_set in outline_dict.items():
-            for outline_name, outline_xml_url in outline_set:
-                if outline_xml_url not in feeds_dict:
-                    try:
-                        feeds_dict[outline_xml_url] = Feed.objects.get(
-                            feed_url=outline_xml_url
-                        )
-                    except Feed.DoesNotExist:
-                        if feed_subscription_progress_entry is None:
-                            feed_subscription_progress_entry = (
-                                FeedSubscriptionProgressEntry(
-                                    user=cast(User, request.user)
-                                )
-                            )
-
-                        feed_subscription_progress_entry_descriptor = FeedSubscriptionProgressEntryDescriptor(
-                            feed_subscription_progress_entry=feed_subscription_progress_entry,
-                            feed_url=outline_xml_url,
-                            custom_feed_title=outline_name,
-                            user_category_text=outer_outline_name,
-                        )
-                        feed_subscription_progress_entry_descriptors.append(
-                            feed_subscription_progress_entry_descriptor
-                        )
-
-                        feeds_dict[outline_xml_url] = None
-
-        user_categories: list[UserCategory] = []
-        subscribed_feed_user_mappings: list[SubscribedFeedUserMapping] = []
-        feed_url_user_categories: dict[str, list[UserCategory]] = defaultdict(list)
-
-        for outer_outline_name, outline_set in outline_dict.items():
-            user_category = existing_categories.get(outer_outline_name)
-            if user_category is None:
-                user_category = UserCategory(
-                    user=cast(User, request.user), text=outer_outline_name
+        existing_category_name_to_urls_mappings: dict[str, set[str]] = defaultdict(set)
+        for user_category in existing_user_categories.values():
+            for feed in cast(Iterable[Feed], user_category.feeds.all()):
+                existing_category_name_to_urls_mappings[user_category.text].add(
+                    feed.feed_url
                 )
-                user_categories.append(user_category)
-                existing_categories[user_category.text] = user_category
 
-            existing_category_mapping_set = existing_category_mappings.get(
-                outer_outline_name
-            )
+        (
+            feeds_dict,
+            feed_subscription_progress_entry,
+            feed_subscription_progress_entry_descriptors,
+        ) = OPMLView._get_or_create_feeds(user, grouped_entries)
 
-            if existing_category_mapping_set is None:
-                existing_category_mapping_set = set()
-                existing_category_mappings[
-                    outer_outline_name
-                ] = existing_category_mapping_set
-
-            for outline_name, outline_xml_url in outline_set:
-                feed = feeds_dict[outline_xml_url]
-                if feed is not None:
-                    custom_title = outline_name if outline_name != feed.title else None
-
-                    if outline_xml_url not in existing_subscriptions:
-                        subscribed_feed_user_mapping = SubscribedFeedUserMapping(
-                            feed=feed,
-                            user=cast(User, request.user),
-                            custom_feed_title=custom_title,
-                        )
-                        subscribed_feed_user_mappings.append(
-                            subscribed_feed_user_mapping
-                        )
-                        existing_subscriptions.add(outline_xml_url)
-
-                    if outline_xml_url not in existing_category_mapping_set:
-                        feed_url_user_categories[feed.feed_url].append(user_category)
-                        existing_category_mapping_set.add(outline_xml_url)
+        (
+            user_categories,
+            subscribed_feed_user_mappings,
+            feed_url_user_categories,
+        ) = OPMLView._create_subscriptions_and_caregories(
+            user,
+            grouped_entries,
+            existing_user_categories,
+            existing_category_name_to_urls_mappings,
+            existing_subscriptions,
+            feeds_dict,
+        )
 
         with transaction.atomic():
             for user_category in user_categories:
                 user_category.save()
 
             SubscribedFeedUserMapping.objects.bulk_create(subscribed_feed_user_mappings)
-            for feed_url, user_categories in feed_url_user_categories.items():
-                feed = feeds_dict[feed_url]
-                assert feed is not None
+            for feed_url, user_categories_ in feed_url_user_categories.items():
+                if (feed_ := feeds_dict[feed_url]) is not None:
+                    feed_.user_categories.add(*user_categories_)
 
-                feed.user_categories.add(*user_categories)
-
-            for feed in feeds_dict.values():
-                if feed is not None:
+            for feed_ in feeds_dict.values():
+                if feed_ is not None:
                     ReadFeedEntryUserMapping.objects.bulk_create(
                         grace_period_util.generate_grace_period_read_entries(
-                            feed, cast(User, request.user)
+                            feed_, cast(User, request.user)
                         ),
                         ignore_conflicts=True,
                     )
@@ -260,7 +180,112 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
                     feed_subscription_progress_entry_descriptors
                 )
 
-        if feed_subscription_progress_entry is None:
-            return Response(status=204)
-        else:
-            return Response(str(feed_subscription_progress_entry.uuid), status=202)
+        return (
+            Response(status=204)
+            if feed_subscription_progress_entry is None
+            else Response(str(feed_subscription_progress_entry.uuid), status=202)
+        )
+
+    class _GetFeedsOutput(NamedTuple):
+        feeds_dict: dict[str, Feed | None]
+        feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None
+        feed_subscription_progress_entry_descriptors: list[
+            FeedSubscriptionProgressEntryDescriptor
+        ]
+
+    @classmethod
+    def _get_or_create_feeds(
+        cls, user: User, grouped_entries: dict[str | None, frozenset[opml_util.Entry]]
+    ) -> _GetFeedsOutput:
+        feeds_dict: dict[str, Feed | None] = {
+            f.feed_url: f
+            for f in Feed.objects.filter(
+                feed_url__in=frozenset(
+                    t.url for e in grouped_entries.values() for t in e
+                )
+            )
+        }
+
+        feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None = None
+        feed_subscription_progress_entry_descriptors: list[
+            FeedSubscriptionProgressEntryDescriptor
+        ] = []
+
+        for group_name, entries in grouped_entries.items():
+            for title, url in entries:
+                if url not in feeds_dict:
+                    if feed_subscription_progress_entry is None:
+                        feed_subscription_progress_entry = (
+                            FeedSubscriptionProgressEntry(user=user)
+                        )
+
+                    feed_subscription_progress_entry_descriptors.append(
+                        FeedSubscriptionProgressEntryDescriptor(
+                            feed_subscription_progress_entry=feed_subscription_progress_entry,
+                            feed_url=url,
+                            custom_feed_title=title,
+                            user_category_text=group_name,
+                        )
+                    )
+
+                    feeds_dict[url] = None
+
+        return cls._GetFeedsOutput(
+            feeds_dict,
+            feed_subscription_progress_entry,
+            feed_subscription_progress_entry_descriptors,
+        )
+
+    class _GetSubscriptionMappingsOutput(NamedTuple):
+        user_categories: list[UserCategory]
+        subscribed_feed_user_mappings: list[SubscribedFeedUserMapping]
+        feed_url_user_categories: dict[str, list[UserCategory]]
+
+    @classmethod
+    def _create_subscriptions_and_caregories(
+        cls,
+        user: User,
+        grouped_entries: dict[str | None, frozenset[opml_util.Entry]],
+        existing_user_categories: dict[str, UserCategory],
+        existing_category_name_to_urls_mappings: dict[str, set[str]],
+        existing_subscriptions: set[str],
+        feeds_dict: dict[str, Feed | None],
+    ) -> _GetSubscriptionMappingsOutput:
+        user_categories: list[UserCategory] = []
+        subscribed_feed_user_mappings: list[SubscribedFeedUserMapping] = []
+        feed_url_user_categories: dict[str, list[UserCategory]] = defaultdict(list)
+
+        for group_name, entries in grouped_entries.items():
+            if group_name is not None:
+                user_category = existing_user_categories.get(group_name)
+                if user_category is None:
+                    user_category = UserCategory(user=user, text=group_name)
+                    user_categories.append(user_category)
+                    existing_user_categories[user_category.text] = user_category
+
+                category_urls = existing_category_name_to_urls_mappings[group_name]
+
+                for title, url in entries:
+                    if url not in category_urls:
+                        feed_url_user_categories[url].append(user_category)
+                        category_urls.add(url)
+
+            for title, url in entries:
+                feed = feeds_dict[url]
+                if feed is not None:
+                    custom_title = title if title != feed.title else None
+
+                    if url not in existing_subscriptions:
+                        subscribed_feed_user_mapping = SubscribedFeedUserMapping(
+                            feed=feed,
+                            user=user,
+                            custom_feed_title=custom_title,
+                        )
+                        subscribed_feed_user_mappings.append(
+                            subscribed_feed_user_mapping
+                        )
+                        existing_subscriptions.add(url)
+
+        return cls._GetSubscriptionMappingsOutput(
+            user_categories, subscribed_feed_user_mappings, feed_url_user_categories
+        )
