@@ -144,17 +144,12 @@ def _generate_feed(
 
     feed_entries: list[FeedEntry] = []
 
-    seen_urls: set[str] = set()
     for d_entry in d.get("entries", []):
         feed_entry: FeedEntry
         try:
             feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
         except ValueError:
             continue
-
-        if feed_entry.url in seen_urls:
-            continue
-        seen_urls.add(feed_entry.url)
 
         feed_entry.feed = feed
 
@@ -164,7 +159,7 @@ def _generate_feed(
 
         feed_entries.append(feed_entry)
 
-    FeedEntry.objects.bulk_create(feed_entries)
+    FeedEntry.objects.bulk_create(feed_entries, ignore_conflicts=True)
 
     return feed
 

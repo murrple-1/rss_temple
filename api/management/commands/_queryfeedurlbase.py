@@ -110,7 +110,6 @@ class BaseCommand(BaseCommand_):
                 feeds.append(feed)
                 new_feeds.append(feed)
 
-                seen_urls: set[str] = set()
                 for index, d_entry in enumerate(d.get("entries", [])):
                     feed_entry: FeedEntry
                     try:
@@ -123,10 +122,6 @@ class BaseCommand(BaseCommand_):
                                 )
                             )
                         continue
-
-                    if feed_entry.url in seen_urls:
-                        continue
-                    seen_urls.add(feed_entry.url)
 
                     feed_entry.feed = feed
 
@@ -143,12 +138,11 @@ class BaseCommand(BaseCommand_):
             )
 
         if save and new_feeds:
+            for feed in new_feeds:
+                feed.with_subscription_data()
             with transaction.atomic():
-                for feed in new_feeds:
-                    feed.with_subscription_data()
-                    feed.save()
-
-                FeedEntry.objects.bulk_create(new_feed_entries)
+                Feed.objects.bulk_create(new_feeds, ignore_conflicts=True)
+                FeedEntry.objects.bulk_create(new_feed_entries, ignore_conflicts=True)
 
         table: list[list[Any]]
         if print_feeds:
