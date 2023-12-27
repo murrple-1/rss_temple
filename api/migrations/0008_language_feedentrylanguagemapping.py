@@ -6,7 +6,7 @@ import django.db.models.deletion
 from django.db import migrations, models
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
-from lingua import IsoCode639_3, Language
+from lingua import Language
 
 
 def _forwards_func(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
@@ -17,9 +17,10 @@ def _forwards_func(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
     )  # from https://en.wikipedia.org/wiki/ISO_639-3#Special_codes
     Language_.objects.bulk_create(
         Language_(
-            iso639_3=iso639_3.name, name=Language.from_iso_code_639_3(iso639_3).name
+            iso639_3=l.iso_code_639_3.name,
+            name=l.name,
         )
-        for iso639_3 in IsoCode639_3
+        for l in Language.all()
     )
 
 

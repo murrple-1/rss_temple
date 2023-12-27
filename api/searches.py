@@ -4,7 +4,7 @@ from typing import Callable, cast
 from django.db import connection
 from django.db.models import Q
 from django.http import HttpRequest
-from lingua import IsoCode639_1, IsoCode639_3, Language
+from lingua import Language
 from pyparsing import ParseException, ParseResults
 
 from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
@@ -21,20 +21,27 @@ from api.search.parser import parser
 _logger = logging.getLogger("rss_temple")
 
 
+_iso_code_639_3_names: frozenset[str] = frozenset(
+    [l.iso_code_639_3.name for l in Language.all()] + ["UND"]
+)
+
+
 class LanguageIso639_3Set(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str):
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
-            if l == "UND":
-                langs.add("UND")
+            if l in _iso_code_639_3_names:
+                langs.add(l)
             else:
-                try:
-                    langs.add(IsoCode639_3[l].name)
-                except KeyError:
-                    raise ValueError("malformed")
+                raise ValueError("malformed")
         return langs
+
+
+_iso_code_639_1_names: frozenset[str] = frozenset(
+    [l.iso_code_639_1.name for l in Language.all()] + ["UN"]
+)
 
 
 class LanguageIso639_1Set(CustomConvertTo):
@@ -43,14 +50,16 @@ class LanguageIso639_1Set(CustomConvertTo):
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
-            if l == "UN":
-                langs.add("UN")
+            if l in _iso_code_639_1_names:
+                langs.add(l)
             else:
-                try:
-                    langs.add(IsoCode639_1[l].name)
-                except KeyError:
-                    raise ValueError("malformed")
+                raise ValueError("malformed")
         return langs
+
+
+_language_names: frozenset[str] = frozenset(
+    [l.name for l in Language.all()] + ["UNDEFINED"]
+)
 
 
 class LanguageNameSet(CustomConvertTo):
@@ -59,13 +68,10 @@ class LanguageNameSet(CustomConvertTo):
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
-            if l == "UNDEFINED":
-                langs.add("UNDEFINED")
+            if l in _language_names:
+                langs.add(l)
             else:
-                try:
-                    langs.add(Language[l].name)
-                except KeyError:
-                    raise ValueError("malformed")
+                raise ValueError("malformed")
         return langs
 
 

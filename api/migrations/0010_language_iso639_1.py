@@ -3,17 +3,19 @@
 from django.db import migrations, models
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
-from lingua import IsoCode639_3, Language
+from lingua import Language
 
 
 def _forwards_func(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
     Language_ = apps.get_model("api", "Language")
 
+    iso639_3to1_mappings: dict[str, str] = {
+        l.iso_code_639_3.name: l.iso_code_639_1.name for l in Language.all()
+    }
+
     Language_.objects.filter(iso639_3="UND").update(iso639_1="UN")
     for lang in Language_.objects.exclude(iso639_3="UND"):
-        lang.iso639_1 = Language.from_iso_code_639_3(
-            IsoCode639_3[lang.iso639_3]
-        ).iso_code_639_1.name
+        lang.iso639_1 = iso639_3to1_mappings[lang.iso639_3]
         lang.save(update_fields=("iso639_1",))
 
 

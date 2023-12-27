@@ -22,24 +22,18 @@ def reusable_captcha_seed() -> str:
 
 
 def db_migrations_state():
-    "Setup the DB as if the various RunPython migration scripts were run"
+    "Setup the DB as-if the various RunPython migration scripts were run"
     Language_.objects.get_or_create(
         iso639_3="UND", defaults={"iso639_1": "UN", "name": "UNDEFINED"}
     )
     Language_.objects.bulk_create(
         (
             Language_(
-                iso639_3=iso639_3.name,
-                iso639_1=lang.iso_code_639_1.name,
-                name=lang.name,
+                iso639_3=l.iso_code_639_3.name,
+                iso639_1=l.iso_code_639_1.name,
+                name=l.name,
             )
-            for iso639_3, lang in zip(
-                (iso639_3_ for iso639_3_ in IsoCode639_3),
-                (
-                    Language.from_iso_code_639_3(iso639_3__)
-                    for iso639_3__ in IsoCode639_3
-                ),
-            )
+            for l in Language.all()
         ),
         ignore_conflicts=True,
     )
