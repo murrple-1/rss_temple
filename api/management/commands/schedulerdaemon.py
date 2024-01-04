@@ -182,6 +182,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--feed-scrape-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
+        parser.add_argument(
+            "--feed-scrape-feed-max-size", type=int, default=1000 * 1000
+        )
+        parser.add_argument("--feed-scrape-feed-chunk-size", type=int, default=1000)
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
 
         parser.add_argument(
@@ -296,6 +300,8 @@ class Command(BaseCommand):
                 "options": {
                     "max_age": options["feed_scrape_max_age"],
                 },
+                "feed_max_size": options["feed_scrape_feed_max_size"],
+                "feed_chunk_size": options["feed_scrape_feed_chunk_size"],
                 "db_limit": options["feed_scrape_db_limit"],
             },
         )

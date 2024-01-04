@@ -105,7 +105,7 @@ def label_users(top_x=10) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def feed_scrape(feed_max_size: int, feed_chunk_size=1024, db_limit=1000) -> None:
+def feed_scrape(feed_max_size=1000 * 1000, feed_chunk_size=1024, db_limit=1000) -> None:
     count = 0
     with transaction.atomic():
         for feed in (
