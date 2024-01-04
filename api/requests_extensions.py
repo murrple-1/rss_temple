@@ -11,7 +11,7 @@ def safe_response_content(
 
         if len(content) > max_size:
             raise requests.exceptions.RequestException(
-                "response too big", response=response
+                f"response too big (max size: {max_size} bytes)", response=response
             )
 
     return content
