@@ -371,7 +371,7 @@ else:
 
 DOWNLOAD_MAX_SIZE = int(
     os.getenv("APP_DOWNLOAD_MAX_SIZE", str(1000 * 1000))
-)  # in bytes, 1MB
+)  # in bytes, 1MB. set to -1 for unlimited
 
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 
