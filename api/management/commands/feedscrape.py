@@ -30,7 +30,7 @@ class Command(BaseCommand):
 
         response = rss_requests.get(feed.feed_url, stream=True)
         response.raise_for_status()
-        response_text = safe_response_text(response, settings.DOWNLOAD_MAX_SIZE)
+        response_text = safe_response_text(response, settings.DOWNLOAD_MAX_BYTE_COUNT)
         with transaction.atomic():
             feed_scrape(feed, response_text)
             feed.save(update_fields=["db_updated_at"])

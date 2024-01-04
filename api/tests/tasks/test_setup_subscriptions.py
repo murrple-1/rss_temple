@@ -153,7 +153,7 @@ class TaskTestCase(TestFileServerTestCase):
             FeedSubscriptionProgressEntry.STARTED,
         )
 
-        setup_subscriptions(feed_subscription_progress_entry)
+        setup_subscriptions(feed_subscription_progress_entry, -1)
 
         self.assertEqual(
             feed_subscription_progress_entry.status,

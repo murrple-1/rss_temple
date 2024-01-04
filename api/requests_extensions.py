@@ -2,8 +2,8 @@ import requests
 from requests.models import CONTENT_CHUNK_SIZE
 
 
-def safe_response_content(response: requests.Response, max_size: int) -> bytes:
-    if max_size >= 0:
+def safe_response_content(response: requests.Response, max_byte_count: int) -> bytes:
+    if max_byte_count >= 0:
         byte_count = 0
         content_parts: list[bytes] = []
 
@@ -11,9 +11,10 @@ def safe_response_content(response: requests.Response, max_size: int) -> bytes:
             content_parts.append(chunk)
             byte_count += len(chunk)
 
-            if byte_count > max_size:
+            if byte_count > max_byte_count:
                 raise requests.exceptions.RequestException(
-                    f"response too big (max size: {max_size} bytes)", response=response
+                    f"response too big (max size: {max_byte_count} bytes)",
+                    response=response,
                 )
 
         content = b"".join(content_parts)
@@ -25,11 +26,11 @@ def safe_response_content(response: requests.Response, max_size: int) -> bytes:
 
 def safe_response_text(
     response: requests.Response,
-    max_size: int,
+    max_byte_count: int,
 ) -> str:
-    if max_size >= 0:
+    if max_byte_count >= 0:
         # based heavily on `requests.Response.text()`
-        content = safe_response_content(response, max_size)
+        content = safe_response_content(response, max_byte_count)
 
         if not content:
             return ""

@@ -21,10 +21,10 @@ def is_top_image_needed(content: str) -> bool:
 
 def extract_top_image_src(
     url: str,
+    response_max_byte_count: int,
     min_image_byte_count=4500,
     min_image_width=256,
     min_image_height=256,
-    response_max_size=1000 * 1000,
 ) -> str | None:
     # TODO Currently, the top image is just the OpenGraph image (if it exists).
     # However, in the future, this might be expanded to do some `goose3`-like
@@ -45,7 +45,7 @@ def extract_top_image_src(
 
     response_text: str
     try:
-        response_text = safe_response_text(response, response_max_size)
+        response_text = safe_response_text(response, response_max_byte_count)
     except RequestException as e:  # pragma: no cover
         raise TryAgain from e
 
@@ -106,7 +106,7 @@ def extract_top_image_src(
 
     content: bytes
     try:
-        content = safe_response_content(image_r, response_max_size)
+        content = safe_response_content(image_r, response_max_byte_count)
     except RequestException as e:  # pragma: no cover
         raise TryAgain from e
 

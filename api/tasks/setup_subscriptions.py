@@ -23,7 +23,7 @@ _logger = logging.getLogger("rss_temple")
 
 def setup_subscriptions(
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
-    response_max_size=1000 * 1000,
+    response_max_byte_count: int,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     feeds: dict[str, Feed] = {}
     subscriptions: set[str] = set()
@@ -62,7 +62,7 @@ def setup_subscriptions(
                 feed = Feed.objects.get(feed_url=feed_url)
             except Feed.DoesNotExist:
                 try:
-                    feed = _generate_feed(feed_url, response_max_size)
+                    feed = _generate_feed(feed_url, response_max_byte_count)
                 except (
                     requests.exceptions.RequestException,
                     feed_handler.FeedHandlerError,
@@ -134,14 +134,14 @@ def setup_subscriptions(
 
 def _generate_feed(
     url: str,
-    response_max_size: int,
+    response_max_byte_count: int,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     response = rss_requests.get(url, stream=True)
     response.raise_for_status()
 
     now = timezone.now()
 
-    response_text = safe_response_text(response, response_max_size)
+    response_text = safe_response_text(response, response_max_byte_count)
 
     d = feed_handler.text_2_d(response_text)
     feed = feed_handler.d_feed_2_feed(d.feed, url, now)

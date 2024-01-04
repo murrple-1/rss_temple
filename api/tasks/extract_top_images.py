@@ -16,7 +16,7 @@ def extract_top_images(
     min_image_byte_count: int,
     min_image_width: int,
     min_image_height: int,
-    response_max_size: int,
+    response_max_byte_count: int,
 ) -> int:
     count = 0
     for feed_entry in feed_entry_queryset:
@@ -25,10 +25,10 @@ def extract_top_images(
                 feed_entry.top_image_src = (
                     extract_top_image_src(
                         feed_entry.url,
+                        response_max_byte_count,
                         min_image_byte_count=min_image_byte_count,
                         min_image_width=min_image_width,
                         min_image_height=min_image_height,
-                        response_max_size=response_max_size,
                     )
                     or ""
                 )

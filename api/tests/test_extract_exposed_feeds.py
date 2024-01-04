@@ -57,19 +57,19 @@ class ExtractExposedFeedsTestCase(TestFileServerTestCase):
             ),
         ]:
             with self.subTest(url=url):
-                exposed_feeds = extract_exposed_feeds(url)
+                exposed_feeds = extract_exposed_feeds(url, -1)
                 self.assertEqual(len(exposed_feeds), expected_feed_count)
 
     @tag("slow")
     def test_extract_exposed_feeds_justafeed(self):
         exposed_feeds = extract_exposed_feeds(
-            f"{ExtractExposedFeedsTestCase.live_server_url}/rss_2.0/well_formed.xml"
+            f"{ExtractExposedFeedsTestCase.live_server_url}/rss_2.0/well_formed.xml", -1
         )
         self.assertEqual(len(exposed_feeds), 1)
 
     @tag("slow")
     def test_extract_exposed_feeds_notfound(self):
         exposed_feeds = extract_exposed_feeds(
-            f"{ExtractExposedFeedsTestCase.live_server_url}/not_found.html"
+            f"{ExtractExposedFeedsTestCase.live_server_url}/not_found.html", -1
         )
         self.assertEqual(len(exposed_feeds), 0)

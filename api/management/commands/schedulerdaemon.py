@@ -160,7 +160,9 @@ class Command(BaseCommand):
             "--extract-top-images-min-image-height", type=int, default=250
         )
         parser.add_argument(
-            "--extract-top-images-response-max-size", type=int, default=1000 * 1000
+            "--extract-top-images-response-max-byte-count",
+            type=int,
+            default=1000 * 1000,
         )
         parser.add_argument("--extract-top-images-db-limit", type=int, default=50)
         parser.add_argument("--extract-top-images-since")
@@ -180,7 +182,7 @@ class Command(BaseCommand):
             "--feed-scrape-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
         parser.add_argument(
-            "--feed-scrape-feed-max-size", type=int, default=1000 * 1000
+            "--feed-scrape-response-max-byte-count", type=int, default=1000 * 1000
         )
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
 
@@ -191,7 +193,9 @@ class Command(BaseCommand):
             "--setup-subscriptions-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
         parser.add_argument(
-            "--setup-subscriptions-response-max-size", type=int, default=1000 * 1000
+            "--setup-subscriptions-response-max-byte-count",
+            type=int,
+            default=1000 * 1000,
         )
 
         parser.add_argument(
@@ -235,6 +239,7 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
+            args=(options["extract_top_images_response_max_byte_count"],),
             kwargs={
                 "max_processing_attempts": options[
                     "extract_top_images_max_processing_attempts"
@@ -244,7 +249,6 @@ class Command(BaseCommand):
                 ],
                 "min_image_width": options["extract_top_images_min_image_width"],
                 "min_image_height": options["extract_top_images_min_image_height"],
-                "response_max_size": options["extract_top_images_response_max_size"],
                 "db_limit": options["extract_top_images_db_limit"],
                 "since": options["extract_top_images_since"],
             },
@@ -286,11 +290,11 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
+            args=(options["feed_scrape_response_max_byte_count"],),
             kwargs={
                 "options": {
                     "max_age": options["feed_scrape_max_age"],
                 },
-                "feed_max_size": options["feed_scrape_feed_max_size"],
                 "db_limit": options["feed_scrape_db_limit"],
             },
         )
@@ -303,11 +307,11 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
+            args=(options["setup_subscriptions_response_max_byte_count"],),
             kwargs={
                 "options": {
                     "max_age": options["setup_subscriptions_max_age"],
                 },
-                "response_max_size": options["setup_subscriptions_response_max_size"],
             },
         )
 

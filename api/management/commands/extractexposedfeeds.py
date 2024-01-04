@@ -16,7 +16,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         exposed_feeds = extract_exposed_feeds(
             options["url"],
-            response_max_size=settings.DOWNLOAD_MAX_SIZE,
+            settings.DOWNLOAD_MAX_BYTE_COUNT,
         )
         self.stderr.write(
             self.style.NOTICE(
