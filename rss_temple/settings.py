@@ -369,8 +369,12 @@ elif _test_runner_type == "timed":
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
-FEED_MAX_SIZE = int(os.getenv("APP_FEED_MAX_SIZE", str(1000 * 1000)))  # in bytes, 1MB
-FEED_CHUNK_SIZE = 1024  # in bytes, 1KB
+DOWNLOAD_MAX_SIZE = int(
+    os.getenv("APP_DOWNLOAD_MAX_SIZE", str(1000 * 1000))
+)  # in bytes, 1MB
+DOWNLOAD_CHUNK_SIZE = int(
+    os.getenv("APP_DOWNLOAD_CHUNK_SIZE", str(1000))
+)  # in bytes, 1KB
 
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 

@@ -56,7 +56,9 @@ class BaseCommand(BaseCommand_):
                         response = rss_requests.get(feed_url, stream=True)
                         response.raise_for_status()
                         response_text = safe_response_text(
-                            response, settings.FEED_MAX_SIZE, settings.FEED_CHUNK_SIZE
+                            response,
+                            settings.DOWNLOAD_MAX_SIZE,
+                            settings.DOWNLOAD_CHUNK_SIZE,
                         )
                     except requests.exceptions.RequestException:
                         if verbosity >= 2:
@@ -89,7 +91,9 @@ class BaseCommand(BaseCommand_):
                     response = rss_requests.get(feed_url, stream=True)
                     response.raise_for_status()
                     response_text = safe_response_text(
-                        response, settings.FEED_MAX_SIZE, settings.FEED_CHUNK_SIZE
+                        response,
+                        settings.DOWNLOAD_MAX_SIZE,
+                        settings.DOWNLOAD_CHUNK_SIZE,
                     )
                 except requests.exceptions.RequestException:
                     if verbosity >= 2:
