@@ -369,6 +369,9 @@ elif _test_runner_type == "timed":
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
+FEED_MAX_SIZE = 1024 * 1000  # in bytes
+FEED_CHUNK_SIZE = 1024  # in bytes
+
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 
 CAPTCHA_EXPIRY_INTERVAL = datetime.timedelta(minutes=5)

@@ -1,7 +1,7 @@
 import os
 
 from django.core import mail
-from lingua import IsoCode639_3, Language
+from lingua import Language
 
 from api.models import Language as Language_
 

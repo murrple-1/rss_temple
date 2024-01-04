@@ -4,9 +4,10 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, UnidentifiedImageError
 from requests import Response
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import HTTPError, RequestException, Timeout
 
 from api import rss_requests
+from api.requests_extensions import safe_response_content, safe_response_text
 
 
 class TryAgain(Exception):
@@ -23,13 +24,15 @@ def extract_top_image_src(
     min_image_byte_count=4500,
     min_image_width=256,
     min_image_height=256,
+    response_max_size=1024 * 1000,
+    response_chunk_size=1024,
 ) -> str | None:
     # TODO Currently, the top image is just the OpenGraph image (if it exists).
     # However, in the future, this might be expanded to do some `goose3`-like
     # smart-parsing of the webpage
     response: Response
     try:
-        response = rss_requests.get(url)
+        response = rss_requests.get(url, stream=True)
     except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
@@ -41,8 +44,16 @@ def extract_top_image_src(
         else:  # pragma: no cover
             raise TryAgain from e
 
+    response_text: str
+    try:
+        response_text = safe_response_text(
+            response, response_max_size, response_chunk_size
+        )
+    except RequestException as e:  # pragma: no cover
+        raise TryAgain from e
+
     # TODO investigate what errors this can throw (if any), and handle them
-    soup = BeautifulSoup(response.text, "lxml")
+    soup = BeautifulSoup(response_text, "lxml")
 
     og_image = soup.find("meta", property="og:image")
 
@@ -84,7 +95,7 @@ def extract_top_image_src(
 
     image_r: Response
     try:
-        image_r = rss_requests.get(og_image_src)
+        image_r = rss_requests.get(og_image_src, stream=True)
     except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
@@ -96,7 +107,11 @@ def extract_top_image_src(
         else:  # pragma: no cover
             raise TryAgain from e
 
-    content = image_r.content
+    content: bytes
+    try:
+        content = safe_response_content(image_r, response_max_size, response_chunk_size)
+    except RequestException as e:  # pragma: no cover
+        raise TryAgain from e
 
     if content_length is None:
         content_length = len(content)

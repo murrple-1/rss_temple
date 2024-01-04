@@ -159,6 +159,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--extract-top-images-min-image-height", type=int, default=250
         )
+        parser.add_argument(
+            "--extract-top-images-response-max-size", type=int, default=1024 * 1000
+        )
+        parser.add_argument(
+            "--extract-top-images-response-chunk-size", type=int, default=1024
+        )
         parser.add_argument("--extract-top-images-db-limit", type=int, default=50)
         parser.add_argument("--extract-top-images-since")
 
@@ -184,6 +190,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--setup-subscriptions-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
+        parser.add_argument(
+            "--setup-subscriptions-response-max-size", type=int, default=1024 * 1000
+        )
+        parser.add_argument(
+            "--setup-subscriptions-response-chunk-size", type=int, default=1024
+        )
 
         parser.add_argument(
             "--purge-expired-data-crontab", default="0 0 */15 * *"
@@ -235,6 +247,10 @@ class Command(BaseCommand):
                 ],
                 "min_image_width": options["extract_top_images_min_image_width"],
                 "min_image_height": options["extract_top_images_min_image_height"],
+                "response_max_size": options["extract_top_images_response_max_size"],
+                "response_chunk_size": options[
+                    "extract_top_images_response_chunk_size"
+                ],
                 "db_limit": options["extract_top_images_db_limit"],
                 "since": options["extract_top_images_since"],
             },
@@ -295,7 +311,11 @@ class Command(BaseCommand):
             kwargs={
                 "options": {
                     "max_age": options["setup_subscriptions_max_age"],
-                }
+                },
+                "response_max_size": options["setup_subscriptions_response_max_size"],
+                "response_chunk_size": options[
+                    "setup_subscriptions_response_chunk_size"
+                ],
             },
         )
 

@@ -14,6 +14,7 @@ from api.models import (
     SubscribedFeedUserMapping,
     UserCategory,
 )
+from api.requests_extensions import safe_response_text
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
@@ -22,6 +23,8 @@ _logger = logging.getLogger("rss_temple")
 
 def setup_subscriptions(
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
+    response_max_size=1024 * 1000,
+    response_chunk_size=1024,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     feeds: dict[str, Feed] = {}
     subscriptions: set[str] = set()
@@ -60,7 +63,9 @@ def setup_subscriptions(
                 feed = Feed.objects.get(feed_url=feed_url)
             except Feed.DoesNotExist:
                 try:
-                    feed = _generate_feed(feed_url)
+                    feed = _generate_feed(
+                        feed_url, response_max_size, response_chunk_size
+                    )
                 except (
                     requests.exceptions.RequestException,
                     feed_handler.FeedHandlerError,
@@ -132,13 +137,17 @@ def setup_subscriptions(
 
 def _generate_feed(
     url: str,
+    response_max_size: int,
+    response_chunk_size: int,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
-    response = rss_requests.get(url)
+    response = rss_requests.get(url, stream=True)
     response.raise_for_status()
 
     now = timezone.now()
 
-    d = feed_handler.text_2_d(response.text)
+    response_text = safe_response_text(response, response_max_size, response_chunk_size)
+
+    d = feed_handler.text_2_d(response_text)
     feed = feed_handler.d_feed_2_feed(d.feed, url, now)
     feed.save()
 

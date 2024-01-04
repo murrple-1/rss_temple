@@ -1,6 +1,7 @@
 import pprint
 from typing import Any
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
 
 from api.exposed_feed_extractor import extract_exposed_feeds
@@ -13,7 +14,11 @@ class Command(BaseCommand):
         parser.add_argument("url")
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
-        exposed_feeds = extract_exposed_feeds(options["url"])
+        exposed_feeds = extract_exposed_feeds(
+            options["url"],
+            response_max_size=settings.FEED_MAX_SIZE,
+            response_chunk_size=settings.FEED_CHUNK_SIZE,
+        )
         self.stderr.write(
             self.style.NOTICE(
                 "exposed feeds:\n{exposed_feeds}".format(

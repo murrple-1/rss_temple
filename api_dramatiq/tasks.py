@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from api import feed_handler, rss_requests
 from api.models import Feed, FeedEntry
+from api.requests_extensions import safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
 from api.tasks import extract_top_images as extract_top_images_
 from api.tasks import feed_scrape as feed_scrape_
@@ -67,6 +68,8 @@ def extract_top_images(
     min_image_byte_count=4500,
     min_image_width=250,
     min_image_height=250,
+    response_max_size=1024 * 1000,
+    response_chunk_size=1024,
     db_limit=50,
     since: str | None = None,
 ) -> None:
@@ -85,6 +88,8 @@ def extract_top_images(
         min_image_byte_count,
         min_image_width,
         min_image_height,
+        response_max_size,
+        response_chunk_size,
     )
     extract_top_images.logger.info("updated %d", count)
 
@@ -100,7 +105,7 @@ def label_users(top_x=10) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def feed_scrape(db_limit=1000) -> None:
+def feed_scrape(feed_max_size: int, feed_chunk_size=1024, db_limit=1000) -> None:
     count = 0
     with transaction.atomic():
         for feed in (
@@ -111,10 +116,14 @@ def feed_scrape(db_limit=1000) -> None:
             count += 1
 
             try:
-                response = rss_requests.get(feed.feed_url)
+                response = rss_requests.get(feed.feed_url, stream=True)
                 response.raise_for_status()
 
-                feed_scrape_(feed, response.text)
+                response_text = safe_response_text(
+                    response, feed_max_size, feed_chunk_size
+                )
+
+                feed_scrape_(feed, response_text)
 
                 feed_scrape.logger.info("scrapped '%s'", feed.feed_url)
 
@@ -144,12 +153,17 @@ def feed_scrape(db_limit=1000) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def setup_subscriptions() -> None:
+def setup_subscriptions(
+    response_max_size=1024 * 1000,
+    response_chunk_size=1024,
+) -> None:
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:
         setup_subscriptions.logger.info("starting subscription processing...")
         setup_subscriptions_(
             feed_subscription_progress_entry,
+            response_max_size=response_max_size,
+            response_chunk_size=response_chunk_size,
         )
     else:
         setup_subscriptions.logger.info("no subscription process available")

@@ -153,7 +153,9 @@ class TaskTestCase(TestFileServerTestCase):
                 is_archived=False,
             )
 
-        count = extract_top_images(FeedEntry.objects.all(), 3, 2000, 256, 256)
+        count = extract_top_images(
+            FeedEntry.objects.all(), 3, 2000, 256, 256, 1024 * 1000, 1024
+        )
 
         self.assertEqual(
             FeedEntry.objects.filter(has_top_image_been_processed=False).count(), 0

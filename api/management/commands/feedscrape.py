@@ -1,11 +1,13 @@
 import uuid
 from typing import Any
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 
 from api import rss_requests
 from api.models import Feed
+from api.requests_extensions import safe_response_text
 from api.tasks import feed_scrape
 
 
@@ -26,8 +28,11 @@ class Command(BaseCommand):
         else:
             raise CommandError("either --feed-url or --feed-uuid must be specified")
 
-        response = rss_requests.get(feed.feed_url)
+        response = rss_requests.get(feed.feed_url, stream=True)
         response.raise_for_status()
+        response_text = safe_response_text(
+            response, settings.FEED_MAX_SIZE, settings.FEED_CHUNK_SIZE
+        )
         with transaction.atomic():
-            feed_scrape(feed, response.text)
+            feed_scrape(feed, response_text)
             feed.save(update_fields=["db_updated_at"])

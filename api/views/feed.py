@@ -28,6 +28,7 @@ from api.models import (
     SubscribedFeedUserMapping,
     User,
 )
+from api.requests_extensions import safe_response_text
 from api.serializers import (
     FeedFindQuerySerializer,
     FeedFindSerializer,
@@ -39,13 +40,19 @@ from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
 _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None
+_FEED_MAX_SIZE: int
+_FEED_CHUNK_SIZE: int
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
     global _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
+    global _FEED_MAX_SIZE
+    global _FEED_CHUNK_SIZE
 
     _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS = settings.EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
+    _FEED_MAX_SIZE = settings.FEED_MAX_SIZE
+    _FEED_CHUNK_SIZE = settings.FEED_CHUNK_SIZE
 
 
 _load_global_settings()
@@ -148,7 +155,11 @@ class FeedLookupView(APIView):
         cache_hit = True
         if exposed_feeds is None:
             cache_hit = False
-            exposed_feeds = extract_exposed_feeds(url)
+            exposed_feeds = extract_exposed_feeds(
+                url,
+                response_max_size=_FEED_MAX_SIZE,
+                response_chunk_size=_FEED_CHUNK_SIZE,
+            )
             cache.set(cache_key, exposed_feeds, _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS)
 
         response = Response(
@@ -275,17 +286,18 @@ class FeedSubscribeView(APIView):
 
 
 def _save_feed(url: str):
-    response: requests.Response
+    response_text: str
     try:
-        response = rss_requests.get(url)
+        response = rss_requests.get(url, stream=True)
         response.raise_for_status()
+        response_text = safe_response_text(response, _FEED_MAX_SIZE, _FEED_CHUNK_SIZE)
     except requests.exceptions.RequestException:
         raise NotFound("feed not found")
 
     now = timezone.now()
 
     with transaction.atomic():
-        d = feed_handler.text_2_d(response.text)
+        d = feed_handler.text_2_d(response_text)
         feed = feed_handler.d_feed_2_feed(d.feed, url, now)
         feed.with_subscription_data()
         feed.save()

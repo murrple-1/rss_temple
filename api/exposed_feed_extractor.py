@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup, ResultSet, Tag
 
 from api import rss_requests
+from api.requests_extensions import safe_response_text
 
 _logger: logging.Logger | None = None
 
@@ -28,15 +29,20 @@ class ExposedFeed:
 
 def extract_exposed_feeds(
     url: str,
+    response_max_size=1024 * 1000,
+    response_chunk_size=1024,
 ) -> list[ExposedFeed]:
-    response: requests.Response
+    response_text: str
     try:
-        response = rss_requests.get(url)
+        response = rss_requests.get(url, stream=True)
         response.raise_for_status()
+        response_text = safe_response_text(
+            response, response_max_size, response_chunk_size
+        )
     except requests.exceptions.RequestException:
         return []
 
-    d = feedparser.parse(response.text, sanitize_html=False)
+    d = feedparser.parse(response_text, sanitize_html=False)
 
     if not d.get("bozo", True):
         logger().info(pprint.pformat(d))
@@ -45,7 +51,7 @@ def extract_exposed_feeds(
         ]
 
     # TODO investigate what errors this can throw (if any), and handle them
-    soup = BeautifulSoup(response.text, "lxml")
+    soup = BeautifulSoup(response_text, "lxml")
 
     base_href: str | None = None
     if (

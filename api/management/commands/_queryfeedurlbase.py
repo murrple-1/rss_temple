@@ -2,6 +2,7 @@ import traceback
 from typing import Any, Collection
 
 import requests
+from django.conf import settings
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -9,6 +10,7 @@ from tabulate import tabulate
 
 from api import feed_handler, rss_requests
 from api.models import Feed, FeedEntry
+from api.requests_extensions import safe_response_text
 from api.tasks.feed_scrape import feed_scrape
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
@@ -32,7 +34,7 @@ class BaseCommand(BaseCommand_):
         feed_entries: list[FeedEntry] = []
         new_feed_entries: list[FeedEntry] = []
         failed_feed_urls: list[str] = []
-        response: requests.Response
+        response_text: str
 
         url_count = len(normalized_feed_urls)
         for i, feed_url in enumerate(normalized_feed_urls):
@@ -51,8 +53,11 @@ class BaseCommand(BaseCommand_):
 
                 if save:
                     try:
-                        response = rss_requests.get(feed_url)
+                        response = rss_requests.get(feed_url, stream=True)
                         response.raise_for_status()
+                        response_text = safe_response_text(
+                            response, settings.FEED_MAX_SIZE, settings.FEED_CHUNK_SIZE
+                        )
                     except requests.exceptions.RequestException:
                         if verbosity >= 2:
                             self.stderr.write(
@@ -65,7 +70,7 @@ class BaseCommand(BaseCommand_):
 
                     try:
                         with transaction.atomic():
-                            feed_scrape(feed, response.text)
+                            feed_scrape(feed, response_text)
                             feed.save(update_fields=["db_updated_at"])
                     except IntegrityError:
                         self.stderr.write(
@@ -81,8 +86,11 @@ class BaseCommand(BaseCommand_):
                 )
             except Feed.DoesNotExist:
                 try:
-                    response = rss_requests.get(feed_url)
+                    response = rss_requests.get(feed_url, stream=True)
                     response.raise_for_status()
+                    response_text = safe_response_text(
+                        response, settings.FEED_MAX_SIZE, settings.FEED_CHUNK_SIZE
+                    )
                 except requests.exceptions.RequestException:
                     if verbosity >= 2:
                         self.stderr.write(
@@ -95,7 +103,7 @@ class BaseCommand(BaseCommand_):
 
                 d: Any
                 try:
-                    d = feed_handler.text_2_d(response.text)
+                    d = feed_handler.text_2_d(response_text)
                 except feed_handler.FeedHandlerError:
                     if verbosity >= 2:
                         self.stderr.write(
