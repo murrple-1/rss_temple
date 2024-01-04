@@ -160,10 +160,10 @@ class Command(BaseCommand):
             "--extract-top-images-min-image-height", type=int, default=250
         )
         parser.add_argument(
-            "--extract-top-images-response-max-size", type=int, default=1024 * 1000
+            "--extract-top-images-response-max-size", type=int, default=1000 * 1000
         )
         parser.add_argument(
-            "--extract-top-images-response-chunk-size", type=int, default=1024
+            "--extract-top-images-response-chunk-size", type=int, default=1000
         )
         parser.add_argument("--extract-top-images-db-limit", type=int, default=50)
         parser.add_argument("--extract-top-images-since")
@@ -191,10 +191,10 @@ class Command(BaseCommand):
             "--setup-subscriptions-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
         parser.add_argument(
-            "--setup-subscriptions-response-max-size", type=int, default=1024 * 1000
+            "--setup-subscriptions-response-max-size", type=int, default=1000 * 1000
         )
         parser.add_argument(
-            "--setup-subscriptions-response-chunk-size", type=int, default=1024
+            "--setup-subscriptions-response-chunk-size", type=int, default=1000
         )
 
         parser.add_argument(

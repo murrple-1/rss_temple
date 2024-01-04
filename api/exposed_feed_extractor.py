@@ -29,8 +29,8 @@ class ExposedFeed:
 
 def extract_exposed_feeds(
     url: str,
-    response_max_size=1024 * 1000,
-    response_chunk_size=1024,
+    response_max_size=1000 * 1000,
+    response_chunk_size=1000,
 ) -> list[ExposedFeed]:
     response_text: str
     try:

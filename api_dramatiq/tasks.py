@@ -68,8 +68,8 @@ def extract_top_images(
     min_image_byte_count=4500,
     min_image_width=250,
     min_image_height=250,
-    response_max_size=1024 * 1000,
-    response_chunk_size=1024,
+    response_max_size=1000 * 1000,
+    response_chunk_size=1000,
     db_limit=50,
     since: str | None = None,
 ) -> None:
@@ -154,8 +154,8 @@ def feed_scrape(feed_max_size: int, feed_chunk_size=1024, db_limit=1000) -> None
 
 @dramatiq.actor(queue_name="rss_temple")
 def setup_subscriptions(
-    response_max_size=1024 * 1000,
-    response_chunk_size=1024,
+    response_max_size=1000 * 1000,
+    response_chunk_size=1000,
 ) -> None:
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:

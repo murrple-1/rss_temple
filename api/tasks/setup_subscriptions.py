@@ -23,8 +23,8 @@ _logger = logging.getLogger("rss_temple")
 
 def setup_subscriptions(
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
-    response_max_size=1024 * 1000,
-    response_chunk_size=1024,
+    response_max_size=1000 * 1000,
+    response_chunk_size=1000,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     feeds: dict[str, Feed] = {}
     subscriptions: set[str] = set()

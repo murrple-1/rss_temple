@@ -24,8 +24,8 @@ def extract_top_image_src(
     min_image_byte_count=4500,
     min_image_width=256,
     min_image_height=256,
-    response_max_size=1024 * 1000,
-    response_chunk_size=1024,
+    response_max_size=1000 * 1000,
+    response_chunk_size=1000,
 ) -> str | None:
     # TODO Currently, the top image is just the OpenGraph image (if it exists).
     # However, in the future, this might be expanded to do some `goose3`-like
