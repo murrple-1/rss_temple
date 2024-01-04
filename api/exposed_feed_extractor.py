@@ -30,15 +30,12 @@ class ExposedFeed:
 def extract_exposed_feeds(
     url: str,
     response_max_size=1000 * 1000,
-    response_chunk_size=1000,
 ) -> list[ExposedFeed]:
     response_text: str
     try:
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
-        response_text = safe_response_text(
-            response, response_max_size, response_chunk_size
-        )
+        response_text = safe_response_text(response, response_max_size)
     except requests.exceptions.RequestException:
         return []
 

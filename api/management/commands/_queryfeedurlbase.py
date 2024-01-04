@@ -58,7 +58,6 @@ class BaseCommand(BaseCommand_):
                         response_text = safe_response_text(
                             response,
                             settings.DOWNLOAD_MAX_SIZE,
-                            settings.DOWNLOAD_CHUNK_SIZE,
                         )
                     except requests.exceptions.RequestException:
                         if verbosity >= 2:
@@ -93,7 +92,6 @@ class BaseCommand(BaseCommand_):
                     response_text = safe_response_text(
                         response,
                         settings.DOWNLOAD_MAX_SIZE,
-                        settings.DOWNLOAD_CHUNK_SIZE,
                     )
                 except requests.exceptions.RequestException:
                     if verbosity >= 2:

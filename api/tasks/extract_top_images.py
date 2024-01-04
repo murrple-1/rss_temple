@@ -17,7 +17,6 @@ def extract_top_images(
     min_image_width: int,
     min_image_height: int,
     response_max_size: int,
-    response_chunk_size: int,
 ) -> int:
     count = 0
     for feed_entry in feed_entry_queryset:
@@ -30,7 +29,6 @@ def extract_top_images(
                         min_image_width=min_image_width,
                         min_image_height=min_image_height,
                         response_max_size=response_max_size,
-                        response_chunk_size=response_chunk_size,
                     )
                     or ""
                 )

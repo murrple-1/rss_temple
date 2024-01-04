@@ -162,9 +162,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "--extract-top-images-response-max-size", type=int, default=1000 * 1000
         )
-        parser.add_argument(
-            "--extract-top-images-response-chunk-size", type=int, default=1000
-        )
         parser.add_argument("--extract-top-images-db-limit", type=int, default=50)
         parser.add_argument("--extract-top-images-since")
 
@@ -185,7 +182,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "--feed-scrape-feed-max-size", type=int, default=1000 * 1000
         )
-        parser.add_argument("--feed-scrape-feed-chunk-size", type=int, default=1000)
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
 
         parser.add_argument(
@@ -196,9 +192,6 @@ class Command(BaseCommand):
         )  # 25 seconds
         parser.add_argument(
             "--setup-subscriptions-response-max-size", type=int, default=1000 * 1000
-        )
-        parser.add_argument(
-            "--setup-subscriptions-response-chunk-size", type=int, default=1000
         )
 
         parser.add_argument(
@@ -252,9 +245,6 @@ class Command(BaseCommand):
                 "min_image_width": options["extract_top_images_min_image_width"],
                 "min_image_height": options["extract_top_images_min_image_height"],
                 "response_max_size": options["extract_top_images_response_max_size"],
-                "response_chunk_size": options[
-                    "extract_top_images_response_chunk_size"
-                ],
                 "db_limit": options["extract_top_images_db_limit"],
                 "since": options["extract_top_images_since"],
             },
@@ -301,7 +291,6 @@ class Command(BaseCommand):
                     "max_age": options["feed_scrape_max_age"],
                 },
                 "feed_max_size": options["feed_scrape_feed_max_size"],
-                "feed_chunk_size": options["feed_scrape_feed_chunk_size"],
                 "db_limit": options["feed_scrape_db_limit"],
             },
         )
@@ -319,9 +308,6 @@ class Command(BaseCommand):
                     "max_age": options["setup_subscriptions_max_age"],
                 },
                 "response_max_size": options["setup_subscriptions_response_max_size"],
-                "response_chunk_size": options[
-                    "setup_subscriptions_response_chunk_size"
-                ],
             },
         )
 

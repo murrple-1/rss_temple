@@ -17,7 +17,6 @@ class Command(BaseCommand):
         exposed_feeds = extract_exposed_feeds(
             options["url"],
             response_max_size=settings.DOWNLOAD_MAX_SIZE,
-            response_chunk_size=settings.DOWNLOAD_CHUNK_SIZE,
         )
         self.stderr.write(
             self.style.NOTICE(

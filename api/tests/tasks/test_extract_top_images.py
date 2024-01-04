@@ -154,7 +154,7 @@ class TaskTestCase(TestFileServerTestCase):
             )
 
         count = extract_top_images(
-            FeedEntry.objects.all(), 3, 2000, 256, 256, 1000 * 1000, 1000
+            FeedEntry.objects.all(), 3, 2000, 256, 256, 1000 * 1000
         )
 
         self.assertEqual(

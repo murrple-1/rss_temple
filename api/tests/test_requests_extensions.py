@@ -12,7 +12,15 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        content = requests_extensions.safe_response_content(response, 16, 1024)
+        content = requests_extensions.safe_response_content(response, 16)
+        self.assertIsInstance(content, bytes)
+        self.assertEqual(len(content), 16)
+
+        response = requests.get(
+            f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
+        )
+        content = requests_extensions.safe_response_content(response, -1)
+        self.assertIsInstance(content, bytes)
         self.assertEqual(len(content), 16)
 
         response = requests.get(
@@ -20,7 +28,14 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
         )
 
         with self.assertRaises(requests.exceptions.RequestException):
-            requests_extensions.safe_response_content(response, 15, 1024)
+            requests_extensions.safe_response_content(response, 15)
+
+        response = requests.get(
+            f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
+        )
+
+        with self.assertRaises(requests.exceptions.RequestException):
+            requests_extensions.safe_response_content(response, 0)
 
     @tag("slow")
     def test_safe_response_text(self):
@@ -28,7 +43,16 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        text = requests_extensions.safe_response_text(response, 16, 1024)
+        text = requests_extensions.safe_response_text(response, 16)
+        self.assertIsInstance(text, str)
+        self.assertEqual(len(text), 16)
+
+        response = requests.get(
+            f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
+        )
+
+        text = requests_extensions.safe_response_text(response, -1)
+        self.assertIsInstance(text, str)
         self.assertEqual(len(text), 16)
 
         response = requests.get(
@@ -36,4 +60,11 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
         )
 
         with self.assertRaises(requests.exceptions.RequestException):
-            requests_extensions.safe_response_text(response, 15, 1024)
+            requests_extensions.safe_response_text(response, 15)
+
+        response = requests.get(
+            f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
+        )
+
+        with self.assertRaises(requests.exceptions.RequestException):
+            requests_extensions.safe_response_text(response, 0)

@@ -41,18 +41,15 @@ from api.text_classifier.prep_content import prep_for_lang_detection
 
 _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None
 _DOWNLOAD_MAX_SIZE: int
-_DOWNLOAD_CHUNK_SIZE: int
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
     global _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
     global _DOWNLOAD_MAX_SIZE
-    global _DOWNLOAD_CHUNK_SIZE
 
     _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS = settings.EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
     _DOWNLOAD_MAX_SIZE = settings.DOWNLOAD_MAX_SIZE
-    _DOWNLOAD_CHUNK_SIZE = settings.DOWNLOAD_CHUNK_SIZE
 
 
 _load_global_settings()
@@ -158,7 +155,6 @@ class FeedLookupView(APIView):
             exposed_feeds = extract_exposed_feeds(
                 url,
                 response_max_size=_DOWNLOAD_MAX_SIZE,
-                response_chunk_size=_DOWNLOAD_CHUNK_SIZE,
             )
             cache.set(cache_key, exposed_feeds, _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS)
 
@@ -290,9 +286,7 @@ def _save_feed(url: str):
     try:
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
-        response_text = safe_response_text(
-            response, _DOWNLOAD_MAX_SIZE, _DOWNLOAD_CHUNK_SIZE
-        )
+        response_text = safe_response_text(response, _DOWNLOAD_MAX_SIZE)
     except requests.exceptions.RequestException:
         raise NotFound("feed not found")
 
