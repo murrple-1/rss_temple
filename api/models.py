@@ -348,24 +348,34 @@ class SubscribedFeedUserMapping(models.Model):
 class FeedEntry(models.Model):
     class Meta:
         indexes = (
-            models.Index(fields=["id"]),
-            models.Index(fields=["url"]),
-            models.Index(fields=["-published_at"]),
-            models.Index(fields=["-created_at"]),
-            models.Index(fields=["-updated_at"]),
-            models.Index(fields=["is_archived"]),
-            models.Index(fields=["has_top_image_been_processed"]),
+            models.Index(fields=("id",)),
+            models.Index(fields=("url",)),
+            models.Index(fields=("-published_at",)),
+            models.Index(fields=("-created_at",)),
+            models.Index(fields=("-updated_at",)),
+            models.Index(fields=("is_archived",)),
+            models.Index(fields=("has_top_image_been_processed",)),
         )
 
         constraints = (
             models.UniqueConstraint(
-                fields=("feed", "url"),
-                name="feedentry__unique__feed__url__when__updated_at__null",
+                fields=("feed", "id"),
+                name="feedentry__unique__feed__id__when__updated_at__null",
                 condition=models.Q(updated_at__isnull=True),
             ),
             models.UniqueConstraint(
+                fields=("feed", "id", "updated_at"),
+                name="feedentry__unique__feed__id__updated_at",
+            ),
+            models.UniqueConstraint(
+                fields=("feed", "url"),
+                name="feedentry__unique__feed__url__when__id__null__updated_at__null",
+                condition=models.Q(id__isnull=True, updated_at__isnull=True),
+            ),
+            models.UniqueConstraint(
                 fields=("feed", "url", "updated_at"),
-                name="feedentry__unique__feed__url__when__updated_at__not_null",
+                name="feedentry__unique__feed__url__updated_at__when__id__null",
+                condition=models.Q(id__isnull=True),
             ),
         )
 
