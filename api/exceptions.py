@@ -11,3 +11,9 @@ class UnprocessableContent(APIException):
     status_code = 422
     default_detail = "The request was well-formed but was unable to be followed due to semantic errors."
     default_code = "unprocessable_content"
+
+
+class InsufficientStorage(APIException):
+    status_code = 507
+    default_detail = "The method could not be performed on the resource because the server is unable to store the representation needed to successfully complete the request."
+    default_code = "insufficient_storage"

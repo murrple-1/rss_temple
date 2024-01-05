@@ -1,5 +1,14 @@
+from typing import Any
+
 import requests
 from requests.models import CONTENT_CHUNK_SIZE
+
+
+class ResponseTooBig(BufferError):
+    def __init__(self, *args: Any, **kwargs: Any):
+        response = kwargs.pop("response", None)
+        self.response = response
+        super().__init__(*args, **kwargs)
 
 
 def safe_response_content(response: requests.Response, max_byte_count: int) -> bytes:
@@ -12,7 +21,7 @@ def safe_response_content(response: requests.Response, max_byte_count: int) -> b
             byte_count += len(chunk)
 
             if byte_count > max_byte_count:
-                raise requests.exceptions.RequestException(
+                raise ResponseTooBig(
                     f"response too big (max size: {max_byte_count} bytes)",
                     response=response,
                 )
@@ -32,7 +41,7 @@ def safe_response_text(
         # based heavily on `requests.Response.text()`
         content = safe_response_content(response, max_byte_count)
 
-        if not content:
+        if not content:  # pragma: no cover
             return ""
 
         try:
@@ -45,7 +54,7 @@ def safe_response_text(
                 ),
                 errors="replace",
             )
-        except (LookupError, TypeError):
+        except (LookupError, TypeError):  # pragma: no cover
             return str(content, errors="replace")
     else:
         return response.text

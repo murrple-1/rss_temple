@@ -1,16 +1,17 @@
 import traceback
 from typing import Any, Collection
 
-import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from requests.exceptions import HTTPError
 from tabulate import tabulate
 
 from api import feed_handler, rss_requests
+from api.feed_handler import FeedHandlerError
 from api.models import Feed, FeedEntry
-from api.requests_extensions import safe_response_text
+from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks.feed_scrape import feed_scrape
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
@@ -59,7 +60,7 @@ class BaseCommand(BaseCommand_):
                             response,
                             settings.DOWNLOAD_MAX_BYTE_COUNT,
                         )
-                    except requests.exceptions.RequestException:
+                    except (HTTPError, ResponseTooBig):
                         if verbosity >= 2:
                             self.stderr.write(
                                 self.style.ERROR(
@@ -93,7 +94,7 @@ class BaseCommand(BaseCommand_):
                         response,
                         settings.DOWNLOAD_MAX_BYTE_COUNT,
                     )
-                except requests.exceptions.RequestException:
+                except (HTTPError, ResponseTooBig):
                     if verbosity >= 2:
                         self.stderr.write(
                             self.style.ERROR(
@@ -106,7 +107,7 @@ class BaseCommand(BaseCommand_):
                 d: Any
                 try:
                     d = feed_handler.text_2_d(response_text)
-                except feed_handler.FeedHandlerError:
+                except FeedHandlerError:
                     if verbosity >= 2:
                         self.stderr.write(
                             self.style.ERROR(

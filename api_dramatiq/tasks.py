@@ -5,15 +5,16 @@ django.setup()
 import datetime
 
 import dramatiq
-import requests
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Now
 from django.utils import timezone
+from requests.exceptions import HTTPError
 
-from api import feed_handler, rss_requests
+from api import rss_requests
+from api.feed_handler import FeedHandlerError
 from api.models import Feed, FeedEntry
-from api.requests_extensions import safe_response_text
+from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
 from api.tasks import extract_top_images as extract_top_images_
 from api.tasks import feed_scrape as feed_scrape_
@@ -132,10 +133,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                         "update_backoff_until",
                     ]
                 )
-            except (
-                requests.exceptions.RequestException,
-                feed_handler.FeedHandlerError,
-            ):
+            except (HTTPError, FeedHandlerError, ResponseTooBig):
                 feed_scrape.logger.exception("failed to scrap feed '%s'", feed.feed_url)
 
                 feed.update_backoff_until = feed_scrape__error_update_backoff_until(

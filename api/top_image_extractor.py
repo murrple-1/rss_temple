@@ -4,10 +4,14 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, UnidentifiedImageError
 from requests import Response
-from requests.exceptions import HTTPError, RequestException, Timeout
+from requests.exceptions import HTTPError, Timeout
 
 from api import rss_requests
-from api.requests_extensions import safe_response_content, safe_response_text
+from api.requests_extensions import (
+    ResponseTooBig,
+    safe_response_content,
+    safe_response_text,
+)
 
 
 class TryAgain(Exception):
@@ -46,7 +50,7 @@ def extract_top_image_src(
     response_text: str
     try:
         response_text = safe_response_text(response, response_max_byte_count)
-    except RequestException as e:  # pragma: no cover
+    except ResponseTooBig as e:  # pragma: no cover
         raise TryAgain from e
 
     # TODO investigate what errors this can throw (if any), and handle them
@@ -107,7 +111,7 @@ def extract_top_image_src(
     content: bytes
     try:
         content = safe_response_content(image_r, response_max_byte_count)
-    except RequestException as e:  # pragma: no cover
+    except ResponseTooBig as e:  # pragma: no cover
         raise TryAgain from e
 
     if content_length is None:

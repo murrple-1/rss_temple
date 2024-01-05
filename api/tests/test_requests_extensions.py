@@ -27,14 +27,14 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests_extensions.ResponseTooBig):
             requests_extensions.safe_response_content(response, 15)
 
         response = requests.get(
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests_extensions.ResponseTooBig):
             requests_extensions.safe_response_content(response, 0)
 
     @tag("slow")
@@ -59,12 +59,12 @@ class RequestsExtensionsTestCase(TestFileServerTestCase):
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests_extensions.ResponseTooBig):
             requests_extensions.safe_response_text(response, 15)
 
         response = requests.get(
             f"{RequestsExtensionsTestCase.live_server_url}/site/16bytes.txt"
         )
 
-        with self.assertRaises(requests.exceptions.RequestException):
+        with self.assertRaises(requests_extensions.ResponseTooBig):
             requests_extensions.safe_response_text(response, 0)

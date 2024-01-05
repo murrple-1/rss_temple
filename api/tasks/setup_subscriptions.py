@@ -1,11 +1,12 @@
 import logging
 from typing import Iterable, cast
 
-import requests.exceptions
 from django.db import transaction
 from django.utils import timezone
+from requests.exceptions import HTTPError
 
 from api import feed_handler, rss_requests
+from api.feed_handler import FeedHandlerError
 from api.models import (
     Feed,
     FeedEntry,
@@ -14,7 +15,7 @@ from api.models import (
     SubscribedFeedUserMapping,
     UserCategory,
 )
-from api.requests_extensions import safe_response_text
+from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
@@ -63,10 +64,7 @@ def setup_subscriptions(
             except Feed.DoesNotExist:
                 try:
                     feed = _generate_feed(feed_url, response_max_byte_count)
-                except (
-                    requests.exceptions.RequestException,
-                    feed_handler.FeedHandlerError,
-                ):
+                except (HTTPError, FeedHandlerError, ResponseTooBig):
                     _logger.exception("could not load feed for '%s'", feed_url)
                     continue
 

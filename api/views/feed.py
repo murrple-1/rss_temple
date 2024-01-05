@@ -1,6 +1,5 @@
 from typing import Any, cast
 
-import requests
 from django.conf import settings
 from django.core.cache import BaseCache, caches
 from django.core.signals import setting_changed
@@ -9,6 +8,7 @@ from django.db.models import OrderBy, Q
 from django.dispatch import receiver
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
+from requests.exceptions import HTTPError
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -18,7 +18,7 @@ from url_normalize import url_normalize
 from api import feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
-from api.exceptions import Conflict
+from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.fields import FieldMap
 from api.models import (
@@ -28,7 +28,7 @@ from api.models import (
     SubscribedFeedUserMapping,
     User,
 )
-from api.requests_extensions import safe_response_text
+from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.serializers import (
     FeedFindQuerySerializer,
     FeedFindSerializer,
@@ -151,8 +151,11 @@ class FeedLookupView(APIView):
         exposed_feeds: list[ExposedFeed] | None = cache.get(cache_key)
         cache_hit = True
         if exposed_feeds is None:
+            try:
+                exposed_feeds = extract_exposed_feeds(url, _DOWNLOAD_MAX_BYTE_COUNT)
+            except ResponseTooBig:  # pragma: no cover
+                raise InsufficientStorage
             cache_hit = False
-            exposed_feeds = extract_exposed_feeds(url, _DOWNLOAD_MAX_BYTE_COUNT)
             cache.set(cache_key, exposed_feeds, _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS)
 
         response = Response(
@@ -284,8 +287,10 @@ def _save_feed(url: str):
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
         response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
-    except requests.exceptions.RequestException:
+    except HTTPError:
         raise NotFound("feed not found")
+    except ResponseTooBig:  # pragma: no cover
+        raise InsufficientStorage
 
     now = timezone.now()
 

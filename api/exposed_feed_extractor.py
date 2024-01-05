@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 import feedparser
-import requests
 from bs4 import BeautifulSoup, ResultSet, Tag
+from requests.exceptions import HTTPError
 
 from api import rss_requests
-from api.requests_extensions import safe_response_text
+from api.requests_extensions import ResponseTooBig, safe_response_text
 
 _logger: logging.Logger | None = None
 
@@ -36,7 +36,8 @@ def extract_exposed_feeds(
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
         response_text = safe_response_text(response, response_max_byte_count)
-    except requests.exceptions.RequestException:
+    except HTTPError:
+        logger().exception(f"unable to download '{url}'")
         return []
 
     d = feedparser.parse(response_text, sanitize_html=False)
