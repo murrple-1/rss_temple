@@ -1,4 +1,4 @@
-FROM python:3.12 as builder
+FROM python:3.12-alpine as builder
 
 ARG BUILD_ENV
 ENV BUILD_ENV=${BUILD_ENV} PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
@@ -8,11 +8,11 @@ COPY Pipfile Pipfile.lock /venv/
 WORKDIR /venv
 RUN pipenv requirements $(test "$BUILD_ENV" != "production" && echo "--dev") > requirements.txt && /venv/bin/pip install -r requirements.txt
 
-FROM python:3.12 as production
+FROM python:3.12-alpine as production
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y ffmpeg espeak && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apk add --update-cache ffmpeg espeak && rm -rf /var/cache/apk/*
 
 COPY --from=builder /venv/ /venv/
 WORKDIR /code
