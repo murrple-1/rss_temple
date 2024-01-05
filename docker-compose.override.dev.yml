@@ -5,7 +5,7 @@ services:
   rss_temple:
     image: rss_temple
     command: >
-      bash -c "while ! python ./manage.py checkready; do
+      sh -c "while ! python ./manage.py checkready; do
                  sleep 0.1
                done
 
@@ -35,7 +35,7 @@ services:
   rss_temple_schedulerdaemon:
     image: rss_temple
     command: >
-      bash -c "while ! python ./manage.py checkready; do
+      sh -c "while ! python ./manage.py checkready; do
                  sleep 0.1
                done
 

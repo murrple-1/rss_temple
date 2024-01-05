@@ -1,12 +1,12 @@
 # Backup
 
-```bash
+```sh
 docker compose exec postgresql pg_dumpall -c --if-exists -U postgres | gzip > dump.sql.gz`
 ```
 
 # Restore
 
-```bash
+```sh
 gunzip dump.sql.gz
 docker compose exec -T postgresql psql -U postgres < dump.sql
 docker compose exec postgresql psql -U postgres
