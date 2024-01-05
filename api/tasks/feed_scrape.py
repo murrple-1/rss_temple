@@ -1,5 +1,6 @@
 import datetime
 
+from django.db.models import Q
 from django.utils import timezone
 
 from api import feed_handler
@@ -23,17 +24,20 @@ def feed_scrape(feed: Feed, response_text: str):
             continue
 
         old_feed_entry: FeedEntry | None
-        old_feed_entry_get_kwargs = {
-            "feed": feed,
-            "url": feed_entry.url,
-        }
-        if feed_entry.updated_at is None:
-            old_feed_entry_get_kwargs["updated_at__isnull"] = True
+        old_feed_entry_get_q = Q(feed=feed)
+
+        if feed_entry.id is not None:
+            old_feed_entry_get_q &= Q(id=feed_entry.id)
         else:
-            old_feed_entry_get_kwargs["updated_at"] = feed_entry.updated_at
+            old_feed_entry_get_q &= Q(url=feed_entry.url)
+
+        if feed_entry.updated_at is None:
+            old_feed_entry_get_q &= Q(updated_at__isnull=True)
+        else:
+            old_feed_entry_get_q &= Q(updated_at=feed_entry.updated_at)
 
         try:
-            old_feed_entry = FeedEntry.objects.get(**old_feed_entry_get_kwargs)
+            old_feed_entry = FeedEntry.objects.get(old_feed_entry_get_q)
         except FeedEntry.DoesNotExist:
             old_feed_entry = None
 
