@@ -112,6 +112,10 @@ def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
 
     url = d_entry.get("link")
     if url is None:
+        if len(enclosures := d_entry.get("enclosures", [])) > 0:
+            url = enclosures[0].get("href")
+
+    if url is None:
         raise ValueError("url not set")
 
     if not validators.url(url):
