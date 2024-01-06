@@ -5,16 +5,18 @@ services:
   rss_temple:
     image: rss_temple
     command: >
-      sh -c "while ! python ./manage.py checkready; do
-                 sleep 0.1
-               done
+      sh -c "
+        while ! python ./manage.py checkready; do
+          sleep 0.1
+        done
 
-               python ./manage.py collectstatic --noinput &
+        python ./manage.py collectstatic --noinput &
 
-               python ./manage.py migrate
+        python ./manage.py migrate
 
-               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- daphne -b 0.0.0.0 -p 8000 rss_temple.asgi:application
-              "
+        exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
+          daphne -b 0.0.0.0 -p 8000 rss_temple.asgi:application
+      "
     build:
       context: ./
     environment:
@@ -35,18 +37,20 @@ services:
   rss_temple_schedulerdaemon:
     image: rss_temple
     command: >
-      sh -c "while ! python ./manage.py checkready; do
-                 sleep 0.1
-               done
+      sh -c "
+        while ! python ./manage.py checkready; do
+          sleep 0.1
+        done
 
-               while ! python ./manage.py migrate --check; do
-                 sleep 5
-               done
+        while ! python ./manage.py migrate --check; do
+          sleep 5
+        done
 
-               python ./manage.py checkclassifierlabels
+        python ./manage.py checkclassifierlabels
 
-               exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- python ./manage.py schedulerdaemon
-              "
+        exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
+          python ./manage.py schedulerdaemon
+      "
     build:
       context: ./
     environment:

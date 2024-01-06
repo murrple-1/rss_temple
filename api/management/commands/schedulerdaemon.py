@@ -162,7 +162,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--extract-top-images-response-max-byte-count",
             type=int,
-            default=1000 * 1000,
+            default=-1,
         )
         parser.add_argument("--extract-top-images-db-limit", type=int, default=50)
         parser.add_argument("--extract-top-images-since")
@@ -182,7 +182,7 @@ class Command(BaseCommand):
             "--feed-scrape-max-age", type=int, default=(1000 * 25)
         )  # 25 seconds
         parser.add_argument(
-            "--feed-scrape-response-max-byte-count", type=int, default=1000 * 1000
+            "--feed-scrape-response-max-byte-count", type=int, default=-1
         )
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
 
@@ -195,7 +195,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--setup-subscriptions-response-max-byte-count",
             type=int,
-            default=1000 * 1000,
+            default=-1,
         )
 
         parser.add_argument(

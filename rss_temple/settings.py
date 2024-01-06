@@ -370,8 +370,8 @@ else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
 DOWNLOAD_MAX_BYTE_COUNT = int(
-    os.getenv("APP_DOWNLOAD_MAX_BYTE_COUNT", str(1000 * 1000))
-)  # in bytes, 1MB. set to -1 for unlimited
+    os.getenv("APP_DOWNLOAD_MAX_BYTE_COUNT", "-1")
+)  # set to -1 for unlimited
 
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 
