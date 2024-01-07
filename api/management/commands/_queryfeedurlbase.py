@@ -60,7 +60,7 @@ class BaseCommand(BaseCommand_):
                             response,
                             settings.DOWNLOAD_MAX_BYTE_COUNT,
                         )
-                    except (HTTPError, ResponseTooBig):
+                    except (HTTPError, ResponseTooBig, UnicodeDecodeError):
                         if verbosity >= 2:
                             self.stderr.write(
                                 self.style.ERROR(
@@ -94,7 +94,7 @@ class BaseCommand(BaseCommand_):
                         response,
                         settings.DOWNLOAD_MAX_BYTE_COUNT,
                     )
-                except (HTTPError, ResponseTooBig):
+                except (HTTPError, ResponseTooBig, UnicodeDecodeError):
                     if verbosity >= 2:
                         self.stderr.write(
                             self.style.ERROR(

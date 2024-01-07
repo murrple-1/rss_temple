@@ -50,7 +50,7 @@ def extract_top_image_src(
     response_text: str
     try:
         response_text = safe_response_text(response, response_max_byte_count)
-    except ResponseTooBig as e:  # pragma: no cover
+    except (ResponseTooBig, UnicodeDecodeError) as e:  # pragma: no cover
         raise TryAgain from e
 
     # TODO investigate what errors this can throw (if any), and handle them

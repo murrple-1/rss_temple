@@ -36,7 +36,7 @@ def extract_exposed_feeds(
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
         response_text = safe_response_text(response, response_max_byte_count)
-    except HTTPError:
+    except (HTTPError, UnicodeDecodeError):
         logger().exception(f"unable to download '{url}'")
         return []
 

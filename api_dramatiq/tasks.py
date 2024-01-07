@@ -133,7 +133,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                         "update_backoff_until",
                     ]
                 )
-            except (HTTPError, FeedHandlerError, ResponseTooBig):
+            except (HTTPError, FeedHandlerError, ResponseTooBig, UnicodeDecodeError):
                 feed_scrape.logger.exception("failed to scrap feed '%s'", feed.feed_url)
 
                 feed.update_backoff_until = feed_scrape__error_update_backoff_until(

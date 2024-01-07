@@ -287,7 +287,7 @@ def _save_feed(url: str):
         response = rss_requests.get(url, stream=True)
         response.raise_for_status()
         response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
-    except HTTPError:
+    except (HTTPError, UnicodeDecodeError):
         raise NotFound("feed not found")
     except ResponseTooBig:  # pragma: no cover
         raise InsufficientStorage

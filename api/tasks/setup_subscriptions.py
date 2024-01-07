@@ -64,7 +64,12 @@ def setup_subscriptions(
             except Feed.DoesNotExist:
                 try:
                     feed = _generate_feed(feed_url, response_max_byte_count)
-                except (HTTPError, FeedHandlerError, ResponseTooBig):
+                except (
+                    HTTPError,
+                    FeedHandlerError,
+                    ResponseTooBig,
+                    UnicodeDecodeError,
+                ):
                     _logger.exception("could not load feed for '%s'", feed_url)
                     continue
 
