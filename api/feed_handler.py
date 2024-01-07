@@ -40,18 +40,17 @@ def d_feed_2_feed(d_feed, url: str, now: datetime.datetime):
         feed_url=url, title=d_feed.get("title", url), home_url=d_feed.get("link")
     )
 
-    if "published_parsed" in d_feed:
-        time_tuple = d_feed.published_parsed
-
+    if time_tuple := d_feed.get("published_parsed"):
         if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
             feed.published_at = dt
+        else:
+            # field auto-filled by DB
+            pass
     else:
         # field auto-filled by DB
         pass
 
-    if "updated_parsed" in d_feed:
-        time_tuple = d_feed.updated_parsed
-
+    if time_tuple := d_feed.get("updated_parsed"):
         if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
             feed.updated_at = dt
         else:  # pragma: no cover
@@ -63,56 +62,58 @@ def d_feed_2_feed(d_feed, url: str, now: datetime.datetime):
 
 
 def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
-    feed_entry = FeedEntry(id=d_entry.get("id"))
+    feed_entry = FeedEntry(
+        id=d_entry.get("id"),
+        author_name=d_entry.get("author"),
+        title=_d_entry_to_title(d_entry),
+        url=_d_entry_to_url(d_entry),
+        content=_d_entry_to_content(d_entry),
+    )
 
-    if "created_parsed" in d_entry:
-        time_tuple = d_entry.created_parsed
-
-        if time_tuple is not None:
-            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
-                feed_entry.created_at = dt
-            else:  # pragma: no cover
-                feed_entry.created_at = None
+    if time_tuple := d_entry.get("created_parsed"):
+        if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+            feed_entry.created_at = dt
         else:  # pragma: no cover
             feed_entry.created_at = None
     else:
         feed_entry.created_at = None
 
-    if "published_parsed" in d_entry:
-        time_tuple = d_entry.published_parsed
-
-        if time_tuple is not None:
-            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
-                feed_entry.published_at = dt
-        else:  # pragma: no cover
-            # field auto-filled by DB
-            pass
+    if time_tuple := d_entry.get("published_parsed"):
+        if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+            feed_entry.published_at = dt
     else:
         # field auto-filled by DB
         pass
 
-    if "updated_parsed" in d_entry:
-        time_tuple = d_entry.updated_parsed
-
-        if time_tuple is not None:
-            if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
-                feed_entry.updated_at = dt
-            else:  # pragma: no cover
-                feed_entry.updated_at = None
+    if time_tuple := d_entry.get("updated_parsed"):
+        if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
+            feed_entry.updated_at = dt
         else:  # pragma: no cover
             feed_entry.updated_at = None
     else:
         feed_entry.updated_at = None
 
-    title = d_entry.get("title")
+    return feed_entry
+
+
+def _parsed_time_tuple_to_datetime(t: time.struct_time):
+    return datetime.datetime.fromtimestamp(time.mktime(t), datetime.timezone.utc)
+
+
+def _d_entry_to_title(d_entry) -> str | None:
+    title: str | None = d_entry.get("title")
     if title is None:
         raise ValueError("title not set")
 
-    feed_entry.title = title
+    return title
 
-    url = d_entry.get("link")
+
+def _d_entry_to_url(d_entry) -> str:
+    url: str | None = d_entry.get("link")
+
     if url is None:
-        if len(enclosures := d_entry.get("enclosures", [])) > 0:
+        if enclosures := d_entry.get("enclosures", []):
+            # TODO if there are multiple enclosures, should they be ranked in some way?
             url = enclosures[0].get("href")
 
     if url is None:
@@ -121,16 +122,18 @@ def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
     if not validators.url(url):
         raise ValueError("url malformed")
 
-    feed_entry.url = url
+    return url
 
+
+def _d_entry_to_content(d_entry) -> str:
     content: str | None = None
 
     if content is None:
-        if "content" in d_entry:
+        if content_list := d_entry.get("content"):
             d_entry_content = next(
                 (
                     dec
-                    for dec in d_entry.content
+                    for dec in content_list
                     if dec.type in {"text/html", "application/xhtml+xml", "text/plain"}
                 ),
                 None,
@@ -139,34 +142,10 @@ def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
                 content = content_sanitize.sanitize(d_entry_content.value)
 
     if content is None:
-        if "summary" in d_entry:
-            content = content_sanitize.sanitize(d_entry.summary)
+        if summary := d_entry.get("summary"):
+            content = content_sanitize.sanitize(summary)
 
     if content is None:
         raise ValueError("content not set")
 
-    feed_entry.content = content
-
-    feed_entry.author_name = d_entry.get("author")
-
-    return feed_entry
-
-
-def d_feed_2_feed_tags(d_feed):
-    d_feed_tags = d_feed.get("tags", [])
-
-    feed_tags = frozenset(d_feed_tag.term for d_feed_tag in d_feed_tags)
-
-    return feed_tags
-
-
-def d_entry_2_entry_tags(d_entry):
-    d_entry_tags = d_entry.get("tags", [])
-
-    entry_tags = frozenset(d_entry_tag.term for d_entry_tag in d_entry_tags)
-
-    return entry_tags
-
-
-def _parsed_time_tuple_to_datetime(t: time.struct_time):
-    return datetime.datetime.fromtimestamp(time.mktime(t), datetime.timezone.utc)
+    return content

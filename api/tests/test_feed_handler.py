@@ -82,38 +82,6 @@ class FeedHandlerTestCase(TestCase):
             )
             self.assertIsInstance(feed_entry, FeedEntry)
 
-    def test_d_feed_2_feed_tags(self):
-        for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text: str
-            with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
-                text = f.read()
-
-            d = feed_handler.text_2_d(text)
-
-            feed_tags = feed_handler.d_feed_2_feed_tags(d.feed)
-            self.assertIs(type(feed_tags), frozenset)
-
-            self.assertGreater(len(feed_tags), 0, f"{feed_type} is empty")
-
-            for feed_tag in feed_tags:
-                self.assertIs(type(feed_tag), str)
-
-    def test_d_entry_2_entry_tags(self):
-        for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text: str
-            with open(f"api/tests/test_files/{feed_type}/well_formed.xml", "r") as f:
-                text = f.read()
-
-            d = feed_handler.text_2_d(text)
-
-            entry_tags = feed_handler.d_entry_2_entry_tags(d.entries[0])
-            self.assertIs(type(entry_tags), frozenset)
-
-            self.assertGreater(len(entry_tags), 0, f"{feed_type} is empty")
-
-            for entry_tag in entry_tags:
-                self.assertIs(type(entry_tag), str)
-
     def test_d_feed_2_feed_entry_plaintext(self):
         text: str
         with open("api/tests/test_files/atom_1.0/well_formed_text.xml", "r") as f:
