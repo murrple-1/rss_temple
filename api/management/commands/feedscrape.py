@@ -31,7 +31,7 @@ class Command(BaseCommand):
         response = rss_requests.get(feed.feed_url, stream=True)
         response.raise_for_status()
         content_type = response.headers.get("Content-Type")
-        if content_type is None or not content_type_util.is_feed(content_type):
+        if content_type is not None and not content_type_util.is_feed(content_type):
             raise ValueError(f"bad content type: {content_type}")
         response_text = safe_response_text(response, settings.DOWNLOAD_MAX_BYTE_COUNT)
         with transaction.atomic():

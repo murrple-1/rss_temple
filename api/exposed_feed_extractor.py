@@ -43,11 +43,9 @@ def extract_exposed_feeds(
         return []
 
     content_type = response.headers.get("Content-Type")
-    if content_type is None:
-        return []
 
     response_text: str
-    if content_type_util.is_feed(content_type):
+    if content_type is None or content_type_util.is_feed(content_type):
         try:
             response_text = safe_response_text(response, response_max_byte_count)
         except UnicodeDecodeError:
@@ -64,7 +62,8 @@ def extract_exposed_feeds(
             return [
                 ExposedFeed(d.feed.get("title", url), url),
             ]
-    elif content_type_util.is_html(content_type):
+
+    if content_type is None or content_type_util.is_html(content_type):
         try:
             response_text = safe_response_text(response, response_max_byte_count)
         except UnicodeDecodeError:

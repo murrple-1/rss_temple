@@ -120,7 +120,9 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 response.raise_for_status()
 
                 content_type = response.headers.get("Content-Type")
-                if content_type is None or not content_type_util.is_feed(content_type):
+                if content_type is not None and not content_type_util.is_feed(
+                    content_type
+                ):
                     raise WrongContentTypeError(content_type)
 
                 response_text = safe_response_text(response, response_max_byte_count)
