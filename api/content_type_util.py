@@ -20,4 +20,7 @@ def is_feed(content_type: str) -> bool:
             re.IGNORECASE,
         )
         is not None
+    ) or (
+        re.search(r"text/html", content_type, re.IGNORECASE)  # common mislabel
+        is not None
     )
