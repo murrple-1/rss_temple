@@ -6,19 +6,18 @@ class WrongContentTypeError(Exception):
 
 
 def is_html(content_type: str) -> bool:
-    return any(
-        re.search(re_str, content_type, re.IGNORECASE)
-        for re_str in (r"text/html", "application/xhtml+xml")
+    return (
+        re.search(r"(?:text/html|application/xhtml\+xml)", content_type, re.IGNORECASE)
+        is not None
     )
 
 
 def is_feed(content_type: str) -> bool:
-    return any(
-        re.search(re_str, content_type, re.IGNORECASE)
-        for re_str in (
-            r"application/(?:rss|rdf|atom)\+xml",
-            r"application/xml",
-            r"text/xml",
-            r"application/json",
+    return (
+        re.search(
+            r"(?:application/(?:(?:(?:rss|rdf|atom)\+)?xml|json)|text/xml)",
+            content_type,
+            re.IGNORECASE,
         )
+        is not None
     )
