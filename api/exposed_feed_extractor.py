@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup, ResultSet, Tag
 from requests.exceptions import HTTPError
 
 from api import rss_requests
-from api.requests_extensions import ResponseTooBig, safe_response_text
+from api.requests_extensions import safe_response_text
 
 _logger: logging.Logger | None = None
 
