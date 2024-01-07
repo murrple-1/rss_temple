@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 
-from api import rss_requests
+from api import content_type_util, rss_requests
 from api.models import Feed
 from api.requests_extensions import safe_response_text
 from api.tasks import feed_scrape
@@ -30,6 +30,9 @@ class Command(BaseCommand):
 
         response = rss_requests.get(feed.feed_url, stream=True)
         response.raise_for_status()
+        content_type = response.headers.get("Content-Type")
+        if content_type is None or not content_type_util.is_feed(content_type):
+            raise ValueError(f"bad content type: {content_type}")
         response_text = safe_response_text(response, settings.DOWNLOAD_MAX_BYTE_COUNT)
         with transaction.atomic():
             feed_scrape(feed, response_text)

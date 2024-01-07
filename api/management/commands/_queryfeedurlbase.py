@@ -8,7 +8,8 @@ from django.utils import timezone
 from requests.exceptions import HTTPError
 from tabulate import tabulate
 
-from api import feed_handler, rss_requests
+from api import content_type_util, feed_handler, rss_requests
+from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
 from api.models import Feed, FeedEntry
 from api.requests_extensions import ResponseTooBig, safe_response_text
@@ -56,11 +57,22 @@ class BaseCommand(BaseCommand_):
                     try:
                         response = rss_requests.get(feed_url, stream=True)
                         response.raise_for_status()
+                        content_type = response.headers.get("Content-Type")
+                        if content_type is None or not content_type_util.is_feed(
+                            content_type
+                        ):
+                            raise WrongContentTypeError(content_type)
+
                         response_text = safe_response_text(
                             response,
                             settings.DOWNLOAD_MAX_BYTE_COUNT,
                         )
-                    except (HTTPError, ResponseTooBig, UnicodeDecodeError):
+                    except (
+                        HTTPError,
+                        ResponseTooBig,
+                        UnicodeDecodeError,
+                        WrongContentTypeError,
+                    ):
                         if verbosity >= 2:
                             self.stderr.write(
                                 self.style.ERROR(
@@ -90,11 +102,22 @@ class BaseCommand(BaseCommand_):
                 try:
                     response = rss_requests.get(feed_url, stream=True)
                     response.raise_for_status()
+                    content_type = response.headers.get("Content-Type")
+                    if content_type is None or not content_type_util.is_feed(
+                        content_type
+                    ):
+                        raise WrongContentTypeError(content_type)
+
                     response_text = safe_response_text(
                         response,
                         settings.DOWNLOAD_MAX_BYTE_COUNT,
                     )
-                except (HTTPError, ResponseTooBig, UnicodeDecodeError):
+                except (
+                    HTTPError,
+                    ResponseTooBig,
+                    UnicodeDecodeError,
+                    WrongContentTypeError,
+                ):
                     if verbosity >= 2:
                         self.stderr.write(
                             self.style.ERROR(

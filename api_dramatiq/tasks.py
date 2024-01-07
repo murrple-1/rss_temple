@@ -11,7 +11,8 @@ from django.db.models.functions import Now
 from django.utils import timezone
 from requests.exceptions import HTTPError
 
-from api import rss_requests
+from api import content_type_util, rss_requests
+from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
 from api.models import Feed, FeedEntry
 from api.requests_extensions import ResponseTooBig, safe_response_text
@@ -118,6 +119,10 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 response = rss_requests.get(feed.feed_url, stream=True)
                 response.raise_for_status()
 
+                content_type = response.headers.get("Content-Type")
+                if content_type is None or not content_type_util.is_feed(content_type):
+                    raise WrongContentTypeError(content_type)
+
                 response_text = safe_response_text(response, response_max_byte_count)
 
                 feed_scrape_(feed, response_text)
@@ -133,7 +138,13 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                         "update_backoff_until",
                     ]
                 )
-            except (HTTPError, FeedHandlerError, ResponseTooBig, UnicodeDecodeError):
+            except (
+                HTTPError,
+                FeedHandlerError,
+                ResponseTooBig,
+                UnicodeDecodeError,
+                WrongContentTypeError,
+            ):
                 feed_scrape.logger.exception("failed to scrap feed '%s'", feed.feed_url)
 
                 feed.update_backoff_until = feed_scrape__error_update_backoff_until(

@@ -6,7 +6,7 @@ from PIL import Image, UnidentifiedImageError
 from requests import Response
 from requests.exceptions import HTTPError, Timeout
 
-from api import rss_requests
+from api import content_type_util, rss_requests
 from api.requests_extensions import (
     ResponseTooBig,
     safe_response_content,
@@ -46,6 +46,10 @@ def extract_top_image_src(
             return None
         else:  # pragma: no cover
             raise TryAgain from e
+
+    content_type = response.headers.get("Content-Type")
+    if content_type is None or not content_type_util.is_html(content_type):
+        return None
 
     response_text: str
     try:

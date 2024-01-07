@@ -5,7 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 from requests.exceptions import HTTPError
 
-from api import feed_handler, rss_requests
+from api import content_type_util, feed_handler, rss_requests
+from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
 from api.models import (
     Feed,
@@ -69,6 +70,7 @@ def setup_subscriptions(
                     FeedHandlerError,
                     ResponseTooBig,
                     UnicodeDecodeError,
+                    WrongContentTypeError,
                 ):
                     _logger.exception("could not load feed for '%s'", feed_url)
                     continue
@@ -141,6 +143,10 @@ def _generate_feed(
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
     response = rss_requests.get(url, stream=True)
     response.raise_for_status()
+
+    content_type = response.headers.get("Content-Type")
+    if content_type is None or not content_type_util.is_feed(content_type):
+        raise WrongContentTypeError(content_type)
 
     now = timezone.now()
 

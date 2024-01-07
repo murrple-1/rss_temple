@@ -20,6 +20,7 @@ from api import fields as fieldutils
 from api import grace_period_util, rss_requests
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
+from api.feed_handler import FeedHandlerError
 from api.fields import FieldMap
 from api.models import (
     Feed,
@@ -294,9 +295,15 @@ def _save_feed(url: str):
 
     now = timezone.now()
 
-    with transaction.atomic():
+    d: Any
+    try:
         d = feed_handler.text_2_d(response_text)
-        feed = feed_handler.d_feed_2_feed(d.feed, url, now)
+    except FeedHandlerError:
+        raise NotFound("feed not found")
+
+    feed = feed_handler.d_feed_2_feed(d.feed, url, now)
+
+    with transaction.atomic():
         feed.with_subscription_data()
         feed.save()
 

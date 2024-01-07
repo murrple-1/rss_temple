@@ -1,7 +1,9 @@
 import datetime
+import io
 import logging
 import pprint
 import time
+from typing import Any
 
 import feedparser
 import validators
@@ -25,7 +27,10 @@ def logger() -> logging.Logger:  # pragma: no cover
 
 
 def text_2_d(text: str):
-    d = feedparser.parse(text, sanitize_html=False)
+    d: Any
+    # TODO this is a hack until https://github.com/kurtmckee/feedparser/issues/427 is resolved...then `io.StringIO` should be used
+    with io.BytesIO(text.encode()) as f:
+        d = feedparser.parse(f, sanitize_html=False)
 
     logger().info("feed info: %s", pprint.pformat(d))
 
