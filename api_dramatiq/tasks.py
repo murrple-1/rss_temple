@@ -155,4 +155,4 @@ def setup_subscriptions(
         setup_subscriptions.logger.info("starting subscription processing...")
         setup_subscriptions_(feed_subscription_progress_entry, response_max_byte_count)
     else:
-        setup_subscriptions.logger.info("no subscription process available")
+        setup_subscriptions.logger.info("no subscription process entry available")
