@@ -1,32 +1,22 @@
-import os
+import tracemalloc
 from typing import Any
 
 from dramatiq import Broker, Message, get_logger
 from dramatiq.middleware import Middleware
 
 
-def _message_str(message: Message) -> str:
-    return f"{message.actor_name}|{message.message_id}|{message.message_timestamp}"
-
-
-def _message_lock_filepath(message: Message) -> str:
-    return os.path.join("mount/", f"{message.message_id}.lock")
-
-
 class BeforeAfterLog(Middleware):
+    snapshots: dict[str, tracemalloc.Snapshot]
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.logger = get_logger(__name__, type(self))
+        self.snapshots = {}
+        tracemalloc.start()
 
     def before_process_message(self, broker: Broker, message: Message):
-        message_str = _message_str(message)
-
-        # TODO remove, this is a temp hack to find a hard-to-trace bug
-        with open(_message_lock_filepath(message), "w") as f:
-            f.write(message_str)
-
-        self.logger.info("before message: %s", message_str)
+        self.snapshots[message.message_id] = tracemalloc.take_snapshot()
 
     def after_process_message(
         self,
@@ -36,7 +26,10 @@ class BeforeAfterLog(Middleware):
         result: Any = None,
         exception: BaseException | None = None,
     ):
-        # TODO remove, this is a temp hack to find a hard-to-trace bug
-        os.unlink(_message_lock_filepath(message))
+        old_snapshot = self.snapshots.pop(message.message_id)
+        final_snapshot = tracemalloc.take_snapshot()
 
-        self.logger.info("after message: %s", _message_str(message))
+        top_stats = final_snapshot.compare_to(old_snapshot, "lineno")
+
+        for stat in top_stats[:10]:
+            self.logger.info(str(stat))
