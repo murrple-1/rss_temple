@@ -62,7 +62,6 @@ def archive_feed_entries(limit=1000) -> None:
 @dramatiq.actor(queue_name="rss_temple")
 def purge_expired_data() -> None:
     purge_expired_data_()
-    purge_expired_data.logger.info("expired data purged")
 
 
 @dramatiq.actor(queue_name="rss_temple")
@@ -98,13 +97,11 @@ def extract_top_images(
 @dramatiq.actor(queue_name="rss_temple")
 def label_feeds(top_x=3) -> None:
     label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
-    label_feeds.logger.info("feeds labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
 def label_users(top_x=10) -> None:
     label_users_(top_x, settings.LABELING_EXPIRY_INTERVAL)
-    label_feeds.logger.info("users labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
@@ -168,8 +165,6 @@ def setup_subscriptions(
 ) -> None:
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:
-        setup_subscriptions.logger.info("starting subscription processing...")
         setup_subscriptions_(feed_subscription_progress_entry, response_max_byte_count)
-        setup_subscriptions.logger.info("subscriptions setup done")
     else:
         setup_subscriptions.logger.info("no subscription process entry available")
