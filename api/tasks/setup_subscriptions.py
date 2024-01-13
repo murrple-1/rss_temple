@@ -3,7 +3,7 @@ from typing import Iterable, cast
 
 from django.db import transaction
 from django.utils import timezone
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, Timeout
 
 from api import content_type_util, feed_handler, rss_requests
 from api.content_type_util import WrongContentTypeError
@@ -66,6 +66,7 @@ def setup_subscriptions(
                 try:
                     feed = _generate_feed(feed_url, response_max_byte_count)
                 except (
+                    Timeout,
                     HTTPError,
                     FeedHandlerError,
                     ResponseTooBig,
