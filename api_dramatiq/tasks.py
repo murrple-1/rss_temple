@@ -112,6 +112,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
             Feed.objects.select_for_update(skip_locked=True)
             .filter(update_backoff_until__lte=Now())
             .order_by("update_backoff_until")[:db_limit]
+            .iterator()
         ):
             count += 1
 
@@ -124,8 +125,10 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                     content_type
                 ):
                     raise WrongContentTypeError(content_type)
+                del content_type
 
                 response_text = safe_response_text(response, response_max_byte_count)
+                del response
 
                 feed_scrape_(feed, response_text)
 
