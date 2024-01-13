@@ -141,16 +141,17 @@ def _generate_feed(
     url: str,
     response_max_byte_count: int,
 ):  # pragma: testing-subscription-setup-daemon-do-subscription
-    response = rss_requests.get(url, stream=True)
-    response.raise_for_status()
+    response_text: str
+    with rss_requests.get(url, stream=True) as response:
+        response.raise_for_status()
 
-    content_type = response.headers.get("Content-Type")
-    if content_type is not None and not content_type_util.is_feed(content_type):
-        raise WrongContentTypeError(content_type)
+        content_type = response.headers.get("Content-Type")
+        if content_type is not None and not content_type_util.is_feed(content_type):
+            raise WrongContentTypeError(content_type)
+
+        response_text = safe_response_text(response, response_max_byte_count)
 
     now = timezone.now()
-
-    response_text = safe_response_text(response, response_max_byte_count)
 
     d = feed_handler.text_2_d(response_text)
     feed = feed_handler.d_feed_2_feed(d.feed, url, now)

@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import feed_handler
+from api import content_type_util, feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
 from api.exceptions import Conflict, InsufficientStorage
@@ -285,9 +285,14 @@ class FeedSubscribeView(APIView):
 def _save_feed(url: str):
     response_text: str
     try:
-        response = rss_requests.get(url, stream=True)
-        response.raise_for_status()
-        response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
+        with rss_requests.get(url, stream=True) as response:
+            response.raise_for_status()
+
+            content_type = response.headers.get("Content-Type")
+            if content_type is not None and not content_type_util.is_feed(content_type):
+                raise NotFound("feed not found")
+
+            response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
     except (HTTPError, UnicodeDecodeError):
         raise NotFound("feed not found")
     except ResponseTooBig:  # pragma: no cover

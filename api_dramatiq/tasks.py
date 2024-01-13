@@ -117,18 +117,19 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
             count += 1
 
             try:
-                response = rss_requests.get(feed.feed_url, stream=True)
-                response.raise_for_status()
+                response_text: str
+                with rss_requests.get(feed.feed_url, stream=True) as response:
+                    response.raise_for_status()
 
-                content_type = response.headers.get("Content-Type")
-                if content_type is not None and not content_type_util.is_feed(
-                    content_type
-                ):
-                    raise WrongContentTypeError(content_type)
-                del content_type
+                    content_type = response.headers.get("Content-Type")
+                    if content_type is not None and not content_type_util.is_feed(
+                        content_type
+                    ):
+                        raise WrongContentTypeError(content_type)
 
-                response_text = safe_response_text(response, response_max_byte_count)
-                del response
+                    response_text = safe_response_text(
+                        response, response_max_byte_count
+                    )
 
                 feed_scrape_(feed, response_text)
 

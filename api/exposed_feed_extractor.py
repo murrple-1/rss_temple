@@ -6,7 +6,6 @@ from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import feedparser
-import requests
 from bs4 import BeautifulSoup, ResultSet, Tag
 from requests.exceptions import HTTPError
 
@@ -34,24 +33,33 @@ def extract_exposed_feeds(
     url: str,
     response_max_byte_count: int,
 ) -> list[ExposedFeed]:
-    response: requests.Response
+    response_text: str
+    content_type: str | None
     try:
-        response = rss_requests.get(url, stream=True)
-        response.raise_for_status()
+        with rss_requests.get(url, stream=True) as response:
+            response.raise_for_status()
+
+            content_type = response.headers.get("Content-Type")
+
+            if (
+                content_type is None
+                or content_type_util.is_feed(content_type)
+                or content_type_util.is_html(content_type)
+            ):
+                try:
+                    response_text = safe_response_text(
+                        response, response_max_byte_count
+                    )
+                except UnicodeDecodeError:
+                    logger().exception(f"unable to decode '{url}'")
+                    return []
+            else:
+                return []
     except HTTPError:
         logger().exception(f"unable to download '{url}'")
         return []
 
-    content_type = response.headers.get("Content-Type")
-
-    response_text: str
     if content_type is None or content_type_util.is_feed(content_type):
-        try:
-            response_text = safe_response_text(response, response_max_byte_count)
-        except UnicodeDecodeError:
-            logger().exception(f"unable to decode '{url}'")
-            return []
-
         d: Any
         # TODO this is a hack until https://github.com/kurtmckee/feedparser/issues/427 is resolved...then `io.StringIO` should be used
         with io.BytesIO(response_text.encode()) as f:
@@ -64,12 +72,6 @@ def extract_exposed_feeds(
             ]
 
     if content_type is None or content_type_util.is_html(content_type):
-        try:
-            response_text = safe_response_text(response, response_max_byte_count)
-        except UnicodeDecodeError:
-            logger().exception(f"unable to decode '{url}'")
-            return []
-
         # TODO investigate what errors this can throw (if any), and handle them
         soup = BeautifulSoup(response_text, "lxml")
 

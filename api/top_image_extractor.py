@@ -3,7 +3,6 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, UnidentifiedImageError
-from requests import Response
 from requests.exceptions import HTTPError, Timeout
 
 from api import content_type_util, rss_requests
@@ -33,31 +32,29 @@ def extract_top_image_src(
     # TODO Currently, the top image is just the OpenGraph image (if it exists).
     # However, in the future, this might be expanded to do some `goose3`-like
     # smart-parsing of the webpage
-    response: Response
-    try:
-        response = rss_requests.get(url, stream=True)
-    except Timeout as e:  # pragma: no cover
-        raise TryAgain from e
-
-    try:
-        response.raise_for_status()
-    except HTTPError as e:
-        if response.status_code in (404,):
-            return None
-        else:  # pragma: no cover
-            raise TryAgain from e
-
-    content_type = response.headers.get("Content-Type")
-    if content_type is None or not content_type_util.is_html(content_type):
-        return None
-
     response_text: str
     try:
-        response_text = safe_response_text(response, response_max_byte_count)
-    except ResponseTooBig as e:  # pragma: no cover
+        with rss_requests.get(url, stream=True) as response:
+            try:
+                response.raise_for_status()
+            except HTTPError as e:
+                if response.status_code in (404,):
+                    return None
+                else:  # pragma: no cover
+                    raise TryAgain from e
+
+            content_type = response.headers.get("Content-Type")
+            if content_type is None or not content_type_util.is_html(content_type):
+                return None
+
+            try:
+                response_text = safe_response_text(response, response_max_byte_count)
+            except ResponseTooBig as e:  # pragma: no cover
+                raise TryAgain from e
+            except UnicodeDecodeError:
+                return None
+    except Timeout as e:  # pragma: no cover
         raise TryAgain from e
-    except UnicodeDecodeError:
-        return None
 
     # TODO investigate what errors this can throw (if any), and handle them
     soup = BeautifulSoup(response_text, "lxml")
@@ -73,57 +70,37 @@ def extract_top_image_src(
 
     og_image_src = urljoin(url, og_image_src)
 
-    content_length: int | None = None
-
-    image_head_r: Response | None
     try:
-        image_head_r = rss_requests.head(og_image_src)
-    except Timeout:  # pragma: no cover
-        # if HEAD fails, just continue on to GET
-        image_head_r = None
+        with rss_requests.head(og_image_src) as image_head_response:
+            image_head_response.raise_for_status()
 
-    if image_head_r is not None:  # pragma: no cover
-        try:
-            image_head_r.raise_for_status()
-        except HTTPError:
-            image_head_r = None
-
-    if image_head_r is not None:  # pragma: no cover
-        content_length_str = image_head_r.headers.get("content-length")
-        if content_length_str is not None:
-            try:
+            content_length_str = image_head_response.headers.get("Content-Length")
+            if content_length_str is not None:
                 content_length = int(content_length_str)
-            except ValueError:
-                pass
-
-    if content_length is not None:  # pragma: no cover
-        if content_length < min_image_byte_count:
-            return None
-
-    image_r: Response
-    try:
-        image_r = rss_requests.get(og_image_src, stream=True)
-    except Timeout as e:  # pragma: no cover
-        raise TryAgain from e
-
-    try:
-        image_r.raise_for_status()
-    except HTTPError as e:
-        if image_r.status_code in (404,):
-            return None
-        else:  # pragma: no cover
-            raise TryAgain from e
+                if content_length < min_image_byte_count:
+                    return None
+    except (Timeout, HTTPError, ValueError):  # pragma: no cover
+        pass
 
     content: bytes
     try:
-        content = safe_response_content(image_r, response_max_byte_count)
-    except ResponseTooBig as e:  # pragma: no cover
+        with rss_requests.get(og_image_src, stream=True) as image_response:
+            try:
+                image_response.raise_for_status()
+            except HTTPError as e:
+                if image_response.status_code in (404,):
+                    return None
+                else:  # pragma: no cover
+                    raise TryAgain from e
+            try:
+                content = safe_response_content(image_response, response_max_byte_count)
+            except ResponseTooBig as e:  # pragma: no cover
+                raise TryAgain from e
+    except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
-    if content_length is None:
-        content_length = len(content)
-        if content_length < min_image_byte_count:
-            return None
+    if len(content) < min_image_byte_count:
+        return None
 
     try:
         with io.BytesIO(content) as f:
