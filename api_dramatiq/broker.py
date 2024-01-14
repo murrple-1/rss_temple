@@ -12,8 +12,6 @@ from dramatiq.middleware import (
     TimeLimit,
 )
 
-from api_dramatiq.middleware import BeforeAfterLog
-
 _REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
 _BROKER_URL = f"{_REDIS_URL}/5"
 
@@ -24,7 +22,6 @@ _middleware: list[Middleware] = [
     Callbacks(),
     Pipelines(),
     Retries(),
-    BeforeAfterLog(),
 ]
 
 broker: Broker
