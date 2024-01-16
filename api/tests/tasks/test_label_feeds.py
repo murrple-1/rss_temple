@@ -100,5 +100,3 @@ class TaskTestCase(TestCase):
         label_feeds(3, datetime.timedelta(days=7))
 
         self.assertGreaterEqual(feed.calculated_classifier_labels.count(), 1)
-
-    # TODO write tests

@@ -73,3 +73,10 @@ class ExtractExposedFeedsTestCase(TestFileServerTestCase):
             f"{ExtractExposedFeedsTestCase.live_server_url}/not_found.html", -1
         )
         self.assertEqual(len(exposed_feeds), 0)
+
+    @tag("slow")
+    def test_extract_exposed_feeds_nothtml(self):
+        exposed_feeds = extract_exposed_feeds(
+            f"{ExtractExposedFeedsTestCase.live_server_url}/site/images/128x128.jpg", -1
+        )
+        self.assertEqual(len(exposed_feeds), 0)

@@ -133,3 +133,15 @@ class FeedHandlerTestCase(TestCase):
 
         with self.assertRaises(ValueError):
             feed_handler.d_entry_2_feed_entry(d.entries[0], FeedHandlerTestCase.now)
+
+    def test_d_feed_2_feed_entry_enclosure(self):
+        text: str
+        with open("api/tests/test_files/rss_2.0/well_formed.xml", "r") as f:
+            text = f.read()
+
+        d = feed_handler.text_2_d(text)
+
+        feed_entry = feed_handler.d_entry_2_feed_entry(
+            d.entries[1], FeedHandlerTestCase.now
+        )
+        self.assertIsInstance(feed_entry, FeedEntry)

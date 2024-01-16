@@ -14,16 +14,16 @@ from api.models import Feed, FeedEntry
 _logger: logging.Logger | None = None
 
 
-class FeedHandlerError(Exception):
-    pass
-
-
 def logger() -> logging.Logger:  # pragma: no cover
     global _logger
     if _logger is None:
         _logger = logging.getLogger("rss_temple.feed_handler")
 
     return _logger
+
+
+class FeedHandlerError(Exception):
+    pass
 
 
 def text_2_d(text: str):
@@ -48,7 +48,7 @@ def d_feed_2_feed(d_feed, url: str, now: datetime.datetime):
     if time_tuple := d_feed.get("published_parsed"):
         if (dt := _parsed_time_tuple_to_datetime(time_tuple)) <= now:
             feed.published_at = dt
-        else:
+        else:  # pragma: no cover
             # field auto-filled by DB
             pass
     else:
@@ -60,7 +60,7 @@ def d_feed_2_feed(d_feed, url: str, now: datetime.datetime):
             feed.updated_at = dt
         else:  # pragma: no cover
             feed.updated_at = None
-    else:
+    else:  # pragma: no cover
         feed.updated_at = None
 
     return feed
@@ -95,7 +95,7 @@ def d_entry_2_feed_entry(d_entry, now: datetime.datetime):
             feed_entry.updated_at = dt
         else:  # pragma: no cover
             feed_entry.updated_at = None
-    else:
+    else:  # pragma: no cover
         feed_entry.updated_at = None
 
     return feed_entry
@@ -118,6 +118,12 @@ def _d_entry_to_url(d_entry) -> str:
 
     if url is None:
         if enclosures := d_entry.get("enclosures", []):
+            if (e_count := len(enclosures)) > 1:  # pragma: no cover
+                logger().warning(
+                    "%d enclosures found, when only 1 expected\n%s",
+                    e_count,
+                    pprint.pformat(enclosures),
+                )
             # TODO if there are multiple enclosures, should they be ranked in some way?
             url = enclosures[0].get("href")
 

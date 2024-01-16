@@ -293,7 +293,7 @@ def _save_feed(url: str):
                 raise NotFound("feed not found")
 
             response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
-    except (Timeout, HTTPError, UnicodeDecodeError):
+    except (Timeout, HTTPError):
         raise NotFound("feed not found")
     except ResponseTooBig:  # pragma: no cover
         raise InsufficientStorage

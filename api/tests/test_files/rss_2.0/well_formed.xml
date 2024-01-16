@@ -40,5 +40,16 @@ nasty tricks&lt;/span&gt;</description>
             <guid>http://example.org/guid/1</guid>
             <pubDate>Thu, 05 Sep 2002 0:00:01 GMT</pubDate>
         </item>
+        <item>
+            <title>Second item title</title>
+            <description>Watch out for
+&lt;span style="background: url(javascript:window.location=’http://example.org/’)"&gt;
+nasty tricks&lt;/span&gt;</description>
+            <author>mark@example.org</author>
+            <category>Miscellaneous</category>
+            <comments>http://example.org/comments/2</comments>
+            <enclosure url="http://example.org/audio/demo2.mp3" length="1069871" type="audio/mpeg" />
+            <pubDate>Thu, 06 Sep 2002 0:00:01 GMT</pubDate>
+        </item>
     </channel>
 </rss>

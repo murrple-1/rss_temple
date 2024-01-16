@@ -70,7 +70,6 @@ def setup_subscriptions(
                     HTTPError,
                     FeedHandlerError,
                     ResponseTooBig,
-                    UnicodeDecodeError,
                     WrongContentTypeError,
                 ):
                     _logger.exception("could not load feed for '%s'", feed_url)

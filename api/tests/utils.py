@@ -1,6 +1,9 @@
 import os
+from typing import Generator, NamedTuple
 
+from bs4 import BeautifulSoup, Tag
 from django.core import mail
+from django.template.loader import get_template
 from lingua import Language
 
 from api.models import Language as Language_
@@ -46,3 +49,95 @@ def throttling_monkey_patch():
         return True
 
     setattr(SimpleRateThrottle, "allow_request", _allow_request)
+
+
+class TopImagePage(NamedTuple):
+    i: int
+    url: str
+    title: str
+    content_curry: str
+
+
+def generate_top_image_pages(
+    live_server_url: str,
+) -> Generator[TopImagePage, None, None]:
+    template = get_template("tests/entry.html")
+
+    # via https://github.com/python-pillow/Pillow/blob/26fc975a6506983076627f4ff1ac2dfea39c3d19/Tests/test_file_jpeg.py#L864C16-L864C16
+    with open("api/tests/test_files/site/images/generated/malformed.jpg", "wb") as f:
+        f.write(b"\xFF" * 4097)
+
+    i = 1
+    for og_tag_filename in (
+        None,
+        "64x64.jpg",
+        "128x128.jpg",
+        "256x256.jpg",
+        "512x512.jpg",
+        "notexist.jpg",
+        "generated/malformed.jpg",
+    ):
+        for img_tag_filename in (
+            None,
+            "64x64.jpg",
+            "128x128.jpg",
+            "256x256.jpg",
+            "512x512.jpg",
+        ):
+            rendered_content = template.render(
+                {
+                    "i": i,
+                    "hostname": live_server_url,
+                    "og_tag_filename": og_tag_filename,
+                    "img_tag_filename": img_tag_filename,
+                }
+            )
+
+            html_filename = f"entry_{og_tag_filename.replace('.', '').replace('/', '_') if og_tag_filename is not None else None}_{img_tag_filename.replace('.', '').replace('/', '_') if img_tag_filename is not None else None}.html"
+
+            html_filepath = os.path.join(
+                "api/tests/test_files/site/generated/", html_filename
+            )
+            with open(html_filepath, "w") as f:
+                f.write(rendered_content)
+
+            soup = BeautifulSoup(rendered_content, "lxml")
+
+            h1_tag = soup.find("h1")
+            assert isinstance(h1_tag, Tag)
+            title = h1_tag.text
+
+            p_tag = soup.find("p")
+            assert isinstance(p_tag, Tag)
+            content = str(p_tag)
+
+            yield TopImagePage(
+                i,
+                f"{live_server_url}/site/generated/{html_filename}",
+                title,
+                content,
+            )
+
+            i += 1
+
+    for html_filename in ["entry_no_og_image_content.html"]:
+        html_filepath = os.path.join("api/tests/test_files/site/", html_filename)
+        with open(html_filepath, "r") as f:
+            soup = BeautifulSoup(f, "lxml")
+
+        h1_tag = soup.find("h1")
+        assert isinstance(h1_tag, Tag)
+        title = h1_tag.text
+
+        p_tag = soup.find("p")
+        assert isinstance(p_tag, Tag)
+        content = str(p_tag)
+
+        yield TopImagePage(
+            i,
+            f"{live_server_url}/site/{html_filename}",
+            title,
+            content,
+        )
+
+        i += 1

@@ -1,4 +1,3 @@
-from django.db import connections
 from django.test.testcases import FSFilesHandler
 from rest_framework.test import APILiveServerTestCase
 
@@ -13,9 +12,3 @@ class _TestFilesHandler(FSFilesHandler):
 
 class TestFileServerTestCase(APILiveServerTestCase):
     static_handler = _TestFilesHandler
-
-    def tearDown(self):
-        super().tearDown()
-
-        # TODO added because it seems to help with https://code.djangoproject.com/ticket/32416 and https://code.djangoproject.com/ticket/30171
-        connections.close_all()

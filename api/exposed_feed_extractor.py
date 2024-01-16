@@ -46,13 +46,7 @@ def extract_exposed_feeds(
                 or content_type_util.is_feed(content_type)
                 or content_type_util.is_html(content_type)
             ):
-                try:
-                    response_text = safe_response_text(
-                        response, response_max_byte_count
-                    )
-                except UnicodeDecodeError:
-                    logger().exception(f"unable to decode '{url}'")
-                    return []
+                response_text = safe_response_text(response, response_max_byte_count)
             else:
                 return []
     except (Timeout, HTTPError):
@@ -75,7 +69,7 @@ def extract_exposed_feeds(
         soup: BeautifulSoup
         try:
             soup = BeautifulSoup(response_text, "lxml")
-        except Exception:
+        except Exception:  # pragma: no cover
             logger().exception("unknown BeautifulSoup error")
             return []
 
@@ -115,4 +109,4 @@ def extract_exposed_feeds(
 
         return exposed_feeds
 
-    return []
+    raise RuntimeError("shouldn't be possible")  # pragma: no cover

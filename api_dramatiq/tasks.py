@@ -149,7 +149,6 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 HTTPError,
                 FeedHandlerError,
                 ResponseTooBig,
-                UnicodeDecodeError,
                 WrongContentTypeError,
             ):
                 feed_scrape.logger.exception("failed to scrap feed '%s'", feed.feed_url)

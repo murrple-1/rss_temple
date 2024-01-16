@@ -68,13 +68,19 @@ class FeedTestCase(TestFileServerTestCase):
     def test_FeedView_get_non_rss_url(self):
         self.generate_credentials()
 
-        response = self.client.get(
-            "/api/feed",
-            {
-                "url": f"{FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
-            },
-        )
-        self.assertEqual(response.status_code, 404, response.content)
+        for path in [
+            "/rss_2.0/sample-404.xml",
+            "/rss_2.0/malformed.xml",
+            "/site/images/128x128.jpg",
+        ]:
+            with self.subTest(path=path):
+                response = self.client.get(
+                    "/api/feed",
+                    {
+                        "url": f"{FeedTestCase.live_server_url}{path}",
+                    },
+                )
+                self.assertEqual(response.status_code, 404, response.content)
 
     def test_FeedsQueryView_post(self):
         self.generate_credentials()
@@ -202,13 +208,19 @@ class FeedTestCase(TestFileServerTestCase):
     def test_FeedSubscribeView_post_non_rss_url(self):
         self.generate_credentials()
 
-        response = self.client.post(
-            "/api/feed/subscribe?url=",
-            {
-                "url": f"{FeedTestCase.live_server_url}/rss_2.0/sample-404.xml",
-            },
-        )
-        self.assertEqual(response.status_code, 404, response.content)
+        for path in [
+            "/rss_2.0/sample-404.xml",
+            "/rss_2.0/malformed.xml",
+            "/site/images/128x128.jpg",
+        ]:
+            with self.subTest(path=path):
+                response = self.client.post(
+                    "/api/feed/subscribe",
+                    {
+                        "url": f"{FeedTestCase.live_server_url}{path}",
+                    },
+                )
+                self.assertEqual(response.status_code, 404, response.content)
 
     def test_FeedSubscribeView_put(self):
         user = self.generate_credentials()

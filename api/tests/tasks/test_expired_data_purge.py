@@ -50,5 +50,3 @@ class TaskTestCase(TestCase):
         purge_expired_data()
 
         self.assertEqual(Captcha.objects.count(), 1)
-
-    # TODO write tests

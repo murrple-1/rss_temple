@@ -83,5 +83,3 @@ class TaskTestCase(TestCase):
         label_users(3, datetime.timedelta(days=7))
 
         self.assertGreaterEqual(user.calculated_classifier_labels.count(), 1)
-
-    # TODO write tests

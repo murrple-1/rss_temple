@@ -62,15 +62,13 @@ def extract_top_image_src(
                 response_text = safe_response_text(response, response_max_byte_count)
             except ResponseTooBig as e:  # pragma: no cover
                 raise TryAgain from e
-            except UnicodeDecodeError:
-                return None
     except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
     soup: BeautifulSoup
     try:
         soup = BeautifulSoup(response_text, "lxml")
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         logger().exception("unknown BeautifulSoup error")
         raise TryAgain from e
 
@@ -90,7 +88,9 @@ def extract_top_image_src(
             image_head_response.raise_for_status()
 
             content_length_str = image_head_response.headers.get("Content-Length")
-            if content_length_str is not None:
+            # TODO this should probably be tested as part of the test suite,
+            # but `rest_framework.test.APILiveServerTestCase` doesn't return the Content-Length header
+            if content_length_str is not None:  # pragma: no cover
                 content_length = int(content_length_str)
                 if content_length < min_image_byte_count:
                     return None

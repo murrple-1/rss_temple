@@ -72,7 +72,6 @@ class BaseCommand(BaseCommand_):
                         Timeout,
                         HTTPError,
                         ResponseTooBig,
-                        UnicodeDecodeError,
                         WrongContentTypeError,
                     ):
                         if verbosity >= 2:
@@ -118,7 +117,6 @@ class BaseCommand(BaseCommand_):
                     Timeout,
                     HTTPError,
                     ResponseTooBig,
-                    UnicodeDecodeError,
                     WrongContentTypeError,
                 ):
                     if verbosity >= 2:

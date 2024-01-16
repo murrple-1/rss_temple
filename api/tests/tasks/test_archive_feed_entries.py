@@ -69,5 +69,3 @@ class TaskTestCase(TestCase):
         self.assertGreater(
             feed.archive_update_backoff_until, now + datetime.timedelta(minutes=5)
         )
-
-    # TODO write tests
