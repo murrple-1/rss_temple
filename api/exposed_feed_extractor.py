@@ -72,8 +72,12 @@ def extract_exposed_feeds(
             ]
 
     if content_type is None or content_type_util.is_html(content_type):
-        # TODO investigate what errors this can throw (if any), and handle them
-        soup = BeautifulSoup(response_text, "lxml")
+        soup: BeautifulSoup
+        try:
+            soup = BeautifulSoup(response_text, "lxml")
+        except Exception:
+            logger().exception("unknown BeautifulSoup error")
+            return []
 
         base_href: str | None = None
         if (
