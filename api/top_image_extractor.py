@@ -88,7 +88,7 @@ def extract_top_image_src(
             image_head_response.raise_for_status()
 
             content_length_str = image_head_response.headers.get("Content-Length")
-            # This should probably be tested as part of the test suite,
+            # TODO This should probably be tested as part of the test suite,
             # but `rest_framework.test.APILiveServerTestCase` doesn't return the 'Content-Length' header.
             # Not only that, but somewhere in the chain - if you add a 'Content-Length' header via overrides -
             # it strips it out again somewhere else in the chain.
