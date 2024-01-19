@@ -93,6 +93,11 @@ def extract_top_image_src(
                     return None
                 else:  # pragma: no cover
                     raise TryAgain from e
+
+            content_type = image_response.headers.get("Content-Type")
+            if content_type is None or not content_type_util.is_image(content_type):
+                return None
+
             try:
                 content = safe_response_content(image_response, response_max_byte_count)
             except ResponseTooBig as e:  # pragma: no cover

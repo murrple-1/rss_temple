@@ -1,3 +1,4 @@
+import itertools
 import os
 from typing import Generator, NamedTuple
 
@@ -68,57 +69,54 @@ def generate_top_image_pages(
         f.write(b"\xFF" * 4097)
 
     i = 1
-    for og_tag_filename in (
-        None,
-        "64x64.jpg",
-        "128x128.jpg",
-        "256x256.jpg",
-        "512x512.jpg",
-        "notexist.jpg",
-        "generated/malformed.jpg",
-    ):
-        for img_tag_filename in (
+    for og_tag_filename, img_tag_filename in itertools.product(
+        (
             None,
             "64x64.jpg",
             "128x128.jpg",
             "256x256.jpg",
             "512x512.jpg",
-        ):
-            rendered_content = template.render(
-                {
-                    "i": i,
-                    "hostname": live_server_url,
-                    "og_tag_filename": og_tag_filename,
-                    "img_tag_filename": img_tag_filename,
-                }
-            )
+            "notexist.jpg",
+            "generated/malformed.jpg",
+            "notanimage.txt",
+        ),
+        repeat=2,
+    ):
+        rendered_content = template.render(
+            {
+                "i": i,
+                "hostname": live_server_url,
+                "og_tag_filename": og_tag_filename,
+                "img_tag_filename": img_tag_filename,
+            }
+        )
 
-            html_filename = f"entry_{og_tag_filename.replace('.', '').replace('/', '_') if og_tag_filename is not None else None}_{img_tag_filename.replace('.', '').replace('/', '_') if img_tag_filename is not None else None}.html"
+        html_filename = f"entry_{og_tag_filename.replace('.', '').replace('/', '_') if og_tag_filename is not None else None}_{img_tag_filename.replace('.', '').replace('/', '_') if img_tag_filename is not None else None}.html"
 
-            html_filepath = os.path.join(
-                "api/tests/test_files/site/generated/", html_filename
-            )
-            with open(html_filepath, "w") as f:
-                f.write(rendered_content)
+        html_filepath = os.path.join(
+            "api/tests/test_files/site/generated/", html_filename
+        )
+        with open(html_filepath, "w") as f:
+            f.write(rendered_content)
 
-            soup = BeautifulSoup(rendered_content, "lxml")
+        soup = BeautifulSoup(rendered_content, "lxml")
 
-            h1_tag = soup.find("h1")
-            assert isinstance(h1_tag, Tag)
-            title = h1_tag.text
+        h1_tag = soup.find("h1")
+        assert isinstance(h1_tag, Tag)
+        title = h1_tag.text
 
-            p_tag = soup.find("p")
-            assert isinstance(p_tag, Tag)
-            content = str(p_tag)
+        p_tag = soup.find("p")
+        assert isinstance(p_tag, Tag)
+        content = str(p_tag)
 
-            yield TopImagePage(
-                i,
-                f"{live_server_url}/site/generated/{html_filename}",
-                title,
-                content,
-            )
+        yield TopImagePage(
+            i,
+            f"{live_server_url}/site/generated/{html_filename}",
+            title,
+            content,
+        )
 
-            i += 1
+        i += 1
 
     for html_filename in ["entry_no_og_image_content.html"]:
         html_filepath = os.path.join("api/tests/test_files/site/", html_filename)

@@ -24,3 +24,7 @@ def is_feed(content_type: str) -> bool:
         re.search(r"text/html", content_type, re.IGNORECASE)  # common mislabel
         is not None
     )
+
+
+def is_image(content_type: str) -> bool:
+    return re.search(r"image/", content_type, re.IGNORECASE) is not None
