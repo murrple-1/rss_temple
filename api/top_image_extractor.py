@@ -83,22 +83,6 @@ def extract_top_image_src(
 
     og_image_src = urljoin(url, og_image_src)
 
-    try:
-        with rss_requests.head(og_image_src) as image_head_response:
-            image_head_response.raise_for_status()
-
-            content_length_str = image_head_response.headers.get("Content-Length")
-            # TODO This should probably be tested as part of the test suite,
-            # but `rest_framework.test.APILiveServerTestCase` doesn't return the 'Content-Length' header.
-            # Not only that, but somewhere in the chain - if you add a 'Content-Length' header via overrides -
-            # it strips it out again somewhere else in the chain.
-            if content_length_str is not None:  # pragma: no cover
-                content_length = int(content_length_str)
-                if content_length < min_image_byte_count:
-                    return None
-    except (Timeout, HTTPError, ValueError):  # pragma: no cover
-        pass
-
     content: bytes
     try:
         with rss_requests.get(og_image_src, stream=True) as image_response:
