@@ -83,7 +83,7 @@ def extract_top_image_src(
 
     og_image_src = urljoin(url, og_image_src)
 
-    content: bytes
+    image_content: bytes
     try:
         with rss_requests.get(og_image_src, stream=True) as image_response:
             try:
@@ -98,18 +98,28 @@ def extract_top_image_src(
             if content_type is None or not content_type_util.is_image(content_type):
                 return None
 
+            content_length_str = image_response.headers.get("Content-Length")
+            if content_length_str is not None:
+                try:
+                    if int(content_length_str) < min_image_byte_count:
+                        return None
+                except ValueError:  # pragma: no cover
+                    pass
+
             try:
-                content = safe_response_content(image_response, response_max_byte_count)
+                image_content = safe_response_content(
+                    image_response, response_max_byte_count
+                )
             except ResponseTooBig as e:  # pragma: no cover
                 raise TryAgain from e
     except Timeout as e:  # pragma: no cover
         raise TryAgain from e
 
-    if len(content) < min_image_byte_count:
-        return None
+    if len(image_content) < min_image_byte_count:
+        return None  # pragma: no cover
 
     try:
-        with io.BytesIO(content) as f:
+        with io.BytesIO(image_content) as f:
             with Image.open(f) as image:
                 if image.width < min_image_width or image.height < min_image_height:
                     return None
