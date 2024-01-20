@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Now
 from django.utils import timezone
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+from requests.exceptions import RequestException
 
 from api import content_type_util, rss_requests
 from api.content_type_util import WrongContentTypeError
@@ -145,9 +145,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                     ]
                 )
             except (
-                Timeout,
-                ConnectionError,
-                HTTPError,
+                RequestException,
                 FeedHandlerError,
                 ResponseTooBig,
                 WrongContentTypeError,

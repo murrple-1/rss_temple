@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+from requests.exceptions import RequestException
 from tabulate import tabulate
 
 from api import content_type_util, feed_handler, rss_requests
@@ -69,9 +69,7 @@ class BaseCommand(BaseCommand_):
                                 settings.DOWNLOAD_MAX_BYTE_COUNT,
                             )
                     except (
-                        Timeout,
-                        ConnectionError,
-                        HTTPError,
+                        RequestException,
                         ResponseTooBig,
                         WrongContentTypeError,
                     ):
@@ -115,9 +113,7 @@ class BaseCommand(BaseCommand_):
                             settings.DOWNLOAD_MAX_BYTE_COUNT,
                         )
                 except (
-                    Timeout,
-                    ConnectionError,
-                    HTTPError,
+                    RequestException,
                     ResponseTooBig,
                     WrongContentTypeError,
                 ):
