@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 from PIL import Image, UnidentifiedImageError
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 from api import content_type_util, rss_requests
 from api.requests_extensions import (
@@ -62,7 +62,7 @@ def extract_top_image_src(
                 response_text = safe_response_text(response, response_max_byte_count)
             except ResponseTooBig as e:  # pragma: no cover
                 raise TryAgain from e
-    except Timeout as e:  # pragma: no cover
+    except (Timeout, ConnectionError) as e:  # pragma: no cover
         raise TryAgain from e
 
     soup: BeautifulSoup
@@ -112,7 +112,7 @@ def extract_top_image_src(
                 )
             except ResponseTooBig as e:  # pragma: no cover
                 raise TryAgain from e
-    except Timeout as e:  # pragma: no cover
+    except (Timeout, ConnectionError) as e:  # pragma: no cover
         raise TryAgain from e
 
     if len(image_content) < min_image_byte_count:

@@ -7,7 +7,7 @@ from urllib.parse import urljoin, urlparse
 
 import feedparser
 from bs4 import BeautifulSoup, ResultSet, Tag
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 from api import content_type_util, rss_requests
 from api.requests_extensions import safe_response_text
@@ -49,7 +49,7 @@ def extract_exposed_feeds(
                 response_text = safe_response_text(response, response_max_byte_count)
             else:
                 return []
-    except (Timeout, HTTPError):
+    except (Timeout, ConnectionError, HTTPError):
         logger().exception(f"unable to download '{url}'")
         return []
 

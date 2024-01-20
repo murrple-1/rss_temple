@@ -8,7 +8,7 @@ from django.db.models import OrderBy, Q
 from django.dispatch import receiver
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -293,7 +293,7 @@ def _save_feed(url: str):
                 raise NotFound("feed not found")
 
             response_text = safe_response_text(response, _DOWNLOAD_MAX_BYTE_COUNT)
-    except (Timeout, HTTPError):
+    except (Timeout, ConnectionError, HTTPError):
         raise NotFound("feed not found")
     except ResponseTooBig:  # pragma: no cover
         raise InsufficientStorage

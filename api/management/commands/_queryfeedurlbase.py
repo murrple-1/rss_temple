@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from tabulate import tabulate
 
 from api import content_type_util, feed_handler, rss_requests
@@ -70,6 +70,7 @@ class BaseCommand(BaseCommand_):
                             )
                     except (
                         Timeout,
+                        ConnectionError,
                         HTTPError,
                         ResponseTooBig,
                         WrongContentTypeError,
@@ -115,6 +116,7 @@ class BaseCommand(BaseCommand_):
                         )
                 except (
                     Timeout,
+                    ConnectionError,
                     HTTPError,
                     ResponseTooBig,
                     WrongContentTypeError,
