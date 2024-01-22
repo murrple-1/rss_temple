@@ -107,6 +107,7 @@ def label_users(top_x=10) -> None:
 @dramatiq.actor(queue_name="rss_temple")
 def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
     count = 0
+    feed_urls_succeeded: list[str] = []
     with transaction.atomic():
         for feed in (
             Feed.objects.select_for_update(skip_locked=True)
@@ -133,7 +134,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
 
                 feed_scrape_(feed, response_text)
 
-                feed_scrape.logger.info("scrapped '%s'", feed.feed_url)
+                feed_urls_succeeded.append(feed.feed_url)
 
                 feed.update_backoff_until = feed_scrape__success_update_backoff_until(
                     feed, settings.SUCCESS_BACKOFF_SECONDS
@@ -159,7 +160,9 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 )
                 feed.save(update_fields=["update_backoff_until"])
 
-    feed_scrape.logger.info("scrapped %d feeds", count)
+    feed_scrape.logger.info(
+        "scrapped %d feeds: %s", count, ", ".join(feed_urls_succeeded)
+    )
 
 
 @dramatiq.actor(queue_name="rss_temple")
