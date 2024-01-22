@@ -56,12 +56,13 @@ def archive_feed_entries(limit=1000) -> None:
                 settings.ARCHIVE_BACKOFF_SECONDS,
             )
 
-    archive_feed_entries.logger.info("updated %d feed archives", count)
+    archive_feed_entries.logger.info("processed %d feed(s) for archiving", count)
 
 
 @dramatiq.actor(queue_name="rss_temple")
 def purge_expired_data() -> None:
     purge_expired_data_()
+    purge_expired_data.logger.info("purged expired data")
 
 
 @dramatiq.actor(queue_name="rss_temple")
@@ -91,17 +92,19 @@ def extract_top_images(
         min_image_height,
         response_max_byte_count,
     )
-    extract_top_images.logger.info("updated %d", count)
+    extract_top_images.logger.info("updated %d feed entry(s)", count)
 
 
 @dramatiq.actor(queue_name="rss_temple")
 def label_feeds(top_x=3) -> None:
     label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
+    label_feeds.logger.info("feeds labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
 def label_users(top_x=10) -> None:
     label_users_(top_x, settings.LABELING_EXPIRY_INTERVAL)
+    label_users.logger.info("users labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
@@ -151,7 +154,9 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 ResponseTooBig,
                 WrongContentTypeError,
             ):
-                feed_scrape.logger.exception("failed to scrap feed '%s'", feed.feed_url)
+                feed_scrape.logger.exception(
+                    "failed to scrape feed '%s'", feed.feed_url
+                )
 
                 feed.update_backoff_until = feed_scrape__error_update_backoff_until(
                     feed,
@@ -160,9 +165,14 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 )
                 feed.save(update_fields=["update_backoff_until"])
 
-    feed_scrape.logger.info(
-        "scrapped %d feeds: %s", count, ", ".join(feed_urls_succeeded)
-    )
+    if feed_urls_succeeded:
+        feed_scrape.logger.info(
+            "attempted to scrape %d feed(s). successes: %s",
+            count,
+            ", ".join(f"'{fu}'" for fu in feed_urls_succeeded),
+        )
+    else:
+        feed_scrape.logger.info("attempted to scrape %d feed(s)", count)
 
 
 @dramatiq.actor(queue_name="rss_temple")
@@ -172,5 +182,6 @@ def setup_subscriptions(
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:
         setup_subscriptions_(feed_subscription_progress_entry, response_max_byte_count)
+        setup_subscriptions.logger.info("subscription process entry(s) setup")
     else:
         setup_subscriptions.logger.info("no subscription process entry available")
