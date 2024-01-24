@@ -191,26 +191,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
     "loggers": {
         "django": {
-            "handlers": ["console"],
             "level": os.getenv("APP_DJANGO_LOG_LEVEL", "INFO"),
         },
         "django.db.backends": {
-            "handlers": ["console"],
             "level": os.getenv("APP_DJANGO_DB_BACKEND_LOG_LEVEL", "INFO"),
         },
         "rss_temple": {
-            "handlers": ["console"],
             "level": os.getenv("APP_LOG_LEVEL", "INFO"),
         },
         "rss_temple.feed_handler": {
-            "handlers": ["console"],
             "level": os.getenv("APP_FEED_LOG_LEVEL", "ERROR"),
         },
     },
