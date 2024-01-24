@@ -11,15 +11,7 @@ import validators
 from api import content_sanitize
 from api.models import Feed, FeedEntry
 
-_logger: logging.Logger | None = None
-
-
-def logger() -> logging.Logger:  # pragma: no cover
-    global _logger
-    if _logger is None:
-        _logger = logging.getLogger("rss_temple.feed_handler")
-
-    return _logger
+_logger = logging.getLogger("rss_temple.feed_handler")
 
 
 class FeedHandlerError(Exception):
@@ -32,7 +24,7 @@ def text_2_d(text: str):
     with io.BytesIO(text.encode()) as f:
         d = feedparser.parse(f, sanitize_html=False)
 
-    logger().info("feed info: %s", pprint.pformat(d))
+    _logger.info("feed info: %s", pprint.pformat(d))
 
     if d.get("bozo", True):
         raise FeedHandlerError from d.bozo_exception
@@ -119,7 +111,7 @@ def _d_entry_to_url(d_entry) -> str:
     if url is None:
         if enclosures := d_entry.get("enclosures", []):
             if (e_count := len(enclosures)) > 1:  # pragma: no cover
-                logger().warning(
+                _logger.warning(
                     "%d enclosures found, when only 1 expected\n%s",
                     e_count,
                     pprint.pformat(enclosures),

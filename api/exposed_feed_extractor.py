@@ -12,15 +12,7 @@ from requests.exceptions import RequestException
 from api import content_type_util, rss_requests
 from api.requests_extensions import safe_response_text
 
-_logger: logging.Logger | None = None
-
-
-def logger() -> logging.Logger:  # pragma: no cover
-    global _logger
-    if _logger is None:
-        _logger = logging.getLogger("rss_temple.exposed_feed_extractor")
-
-    return _logger
+_logger = logging.getLogger("rss_temple.exposed_feed_extractor")
 
 
 @dataclass
@@ -50,7 +42,7 @@ def extract_exposed_feeds(
             else:
                 return []
     except RequestException:
-        logger().exception(f"unable to download '{url}'")
+        _logger.exception(f"unable to download '{url}'")
         return []
 
     if content_type is None or content_type_util.is_feed(content_type):
@@ -60,7 +52,7 @@ def extract_exposed_feeds(
             d = feedparser.parse(f, sanitize_html=False)
 
         if not d.get("bozo", True):
-            logger().info(pprint.pformat(d))
+            _logger.info(pprint.pformat(d))
             return [
                 ExposedFeed(d.feed.get("title", url), url),
             ]
@@ -70,7 +62,7 @@ def extract_exposed_feeds(
         try:
             soup = BeautifulSoup(response_text, "lxml")
         except Exception:  # pragma: no cover
-            logger().exception("unknown BeautifulSoup error")
+            _logger.exception("unknown BeautifulSoup error")
             return []
 
         base_href: str | None = None

@@ -13,15 +13,7 @@ from api.requests_extensions import (
     safe_response_text,
 )
 
-_logger: logging.Logger | None = None
-
-
-def logger() -> logging.Logger:  # pragma: no cover
-    global _logger
-    if _logger is None:
-        _logger = logging.getLogger("rss_temple.top_image_extractor")
-
-    return _logger
+_logger = logging.getLogger("rss_temple.top_image_extractor")
 
 
 class TryAgain(Exception):
@@ -69,7 +61,7 @@ def extract_top_image_src(
     try:
         soup = BeautifulSoup(response_text, "lxml")
     except Exception as e:  # pragma: no cover
-        logger().exception("unknown BeautifulSoup error")
+        _logger.exception("unknown BeautifulSoup error")
         raise TryAgain from e
 
     og_image = soup.find("meta", property="og:image")
