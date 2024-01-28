@@ -258,7 +258,7 @@ else:
 
 CSRF_TRUSTED_ORIGINS = (
     csrf_trusted_origins.split(",")
-    if (csrf_trusted_origins := os.getenv("APP_CSRF_TRUSTED_ORIGINS")) is not None
+    if (csrf_trusted_origins := os.getenv("APP_CSRF_TRUSTED_ORIGINS"))
     else []
 )
 
