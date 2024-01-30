@@ -15,7 +15,7 @@ def is_html(content_type: str) -> bool:
 def is_feed(content_type: str) -> bool:
     return (
         re.search(
-            r"(?:application/(?:(?:(?:rss|rdf|atom)\+)?xml|json)|text/xml)",
+            r"(?:application/(?:(?:(?:rss|rdf|atom)\+)?xml|json)|text/xml|xml/rss)",
             content_type,
             re.IGNORECASE,
         )
