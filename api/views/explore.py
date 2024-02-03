@@ -137,9 +137,9 @@ TODO: for the time being, this will just be static data (based on my personal OP
                 some_feed_entry_titles: list[str] | None = cache.get(cache_key)
                 if some_feed_entry_titles is None:
                     some_feed_entry_titles = list(
-                        FeedEntry.objects.filter(feed=feed, title__isnull=False)
-                        .order_by("published_at")
-                        .values_list("title", flat=True)[:5]
+                        feed.feed_entries.order_by("published_at").values_list(
+                            "title", flat=True
+                        )[:5]
                     )
                     cache.set(cache_key, some_feed_entry_titles, 60.0 * 60.0 * 24.0)
 
