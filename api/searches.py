@@ -257,7 +257,7 @@ else:
     )
 
 
-def to_filter_args(object_name: str, request: HttpRequest, search: str):
+def to_filter_args(object_name: str, request: HttpRequest, search: str) -> list[Q]:
     parse_results: ParseResults
     try:
         parse_results = parser().parseString(search, True)
@@ -337,7 +337,7 @@ def _q(
     field_name: str,
     search_obj: str,
     object_search_fns: dict[str, Callable[[HttpRequest, str], Q]],
-):
+) -> Q:
     for _field_name, object_search_fn in object_search_fns.items():
         if field_name.lower() == _field_name.lower():
             try:

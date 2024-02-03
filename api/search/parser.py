@@ -17,7 +17,7 @@ def parser() -> Forward:
     global _parser
 
     if not _parser:
-        string_term = QuotedString('"').setResultsName("StringTerm")
+        string_term = QuotedString('"', esc_char="\\").setResultsName("StringTerm")
         identifier_term = Word(alphas, alphanums + "_").setResultsName("IdentifierTerm")
 
         and_operator = CaselessKeyword("and").setResultsName("AndOperator")

@@ -3,7 +3,7 @@ import uuid
 from typing import Any, Callable, ClassVar, TypedDict
 from unittest.mock import Mock
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.db.models.manager import BaseManager
 from django.http import HttpRequest
 from django.test import SimpleTestCase, TestCase
@@ -30,11 +30,45 @@ class SearchesTestCase(TestCase):
         logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
 
     def test_standard(self):
-        searches.to_filter_args(
+        q_list = searches.to_filter_args(
             "feed",
             Mock(HttpRequest),
             'uuid:"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
         )
+
+        try:
+            self.assertEqual(
+                q_list,
+                [
+                    Q(
+                        uuid__in=[
+                            uuid.UUID("c54a1f76-f350-4336-b7c4-33ec8f5e81a3"),
+                            uuid.UUID("99d63124-59e2-4204-ba61-be294dcb4d22"),
+                        ]
+                    )
+                ],
+            )
+        except AssertionError:
+            self.assertEqual(
+                q_list,
+                [
+                    Q(
+                        uuid__in=[
+                            uuid.UUID("99d63124-59e2-4204-ba61-be294dcb4d22"),
+                            uuid.UUID("c54a1f76-f350-4336-b7c4-33ec8f5e81a3"),
+                        ]
+                    )
+                ],
+            )
+
+    def test_standard_with_inner_quote(self):
+        q_list = searches.to_filter_args(
+            "feed", Mock(HttpRequest), 'title:"\\"test\\""'
+        )
+        try:
+            self.assertEqual(q_list, [Q(title_search_vector='"test"')])
+        except AssertionError:
+            self.assertEqual(q_list, [Q(title__icontains='"test"')])
 
     def test_malformed(self):
         with self.assertRaises(ValueError):
