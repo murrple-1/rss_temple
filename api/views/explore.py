@@ -136,9 +136,9 @@ TODO: for the time being, this will just be static data (based on my personal OP
                         continue
 
                     some_feed_entry_titles = list(
-                        feed.feed_entries.order_by("published_at").values_list(
-                            "title", flat=True
-                        )[:5]
+                        feed.feed_entries.filter(is_archived=False)
+                        .order_by("-published_at")
+                        .values_list("title", flat=True)[:5]
                     )
 
                     if not some_feed_entry_titles:
