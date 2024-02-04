@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Feed, User
+from api.models import Feed, SubscribedFeedUserMapping, User
 from api.serializers import ExploreSerializer
 
 
@@ -113,57 +113,67 @@ TODO: for the time being, this will just be static data (based on my personal OP
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
 
-        ret_obj: list[dict[str, Any]] = []
+        cache_key = "explore__ret_obj"
+        ret_obj: list[dict[str, Any]] | None = cache.get(cache_key)
 
-        feeds = {
-            f.feed_url: f
-            for f in Feed.annotate_subscription_data(
-                Feed.objects.filter(
+        if ret_obj is None:
+            ret_obj = []
+
+            feeds = {
+                f.feed_url: f
+                for f in Feed.objects.prefetch_related("feed_entries").filter(
                     feed_url__in=(
                         sf["feed_url"] for s in _section_lookups for sf in s["feeds"]
                     )
-                ),
-                cast(User, request.user),
-            )
-        }
+                )
+            }
 
-        for section_lookup in _section_lookups:
-            feed_objs: list[dict[str, Any]] = []
-            for feed_lookup in section_lookup["feeds"]:
-                feed = feeds.get(feed_lookup["feed_url"])
-                if not feed:
-                    continue
+            for section_lookup in _section_lookups:
+                feed_objs: list[dict[str, Any]] = []
+                for feed_lookup in section_lookup["feeds"]:
+                    feed = feeds.get(feed_lookup["feed_url"])
+                    if not feed:
+                        continue
 
-                cache_key = f"explore__some_feed_entry_titles__{feed.uuid}"
-                some_feed_entry_titles: list[str] | None = cache.get(cache_key)
-                if some_feed_entry_titles is None:
                     some_feed_entry_titles = list(
                         feed.feed_entries.order_by("published_at").values_list(
                             "title", flat=True
                         )[:5]
                     )
-                    cache.set(cache_key, some_feed_entry_titles, 60.0 * 60.0)
 
-                if not some_feed_entry_titles:
-                    continue
+                    if not some_feed_entry_titles:
+                        continue
 
-                feed_objs.append(
-                    {
-                        "name": feed.title,
-                        "feedUrl": feed.feed_url,
-                        "homeUrl": feed.home_url,
-                        "imageSrc": feed_lookup["image_src"],
-                        "entryTitles": some_feed_entry_titles,
-                        "isSubscribed": feed.is_subscribed,
-                    }
-                )
+                    feed_objs.append(
+                        {
+                            "_uuid": feed.uuid,
+                            "name": feed.title,
+                            "feedUrl": feed.feed_url,
+                            "homeUrl": feed.home_url,
+                            "imageSrc": feed_lookup["image_src"],
+                            "entryTitles": some_feed_entry_titles,
+                        }
+                    )
 
-            if feed_objs:
-                ret_obj.append(
-                    {
-                        "tagName": section_lookup["tag"],
-                        "feeds": feed_objs,
-                    }
-                )
+                if feed_objs:
+                    ret_obj.append(
+                        {
+                            "tagName": section_lookup["tag"],
+                            "feeds": feed_objs,
+                        }
+                    )
+
+            cache.set(cache_key, ret_obj, 60.0 * 60.0 * 3.0)
+
+        subscribed_feed_uuids = frozenset(
+            SubscribedFeedUserMapping.objects.filter(
+                user=cast(User, request.user)
+            ).values_list("feed_id", flat=True)
+        )
+
+        for json_ in ret_obj:
+            for feed_json in json_["feeds"]:
+                uuid_ = feed_json.pop("_uuid")
+                feed_json["isSubscribed"] = uuid_ in subscribed_feed_uuids
 
         return Response(ExploreSerializer(ret_obj, many=True).data)
