@@ -115,7 +115,7 @@ TODO: for the time being, this will just be static data (based on my personal OP
 
         cache_key = "explore__ret_obj"
         ret_obj: list[dict[str, Any]] | None = cache.get(cache_key)
-
+        cache_hit = True
         if ret_obj is None:
             ret_obj = []
 
@@ -163,6 +163,7 @@ TODO: for the time being, this will just be static data (based on my personal OP
                         }
                     )
 
+            cache_hit = False
             cache.set(cache_key, ret_obj, 60.0 * 60.0 * 3.0)
 
         subscribed_feed_uuids = frozenset(
@@ -176,4 +177,6 @@ TODO: for the time being, this will just be static data (based on my personal OP
                 uuid_ = feed_json.pop("_uuid")
                 feed_json["isSubscribed"] = uuid_ in subscribed_feed_uuids
 
-        return Response(ExploreSerializer(ret_obj, many=True).data)
+        response = Response(ExploreSerializer(ret_obj, many=True).data)
+        response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
+        return response
