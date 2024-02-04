@@ -121,7 +121,7 @@ TODO: for the time being, this will just be static data (based on my personal OP
 
             feeds = {
                 f.feed_url: f
-                for f in Feed.objects.prefetch_related("feed_entries").filter(
+                for f in Feed.objects.filter(
                     feed_url__in=(
                         sf["feed_url"] for s in _section_lookups for sf in s["feeds"]
                     )
