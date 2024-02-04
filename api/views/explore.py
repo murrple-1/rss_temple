@@ -25,11 +25,11 @@ _section_lookups: list[_Section] = [
         "tag": "Gaming",
         "feeds": [
             {
-                "feed_url": "http://feeds.feedburner.com/GamasutraFeatureArticles",
+                "feed_url": "http://feeds.ign.com/ign/all",
                 "image_src": "/assets/images/explore_banner.png",
             },
             {
-                "feed_url": "http://feeds.wolfire.com/WolfireGames",
+                "feed_url": "http://feeds.ign.com/ign/all",
                 "image_src": "/assets/images/explore_banner.png",
             },
         ],
@@ -64,7 +64,7 @@ _section_lookups: list[_Section] = [
                 "image_src": None,
             },
             {
-                "feed_url": "http://feeds.wolfire.com/WolfireGames",
+                "feed_url": "https://www.xda-developers.com/",
                 "image_src": None,
             },
             {
@@ -89,7 +89,7 @@ _section_lookups: list[_Section] = [
                 "image_src": "/assets/images/explore_banner.png",
             },
             {
-                "feed_url": "http://www.terrorizer.com/feed/",
+                "feed_url": "http://consequenceofsound.net/feed",
                 "image_src": "/assets/images/explore_banner.png",
             },
             {
