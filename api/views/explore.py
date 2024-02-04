@@ -60,11 +60,11 @@ _section_lookups: list[_Section] = [
         "tag": "Programming",
         "feeds": [
             {
-                "feed_url": "http://feeds.feedburner.com/codinghorror",
+                "feed_url": "https://proandroiddev.com/feed",
                 "image_src": None,
             },
             {
-                "feed_url": "https://www.xda-developers.com/",
+                "feed_url": "https://www.xda-developers.com/feed/",
                 "image_src": None,
             },
             {
