@@ -29,7 +29,7 @@ _section_lookups: list[_Section] = [
                 "image_src": "/assets/images/explore_banner.png",
             },
             {
-                "feed_url": "http://feeds.ign.com/ign/all",
+                "feed_url": "https://www.eurogamer.net/?format=rss",
                 "image_src": "/assets/images/explore_banner.png",
             },
         ],
