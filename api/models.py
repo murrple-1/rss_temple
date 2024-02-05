@@ -329,6 +329,34 @@ class Feed(models.Model):
         return f"{self.title} - {self.feed_url} - {self.uuid}"
 
 
+class AlternateFeedURL(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
+    feed_url = models.TextField(unique=True)
+    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+
+
+class DuplicateFeedSuggestion(models.Model):
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(feed1_id__lt=models.F("feed2_id")),
+                name="check__feed1_id__feed2_id__lessthan",
+            ),
+            models.UniqueConstraint(
+                fields=("feed1", "feed2"), name="unique__feed1__feed2"
+            ),
+        ]
+
+    uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
+    feed1 = models.ForeignKey(
+        Feed, on_delete=models.CASCADE, related_name="duplicate_feed_suggestions_1"
+    )
+    feed2 = models.ForeignKey(
+        Feed, on_delete=models.CASCADE, related_name="duplicate_feed_suggestions_2"
+    )
+    is_ignored = models.BooleanField(default=False)
+
+
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
         constraints = (

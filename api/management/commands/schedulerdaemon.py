@@ -131,6 +131,40 @@ def _setup_subscriptions(
     )
 
 
+def _flag_duplicate_feeds(
+    *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
+):
+    from dramatiq import Message
+
+    options = options or {}
+    broker.enqueue(
+        Message(
+            queue_name="rss_temple",
+            actor_name="flag_duplicate_feeds",
+            args=args,
+            kwargs=kwargs,
+            options=options,
+        )
+    )
+
+
+def _purge_duplicate_feed_urls(
+    *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
+):
+    from dramatiq import Message
+
+    options = options or {}
+    broker.enqueue(
+        Message(
+            queue_name="rss_temple",
+            actor_name="purge_duplicate_feed_urls",
+            args=args,
+            kwargs=kwargs,
+            options=options,
+        )
+    )
+
+
 class Command(BaseCommand):
     help = "Run the tasks on a schedule"
 
@@ -200,6 +234,21 @@ class Command(BaseCommand):
 
         parser.add_argument(
             "--purge-expired-data-crontab", default="0 0 */15 * *"
+        )  # every 1st and 15th, at midnight
+
+        parser.add_argument(
+            "--flag-duplicate-feeds-crontab", default="0 0 * * *"
+        )  # every midnight
+        parser.add_argument("--flag-duplicate-feeds-feed-count", type=int, default=1000)
+        parser.add_argument(
+            "--flag-duplicate-feeds-entry-compare-count", type=int, default=50
+        )
+        parser.add_argument(
+            "--flag-duplicate-feeds-entry-intersection-threshold", type=int, default=5
+        )
+
+        parser.add_argument(
+            "--purge-duplicate-feed-urls-crontab", default="0 0 */15 * *"
         )  # every 1st and 15th, at midnight
 
     def handle(self, *args: Any, **options: Any) -> None:
@@ -313,6 +362,33 @@ class Command(BaseCommand):
                     "max_age": options["setup_subscriptions_max_age"],
                 },
             },
+        )
+        scheduler.add_job(
+            _flag_duplicate_feeds,
+            trigger=CronTrigger.from_crontab(options["flag_duplicate_feeds_crontab"]),
+            id="flag_duplicate_feeds",
+            max_instances=1,
+            replace_existing=True,
+            coalesce=True,
+            kwargs={
+                "feed_count": options["flag_duplicate_feeds_feed_count"],
+                "entry_compare_count": options[
+                    "flag_duplicate_feeds_entry_compare_count"
+                ],
+                "entry_intersection_threshold": options[
+                    "flag_duplicate_feeds_entry_intersection_threshold"
+                ],
+            },
+        )
+        scheduler.add_job(
+            _purge_duplicate_feed_urls,
+            trigger=CronTrigger.from_crontab(
+                options["purge_duplicate_feed_urls_crontab"]
+            ),
+            id="purge_duplicate_feed_urls",
+            max_instances=1,
+            replace_existing=True,
+            coalesce=True,
         )
 
         try:

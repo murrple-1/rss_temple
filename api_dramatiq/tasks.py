@@ -14,13 +14,15 @@ from requests.exceptions import RequestException
 from api import content_type_util, rss_requests
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
-from api.models import Feed, FeedEntry
+from api.models import DuplicateFeedSuggestion, Feed, FeedEntry
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
 from api.tasks import extract_top_images as extract_top_images_
 from api.tasks import feed_scrape as feed_scrape_
+from api.tasks import find_duplicate_feeds as find_duplicate_feeds_
 from api.tasks import label_feeds as label_feeds_
 from api.tasks import label_users as label_users_
+from api.tasks import purge_duplicate_feed_urls as purge_duplicate_feed_urls_
 from api.tasks import purge_expired_data as purge_expired_data_
 from api.tasks import setup_subscriptions as setup_subscriptions_
 from api.tasks.feed_scrape import (
@@ -185,3 +187,36 @@ def setup_subscriptions(
         setup_subscriptions.logger.info("subscription process entry(s) setup")
     else:
         setup_subscriptions.logger.info("no subscription process entry available")
+
+
+@dramatiq.actor(queue_name="rss_temple")
+def flag_duplicate_feeds(
+    feed_count=1000, entry_compare_count=50, entry_intersection_threshold=5
+) -> None:
+    duplicate_feed_suggestions: list[DuplicateFeedSuggestion] = []
+
+    for f1, f2 in find_duplicate_feeds_(
+        feed_count, entry_compare_count, entry_intersection_threshold
+    ):
+        flag_duplicate_feeds.logger.info(
+            "possible duplicate found: %s :: %s", f1.feed_url, f2.feed_url
+        )
+
+        f1_id, f2_id = sorted([f1.uuid, f2.uuid], reverse=True)
+        duplicate_feed_suggestions.append(
+            DuplicateFeedSuggestion(feed1_id=f1_id, feed2_id=f2_id)
+        )
+
+    DuplicateFeedSuggestion.objects.bulk_create(
+        duplicate_feed_suggestions, ignore_conflicts=True
+    )
+
+    flag_duplicate_feeds.logger.info(
+        "%d possible duplicate(s) found", len(duplicate_feed_suggestions)
+    )
+
+
+@dramatiq.actor(queue_name="rss_temple")
+def purge_duplicate_feed_urls() -> None:
+    purge_duplicate_feed_urls_()
+    purge_duplicate_feed_urls.logger.info("purged duplicate feed URLs")

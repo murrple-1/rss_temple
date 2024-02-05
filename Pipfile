@@ -38,6 +38,7 @@ beautifulsoup4 = "*"
 dramatiq = {version = "*", extras = ["redis", "watch"]}
 apscheduler = "*"
 django-apscheduler = "*"
+jellyfish = "*"
 
 [dev-packages]
 coverage = "*"
