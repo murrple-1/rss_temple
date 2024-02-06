@@ -15,14 +15,23 @@ from api.models import (
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    list_display = ["email", "created_at", "is_staff", "is_active"]
+    list_editable = ["is_staff", "is_active"]
+    list_filter = ["is_active", "is_staff"]
     search_fields = ["email"]
     exclude = ["read_feed_entries", "favorite_feed_entries"]
 
 
 @admin.register(UserCategory)
 class UserCategoryAdmin(admin.ModelAdmin):
-    search_fields = ["text"]
+    list_display = ["text", "user__email"]
+    list_select_related = ["user"]
+    search_fields = ["text", "user__email"]
     autocomplete_fields = ["feeds"]
+
+    @admin.display(description="Username")
+    def user__email(self, obj: UserCategory):
+        return obj.user.email
 
 
 @admin.register(Feed)
@@ -33,10 +42,27 @@ class FeedAdmin(admin.ModelAdmin):
 
 @admin.register(FeedEntry)
 class FeedEntryAdmin(admin.ModelAdmin):
-    list_display = ["url", "title", "feed", "published_at", "is_archived"]
+    list_display = [
+        "url",
+        "title",
+        "feed__feed_url",
+        "feed__title",
+        "published_at",
+        "is_archived",
+    ]
     list_filter = ["is_archived"]
+    list_editable = ["is_archived"]
+    list_select_related = ["feed"]
     autocomplete_fields = ["feed"]
     search_fields = ["feed__feed_url"]
+
+    @admin.display(description="Parent Feed URL")
+    def feed__feed_url(self, obj: FeedEntry):
+        return obj.feed.feed_url
+
+    @admin.display(description="Parent Feed Title")
+    def feed__title(self, obj: FeedEntry):
+        return obj.feed.title
 
 
 @admin.register(AlternateFeedURL)
