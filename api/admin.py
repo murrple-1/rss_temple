@@ -16,6 +16,7 @@ from api.models import (
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     search_fields = ["email"]
+    exclude = ["read_feed_entries", "favorite_feed_entries"]
 
 
 @admin.register(UserCategory)

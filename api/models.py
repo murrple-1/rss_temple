@@ -9,7 +9,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
-from django.db.models.functions import Upper
 from django.utils import timezone
 from rest_framework.authtoken.models import Token as _Token
 
