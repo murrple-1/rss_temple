@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
+from django.db.models.functions import Upper
 from django.utils import timezone
 from rest_framework.authtoken.models import Token as _Token
 
@@ -235,6 +236,7 @@ class Feed(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["update_backoff_until"]),
+            models.Index(Upper("feed_url"), name="feed__idx__feed_url__upper"),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
@@ -330,6 +332,11 @@ class Feed(models.Model):
 
 
 class AlternateFeedURL(models.Model):
+    class Meta:
+        indexes = [
+            models.Index(Upper("feed_url"), name="alter...__idx__feed_url__upper"),
+        ]
+
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_url = models.URLField(max_length=2048, unique=True)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
@@ -340,10 +347,11 @@ class DuplicateFeedSuggestion(models.Model):
         constraints = [
             models.CheckConstraint(
                 check=~models.Q(feed1_id__lt=models.F("feed2_id")),
-                name="check__feed1_id__feed2_id__lessthan",
+                name="duplicatefeedsuggestion__check__feed1_id__feed2_id__lessthan",
             ),
             models.UniqueConstraint(
-                fields=("feed1", "feed2"), name="unique__feed1__feed2"
+                fields=("feed1", "feed2"),
+                name="duplicatefeedsuggestion__unique__feed1__feed2",
             ),
         ]
 
@@ -360,7 +368,10 @@ class DuplicateFeedSuggestion(models.Model):
 class SubscribedFeedUserMapping(models.Model):
     class Meta:
         constraints = (
-            models.UniqueConstraint(fields=("user", "feed"), name="unique__user__feed"),
+            models.UniqueConstraint(
+                fields=("user", "feed"),
+                name="subscribedfeedusermapping__unique__user__feed",
+            ),
             models.UniqueConstraint(
                 fields=("user", "custom_feed_title"),
                 name="subscribedfeedusermapping__unique__user__custom_feed_title",
