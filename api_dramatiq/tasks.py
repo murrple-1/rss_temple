@@ -198,10 +198,6 @@ def flag_duplicate_feeds(
     for f1, f2 in find_duplicate_feeds_(
         feed_count, entry_compare_count, entry_intersection_threshold
     ):
-        flag_duplicate_feeds.logger.info(
-            "possible duplicate found: %s :: %s", f1.feed_url, f2.feed_url
-        )
-
         f1_id, f2_id = sorted([f1.uuid, f2.uuid], reverse=True)
         duplicate_feed_suggestions.append(
             DuplicateFeedSuggestion(feed1_id=f1_id, feed2_id=f2_id)
@@ -212,7 +208,12 @@ def flag_duplicate_feeds(
     )
 
     flag_duplicate_feeds.logger.info(
-        "%d possible duplicate(s) found", len(duplicate_feed_suggestions)
+        "%d possible duplicate(s) found: %s",
+        len(duplicate_feed_suggestions),
+        ", ".join(
+            f"'{dfs.feed1.feed_url}'::'{dfs.feed2.feed_url}"
+            for dfs in duplicate_feed_suggestions
+        ),
     )
 
 
