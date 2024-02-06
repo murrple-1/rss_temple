@@ -22,6 +22,7 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(UserCategory)
 class UserCategoryAdmin(admin.ModelAdmin):
     search_fields = ["text"]
+    autocomplete_fields = ["feeds"]
 
 
 @admin.register(Feed)
@@ -34,13 +35,24 @@ class FeedAdmin(admin.ModelAdmin):
 class FeedEntryAdmin(admin.ModelAdmin):
     list_display = ["url", "title", "feed", "published_at", "is_archived"]
     list_filter = ["is_archived"]
+    autocomplete_fields = ["feed"]
     search_fields = ["feed__feed_url"]
 
 
 @admin.register(AlternateFeedURL)
 class AlternateFeedURLAdmin(admin.ModelAdmin):
-    list_display = ["feed_url", "feed"]
-    search_fields = ["feed_url"]
+    list_display = ["feed_url", "feed__feed_url", "feed__title"]
+    list_select_related = ["feed"]
+    search_fields = ["feed_url", "feed__feed_url"]
+    autocomplete_fields = ["feed"]
+
+    @admin.display(description="Parent Feed URL")
+    def feed__feed_url(self, obj: AlternateFeedURL):
+        return obj.feed.feed_url
+
+    @admin.display(description="Parent Feed Title")
+    def feed__title(self, obj: AlternateFeedURL):
+        return obj.feed.title
 
 
 @admin.action(description="Convert to Alternate Feed URL (Feed 1 is the duplicate)")
@@ -71,7 +83,32 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
         convert_duplicate_feed1_to_alternate_feed_url,
         convert_duplicate_feed2_to_alternate_feed_url,
     ]
-    list_display = ["uuid", "feed1", "feed2", "is_ignored"]
+    list_display = [
+        "uuid",
+        "feed1__feed_url",
+        "feed1__title",
+        "feed2__feed_url",
+        "feed2__title",
+        "is_ignored",
+    ]
     list_editable = ["is_ignored"]
     list_filter = ["is_ignored"]
+    list_select_related = ["feed1", "feed2"]
+    autocomplete_fields = ["feed1", "feed2"]
     search_fields = ["feed1__feed_url", "feed2__feed_url"]
+
+    @admin.display(description="Feed 1 Feed URL")
+    def feed1__feed_url(self, obj: DuplicateFeedSuggestion):
+        return obj.feed1.feed_url
+
+    @admin.display(description="Feed 1 Title")
+    def feed1__title(self, obj: DuplicateFeedSuggestion):
+        return obj.feed1.title
+
+    @admin.display(description="Feed 2 Feed URL")
+    def feed2__feed_url(self, obj: DuplicateFeedSuggestion):
+        return obj.feed2.feed_url
+
+    @admin.display(description="Feed 2 Title")
+    def feed2__title(self, obj: DuplicateFeedSuggestion):
+        return obj.feed2.title
