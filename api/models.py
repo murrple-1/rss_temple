@@ -136,7 +136,7 @@ class UserCategory(models.Model):
         on_delete=models.CASCADE,
         related_name="user_categories",
     )
-    text = models.TextField()
+    text = models.CharField(max_length=1024)
     feeds: models.ManyToManyField = models.ManyToManyField(
         "Feed", related_name="user_categories"
     )
@@ -238,9 +238,9 @@ class Feed(models.Model):
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    feed_url = models.TextField(unique=True)
+    feed_url = models.URLField(max_length=2048, unique=True)
     title = models.TextField()
-    home_url = models.TextField(null=True)
+    home_url = models.URLField(max_length=2048, null=True)
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
@@ -331,7 +331,7 @@ class Feed(models.Model):
 
 class AlternateFeedURL(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    feed_url = models.TextField(unique=True)
+    feed_url = models.URLField(max_length=2048, unique=True)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
 
 
@@ -369,7 +369,7 @@ class SubscribedFeedUserMapping(models.Model):
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
-    custom_feed_title = models.TextField(null=True)
+    custom_feed_title = models.CharField(max_length=1024, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
@@ -404,7 +404,7 @@ class FeedEntry(models.Model):
         )
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    id = models.TextField(null=True)
+    id = models.CharField(max_length=2048, null=True)
     feed = models.ForeignKey(
         Feed, on_delete=models.CASCADE, related_name="feed_entries"
     )
@@ -412,9 +412,9 @@ class FeedEntry(models.Model):
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True)
     title = models.TextField()
-    url = models.TextField()
+    url = models.URLField(max_length=2048)
     content = models.TextField()
-    author_name = models.TextField(null=True)
+    author_name = models.CharField(max_length=1024, null=True)
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
     is_archived = models.BooleanField(default=False)
@@ -422,7 +422,7 @@ class FeedEntry(models.Model):
         Language, related_name="feed_entries", null=True, on_delete=models.SET_NULL
     )
     has_top_image_been_processed = models.BooleanField(default=False)
-    top_image_src = models.TextField(default="")
+    top_image_src = models.URLField(max_length=2048, default="")
     top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
     voted_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         ClassifierLabel,
@@ -514,9 +514,9 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
     feed_subscription_progress_entry = models.ForeignKey(
         FeedSubscriptionProgressEntry, on_delete=models.CASCADE
     )
-    feed_url = models.TextField()
-    custom_feed_title = models.TextField(null=True)
-    user_category_text = models.TextField(null=True)
+    feed_url = models.URLField(max_length=2048)
+    custom_feed_title = models.CharField(max_length=1024, null=True)
+    user_category_text = models.CharField(max_length=1024, null=True)
     is_finished = models.BooleanField(default=False)
 
 
