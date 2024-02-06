@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.http import HttpRequest
 from lingua import Language
 from pyparsing import ParseException, ParseResults
+from url_normalize import url_normalize
 
 from api.models import (
     AlternateFeedURL,
@@ -81,6 +82,40 @@ class LanguageNameSet(CustomConvertTo):
         return langs
 
 
+def _feed_feedUrl(request: HttpRequest, search_obj: str) -> Q:
+    url: str
+    try:
+        url = cast(str, url_normalize(search_obj))
+    except Exception as e:
+        raise ValueError("malformed") from e
+
+    return Q(feed_url=url) | Q(
+        uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values("feed_id")[:1]
+    )
+
+
+def _feed_homeUrl(request: HttpRequest, search_obj: str) -> Q:
+    url: str
+    try:
+        url = cast(str, url_normalize(search_obj))
+    except Exception as e:
+        raise ValueError("malformed") from e
+
+    return Q(home_url=url)
+
+
+def _feedentry_feedUrl(request: HttpRequest, search_obj: str) -> Q:
+    url: str
+    try:
+        url = cast(str, url_normalize(search_obj))
+    except Exception as e:
+        raise ValueError("malformed") from e
+
+    return Q(feed__feed_url=url) | Q(
+        feed_id__in=AlternateFeedURL.objects.filter(feed_url=url).values("feed_id")[:1]
+    )
+
+
 def _feedentry_subscribed(request: HttpRequest, search_obj: str):
     q = Q(
         feed__in=Feed.objects.filter(
@@ -128,13 +163,8 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
         "title": lambda request, search_obj: Q(title__icontains=search_obj),
         "title_exact": lambda request, search_obj: Q(title__iexact=search_obj),
-        "feedUrl": lambda request, search_obj: Q(feed_url__iexact=search_obj)
-        | Q(
-            uuid__in=AlternateFeedURL.objects.filter(
-                feed_url__iexact=search_obj
-            ).values("feed_id")[:1]
-        ),
-        "homeUrl": lambda request, search_obj: Q(home_url__iexact=search_obj),
+        "feedUrl": _feed_feedUrl,
+        "homeUrl": _feed_homeUrl,
         "publishedAt": lambda request, search_obj: Q(
             published_at__range=DateTimeRange.convertto(search_obj)
         ),
@@ -175,12 +205,7 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "feedUuid": lambda request, search_obj: Q(
             feed_id__in=UuidList.convertto(search_obj)
         ),
-        "feedUrl": lambda request, search_obj: Q(feed__feed_url__iexact=search_obj)
-        | Q(
-            feed_id__in=AlternateFeedURL.objects.filter(
-                feed_url__iexact=search_obj
-            ).values("feed_id")[:1]
-        ),
+        "feedUrl": _feedentry_feedUrl,
         "createdAt": lambda request, search_obj: Q(
             created_at__range=DateTimeRange.convertto(search_obj)
         ),

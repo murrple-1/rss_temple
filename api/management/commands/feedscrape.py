@@ -1,10 +1,11 @@
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 from django.db.models import Q
+from url_normalize import url_normalize
 
 from api import content_type_util, rss_requests
 from api.models import AlternateFeedURL, Feed
@@ -23,12 +24,13 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         feed: Feed
         if feed_url := options["feed_url"]:
+            feed_url = cast(str, url_normalize(feed_url))
             feed = Feed.objects.get(
-                Q(feed_url__iexact=feed_url)
+                Q(feed_url=feed_url)
                 | Q(
-                    uuid__in=AlternateFeedURL.objects.filter(
-                        feed_url__iexact=feed_url
-                    ).values("feed_id")[:1]
+                    uuid__in=AlternateFeedURL.objects.filter(feed_url=feed_url).values(
+                        "feed_id"
+                    )[:1]
                 )
             )
         elif feed_uuid := options["feed_uuid"]:

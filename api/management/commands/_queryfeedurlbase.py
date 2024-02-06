@@ -50,10 +50,10 @@ class BaseCommand(BaseCommand_):
 
             try:
                 feed = Feed.objects.prefetch_related("feed_entries").get(
-                    Q(feed_url__iexact=feed_url)
+                    Q(feed_url=feed_url)
                     | Q(
                         uuid__in=AlternateFeedURL.objects.filter(
-                            feed_url__iexact=feed_url
+                            feed_url=feed_url
                         ).values("feed_id")[:1]
                     )
                 )

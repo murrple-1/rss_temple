@@ -126,10 +126,10 @@ TODO: for the time being, this will just be static data (based on my personal OP
                 for sf in s["feeds"]:
                     url = cast(str, url_normalize(sf["feed_url"]))
                     feed = Feed.objects.filter(
-                        Q(feed_url__iexact=url)
+                        Q(feed_url=url)
                         | Q(
                             uuid__in=AlternateFeedURL.objects.filter(
-                                feed_url__iexact=url
+                                feed_url=url
                             ).values("feed_id")[:1]
                         )
                     ).first()

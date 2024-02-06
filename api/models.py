@@ -236,7 +236,6 @@ class Feed(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["update_backoff_until"]),
-            models.Index(Upper("feed_url"), name="feed__idx__feed_url__upper"),
         ]
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
@@ -332,11 +331,6 @@ class Feed(models.Model):
 
 
 class AlternateFeedURL(models.Model):
-    class Meta:
-        indexes = [
-            models.Index(Upper("feed_url"), name="alter...__idx__feed_url__upper"),
-        ]
-
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_url = models.URLField(max_length=2048, unique=True)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)

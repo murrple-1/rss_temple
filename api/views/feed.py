@@ -81,11 +81,11 @@ class FeedView(APIView):
             feed = Feed.annotate_subscription_data(
                 Feed.objects.all(), cast(User, request.user)
             ).get(
-                Q(feed_url__iexact=url)
+                Q(feed_url=url)
                 | Q(
-                    uuid__in=AlternateFeedURL.objects.filter(
-                        feed_url__iexact=url
-                    ).values("feed_id")[:1]
+                    uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values(
+                        "feed_id"
+                    )[:1]
                 )
             )
         except Feed.DoesNotExist:
@@ -197,11 +197,11 @@ class FeedSubscribeView(APIView):
         feed: Feed
         try:
             feed = Feed.objects.get(
-                Q(feed_url__iexact=url)
+                Q(feed_url=url)
                 | Q(
-                    uuid__in=AlternateFeedURL.objects.filter(
-                        feed_url__iexact=url
-                    ).values("feed_id")[:1]
+                    uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values(
+                        "feed_id"
+                    )[:1]
                 )
             )
         except Feed.DoesNotExist:
@@ -256,7 +256,7 @@ class FeedSubscribeView(APIView):
         subscribed_feed_mapping: SubscribedFeedUserMapping
         try:
             subscribed_feed_mapping = SubscribedFeedUserMapping.objects.get(
-                user=user, feed__feed_url__iexact=url
+                user=user, feed__feed_url=url
             )
         except SubscribedFeedUserMapping.DoesNotExist:
             raise NotFound("not subscribed")
@@ -285,10 +285,10 @@ class FeedSubscribeView(APIView):
         serializer = FeedGetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        url = url_normalize(serializer.validated_data["url"])
+        url = cast(str, url_normalize(serializer.validated_data["url"]))
 
         count, _ = SubscribedFeedUserMapping.objects.filter(
-            user=cast(User, request.user), feed__feed_url__iexact=url
+            user=cast(User, request.user), feed__feed_url=url
         ).delete()
 
         if count < 1:

@@ -64,10 +64,10 @@ def setup_subscriptions(
         if feed is None:
             try:
                 feed = Feed.objects.get(
-                    Q(feed_url__iexact=feed_url)
+                    Q(feed_url=feed_url)
                     | Q(
                         uuid__in=AlternateFeedURL.objects.filter(
-                            feed_url__iexact=feed_url
+                            feed_url=feed_url
                         ).values("feed_id")[:1]
                     )
                 )

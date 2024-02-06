@@ -205,11 +205,11 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
             for t in e:
                 url = cast(str, url_normalize(t.url))
                 feed = Feed.objects.filter(
-                    Q(feed_url__iexact=url)
+                    Q(feed_url=url)
                     | Q(
-                        uuid__in=AlternateFeedURL.objects.filter(
-                            feed_url__iexact=url
-                        ).values("feed_id")[:1]
+                        uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values(
+                            "feed_id"
+                        )[:1]
                     )
                 ).first()
                 if feed is not None:
