@@ -7,6 +7,7 @@ import xmlschema
 from defusedxml.ElementTree import ParseError as defused_ParseError
 from defusedxml.ElementTree import fromstring as defused_fromstring
 from django.db import transaction
+from django.db.models import Q
 from django.http.response import HttpResponse
 from drf_yasg import openapi
 from drf_yasg.inspectors import SwaggerAutoSchema
@@ -15,10 +16,12 @@ from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from url_normalize import url_normalize
 
 from api import grace_period_util
 from api import opml as opml_util
 from api.models import (
+    AlternateFeedURL,
     Feed,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
@@ -197,14 +200,20 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
     def _get_or_create_feeds(
         cls, user: User, grouped_entries: dict[str | None, frozenset[opml_util.Entry]]
     ) -> _GetFeedsOutput:
-        feeds_dict: dict[str, Feed | None] = {
-            f.feed_url: f
-            for f in Feed.objects.filter(
-                feed_url__in=frozenset(
-                    t.url for e in grouped_entries.values() for t in e
-                )
-            )
-        }
+        feeds_dict: dict[str, Feed | None] = {}
+        for e in grouped_entries.values():
+            for t in e:
+                url = cast(str, url_normalize(t.url))
+                feed = Feed.objects.filter(
+                    Q(feed_url__iexact=url)
+                    | Q(
+                        uuid__in=AlternateFeedURL.objects.filter(
+                            feed_url__iexact=url
+                        ).values("feed_id")[:1]
+                    )
+                ).first()
+                if feed is not None:
+                    feeds_dict[url] = feed
 
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry | None = None
         feed_subscription_progress_entry_descriptors: list[
@@ -213,6 +222,7 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
 
         for group_name, entries in grouped_entries.items():
             for title, url in entries:
+                url = cast(str, url_normalize(url))
                 if url not in feeds_dict:
                     if feed_subscription_progress_entry is None:
                         feed_subscription_progress_entry = (

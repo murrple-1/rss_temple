@@ -1,12 +1,14 @@
 from typing import Any, TypedDict, cast
 
 from django.core.cache import BaseCache, caches
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from url_normalize import url_normalize
 
-from api.models import Feed, SubscribedFeedUserMapping, User
+from api.models import AlternateFeedURL, Feed, SubscribedFeedUserMapping, User
 from api.serializers import ExploreSerializer
 
 
@@ -119,14 +121,20 @@ TODO: for the time being, this will just be static data (based on my personal OP
         if ret_obj is None:
             ret_obj = []
 
-            feeds = {
-                f.feed_url: f
-                for f in Feed.objects.filter(
-                    feed_url__in=(
-                        sf["feed_url"] for s in _section_lookups for sf in s["feeds"]
-                    )
-                )
-            }
+            feeds: dict[str, Feed] = {}
+            for s in _section_lookups:
+                for sf in s["feeds"]:
+                    url = cast(str, url_normalize(sf["feed_url"]))
+                    feed = Feed.objects.filter(
+                        Q(feed_url__iexact=url)
+                        | Q(
+                            uuid__in=AlternateFeedURL.objects.filter(
+                                feed_url__iexact=url
+                            ).values("feed_id")[:1]
+                        )
+                    ).first()
+                    if feed is not None:
+                        feeds[url] = feed
 
             for section_lookup in _section_lookups:
                 feed_objs: list[dict[str, Any]] = []

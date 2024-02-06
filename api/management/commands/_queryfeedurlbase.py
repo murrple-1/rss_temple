@@ -4,6 +4,7 @@ from typing import Any, Collection
 from django.conf import settings
 from django.core.management.base import BaseCommand as BaseCommand_
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from requests.exceptions import RequestException
 from tabulate import tabulate
@@ -11,7 +12,7 @@ from tabulate import tabulate
 from api import content_type_util, feed_handler, rss_requests
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
-from api.models import Feed, FeedEntry
+from api.models import AlternateFeedURL, Feed, FeedEntry
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks.feed_scrape import feed_scrape
 from api.text_classifier.lang_detector import detect_iso639_3
@@ -49,7 +50,12 @@ class BaseCommand(BaseCommand_):
 
             try:
                 feed = Feed.objects.prefetch_related("feed_entries").get(
-                    feed_url=feed_url
+                    Q(feed_url__iexact=feed_url)
+                    | Q(
+                        uuid__in=AlternateFeedURL.objects.filter(
+                            feed_url__iexact=feed_url
+                        ).values("feed_id")[:1]
+                    )
                 )
                 feeds.append(feed)
 

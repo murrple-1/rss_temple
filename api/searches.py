@@ -7,7 +7,13 @@ from django.http import HttpRequest
 from lingua import Language
 from pyparsing import ParseException, ParseResults
 
-from api.models import Feed, ReadFeedEntryUserMapping, SubscribedFeedUserMapping, User
+from api.models import (
+    AlternateFeedURL,
+    Feed,
+    ReadFeedEntryUserMapping,
+    SubscribedFeedUserMapping,
+    User,
+)
 from api.search.convertto import (
     Bool,
     CustomConvertTo,
@@ -122,7 +128,12 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
         "title": lambda request, search_obj: Q(title__icontains=search_obj),
         "title_exact": lambda request, search_obj: Q(title__iexact=search_obj),
-        "feedUrl": lambda request, search_obj: Q(feed_url__iexact=search_obj),
+        "feedUrl": lambda request, search_obj: Q(feed_url__iexact=search_obj)
+        | Q(
+            uuid__in=AlternateFeedURL.objects.filter(
+                feed_url__iexact=search_obj
+            ).values("feed_id")[:1]
+        ),
         "homeUrl": lambda request, search_obj: Q(home_url__iexact=search_obj),
         "publishedAt": lambda request, search_obj: Q(
             published_at__range=DateTimeRange.convertto(search_obj)
@@ -164,7 +175,12 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "feedUuid": lambda request, search_obj: Q(
             feed_id__in=UuidList.convertto(search_obj)
         ),
-        "feedUrl": lambda request, search_obj: Q(feed__feed_url=search_obj),
+        "feedUrl": lambda request, search_obj: Q(feed__feed_url__iexact=search_obj)
+        | Q(
+            feed_id__in=AlternateFeedURL.objects.filter(
+                feed_url__iexact=search_obj
+            ).values("feed_id")[:1]
+        ),
         "createdAt": lambda request, search_obj: Q(
             created_at__range=DateTimeRange.convertto(search_obj)
         ),

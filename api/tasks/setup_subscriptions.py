@@ -2,6 +2,7 @@ import logging
 from typing import Iterable, cast
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from requests.exceptions import RequestException
 
@@ -9,6 +10,7 @@ from api import content_type_util, feed_handler, rss_requests
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
 from api.models import (
+    AlternateFeedURL,
     Feed,
     FeedEntry,
     FeedSubscriptionProgressEntry,
@@ -61,7 +63,14 @@ def setup_subscriptions(
         feed = feeds.get(feed_url)
         if feed is None:
             try:
-                feed = Feed.objects.get(feed_url=feed_url)
+                feed = Feed.objects.get(
+                    Q(feed_url__iexact=feed_url)
+                    | Q(
+                        uuid__in=AlternateFeedURL.objects.filter(
+                            feed_url__iexact=feed_url
+                        ).values("feed_id")[:1]
+                    )
+                )
             except Feed.DoesNotExist:
                 try:
                     feed = _generate_feed(feed_url, response_max_byte_count)

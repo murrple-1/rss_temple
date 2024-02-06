@@ -23,6 +23,7 @@ from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
 from api.fields import FieldMap
 from api.models import (
+    AlternateFeedURL,
     Feed,
     FeedEntry,
     ReadFeedEntryUserMapping,
@@ -79,7 +80,14 @@ class FeedView(APIView):
         try:
             feed = Feed.annotate_subscription_data(
                 Feed.objects.all(), cast(User, request.user)
-            ).get(feed_url=url)
+            ).get(
+                Q(feed_url__iexact=url)
+                | Q(
+                    uuid__in=AlternateFeedURL.objects.filter(
+                        feed_url__iexact=url
+                    ).values("feed_id")[:1]
+                )
+            )
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
@@ -188,7 +196,14 @@ class FeedSubscribeView(APIView):
 
         feed: Feed
         try:
-            feed = Feed.objects.get(feed_url=url)
+            feed = Feed.objects.get(
+                Q(feed_url__iexact=url)
+                | Q(
+                    uuid__in=AlternateFeedURL.objects.filter(
+                        feed_url__iexact=url
+                    ).values("feed_id")[:1]
+                )
+            )
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
@@ -241,7 +256,7 @@ class FeedSubscribeView(APIView):
         subscribed_feed_mapping: SubscribedFeedUserMapping
         try:
             subscribed_feed_mapping = SubscribedFeedUserMapping.objects.get(
-                user=user, feed__feed_url=url
+                user=user, feed__feed_url__iexact=url
             )
         except SubscribedFeedUserMapping.DoesNotExist:
             raise NotFound("not subscribed")
@@ -273,7 +288,7 @@ class FeedSubscribeView(APIView):
         url = url_normalize(serializer.validated_data["url"])
 
         count, _ = SubscribedFeedUserMapping.objects.filter(
-            user=cast(User, request.user), feed__feed_url=url
+            user=cast(User, request.user), feed__feed_url__iexact=url
         ).delete()
 
         if count < 1:

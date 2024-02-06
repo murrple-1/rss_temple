@@ -4,9 +4,10 @@ from typing import Any
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.db.models import Q
 
 from api import content_type_util, rss_requests
-from api.models import Feed
+from api.models import AlternateFeedURL, Feed
 from api.requests_extensions import safe_response_text
 from api.tasks import feed_scrape
 
@@ -22,7 +23,14 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         feed: Feed
         if feed_url := options["feed_url"]:
-            feed = Feed.objects.get(feed_url=feed_url)
+            feed = Feed.objects.get(
+                Q(feed_url__iexact=feed_url)
+                | Q(
+                    uuid__in=AlternateFeedURL.objects.filter(
+                        feed_url__iexact=feed_url
+                    ).values("feed_id")[:1]
+                )
+            )
         elif feed_uuid := options["feed_uuid"]:
             feed = Feed.objects.get(uuid=uuid.UUID(feed_uuid))
         else:
