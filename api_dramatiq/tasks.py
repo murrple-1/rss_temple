@@ -211,7 +211,7 @@ def flag_duplicate_feeds(
         "%d possible duplicate(s) found: %s",
         len(duplicate_feed_suggestions),
         ", ".join(
-            f"'{dfs.feed1.feed_url}'::'{dfs.feed2.feed_url}"
+            f"'{dfs.feed1.feed_url}'::'{dfs.feed2.feed_url}'"
             for dfs in duplicate_feed_suggestions
         ),
     )
