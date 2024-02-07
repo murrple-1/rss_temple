@@ -1,5 +1,5 @@
 import uuid
-from typing import Callable, Collection
+from typing import Any, Callable, Collection
 
 from django.db import IntegrityError, transaction
 
@@ -24,7 +24,7 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
     remove_feed_uuids: set[uuid.UUID] = set()
     moving_subscriptions: list[SubscribedFeedUserMapping] = []
     moving_read_mappings: list[ReadFeedEntryUserMapping] = []
-    favorite_additions: dict[uuid.UUID, tuple[User, list[FeedEntry]]] = {}
+    moving_favorite_mappings: list[Any] = []
     user_category_additions: dict[uuid.UUID, tuple[UserCategory, list[Feed]]] = {}
     for dfs in duplicate_feed_suggestions:
         master_feed = master_feed_fn(dfs)
@@ -51,24 +51,22 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
                 read_mapping.feed_entry = similar_feed_entry
                 moving_read_mappings.append(read_mapping)
 
-        for feed_entry in FeedEntry.objects.filter(
-            feed=duplicate_feed, is_archived=False
-        ).iterator():
+        for favorite_mapping in (
+            User.favorite_feed_entries.through.objects.filter(
+                feedentry__feed=duplicate_feed
+            )
+            .select_related("feedentry")
+            .iterator()
+        ):
             similar_feed_entry = FeedEntry.objects.filter(
                 feed=master_feed,
-                title=feed_entry.title,
-                url=feed_entry.url,
+                title=favorite_mapping.feedentry.title,
+                url=favorite_mapping.feedentry.url,
                 is_archived=False,
             ).first()
             if similar_feed_entry:
-                for user in feed_entry.favorite_user_set.iterator():
-                    user_feed_entries_tuple: tuple[
-                        User, list[FeedEntry]
-                    ] | None = favorite_additions.get(user.uuid)
-                    if not user_feed_entries_tuple:
-                        user_feed_entries_tuple = (user, [])
-                        favorite_additions[user.uuid] = user_feed_entries_tuple
-                    user_feed_entries_tuple[1].append(similar_feed_entry)
+                favorite_mapping.feedentry = similar_feed_entry
+                moving_favorite_mappings.append(favorite_mapping)
 
         for user_category in duplicate_feed.user_categories.iterator():
             user_category_feeds_tuple: tuple[
@@ -85,12 +83,6 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
         remove_feed_uuids.add(duplicate_feed.uuid)
 
     with transaction.atomic():
-        for user, feed_entries in favorite_additions.values():
-            user.favorite_feed_entries.add(*feed_entries)
-
-        for user_category, feeds in user_category_additions.values():
-            user_category.feeds.add(*feeds)
-
         for subsciption_mapping in moving_subscriptions:
             try:
                 subsciption_mapping.save(update_fields=("feed",))
@@ -104,6 +96,16 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
             except IntegrityError:
                 # user was subscribed to both versions, for some reason
                 pass
+
+        for favorite_mapping in moving_favorite_mappings:
+            try:
+                favorite_mapping.save(update_fields=("feedentry",))
+            except IntegrityError:
+                # user was subscribed to both versions, for some reason
+                pass
+
+        for user_category, feeds in user_category_additions.values():
+            user_category.feeds.add(*feeds)
 
         AlternateFeedURL.objects.bulk_create(alternate_feed_urls)
         Feed.objects.filter(uuid__in=remove_feed_uuids).delete()
