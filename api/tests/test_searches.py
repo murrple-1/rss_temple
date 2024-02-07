@@ -309,3 +309,18 @@ class LanguageNameSetTestCase(SimpleTestCase):
             with self.subTest(input=input_):
                 with self.assertRaises(ValueError):
                     searches.LanguageNameSet.convertto(input_)
+
+
+class URLTestCase(SimpleTestCase):
+    def test_convertto(self):
+        for input_, expected in [
+            ("https://GOOGLE.COM", "https://google.com/"),
+        ]:
+            with self.subTest(input=input_, expected=expected):
+                self.assertEqual(searches.URL.convertto(input_), expected)
+
+    def test_convertto_bad(self):
+        for input_ in ["//[oops"]:
+            with self.subTest(input=input_):
+                with self.assertRaises(ValueError):
+                    searches.URL.convertto(input_)

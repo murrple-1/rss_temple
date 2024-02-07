@@ -82,41 +82,32 @@ class LanguageNameSet(CustomConvertTo):
         return langs
 
 
+class URL(CustomConvertTo):
+    @staticmethod
+    def convertto(search_obj: str):
+        try:
+            return cast(str, url_normalize(search_obj))
+        except Exception as e:
+            raise ValueError("malformed") from e
+
+
 def _feed_feedUrl(request: HttpRequest, search_obj: str) -> Q:
-    url: str
-    try:
-        url = cast(str, url_normalize(search_obj))
-    except Exception as e:
-        raise ValueError("malformed") from e
+    url = URL.convertto(search_obj)
 
     return Q(feed_url=url) | Q(
         uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values("feed_id")[:1]
     )
 
 
-def _feed_homeUrl(request: HttpRequest, search_obj: str) -> Q:
-    url: str
-    try:
-        url = cast(str, url_normalize(search_obj))
-    except Exception as e:
-        raise ValueError("malformed") from e
-
-    return Q(home_url=url)
-
-
 def _feedentry_feedUrl(request: HttpRequest, search_obj: str) -> Q:
-    url: str
-    try:
-        url = cast(str, url_normalize(search_obj))
-    except Exception as e:
-        raise ValueError("malformed") from e
+    url = URL.convertto(search_obj)
 
     return Q(feed__feed_url=url) | Q(
         feed_id__in=AlternateFeedURL.objects.filter(feed_url=url).values("feed_id")[:1]
     )
 
 
-def _feedentry_subscribed(request: HttpRequest, search_obj: str):
+def _feedentry_subscribed(request: HttpRequest, search_obj: str) -> Q:
     q = Q(
         feed__in=Feed.objects.filter(
             uuid__in=SubscribedFeedUserMapping.objects.filter(
@@ -131,7 +122,7 @@ def _feedentry_subscribed(request: HttpRequest, search_obj: str):
     return q
 
 
-def _feedentry_is_read(request: HttpRequest, search_obj: str):
+def _feedentry_isRead(request: HttpRequest, search_obj: str) -> Q:
     q = Q(is_archived=True) | Q(
         uuid__in=ReadFeedEntryUserMapping.objects.filter(
             user=cast(User, request.user)
@@ -144,7 +135,7 @@ def _feedentry_is_read(request: HttpRequest, search_obj: str):
     return q
 
 
-def _feedentry_is_favorite(request: HttpRequest, search_obj: str):
+def _feedentry_isFavorite(request: HttpRequest, search_obj: str) -> Q:
     q = Q(uuid__in=cast(User, request.user).favorite_feed_entries.values("uuid"))
 
     if not Bool.convertto(search_obj):
@@ -164,7 +155,7 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "title": lambda request, search_obj: Q(title__icontains=search_obj),
         "title_exact": lambda request, search_obj: Q(title__iexact=search_obj),
         "feedUrl": _feed_feedUrl,
-        "homeUrl": _feed_homeUrl,
+        "homeUrl": lambda request, search_obj: Q(home_url=URL.convertto(search_obj)),
         "publishedAt": lambda request, search_obj: Q(
             published_at__range=DateTimeRange.convertto(search_obj)
         ),
@@ -239,8 +230,8 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
             author_name__iexact=search_obj
         ),
         "subscribed": _feedentry_subscribed,
-        "isRead": _feedentry_is_read,
-        "isFavorite": _feedentry_is_favorite,
+        "isRead": _feedentry_isRead,
+        "isFavorite": _feedentry_isFavorite,
         "readAt": lambda request, search_obj: Q(
             uuid__in=ReadFeedEntryUserMapping.objects.filter(
                 user=cast(User, request.user),

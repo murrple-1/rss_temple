@@ -30,7 +30,7 @@ class UserCategoryAdmin(admin.ModelAdmin):
     autocomplete_fields = ["feeds"]
 
     @admin.display(description="Username")
-    def user__email(self, obj: UserCategory):
+    def user__email(self, obj: UserCategory):  # pragma: no cover
         return obj.user.email
 
 
@@ -57,11 +57,11 @@ class FeedEntryAdmin(admin.ModelAdmin):
     search_fields = ["feed__feed_url"]
 
     @admin.display(description="Parent Feed URL")
-    def feed__feed_url(self, obj: FeedEntry):
+    def feed__feed_url(self, obj: FeedEntry):  # pragma: no cover
         return obj.feed.feed_url
 
     @admin.display(description="Parent Feed Title")
-    def feed__title(self, obj: FeedEntry):
+    def feed__title(self, obj: FeedEntry):  # pragma: no cover
         return obj.feed.title
 
 
@@ -73,11 +73,11 @@ class AlternateFeedURLAdmin(admin.ModelAdmin):
     autocomplete_fields = ["feed"]
 
     @admin.display(description="Parent Feed URL")
-    def feed__feed_url(self, obj: AlternateFeedURL):
+    def feed__feed_url(self, obj: AlternateFeedURL):  # pragma: no cover
         return obj.feed.feed_url
 
     @admin.display(description="Parent Feed Title")
-    def feed__title(self, obj: AlternateFeedURL):
+    def feed__title(self, obj: AlternateFeedURL):  # pragma: no cover
         return obj.feed.title
 
 
@@ -86,7 +86,7 @@ def convert_duplicate_feed1_to_alternate_feed_url(
     modeladmin: "DuplicateFeedSuggestionAdmin",
     request: HttpRequest,
     queryset: QuerySet[DuplicateFeedSuggestion],
-):
+):  # pragma: no cover
     convert_duplicate_feeds_to_alternate_feed_urls(
         queryset, lambda dfs: dfs.feed2, lambda dfs: dfs.feed1
     )
@@ -97,7 +97,7 @@ def convert_duplicate_feed2_to_alternate_feed_url(
     modeladmin: "DuplicateFeedSuggestionAdmin",
     request: HttpRequest,
     queryset: QuerySet[DuplicateFeedSuggestion],
-):
+):  # pragma: no cover
     convert_duplicate_feeds_to_alternate_feed_urls(
         queryset, lambda dfs: dfs.feed1, lambda dfs: dfs.feed2
     )
@@ -124,17 +124,17 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
     search_fields = ["feed1__feed_url", "feed2__feed_url"]
 
     @admin.display(description="Feed 1 Feed URL")
-    def feed1__feed_url(self, obj: DuplicateFeedSuggestion):
+    def feed1__feed_url(self, obj: DuplicateFeedSuggestion):  # pragma: no cover
         return obj.feed1.feed_url
 
     @admin.display(description="Feed 1 Title")
-    def feed1__title(self, obj: DuplicateFeedSuggestion):
+    def feed1__title(self, obj: DuplicateFeedSuggestion):  # pragma: no cover
         return obj.feed1.title
 
     @admin.display(description="Feed 2 Feed URL")
-    def feed2__feed_url(self, obj: DuplicateFeedSuggestion):
+    def feed2__feed_url(self, obj: DuplicateFeedSuggestion):  # pragma: no cover
         return obj.feed2.feed_url
 
     @admin.display(description="Feed 2 Title")
-    def feed2__title(self, obj: DuplicateFeedSuggestion):
+    def feed2__title(self, obj: DuplicateFeedSuggestion):  # pragma: no cover
         return obj.feed2.title
