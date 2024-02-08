@@ -84,21 +84,24 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
     with transaction.atomic():
         for subsciption_mapping in moving_subscriptions:
             try:
-                subsciption_mapping.save(update_fields=("feed",))
+                with transaction.atomic():
+                    subsciption_mapping.save(update_fields=("feed",))
             except IntegrityError:
                 # user was subscribed to both versions, for some reason
                 pass
 
         for moving_read_mapping in moving_read_mappings:
             try:
-                moving_read_mapping.save(update_fields=("feed_entry",))
+                with transaction.atomic():
+                    moving_read_mapping.save(update_fields=("feed_entry",))
             except IntegrityError:
                 # user was subscribed to both versions, for some reason
                 pass
 
         for favorite_mapping in moving_favorite_mappings:
             try:
-                favorite_mapping.save(update_fields=("feedentry",))
+                with transaction.atomic():
+                    favorite_mapping.save(update_fields=("feedentry",))
             except IntegrityError:
                 # user was subscribed to both versions, for some reason
                 pass
