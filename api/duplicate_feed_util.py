@@ -61,7 +61,6 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
                 feed=original_feed,
                 title=favorite_mapping.feedentry.title,
                 url=favorite_mapping.feedentry.url,
-                is_archived=False,
             ).first()
             if similar_feed_entry:
                 favorite_mapping.feedentry = similar_feed_entry

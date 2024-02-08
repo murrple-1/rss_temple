@@ -80,6 +80,7 @@ class DuplicateFeedUtilTestCase(TestCase):
         )
 
         self.assertFalse(Feed.objects.filter(uuid=feed1.uuid).exists())
+        self.assertTrue(user_category.feeds.filter(uuid=feed2.uuid).exists())
         self.assertTrue(
             DuplicateFeedUtilTestCase.user.subscribed_feeds.filter(
                 uuid=feed2.uuid
@@ -225,3 +226,34 @@ class DuplicateFeedUtilTestCase(TestCase):
         convert_duplicate_feeds_to_alternate_feed_urls(
             [DuplicateFeedTuple(feed2, feed1)]
         )
+
+    def test_convert_duplicate_feeds_to_alternate_feed_urls_bothincategories(self):
+        user_category = UserCategory.objects.create(
+            user=DuplicateFeedUtilTestCase.user, text="My Category"
+        )
+
+        feed1 = Feed.objects.create(
+            feed_url="http://example.com/rss1.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed2 = Feed.objects.create(
+            feed_url="http://example.com/rss2.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        user_category.feeds.add(feed1, feed2)
+
+        convert_duplicate_feeds_to_alternate_feed_urls(
+            [DuplicateFeedTuple(feed2, feed1)]
+        )
+
+        self.assertTrue(user_category.feeds.filter(uuid=feed2.uuid).exists())
