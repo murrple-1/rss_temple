@@ -2,7 +2,10 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http.request import HttpRequest
 
-from api.duplicate_feed_util import convert_duplicate_feeds_to_alternate_feed_urls
+from api.duplicate_feed_util import (
+    DuplicateFeedTuple,
+    convert_duplicate_feeds_to_alternate_feed_urls,
+)
 from api.models import (
     AlternateFeedURL,
     DuplicateFeedSuggestion,
@@ -88,7 +91,7 @@ def convert_duplicate_feed1_to_alternate_feed_url(
     queryset: QuerySet[DuplicateFeedSuggestion],
 ):  # pragma: no cover
     convert_duplicate_feeds_to_alternate_feed_urls(
-        queryset, lambda dfs: dfs.feed2, lambda dfs: dfs.feed1
+        DuplicateFeedTuple(dfs.feed2, dfs.feed1) for dfs in queryset
     )
 
 
@@ -99,7 +102,7 @@ def convert_duplicate_feed2_to_alternate_feed_url(
     queryset: QuerySet[DuplicateFeedSuggestion],
 ):  # pragma: no cover
     convert_duplicate_feeds_to_alternate_feed_urls(
-        queryset, lambda dfs: dfs.feed1, lambda dfs: dfs.feed2
+        DuplicateFeedTuple(dfs.feed1, dfs.feed2) for dfs in queryset
     )
 
 
