@@ -97,7 +97,7 @@ class FeedView(APIView):
             cache.set(
                 cache_key,
                 subscription_datas,
-                60.0 * 5.0,  # TODO make setting
+                None,
             )
 
         feed: Feed
@@ -152,7 +152,7 @@ class FeedsQueryView(APIView):
             cache.set(
                 cache_key,
                 subscription_datas,
-                60.0 * 5.0,  # TODO make setting
+                None,
             )
 
         feeds = Feed.annotate_search_vectors(
