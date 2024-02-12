@@ -288,7 +288,10 @@ class Feed(models.Model):
     ) -> models.QuerySet["Feed"]:
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
         custom_title_case_whens: list[models.When] = [
-            models.When(uuid=sd["uuid"], then=sd["custom_title"])
+            models.When(
+                condition=models.Q(uuid=sd["uuid"]),
+                then=models.Value(sd["custom_title"]),
+            )
             for sd in subscription_datas
         ]
 
@@ -299,7 +302,10 @@ class Feed(models.Model):
                 output_field=models.CharField(null=True),
             ),
             is_subscribed=models.Case(
-                models.When(uuid__in=subscribed_uuids, then=True),
+                models.When(
+                    condition=models.Q(uuid__in=subscribed_uuids),
+                    then=models.Value(True),
+                ),
                 default=False,
                 output_field=models.BooleanField(),
             ),
