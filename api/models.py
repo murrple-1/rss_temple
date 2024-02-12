@@ -298,7 +298,6 @@ class Feed(models.Model):
         return qs.annotate(
             custom_title=models.Case(
                 *custom_title_case_whens,
-                default=None,
                 output_field=models.CharField(null=True),
             ),
             is_subscribed=models.Case(
@@ -306,7 +305,7 @@ class Feed(models.Model):
                     condition=models.Q(uuid__in=subscribed_uuids),
                     then=models.Value(True),
                 ),
-                default=False,
+                default=models.Value(False),
                 output_field=models.BooleanField(),
             ),
         )
