@@ -1,9 +1,8 @@
 import random
 import uuid as uuid_
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import cached_property
-from typing import Collection
+from typing import Collection, NamedTuple, Sequence, TypedDict
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
@@ -279,12 +278,37 @@ class Feed(models.Model):
             is_subscribed=models.Exists(subscribed_user_feed_mappings),
         )
 
+    class _SubscriptionData(TypedDict):
+        uuid: uuid_.UUID
+        custom_title: str | None
+
+    @staticmethod
+    def annotate_subscription_data__case(
+        qs: models.QuerySet["Feed"], subscription_datas: Sequence[_SubscriptionData]
+    ) -> models.QuerySet["Feed"]:
+        subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
+        custom_title_case_whens: list[models.When] = [
+            models.When(models.Q(uuid=sd["uuid"]), then=sd["custom_title"])
+            for sd in subscription_datas
+        ]
+
+        return qs.annotate(
+            custom_title=models.Case(
+                *custom_title_case_whens,
+                default=None,
+                output_field=models.CharField(null=True),
+            ),
+            is_subscribed=models.Case(
+                models.When(models.Q(uuid__in=subscribed_uuids), then=True),
+                default=False,
+            ),
+        )
+
     def with_subscription_data(self) -> None:
         self.custom_title = None
         self.is_subscribed = False
 
-    @dataclass(slots=True)
-    class _CountsDescriptor:
+    class _CountsDescriptor(NamedTuple):
         unread_count: int
         read_count: int
 

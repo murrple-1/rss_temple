@@ -59,6 +59,16 @@ _load_global_settings()
 _OBJECT_NAME = "feed"
 
 
+def _generate_subscription_datas(user: User) -> list[Feed._SubscriptionData]:
+    return [
+        {
+            "uuid": sfum.feed_id,
+            "custom_title": sfum.custom_feed_title,
+        }
+        for sfum in SubscribedFeedUserMapping.objects.filter(user=user).iterator()
+    ]
+
+
 class FeedView(APIView):
     @swagger_auto_schema(
         operation_summary="Get Single Feed",
@@ -66,6 +76,10 @@ class FeedView(APIView):
         query_serializer=FeedGetSerializer,
     )
     def get(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = FeedGetSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -76,10 +90,20 @@ class FeedView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
+        cache_key = f"feed_subscription_datas__{user.uuid}"
+        subscription_datas: list[Feed._SubscriptionData] | None = cache.get(cache_key)
+        if subscription_datas is None:
+            subscription_datas = _generate_subscription_datas(user)
+            cache.set(
+                cache_key,
+                subscription_datas,
+                60.0 * 5.0,  # TODO make setting
+            )
+
         feed: Feed
         try:
-            feed = Feed.annotate_subscription_data(
-                Feed.objects.all(), cast(User, request.user)
+            feed = Feed.annotate_subscription_data__case(
+                Feed.objects.all(), subscription_datas
             ).get(
                 Q(feed_url=url)
                 | Q(
@@ -103,6 +127,10 @@ class FeedsQueryView(APIView):
         request_body=GetManySerializer,
     )
     def post(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = GetManySerializer(
             data=request.data,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -117,9 +145,19 @@ class FeedsQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
+        cache_key = f"feed_subscription_datas__{user.uuid}"
+        subscription_datas: list[Feed._SubscriptionData] | None = cache.get(cache_key)
+        if subscription_datas is None:
+            subscription_datas = _generate_subscription_datas(user)
+            cache.set(
+                cache_key,
+                subscription_datas,
+                60.0 * 5.0,  # TODO make setting
+            )
+
         feeds = Feed.annotate_search_vectors(
-            Feed.annotate_subscription_data(
-                Feed.objects.all(), cast(User, request.user)
+            Feed.annotate_subscription_data__case(
+                Feed.objects.all(), subscription_datas
             )
         ).filter(*search)
 
@@ -187,6 +225,8 @@ class FeedSubscribeView(APIView):
         request_body=FeedSubscribeSerializer,
     )
     def post(self, request: Request):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
         serializer = FeedSubscribeSerializer(data=request.data)
@@ -235,6 +275,8 @@ class FeedSubscribeView(APIView):
 
             ReadFeedEntryUserMapping.objects.bulk_create(read_mappings)
 
+        cache.delete(f"feed_subscription_datas__{user.uuid}")
+
         return Response(status=204)
 
     @swagger_auto_schema(
@@ -243,6 +285,8 @@ class FeedSubscribeView(APIView):
         request_body=FeedSubscribeSerializer,
     )
     def put(self, request: Request):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
         serializer = FeedSubscribeSerializer(data=request.data)
@@ -274,6 +318,8 @@ class FeedSubscribeView(APIView):
         subscribed_feed_mapping.custom_feed_title = custom_title
         subscribed_feed_mapping.save(update_fields=["custom_feed_title"])
 
+        cache.delete(f"feed_subscription_datas__{user.uuid}")
+
         return Response(status=204)
 
     @swagger_auto_schema(
@@ -282,17 +328,23 @@ class FeedSubscribeView(APIView):
         request_body=FeedGetSerializer,
     )
     def delete(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = FeedGetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         url = cast(str, url_normalize(serializer.validated_data["url"]))
 
         count, _ = SubscribedFeedUserMapping.objects.filter(
-            user=cast(User, request.user), feed__feed_url=url
+            user=user, feed__feed_url=url
         ).delete()
 
         if count < 1:
             raise NotFound("user not subscribed")
+
+        cache.delete(f"feed_subscription_datas__{user.uuid}")
 
         return Response(status=204)
 
