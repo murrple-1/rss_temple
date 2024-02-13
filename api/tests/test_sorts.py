@@ -126,7 +126,11 @@ class AllSortsTestCase(TestCase):
             ),
         },
         "feedentry": {
-            "get_queryset": lambda: FeedEntry.objects,
+            "get_queryset": lambda: FeedEntry.annotate_search_vectors(
+                FeedEntry.annotate_user_data(
+                    FeedEntry.objects.all(), AllSortsTestCase.user
+                )
+            ),
         },
     }
 

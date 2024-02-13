@@ -124,27 +124,6 @@ def _feedentry_readAt(
         )
 
 
-def _feedentry_fromSubscription(
-    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
-) -> bool:
-    # at time of writing, this is already pretty optimized
-    return db_obj.from_subscription(cast(User, request.user))
-
-
-def _feedentry_isFavorite(
-    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
-) -> bool:
-    # at time of writing, this is already pretty optimized
-    return db_obj.is_favorite(cast(User, request.user))
-
-
-def _feedentry_isRead(
-    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
-) -> bool:
-    # at time of writing, this is already pretty optimized
-    return db_obj.is_read(cast(User, request.user))
-
-
 _field_configs: dict[str, dict[str, _FieldConfig]] = {
     "usercategory": {
         "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
@@ -220,12 +199,14 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         "feedUuid": _FieldConfig(
             lambda request, db_obj, queryset: str(db_obj.feed_id), False
         ),
-        "fromSubscription": _FieldConfig(
-            _feedentry_fromSubscription,
+        "isFromSubscription": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.is_from_subscription,
             False,
         ),
-        "isRead": _FieldConfig(_feedentry_isRead, False),
-        "isFavorite": _FieldConfig(_feedentry_isFavorite, False),
+        "isRead": _FieldConfig(lambda request, db_obj, queryset: db_obj.is_read, False),
+        "isFavorite": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.is_favorite, False
+        ),
         "readAt": _FieldConfig(_feedentry_readAt, False),
         "isArchived": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_archived, False

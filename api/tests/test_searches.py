@@ -165,7 +165,11 @@ class AllSearchesTestCase(TestCase):
             },
         },
         "feedentry": {
-            "get_queryset": lambda: FeedEntry.objects,
+            "get_queryset": lambda: FeedEntry.annotate_search_vectors(
+                FeedEntry.annotate_user_data(
+                    FeedEntry.objects.all(), AllSearchesTestCase.user
+                )
+            ),
             "searches": {
                 "uuid": [str(uuid.uuid4())],
                 "feedUuid": [str(uuid.uuid4())],
@@ -184,7 +188,7 @@ class AllSearchesTestCase(TestCase):
                 "authorName_exact": ["John Doe"],
                 "title": ["Some Text"],
                 "content": ["Some Text"],
-                "subscribed": ["true", "false"],
+                "isFromSubscription": ["true", "false"],
                 "isRead": ["true", "false"],
                 "isFavorite": ["true", "false"],
                 "readAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],

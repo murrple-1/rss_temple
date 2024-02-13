@@ -2,7 +2,7 @@ import random
 import uuid as uuid_
 from collections import defaultdict
 from functools import cached_property
-from typing import Collection, NamedTuple, Sequence, TypedDict
+from typing import TYPE_CHECKING, Collection, NamedTuple, Sequence
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
@@ -12,6 +12,9 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token as _Token
 
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
+
+if TYPE_CHECKING:  # pragma: no cover
+    from api.subscription_datas_cache_util import SubscriptionData
 
 
 class UserManager(BaseUserManager["User"]):
@@ -99,18 +102,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             self._category_dict = category_dict
 
         return category_dict
-
-    @cached_property
-    def subscribed_feed_uuids(self) -> frozenset[uuid_.UUID]:
-        return frozenset(self.subscribed_feeds.values_list("uuid", flat=True))
-
-    @cached_property
-    def read_feed_entry_uuids(self) -> frozenset[uuid_.UUID]:
-        return frozenset(self.read_feed_entries.values_list("uuid", flat=True))
-
-    @cached_property
-    def favorite_feed_entry_uuids(self) -> frozenset[uuid_.UUID]:
-        return frozenset(self.favorite_feed_entries.values_list("uuid", flat=True))
 
 
 class Token(_Token):
@@ -278,13 +269,9 @@ class Feed(models.Model):
             is_subscribed=models.Exists(subscribed_user_feed_mappings),
         )
 
-    class _SubscriptionData(TypedDict):
-        uuid: uuid_.UUID
-        custom_title: str | None
-
     @staticmethod
     def annotate_subscription_data__case(
-        qs: models.QuerySet["Feed"], subscription_datas: Sequence[_SubscriptionData]
+        qs: models.QuerySet["Feed"], subscription_datas: Sequence["SubscriptionData"]
     ) -> models.QuerySet["Feed"]:
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
         custom_title_case_whens: list[models.When] = [
@@ -500,6 +487,10 @@ class FeedEntry(models.Model):
         related_name="calculated_feed_entry_set",
     )
 
+    is_from_subscription: bool
+    is_read: bool
+    is_favorite: bool
+
     @staticmethod
     def annotate_search_vectors(
         qs: models.QuerySet["FeedEntry"],
@@ -514,29 +505,63 @@ class FeedEntry(models.Model):
 
         return qs
 
-    def from_subscription(self, user: User) -> bool:
-        from_subscription = getattr(self, "_from_subscription", None)
-        if from_subscription is None:
-            from_subscription = self.feed_id in user.subscribed_feed_uuids
-            self._from_subscription = from_subscription
+    @staticmethod
+    def annotate_user_data(
+        qs: models.QuerySet["FeedEntry"], user: User
+    ) -> models.QuerySet["FeedEntry"]:
+        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
+            user=user, feed_id=models.OuterRef("feed_id")
+        )
+        read_user_feed_entry_mapping = ReadFeedEntryUserMapping.objects.filter(
+            user=user, feed_entry_id=models.OuterRef("uuid")
+        )
+        favorite_user_feed_entry_mapping = (
+            User.favorite_feed_entries.through.objects.filter(
+                user=user, feedentry_id=models.OuterRef("uuid")
+            )
+        )
+        return qs.annotate(
+            is_from_subscription=models.Exists(subscribed_user_feed_mappings),
+            is_read=models.Q(is_archived=True)
+            | models.Exists(read_user_feed_entry_mapping),
+            is_favorite=models.Exists(favorite_user_feed_entry_mapping),
+        )
 
-        return from_subscription
+    @staticmethod
+    def annotate_user_data__case(
+        qs: models.QuerySet["FeedEntry"],
+        user: User,
+        subscription_datas: Sequence["SubscriptionData"],
+    ) -> models.QuerySet["FeedEntry"]:
+        subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
 
-    def is_read(self, user: User) -> bool:
-        is_read = getattr(self, "_is_read", None)
-        if is_read is None:
-            is_read = self.is_archived or self.uuid in user.read_feed_entry_uuids
-            self._is_read = is_read
+        read_user_feed_entry_mapping = ReadFeedEntryUserMapping.objects.filter(
+            user=user, feed_entry_id=models.OuterRef("uuid")
+        )
+        favorite_user_feed_entry_mapping = (
+            User.favorite_feed_entries.through.objects.filter(
+                user=user, feedentry_id=models.OuterRef("uuid")
+            )
+        )
 
-        return is_read
+        return qs.annotate(
+            is_subscribed=models.Case(
+                models.When(
+                    condition=models.Q(feed_id__in=subscribed_uuids),
+                    then=models.Value(True),
+                ),
+                default=models.Value(False),
+                output_field=models.BooleanField(),
+            ),
+            is_read=models.Q(is_archived=True)
+            | models.Exists(read_user_feed_entry_mapping),
+            is_favorite=models.Exists(favorite_user_feed_entry_mapping),
+        )
 
-    def is_favorite(self, user: User) -> bool:
-        is_favorite = getattr(self, "_is_favorite", None)
-        if is_favorite is None:
-            is_favorite = self.uuid in user.favorite_feed_entry_uuids
-            self._is_favorite = is_favorite
-
-        return is_favorite
+    def with_user_data(self):
+        self.is_from_subscription = False
+        self.is_read = False
+        self.is_favorite = False
 
     def __str__(self) -> str:
         return f"{self.title} - {self.url}"

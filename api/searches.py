@@ -8,13 +8,7 @@ from lingua import Language
 from pyparsing import ParseException, ParseResults
 from url_normalize import url_normalize
 
-from api.models import (
-    AlternateFeedURL,
-    Feed,
-    ReadFeedEntryUserMapping,
-    SubscribedFeedUserMapping,
-    User,
-)
+from api.models import AlternateFeedURL, ReadFeedEntryUserMapping, User
 from api.search.convertto import (
     Bool,
     CustomConvertTo,
@@ -107,43 +101,6 @@ def _feedentry_feedUrl(request: HttpRequest, search_obj: str) -> Q:
     )
 
 
-def _feedentry_subscribed(request: HttpRequest, search_obj: str) -> Q:
-    q = Q(
-        feed__in=Feed.objects.filter(
-            uuid__in=SubscribedFeedUserMapping.objects.filter(
-                user=cast(User, request.user)
-            ).values("feed_id")
-        )
-    )
-
-    if not Bool.convertto(search_obj):
-        q = ~q
-
-    return q
-
-
-def _feedentry_isRead(request: HttpRequest, search_obj: str) -> Q:
-    q = Q(is_archived=True) | Q(
-        uuid__in=ReadFeedEntryUserMapping.objects.filter(
-            user=cast(User, request.user)
-        ).values("feed_entry_id")
-    )
-
-    if not Bool.convertto(search_obj):
-        q = ~q
-
-    return q
-
-
-def _feedentry_isFavorite(request: HttpRequest, search_obj: str) -> Q:
-    q = Q(uuid__in=cast(User, request.user).favorite_feed_entries.values("uuid"))
-
-    if not Bool.convertto(search_obj):
-        q = ~q
-
-    return q
-
-
 _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
     "usercategory": {
         "uuid": lambda request, search_obj: Q(uuid__in=UuidList.convertto(search_obj)),
@@ -229,9 +186,13 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "authorName_exact": lambda request, search_obj: Q(
             author_name__iexact=search_obj
         ),
-        "subscribed": _feedentry_subscribed,
-        "isRead": _feedentry_isRead,
-        "isFavorite": _feedentry_isFavorite,
+        "isFromSubscription": lambda request, search_obj: Q(
+            is_from_subscription=Bool.convertto(search_obj)
+        ),
+        "isRead": lambda request, search_obj: Q(is_read=Bool.convertto(search_obj)),
+        "isFavorite": lambda request, search_obj: Q(
+            is_favorite=Bool.convertto(search_obj)
+        ),
         "readAt": lambda request, search_obj: Q(
             uuid__in=ReadFeedEntryUserMapping.objects.filter(
                 user=cast(User, request.user),

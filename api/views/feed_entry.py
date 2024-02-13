@@ -30,6 +30,7 @@ from api.serializers import (
     StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
 )
+from api.subscription_datas_cache_util import generate_subscription_datas
 
 _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT: int
 _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS: float
@@ -90,6 +91,10 @@ class FeedEntriesQueryView(APIView):
         request_body=GetManySerializer,
     )
     def post(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = GetManySerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
@@ -103,8 +108,16 @@ class FeedEntriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
+        subscription_datas = generate_subscription_datas(user, cache)
+
         feed_entries = (
-            FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
+            FeedEntry.annotate_search_vectors(
+                FeedEntry.annotate_user_data__case(
+                    FeedEntry.objects.all(),
+                    user,
+                    subscription_datas,
+                )
+            )
             .filter(*search)
             .select_related("language")
         )
@@ -134,7 +147,11 @@ class FeedEntriesQueryStableCreateView(APIView):
         request_body=StableQueryCreateSerializer,
     )
     def post(self, request: Request):
-        cache: BaseCache = caches["stable_query"]
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
+        stable_query_cache: BaseCache = caches["stable_query"]
 
         serializer = StableQueryCreateSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
@@ -146,10 +163,18 @@ class FeedEntriesQueryStableCreateView(APIView):
 
         token = f"feedentry-{uuid_.uuid4().int}"
 
-        cache.set(
+        subscription_datas = generate_subscription_datas(user, cache)
+
+        stable_query_cache.set(
             token,
             list(
-                FeedEntry.annotate_search_vectors(FeedEntry.objects.all())
+                FeedEntry.annotate_search_vectors(
+                    FeedEntry.annotate_user_data__case(
+                        FeedEntry.objects.all(),
+                        user,
+                        subscription_datas,
+                    )
+                )
                 .filter(*search)
                 .order_by(*sort)
                 .values_list("uuid", flat=True)[:_MAX_FEED_ENTRIES_STABLE_QUERY_COUNT]
@@ -166,7 +191,7 @@ class FeedEntriesQueryStableView(APIView):
         request_body=StableQueryMultipleSerializer,
     )
     def post(self, request: Request):
-        cache: BaseCache = caches["stable_query"]
+        stable_query_cache: BaseCache = caches["stable_query"]
 
         serializer = StableQueryMultipleSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
@@ -180,8 +205,8 @@ class FeedEntriesQueryStableView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        cache.touch(token)
-        uuids = cache.get(token, [])
+        stable_query_cache.touch(token)
+        uuids = stable_query_cache.get(token, [])
 
         ret_obj: dict[str, Any] = {}
 

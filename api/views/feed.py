@@ -39,6 +39,7 @@ from api.serializers import (
     FeedSubscribeSerializer,
     GetManySerializer,
 )
+from api.subscription_datas_cache_util import generate_subscription_datas
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
@@ -58,30 +59,6 @@ def _load_global_settings(*args: Any, **kwargs: Any):
 _load_global_settings()
 
 _OBJECT_NAME = "feed"
-
-
-def _generate_subscription_datas(
-    user: User, cache: BaseCache
-) -> list[Feed._SubscriptionData]:
-    subscription_datas_cache_key = f"subscription_datas__{user.uuid}"
-    subscription_datas: list[Feed._SubscriptionData] | None = cache.get(
-        subscription_datas_cache_key
-    )
-    if subscription_datas is None:
-        subscription_datas = [
-            {
-                "uuid": sfum.feed_id,
-                "custom_title": sfum.custom_feed_title,
-            }
-            for sfum in SubscribedFeedUserMapping.objects.filter(user=user).iterator()
-        ]
-        cache.set(
-            subscription_datas_cache_key,
-            subscription_datas,
-            None,
-        )
-
-    return subscription_datas
 
 
 class FeedView(APIView):
@@ -105,7 +82,7 @@ class FeedView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
-        subscription_datas = _generate_subscription_datas(user, cache)
+        subscription_datas = generate_subscription_datas(user, cache)
 
         feed: Feed
         try:
@@ -158,7 +135,7 @@ class FeedsQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        subscription_datas = _generate_subscription_datas(user, cache)
+        subscription_datas = generate_subscription_datas(user, cache)
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data__case(
