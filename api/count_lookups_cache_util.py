@@ -1,5 +1,5 @@
 import uuid as uuid_
-from typing import Any, Collection
+from typing import Any, Collection, Generator
 
 from django.conf import settings
 from django.core.cache import BaseCache
@@ -23,19 +23,44 @@ def _load_global_settings(*args: Any, **kwargs: Any):
 _load_global_settings()
 
 
-def get_count_lookups_from_cache(
+def _generate_cached_entries(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> dict[uuid_.UUID, Feed._CountsDescriptor]:
+) -> Generator[tuple[uuid_.UUID, int, int], None, None]:
     cache_entries: dict[str, tuple[int, int] | None] = cache.get_many(
         [f"counts_lookup_{user.uuid}_{f_uuid}" for f_uuid in feed_uuids]
     )
 
-    count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
     for key, entry in cache_entries.items():
         if entry is not None:
             unread, read = entry
             feed_uuid = uuid_.UUID(key.removeprefix(f"counts_lookup_{user.uuid}_"))
-            count_lookups[feed_uuid] = Feed._CountsDescriptor(unread, read)
+            yield feed_uuid, unread, read
+
+
+def _save_entries_to_cache(
+    user: User,
+    counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor],
+    cache: BaseCache,
+) -> None:
+    cache.set_many(
+        {
+            f"counts_lookup_{user.uuid}_{feed_uuid}": (
+                count_lookup.unread_count,
+                count_lookup.read_count,
+            )
+            for feed_uuid, count_lookup in counts_lookup.items()
+        },
+        _FEED_COUNT_LOOKUPS_CACHE_TIMEOUT_SECONDS,
+    )
+
+
+def get_count_lookups_from_cache(
+    user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
+) -> dict[uuid_.UUID, Feed._CountsDescriptor]:
+    count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {
+        feed_uuid: Feed._CountsDescriptor(unread, read)
+        for feed_uuid, unread, read in _generate_cached_entries(user, feed_uuids, cache)
+    }
 
     missing_feed_uuids = [
         f_uuid for f_uuid in feed_uuids if f_uuid not in count_lookups
@@ -45,16 +70,7 @@ def get_count_lookups_from_cache(
         missing_count_lookups = Feed.generate_counts_lookup(user, missing_feed_uuids)
         count_lookups.update(missing_count_lookups)
 
-        cache.set_many(
-            {
-                f"counts_lookup_{user.uuid}_{feed_uuid}": (
-                    count_lookup.unread_count,
-                    count_lookup.read_count,
-                )
-                for feed_uuid, count_lookup in missing_count_lookups.items()
-            },
-            _FEED_COUNT_LOOKUPS_CACHE_TIMEOUT_SECONDS,
-        )
+        _save_entries_to_cache(user, missing_count_lookups, cache)
 
     return count_lookups
 
@@ -62,20 +78,12 @@ def get_count_lookups_from_cache(
 def increment_read_in_count_lookups_cache(
     user: User, feed_increments: dict[uuid_.UUID, int], cache: BaseCache
 ) -> None:
-    cache_entries: dict[str, tuple[int, int] | None] = cache.get_many(
-        [f"counts_lookup_{user.uuid}_{k_uuid}" for k_uuid in feed_increments.keys()]
-    )
-
     count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
-    for key, entry in cache_entries.items():
-        if entry is not None:
-            unread, read = entry
-            feed_uuid = uuid_.UUID(key.removeprefix(f"counts_lookup_{user.uuid}_"))
-
-            incr = feed_increments[feed_uuid]
-            count_lookups[feed_uuid] = Feed._CountsDescriptor(
-                unread - incr, read + incr
-            )
+    for feed_uuid, unread, read in _generate_cached_entries(
+        user, feed_increments.keys(), cache
+    ):
+        incr = feed_increments[feed_uuid]
+        count_lookups[feed_uuid] = Feed._CountsDescriptor(unread - incr, read + incr)
 
     missing_feed_uuids = [
         k_uuid for k_uuid in feed_increments.keys() if k_uuid not in count_lookups
@@ -84,13 +92,4 @@ def increment_read_in_count_lookups_cache(
     if missing_feed_uuids:
         count_lookups.update(Feed.generate_counts_lookup(user, missing_feed_uuids))
 
-    cache.set_many(
-        {
-            f"counts_lookup_{user.uuid}_{feed_uuid}": (
-                count_lookup.unread_count,
-                count_lookup.read_count,
-            )
-            for feed_uuid, count_lookup in count_lookups.items()
-        },
-        _FEED_COUNT_LOOKUPS_CACHE_TIMEOUT_SECONDS,
-    )
+    _save_entries_to_cache(user, count_lookups, cache)
