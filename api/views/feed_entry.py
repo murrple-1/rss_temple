@@ -191,6 +191,10 @@ class FeedEntriesQueryStableView(APIView):
         request_body=StableQueryMultipleSerializer,
     )
     def post(self, request: Request):
+        user = cast(User, request.user)
+
+        cache: BaseCache = caches["default"]
+
         stable_query_cache: BaseCache = caches["stable_query"]
 
         serializer = StableQueryMultipleSerializer(
@@ -213,11 +217,17 @@ class FeedEntriesQueryStableView(APIView):
         if return_objects:
             current_uuids = uuids[skip : skip + count]
 
+            subscription_datas = generate_subscription_datas(user, cache)
+
             feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
-                for feed_entry in FeedEntry.objects.filter(
-                    uuid__in=current_uuids
-                ).select_related("language")
+                for feed_entry in FeedEntry.annotate_user_data__case(
+                    FeedEntry.objects.filter(uuid__in=current_uuids).select_related(
+                        "language"
+                    ),
+                    user,
+                    subscription_datas,
+                )
             }
 
             objs: list[dict[str, Any]] = []
