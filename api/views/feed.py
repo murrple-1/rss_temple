@@ -18,6 +18,7 @@ from url_normalize import url_normalize
 from api import content_type_util, feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
+from api.count_lookups_cache_util import get_count_lookups_from_cache
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
@@ -59,14 +60,28 @@ _load_global_settings()
 _OBJECT_NAME = "feed"
 
 
-def _generate_subscription_datas(user: User) -> list[Feed._SubscriptionData]:
-    return [
-        {
-            "uuid": sfum.feed_id,
-            "custom_title": sfum.custom_feed_title,
-        }
-        for sfum in SubscribedFeedUserMapping.objects.filter(user=user).iterator()
-    ]
+def _generate_subscription_datas(
+    user: User, cache: BaseCache
+) -> list[Feed._SubscriptionData]:
+    subscription_datas_cache_key = f"subscription_datas__{user.uuid}"
+    subscription_datas: list[Feed._SubscriptionData] | None = cache.get(
+        subscription_datas_cache_key
+    )
+    if subscription_datas is None:
+        subscription_datas = [
+            {
+                "uuid": sfum.feed_id,
+                "custom_title": sfum.custom_feed_title,
+            }
+            for sfum in SubscribedFeedUserMapping.objects.filter(user=user).iterator()
+        ]
+        cache.set(
+            subscription_datas_cache_key,
+            subscription_datas,
+            None,
+        )
+
+    return subscription_datas
 
 
 class FeedView(APIView):
@@ -90,15 +105,7 @@ class FeedView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
-        cache_key = f"feed_subscription_datas__{user.uuid}"
-        subscription_datas: list[Feed._SubscriptionData] | None = cache.get(cache_key)
-        if subscription_datas is None:
-            subscription_datas = _generate_subscription_datas(user)
-            cache.set(
-                cache_key,
-                subscription_datas,
-                None,
-            )
+        subscription_datas = _generate_subscription_datas(user, cache)
 
         feed: Feed
         try:
@@ -114,6 +121,12 @@ class FeedView(APIView):
             )
         except Feed.DoesNotExist:
             feed = _save_feed(url)
+
+        setattr(
+            request,
+            "_count_lookups",
+            get_count_lookups_from_cache(user, (feed.uuid,), cache),
+        )
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -145,15 +158,7 @@ class FeedsQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        cache_key = f"feed_subscription_datas__{user.uuid}"
-        subscription_datas: list[Feed._SubscriptionData] | None = cache.get(cache_key)
-        if subscription_datas is None:
-            subscription_datas = _generate_subscription_datas(user)
-            cache.set(
-                cache_key,
-                subscription_datas,
-                None,
-            )
+        subscription_datas = _generate_subscription_datas(user, cache)
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data__case(
@@ -161,11 +166,21 @@ class FeedsQueryView(APIView):
             )
         ).filter(*search)
 
+        feeds_qs = feeds.order_by(*sort)[skip : skip + count]
+
+        setattr(
+            request,
+            "_count_lookups",
+            get_count_lookups_from_cache(
+                user, frozenset(f.uuid for f in feeds_qs), cache
+            ),
+        )
+
         ret_obj: dict[str, Any] = {}
 
         if return_objects:
             objs: list[dict[str, Any]] = []
-            for feed in feeds.order_by(*sort)[skip : skip + count]:
+            for feed in feeds_qs:
                 obj = fieldutils.generate_return_object(
                     field_maps, feed, request, feeds
                 )
@@ -275,7 +290,7 @@ class FeedSubscribeView(APIView):
 
             ReadFeedEntryUserMapping.objects.bulk_create(read_mappings)
 
-        cache.delete(f"feed_subscription_datas__{user.uuid}")
+        cache.delete(f"subscription_datas__{user.uuid}")
 
         return Response(status=204)
 
@@ -318,7 +333,7 @@ class FeedSubscribeView(APIView):
         subscribed_feed_mapping.custom_feed_title = custom_title
         subscribed_feed_mapping.save(update_fields=["custom_feed_title"])
 
-        cache.delete(f"feed_subscription_datas__{user.uuid}")
+        cache.delete(f"subscription_datas__{user.uuid}")
 
         return Response(status=204)
 
@@ -344,7 +359,7 @@ class FeedSubscribeView(APIView):
         if count < 1:
             raise NotFound("user not subscribed")
 
-        cache.delete(f"feed_subscription_datas__{user.uuid}")
+        cache.delete(f"subscription_datas__{user.uuid}")
 
         return Response(status=204)
 

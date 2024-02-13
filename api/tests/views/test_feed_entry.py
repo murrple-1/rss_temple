@@ -224,6 +224,14 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
+    def test_FeedEntryReadView_delete_not_exist(self):
+        uuid_ = uuid.UUID(int=0)
+
+        response = self.client.delete(
+            f"/api/feedentry/{uuid_}/read",
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
     def test_FeedEntriesReadView_post(self):
         feed_entry1 = FeedEntry.objects.create(
             id=None,

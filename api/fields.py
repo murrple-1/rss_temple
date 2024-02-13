@@ -3,8 +3,6 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Callable, Collection, TypedDict, cast
 
-from django.db.models import Q
-from django.db.models.aggregates import Count
 from django.http import HttpRequest
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User, UserCategory
@@ -66,61 +64,34 @@ def _feed_userCategoryUuids(
         return [str(uuid_) for uuid_ in user_category_uuids_dict[db_obj.uuid]]
 
 
-def _feed__generate_counts(
+def _feed__generate_count_lookups(
     request: HttpRequest, queryset: Collection[Feed]
 ) -> dict[uuid.UUID, Feed._CountsDescriptor]:
-    counts: dict[uuid.UUID, Feed._CountsDescriptor] | None
-    if (counts := getattr(request, "_feed__generate_counts", None)) is None:
-        feed_uuids = frozenset(f.uuid for f in queryset)
-        counts = {
-            r["uuid"]: Feed._CountsDescriptor(
-                r["unread_count"], r["total_count"] - r["unread_count"]
-            )
-            for r in Feed.objects.filter(uuid__in=feed_uuids)
-            .values("uuid")
-            .annotate(
-                total_count=Count("feed_entries__uuid"),
-                unread_count=Count(
-                    "feed_entries__uuid",
-                    filter=(
-                        Q(feed_entries__is_archived=False)
-                        & ~Q(
-                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                user=cast(User, request.user),
-                                feed_entry__feed_id__in=feed_uuids,
-                            ).values(
-                                "feed_entry_id"
-                            )
-                        )
-                    ),
-                ),
-            )
-            .values("uuid", "total_count", "unread_count")
-        }
+    count_lookups: dict[uuid.UUID, Feed._CountsDescriptor] | None = getattr(
+        request, "_count_lookups", None
+    )
+    if count_lookups is None:
+        count_lookups = Feed.generate_counts_lookup(
+            cast(User, request.user), [f.uuid for f in queryset]
+        )
 
-        setattr(request, "_feed__generate_counts", counts)
+        setattr(request, "_count_lookups", count_lookups)
 
-    return counts
+    return count_lookups
 
 
 def _feed_readCount(
     request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
 ) -> int:
-    if queryset is None:
-        return db_obj.read_count(cast(User, request.user))
-    else:
-        counts = _feed__generate_counts(request, queryset)
-        return counts[db_obj.uuid].read_count
+    count_lookups = _feed__generate_count_lookups(request, queryset or (db_obj,))
+    return count_lookups[db_obj.uuid].read_count
 
 
 def _feed_unreadCount(
     request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
 ) -> int:
-    if queryset is None:
-        return db_obj.unread_count(cast(User, request.user))
-    else:
-        counts = _feed__generate_counts(request, queryset)
-        return counts[db_obj.uuid].unread_count
+    count_lookups = _feed__generate_count_lookups(request, queryset or (db_obj,))
+    return count_lookups[db_obj.uuid].unread_count
 
 
 def _feedentry_readAt(

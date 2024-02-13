@@ -1,5 +1,6 @@
 import uuid as uuid_
-from typing import Any, cast
+from collections import Counter
+from typing import Any, Generator, cast
 
 from django.conf import settings
 from django.core.cache import BaseCache, caches
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import fields as fieldutils
+from api.count_lookups_cache_util import increment_read_in_count_lookups_cache
 from api.django_extensions import bulk_create_iter
 from api.fields import FieldMap
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
@@ -220,6 +222,8 @@ class FeedEntryReadView(APIView):
         operation_description="Mark a feed entry as 'read'",
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
         read_feed_entry_user_mapping: ReadFeedEntryUserMapping
@@ -234,6 +238,7 @@ class FeedEntryReadView(APIView):
             if feed_entry.is_archived:
                 ret_obj = ""
             else:
+                created: bool
                 with transaction.atomic():
                     (
                         read_feed_entry_user_mapping,
@@ -249,6 +254,11 @@ class FeedEntryReadView(APIView):
 
                     ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
+                if created:
+                    increment_read_in_count_lookups_cache(
+                        user, {feed_entry.feed_id: 1}, cache
+                    )
+
         return Response(ret_obj)
 
     @swagger_auto_schema(
@@ -256,18 +266,31 @@ class FeedEntryReadView(APIView):
         operation_description="Unmark a feed entry as 'read'",
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
+        deleted: bool
         with transaction.atomic():
+            feed_entry: FeedEntry
+            try:
+                feed_entry = FeedEntry.objects.get(uuid=uuid)
+            except FeedEntry.DoesNotExist:
+                return Response(status=204)
+
             _, deletes = ReadFeedEntryUserMapping.objects.filter(
-                user=user, feed_entry_id=uuid
+                user=user, feed_entry=feed_entry
             ).delete()
             deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
-            if deleted_count > 0:
+            deleted = deleted_count > 0
+            if deleted:
                 User.objects.filter(uuid=user.uuid).update(
                     read_feed_entries_counter=F("read_feed_entries_counter")
                     - deleted_count
                 )
+
+        if deleted:
+            increment_read_in_count_lookups_cache(user, {feed_entry.feed_id: -1}, cache)
 
         return Response(status=204)
 
@@ -279,6 +302,8 @@ class FeedEntriesReadView(APIView):
         request_body=FeedEntriesMarkReadSerializer,
     )
     def post(self, request: Request):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
         serializer = FeedEntriesMarkReadSerializer(data=request.data)
@@ -306,14 +331,21 @@ class FeedEntriesReadView(APIView):
             & q
         )
 
+        increment_counter: Counter[uuid_.UUID] = Counter()
+
+        def generate_read_feed_entry_mappings_and_count_feed_uuids() -> (
+            Generator[ReadFeedEntryUserMapping, None, None]
+        ):
+            for feed_entry_uuid, feed_uuid in (
+                FeedEntry.objects.filter(q).values_list("uuid", "feed_id").iterator()
+            ):
+                increment_counter.update([feed_uuid])
+
+                yield ReadFeedEntryUserMapping(feed_entry_id=feed_entry_uuid, user=user)
+
         with transaction.atomic():
             created_count = bulk_create_iter(
-                (
-                    ReadFeedEntryUserMapping(feed_entry_id=feed_entry_uuid, user=user)
-                    for feed_entry_uuid in FeedEntry.objects.filter(q)
-                    .values_list("uuid", flat=True)
-                    .iterator()
-                ),
+                generate_read_feed_entry_mappings_and_count_feed_uuids(),
                 ReadFeedEntryUserMapping,
             )
             if created_count > 0:
@@ -323,6 +355,9 @@ class FeedEntriesReadView(APIView):
                     )
                 )
 
+        if increment_counter:
+            increment_read_in_count_lookups_cache(user, increment_counter, cache)
+
         return Response(status=204)
 
     @swagger_auto_schema(
@@ -331,6 +366,8 @@ class FeedEntriesReadView(APIView):
         request_body=FeedEntriesMarkSerializer,
     )
     def delete(self, request: Request):
+        cache: BaseCache = caches["default"]
+
         user = cast(User, request.user)
 
         serializer = FeedEntriesMarkSerializer(data=request.data)
@@ -343,16 +380,34 @@ class FeedEntriesReadView(APIView):
         if len(feed_entry_uuids) < 1:
             return Response(status=204)
 
+        increment_counter: Counter[uuid_.UUID] = Counter()
+
         with transaction.atomic():
-            _, deletes = ReadFeedEntryUserMapping.objects.filter(
-                user=user, feed_entry_id__in=feed_entry_uuids
-            ).delete()
-            deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
-            if deleted_count > 0:
+            total_deleted_count = 0
+            for uuid, feed_uuid in (
+                ReadFeedEntryUserMapping.objects.select_related("feed_entry")
+                .filter(user=user, feed_entry_id__in=feed_entry_uuids)
+                .values_list("uuid", "feed_entry__feed_id")
+                .iterator()
+            ):
+                _, deletes = ReadFeedEntryUserMapping.objects.filter(uuid=uuid).delete()
+                deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
+                if deleted_count > 0:
+                    total_deleted_count += deleted_count
+                    increment_counter.update([feed_uuid])
+
+            if total_deleted_count > 0:
                 User.objects.filter(uuid=user.uuid).update(
                     read_feed_entries_counter=F("read_feed_entries_counter")
-                    - deleted_count
+                    - total_deleted_count
                 )
+
+        if increment_counter:
+            increment_read_in_count_lookups_cache(
+                user,
+                {feed_uuid: -incr for feed_uuid, incr in increment_counter.items()},
+                cache,
+            )
 
         return Response(status=204)
 

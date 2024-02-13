@@ -319,8 +319,8 @@ class Feed(models.Model):
         read_count: int
 
     @staticmethod
-    def _generate_counts(feed: "Feed", user: User) -> _CountsDescriptor:
-        counts = Feed.objects.filter(uuid=feed.uuid).aggregate(
+    def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
+        counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
             total_count=models.Count("feed_entries__uuid"),
             unread_count=models.Count(
                 "feed_entries__uuid",
@@ -328,7 +328,7 @@ class Feed(models.Model):
                     models.Q(feed_entries__is_archived=False)
                     & ~models.Q(
                         feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                            user=user, feed_entry__feed=feed
+                            user=user, feed_entry__feed_id=feed_uuid
                         ).values("feed_entry_id")
                     )
                 ),
@@ -341,10 +341,41 @@ class Feed(models.Model):
 
         return Feed._CountsDescriptor(unread_count, read_count)
 
+    @staticmethod
+    def generate_counts_lookup(
+        user: User, feed_uuids: Collection[uuid_.UUID]
+    ) -> dict[uuid_.UUID, _CountsDescriptor]:
+        feed_uuids = frozenset(feed_uuids)
+        return {
+            r["uuid"]: Feed._CountsDescriptor(
+                r["unread_count"], r["total_count"] - r["unread_count"]
+            )
+            for r in Feed.objects.filter(uuid__in=feed_uuids)
+            .values("uuid")
+            .annotate(
+                total_count=models.Count("feed_entries__uuid"),
+                unread_count=models.Count(
+                    "feed_entries__uuid",
+                    filter=(
+                        models.Q(feed_entries__is_archived=False)
+                        & ~models.Q(
+                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                user=user,
+                                feed_entry__feed_id__in=feed_uuids,
+                            ).values(
+                                "feed_entry_id"
+                            )
+                        )
+                    ),
+                ),
+            )
+            .values("uuid", "total_count", "unread_count")
+        }
+
     def _counts(self, user: User) -> _CountsDescriptor:
         counts = getattr(self, "_counts_", None)
         if counts is None:
-            counts = Feed._generate_counts(self, user)
+            counts = Feed.generate_counts(self.uuid, user)
             self._counts_ = counts
 
         return counts
