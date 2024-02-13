@@ -14,7 +14,7 @@ from rest_framework.authtoken.models import Token as _Token
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
-    from api.subscription_datas_cache_util import SubscriptionData
+    from api.cache_utils.subscription_datas import SubscriptionData
 
 
 class UserManager(BaseUserManager["User"]):
@@ -530,19 +530,11 @@ class FeedEntry(models.Model):
     @staticmethod
     def annotate_user_data__case(
         qs: models.QuerySet["FeedEntry"],
-        user: User,
         subscription_datas: Sequence["SubscriptionData"],
+        read_feed_entry_uuids: Sequence[uuid_.UUID],
+        favorite_feed_entry_uuids: Sequence[uuid_.UUID],
     ) -> models.QuerySet["FeedEntry"]:
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
-
-        read_user_feed_entry_mapping = ReadFeedEntryUserMapping.objects.filter(
-            user=user, feed_entry_id=models.OuterRef("uuid")
-        )
-        favorite_user_feed_entry_mapping = (
-            User.favorite_feed_entries.through.objects.filter(
-                user=user, feedentry_id=models.OuterRef("uuid")
-            )
-        )
 
         return qs.annotate(
             is_subscribed=models.Case(
@@ -554,8 +546,22 @@ class FeedEntry(models.Model):
                 output_field=models.BooleanField(),
             ),
             is_read=models.Q(is_archived=True)
-            | models.Exists(read_user_feed_entry_mapping),
-            is_favorite=models.Exists(favorite_user_feed_entry_mapping),
+            | models.Case(
+                models.When(
+                    condition=models.Q(feed_id__in=read_feed_entry_uuids),
+                    then=models.Value(True),
+                ),
+                default=models.Value(False),
+                output_field=models.BooleanField(),
+            ),
+            is_favorite=models.Case(
+                models.When(
+                    condition=models.Q(feed_id__in=favorite_feed_entry_uuids),
+                    then=models.Value(True),
+                ),
+                default=models.Value(False),
+                output_field=models.BooleanField(),
+            ),
         )
 
     def with_user_data(self):

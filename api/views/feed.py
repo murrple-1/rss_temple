@@ -18,7 +18,11 @@ from url_normalize import url_normalize
 from api import content_type_util, feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
-from api.count_lookups_cache_util import get_count_lookups_from_cache
+from api.cache_utils.count_lookups import get_count_lookups_from_cache
+from api.cache_utils.subscription_datas import (
+    delete_subscription_data_cache,
+    get_subscription_datas_from_cache,
+)
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
@@ -39,7 +43,6 @@ from api.serializers import (
     FeedSubscribeSerializer,
     GetManySerializer,
 )
-from api.subscription_datas_cache_util import generate_subscription_datas
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
@@ -82,7 +85,7 @@ class FeedView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
-        subscription_datas = generate_subscription_datas(user, cache)
+        subscription_datas = get_subscription_datas_from_cache(user, cache)
 
         feed: Feed
         try:
@@ -135,7 +138,7 @@ class FeedsQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        subscription_datas = generate_subscription_datas(user, cache)
+        subscription_datas = get_subscription_datas_from_cache(user, cache)
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data__case(
@@ -267,7 +270,7 @@ class FeedSubscribeView(APIView):
 
             ReadFeedEntryUserMapping.objects.bulk_create(read_mappings)
 
-        cache.delete(f"subscription_datas__{user.uuid}")
+        delete_subscription_data_cache(user, cache)
 
         return Response(status=204)
 
@@ -310,7 +313,7 @@ class FeedSubscribeView(APIView):
         subscribed_feed_mapping.custom_feed_title = custom_title
         subscribed_feed_mapping.save(update_fields=["custom_feed_title"])
 
-        cache.delete(f"subscription_datas__{user.uuid}")
+        delete_subscription_data_cache(user, cache)
 
         return Response(status=204)
 
@@ -336,7 +339,7 @@ class FeedSubscribeView(APIView):
         if count < 1:
             raise NotFound("user not subscribed")
 
-        cache.delete(f"subscription_datas__{user.uuid}")
+        delete_subscription_data_cache(user, cache)
 
         return Response(status=204)
 

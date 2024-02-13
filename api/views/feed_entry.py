@@ -16,7 +16,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import fields as fieldutils
-from api.count_lookups_cache_util import increment_read_in_count_lookups_cache
+from api.cache_utils.count_lookups import increment_read_in_count_lookups_cache
+from api.cache_utils.favorite_feed_entry_uuids import (
+    delete_favorite_feed_entry_uuids_cache,
+    get_favorite_feed_entry_uuids_from_cache,
+)
+from api.cache_utils.read_feed_entry_uuids import (
+    delete_read_feed_entry_uuids_cache,
+    get_read_feed_entry_uuids_from_cache,
+)
+from api.cache_utils.subscription_datas import get_subscription_datas_from_cache
 from api.django_extensions import bulk_create_iter
 from api.fields import FieldMap
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
@@ -30,7 +39,6 @@ from api.serializers import (
     StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
 )
-from api.subscription_datas_cache_util import generate_subscription_datas
 
 _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT: int
 _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS: float
@@ -108,14 +116,19 @@ class FeedEntriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        subscription_datas = generate_subscription_datas(user, cache)
+        subscription_datas = get_subscription_datas_from_cache(user, cache)
+        read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
+        favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
+            user, cache
+        )
 
         feed_entries = (
             FeedEntry.annotate_search_vectors(
                 FeedEntry.annotate_user_data__case(
                     FeedEntry.objects.all(),
-                    user,
                     subscription_datas,
+                    read_feed_entry_uuids,
+                    favorite_feed_entry_uuids,
                 )
             )
             .filter(*search)
@@ -163,7 +176,11 @@ class FeedEntriesQueryStableCreateView(APIView):
 
         token = f"feedentry-{uuid_.uuid4().int}"
 
-        subscription_datas = generate_subscription_datas(user, cache)
+        subscription_datas = get_subscription_datas_from_cache(user, cache)
+        read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
+        favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
+            user, cache
+        )
 
         stable_query_cache.set(
             token,
@@ -171,8 +188,9 @@ class FeedEntriesQueryStableCreateView(APIView):
                 FeedEntry.annotate_search_vectors(
                     FeedEntry.annotate_user_data__case(
                         FeedEntry.objects.all(),
-                        user,
                         subscription_datas,
+                        read_feed_entry_uuids,
+                        favorite_feed_entry_uuids,
                     )
                 )
                 .filter(*search)
@@ -217,7 +235,11 @@ class FeedEntriesQueryStableView(APIView):
         if return_objects:
             current_uuids = uuids[skip : skip + count]
 
-            subscription_datas = generate_subscription_datas(user, cache)
+            subscription_datas = get_subscription_datas_from_cache(user, cache)
+            read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
+            favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
+                user, cache
+            )
 
             feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
@@ -225,8 +247,9 @@ class FeedEntriesQueryStableView(APIView):
                     FeedEntry.objects.filter(uuid__in=current_uuids).select_related(
                         "language"
                     ),
-                    user,
                     subscription_datas,
+                    read_feed_entry_uuids,
+                    favorite_feed_entry_uuids,
                 )
             }
 
@@ -293,6 +316,7 @@ class FeedEntryReadView(APIView):
                     increment_read_in_count_lookups_cache(
                         user, {feed_entry.feed_id: 1}, cache
                     )
+                    delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(ret_obj)
 
@@ -326,6 +350,7 @@ class FeedEntryReadView(APIView):
 
         if deleted:
             increment_read_in_count_lookups_cache(user, {feed_entry.feed_id: -1}, cache)
+            delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -392,6 +417,7 @@ class FeedEntriesReadView(APIView):
 
         if increment_counter:
             increment_read_in_count_lookups_cache(user, increment_counter, cache)
+            delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -443,6 +469,7 @@ class FeedEntriesReadView(APIView):
                 {feed_uuid: -incr for feed_uuid, incr in increment_counter.items()},
                 cache,
             )
+            delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -457,13 +484,19 @@ class FeedEntryFavoriteView(APIView):
         operation_description="Mark a feed entry as 'favorite'",
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         feed_entry: FeedEntry
         try:
             feed_entry = FeedEntry.objects.get(uuid=uuid)
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
-        cast(User, request.user).favorite_feed_entries.add(feed_entry)
+        user.favorite_feed_entries.add(feed_entry)
+
+        delete_favorite_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -472,9 +505,15 @@ class FeedEntryFavoriteView(APIView):
         operation_description="Unmark a feed entry as 'favorite'",
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         User.favorite_feed_entries.through.objects.filter(
-            user=cast(User, request.user), feedentry_id=uuid
+            user=user, feedentry_id=uuid
         ).delete()
+
+        delete_favorite_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -486,6 +525,10 @@ class FeedEntriesFavoriteView(APIView):
         request_body=FeedEntriesMarkSerializer,
     )
     def post(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -501,7 +544,9 @@ class FeedEntriesFavoriteView(APIView):
         if len(feed_entries) != len(feed_entry_uuids):
             raise NotFound("feed entry not found")
 
-        cast(User, request.user).favorite_feed_entries.add(*feed_entries)
+        user.favorite_feed_entries.add(*feed_entries)
+
+        delete_favorite_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
@@ -511,6 +556,10 @@ class FeedEntriesFavoriteView(APIView):
         request_body=FeedEntriesMarkSerializer,
     )
     def delete(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = FeedEntriesMarkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -522,8 +571,10 @@ class FeedEntriesFavoriteView(APIView):
             return Response(status=204)
 
         User.favorite_feed_entries.through.objects.filter(
-            user=cast(User, request.user), feedentry_id__in=feed_entry_uuids
+            user=user, feedentry_id__in=feed_entry_uuids
         ).delete()
+
+        delete_favorite_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
 
