@@ -530,7 +530,7 @@ class FeedEntry(models.Model):
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
 
         return qs.annotate(
-            is_subscribed=models.Q(feed_id__in=subscribed_uuids),
+            is_from_subscription=models.Q(feed_id__in=subscribed_uuids),
             is_read=models.Q(is_archived=True)
             | models.Q(feed_id__in=read_feed_entry_uuids),
             is_favorite=models.Q(feed_id__in=favorite_feed_entry_uuids),

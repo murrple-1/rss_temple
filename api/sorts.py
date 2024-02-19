@@ -34,7 +34,7 @@ _sort_configs: dict[str, dict[str, _SortConfig]] = {
         "homeUrl": _SortConfig([_standard_sort("home_url")], None),
         "publishedAt": _SortConfig([_standard_sort("published_at")], None),
         "updatedAt": _SortConfig([_standard_sort("updated_at")], None),
-        "subscribed": _SortConfig([_standard_sort("is_subscribed")], None),
+        "isSubscribed": _SortConfig([_standard_sort("is_subscribed")], None),
         "customTitle": _SortConfig([_standard_sort("custom_title")], None),
         "calculatedTitle": _SortConfig(
             [_standard_sort("custom_title"), _standard_sort("title")], None

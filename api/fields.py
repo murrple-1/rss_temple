@@ -151,7 +151,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             else None,
             False,
         ),
-        "subscribed": _FieldConfig(
+        "isSubscribed": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_subscribed, False
         ),
         "customTitle": _FieldConfig(

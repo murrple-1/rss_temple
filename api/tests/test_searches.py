@@ -156,7 +156,7 @@ class AllSearchesTestCase(TestCase):
                 "updatedAt": ["2018-11-23 00:00:00+0000|2018-11-26 00:00:00+0000"],
                 "updatedAt_exact": ["2018-11-26 00:00:00+0000"],
                 "updatedAt_delta": ["older_than:10h"],
-                "subscribed": ["true", "false"],
+                "isSubscribed": ["true", "false"],
                 "customTitle": ["custom title"],
                 "customTitle_exact": ["custom title"],
                 "customTitle_null": ["true", "false"],

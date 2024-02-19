@@ -131,7 +131,7 @@ _search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
         "updatedAt_delta": lambda request, search_obj: Q(
             updated_at__range=DateTimeDeltaRange.convertto(search_obj)
         ),
-        "subscribed": lambda request, search_obj: Q(
+        "isSubscribed": lambda request, search_obj: Q(
             is_subscribed=Bool.convertto(search_obj)
         ),
         "customTitle": lambda request, search_obj: Q(
