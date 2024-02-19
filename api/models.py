@@ -287,14 +287,7 @@ class Feed(models.Model):
                 *custom_title_case_whens,
                 output_field=models.CharField(null=True),
             ),
-            is_subscribed=models.Case(
-                models.When(
-                    condition=models.Q(uuid__in=subscribed_uuids),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
-            ),
+            is_subscribed=models.Q(uuid__in=subscribed_uuids),
         )
 
     def with_subscription_data(self) -> None:
@@ -537,31 +530,9 @@ class FeedEntry(models.Model):
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
 
         return qs.annotate(
-            is_subscribed=models.Case(
-                models.When(
-                    condition=models.Q(feed_id__in=subscribed_uuids),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
-            ),
-            is_read=models.Q(is_archived=True)
-            | models.Case(
-                models.When(
-                    condition=models.Q(feed_id__in=read_feed_entry_uuids),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
-            ),
-            is_favorite=models.Case(
-                models.When(
-                    condition=models.Q(feed_id__in=favorite_feed_entry_uuids),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
-            ),
+            is_subscribed=models.Q(feed_id__in=subscribed_uuids),
+            is_read=models.Q(is_archived=True) | models.Q(feed_id__in=read_feed_entry_uuids),
+            is_favorite=models.Q(feed_id__in=favorite_feed_entry_uuids),
         )
 
     def with_user_data(self):
