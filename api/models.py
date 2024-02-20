@@ -287,10 +287,8 @@ class Feed(models.Model):
                 *custom_title_case_whens,
                 output_field=models.CharField(null=True),
             ),
-            is_subscribed=models.Case(
-                models.When(uuid__in=subscribed_uuids, then=models.Value(True)),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
+            is_subscribed=models.ExpressionWrapper(
+                models.Q(uuid__in=subscribed_uuids), output_field=models.BooleanField()
             ),
         )
 
@@ -519,13 +517,9 @@ class FeedEntry(models.Model):
         )
         return qs.annotate(
             is_from_subscription=models.Exists(subscribed_user_feed_mappings),
-            is_read=models.Case(
-                models.When(
-                    models.Q(is_archived=True)
-                    | models.Exists(read_user_feed_entry_mapping),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
+            is_read=models.ExpressionWrapper(
+                models.Q(is_archived=True)
+                | models.Exists(read_user_feed_entry_mapping),
                 output_field=models.BooleanField(),
             ),
             is_favorite=models.Exists(favorite_user_feed_entry_mapping),
@@ -541,25 +535,16 @@ class FeedEntry(models.Model):
         subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
 
         return qs.annotate(
-            is_subscribed=models.Case(
-                models.When(feed_id__in=subscribed_uuids, then=models.Value(True)),
-                default=models.Value(False),
+            is_from_subscription=models.ExpressionWrapper(
+                models.Q(feed_id__in=subscribed_uuids),
                 output_field=models.BooleanField(),
             ),
-            is_read=models.Case(
-                models.When(
-                    models.Q(is_archived=True)
-                    | models.Q(feed_id__in=read_feed_entry_uuids),
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
+            is_read=models.ExpressionWrapper(
+                models.Q(is_archived=True) | models.Q(uuid__in=read_feed_entry_uuids),
                 output_field=models.BooleanField(),
             ),
-            is_favorite=models.Case(
-                models.When(
-                    feed_id__in=favorite_feed_entry_uuids, then=models.Value(True)
-                ),
-                default=models.Value(False),
+            is_favorite=models.ExpressionWrapper(
+                models.Q(uuid__in=favorite_feed_entry_uuids),
                 output_field=models.BooleanField(),
             ),
         )
