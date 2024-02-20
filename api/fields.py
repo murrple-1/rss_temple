@@ -152,10 +152,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             False,
         ),
         "isSubscribed": _FieldConfig(
-            lambda request, db_obj, queryset: bool(
-                db_obj.is_subscribed
-            ),  # sometimes annotated booleans output as 0/1, instead of boolean
-            False,
+            lambda request, db_obj, queryset: db_obj.is_subscribed, False
         ),
         "customTitle": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.custom_title, False
@@ -203,22 +200,12 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             lambda request, db_obj, queryset: str(db_obj.feed_id), False
         ),
         "isFromSubscription": _FieldConfig(
-            lambda request, db_obj, queryset: bool(
-                db_obj.is_from_subscription
-            ),  # sometimes annotated booleans output as 0/1, instead of boolean
+            lambda request, db_obj, queryset: db_obj.is_from_subscription,
             False,
         ),
-        "isRead": _FieldConfig(
-            lambda request, db_obj, queryset: bool(
-                db_obj.is_read
-            ),  # sometimes annotated booleans output as 0/1, instead of boolean
-            False,
-        ),
+        "isRead": _FieldConfig(lambda request, db_obj, queryset: db_obj.is_read, False),
         "isFavorite": _FieldConfig(
-            lambda request, db_obj, queryset: bool(
-                db_obj.is_favorite
-            ),  # sometimes annotated booleans output as 0/1, instead of boolean
-            False,
+            lambda request, db_obj, queryset: db_obj.is_favorite, False
         ),
         "readAt": _FieldConfig(_feedentry_readAt, False),
         "isArchived": _FieldConfig(
