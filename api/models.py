@@ -291,6 +291,7 @@ class Feed(models.Model):
                 subscribed_user_feed_mappings.values("custom_feed_title")
             )
             is_subscribed_expression = models.Exists(subscribed_user_feed_mappings)
+
         return qs.annotate(
             custom_title=custom_title_expression,
             is_subscribed=is_subscribed_expression,
