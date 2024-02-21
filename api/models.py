@@ -281,7 +281,9 @@ class Feed(models.Model):
                     output_field=models.CharField(null=True),
                 )
                 if subscription_datas
-                else models.Value(None)
+                else models.ExpressionWrapper(
+                    models.Value(None), output_field=models.CharField(null=True)
+                )
             )
         else:
             subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
