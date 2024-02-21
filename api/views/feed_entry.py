@@ -124,11 +124,12 @@ class FeedEntriesQueryView(APIView):
 
         feed_entries = (
             FeedEntry.annotate_search_vectors(
-                FeedEntry.annotate_user_data__case(
+                FeedEntry.annotate_user_data(
                     FeedEntry.objects.all(),
-                    subscription_datas,
-                    read_feed_entry_uuids,
-                    favorite_feed_entry_uuids,
+                    user,
+                    subscription_datas=subscription_datas,
+                    read_feed_entry_uuids=read_feed_entry_uuids,
+                    favorite_feed_entry_uuids=favorite_feed_entry_uuids,
                 )
             )
             .filter(*search)
@@ -186,11 +187,12 @@ class FeedEntriesQueryStableCreateView(APIView):
             token,
             list(
                 FeedEntry.annotate_search_vectors(
-                    FeedEntry.annotate_user_data__case(
+                    FeedEntry.annotate_user_data(
                         FeedEntry.objects.all(),
-                        subscription_datas,
-                        read_feed_entry_uuids,
-                        favorite_feed_entry_uuids,
+                        user,
+                        subscription_datas=subscription_datas,
+                        read_feed_entry_uuids=read_feed_entry_uuids,
+                        favorite_feed_entry_uuids=favorite_feed_entry_uuids,
                     )
                 )
                 .filter(*search)
@@ -243,13 +245,14 @@ class FeedEntriesQueryStableView(APIView):
 
             feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
-                for feed_entry in FeedEntry.annotate_user_data__case(
+                for feed_entry in FeedEntry.annotate_user_data(
                     FeedEntry.objects.filter(uuid__in=current_uuids).select_related(
                         "language"
                     ),
-                    subscription_datas,
-                    read_feed_entry_uuids,
-                    favorite_feed_entry_uuids,
+                    user,
+                    subscription_datas=subscription_datas,
+                    read_feed_entry_uuids=read_feed_entry_uuids,
+                    favorite_feed_entry_uuids=favorite_feed_entry_uuids,
                 )
             }
 

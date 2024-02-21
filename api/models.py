@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import connection, models
-from django.utils import timezone
+from django.utils import timezone, tree
 from rest_framework.authtoken.models import Token as _Token
 
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
@@ -257,39 +257,43 @@ class Feed(models.Model):
 
     @staticmethod
     def annotate_subscription_data(
-        qs: models.QuerySet["Feed"], user: User
+        qs: models.QuerySet["Feed"],
+        user: User,
+        subscription_datas: Sequence["SubscriptionData"] | None = None,
     ) -> models.QuerySet["Feed"]:
-        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
-            user=user, feed_id=models.OuterRef("uuid")
-        )
-        return qs.annotate(
-            custom_title=models.Subquery(
-                subscribed_user_feed_mappings.values("custom_feed_title")
-            ),
-            is_subscribed=models.Exists(subscribed_user_feed_mappings),
-        )
-
-    @staticmethod
-    def annotate_subscription_data__case(
-        qs: models.QuerySet["Feed"], subscription_datas: Sequence["SubscriptionData"]
-    ) -> models.QuerySet["Feed"]:
-        subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
-        custom_title_case_whens: list[models.When] = [
-            models.When(
-                condition=models.Q(uuid=sd["uuid"]),
-                then=models.Value(sd["custom_title"]),
+        custom_title_expression: models.expressions.BaseExpression | tree.Node
+        is_subscribed_expression: models.expressions.BaseExpression | tree.Node
+        if subscription_datas is not None:
+            is_subscribed_expression = (
+                models.Q(uuid__in=[sd["uuid"] for sd in subscription_datas])
+                if subscription_datas
+                else models.Value(False)
             )
-            for sd in subscription_datas
-        ]
-
+            custom_title_expression = (
+                models.Case(
+                    *(
+                        models.When(
+                            condition=models.Q(uuid=sd["uuid"]),
+                            then=models.Value(sd["custom_title"]),
+                        )
+                        for sd in subscription_datas
+                    ),
+                    output_field=models.CharField(null=True),
+                )
+                if subscription_datas
+                else models.Value(None)
+            )
+        else:
+            subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
+                user=user, feed_id=models.OuterRef("uuid")
+            )
+            custom_title_expression = models.Subquery(
+                subscribed_user_feed_mappings.values("custom_feed_title")
+            )
+            is_subscribed_expression = models.Exists(subscribed_user_feed_mappings)
         return qs.annotate(
-            custom_title=models.Case(
-                *custom_title_case_whens,
-                output_field=models.CharField(null=True),
-            ),
-            is_subscribed=models.ExpressionWrapper(
-                models.Q(uuid__in=subscribed_uuids), output_field=models.BooleanField()
-            ),
+            custom_title=custom_title_expression,
+            is_subscribed=is_subscribed_expression,
         )
 
     def with_subscription_data(self) -> None:
@@ -502,51 +506,57 @@ class FeedEntry(models.Model):
 
     @staticmethod
     def annotate_user_data(
-        qs: models.QuerySet["FeedEntry"], user: User
+        qs: models.QuerySet["FeedEntry"],
+        user: User,
+        subscription_datas: Sequence["SubscriptionData"] | None = None,
+        read_feed_entry_uuids: Sequence[uuid_.UUID] | None = None,
+        favorite_feed_entry_uuids: Sequence[uuid_.UUID] | None = None,
     ) -> models.QuerySet["FeedEntry"]:
-        subscribed_user_feed_mappings = SubscribedFeedUserMapping.objects.filter(
-            user=user, feed_id=models.OuterRef("feed_id")
-        )
-        read_user_feed_entry_mapping = ReadFeedEntryUserMapping.objects.filter(
-            user=user, feed_entry_id=models.OuterRef("uuid")
-        )
-        favorite_user_feed_entry_mapping = (
-            User.favorite_feed_entries.through.objects.filter(
-                user=user, feedentry_id=models.OuterRef("uuid")
+        is_from_subscription_expression = (
+            (
+                models.Q(feed_id__in=[sd["uuid"] for sd in subscription_datas])
+                if subscription_datas
+                else models.Value(False)
+            )
+            if subscription_datas is not None
+            else models.Exists(
+                SubscribedFeedUserMapping.objects.filter(
+                    user=user, feed_id=models.OuterRef("feed_id")
+                )
             )
         )
-        return qs.annotate(
-            is_from_subscription=models.Exists(subscribed_user_feed_mappings),
-            is_read=models.ExpressionWrapper(
-                models.Q(is_archived=True)
-                | models.Exists(read_user_feed_entry_mapping),
-                output_field=models.BooleanField(),
-            ),
-            is_favorite=models.Exists(favorite_user_feed_entry_mapping),
+        is_read_expression = (
+            (
+                (models.Q(is_archived=True) | models.Q(uuid__in=read_feed_entry_uuids))
+                if read_feed_entry_uuids
+                else models.Q(is_archived=True)
+            )
+            if read_feed_entry_uuids is not None
+            else models.Q(is_archived=True)
+            | models.Exists(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=user, feed_entry_id=models.OuterRef("uuid")
+                )
+            )
+        )
+        is_favorite_expression = (
+            (
+                models.Q(uuid__in=favorite_feed_entry_uuids)
+                if favorite_feed_entry_uuids
+                else models.Value(False)
+            )
+            if favorite_feed_entry_uuids is not None
+            else models.Exists(
+                User.favorite_feed_entries.through.objects.filter(
+                    user=user, feedentry_id=models.OuterRef("uuid")
+                )
+            )
         )
 
-    @staticmethod
-    def annotate_user_data__case(
-        qs: models.QuerySet["FeedEntry"],
-        subscription_datas: Sequence["SubscriptionData"],
-        read_feed_entry_uuids: Sequence[uuid_.UUID],
-        favorite_feed_entry_uuids: Sequence[uuid_.UUID],
-    ) -> models.QuerySet["FeedEntry"]:
-        subscribed_uuids = [sd["uuid"] for sd in subscription_datas]
-
         return qs.annotate(
-            is_from_subscription=models.ExpressionWrapper(
-                models.Q(feed_id__in=subscribed_uuids),
-                output_field=models.BooleanField(),
-            ),
-            is_read=models.ExpressionWrapper(
-                models.Q(is_archived=True) | models.Q(uuid__in=read_feed_entry_uuids),
-                output_field=models.BooleanField(),
-            ),
-            is_favorite=models.ExpressionWrapper(
-                models.Q(uuid__in=favorite_feed_entry_uuids),
-                output_field=models.BooleanField(),
-            ),
+            is_from_subscription=is_from_subscription_expression,
+            is_read=is_read_expression,
+            is_favorite=is_favorite_expression,
         )
 
     def with_user_data(self):

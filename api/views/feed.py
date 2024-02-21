@@ -89,8 +89,8 @@ class FeedView(APIView):
 
         feed: Feed
         try:
-            feed = Feed.annotate_subscription_data__case(
-                Feed.objects.all(), subscription_datas
+            feed = Feed.annotate_subscription_data(
+                Feed.objects.all(), user, subscription_datas=subscription_datas
             ).get(
                 Q(feed_url=url)
                 | Q(
@@ -141,8 +141,8 @@ class FeedsQueryView(APIView):
         subscription_datas = get_subscription_datas_from_cache(user, cache)
 
         feeds = Feed.annotate_search_vectors(
-            Feed.annotate_subscription_data__case(
-                Feed.objects.all(), subscription_datas
+            Feed.annotate_subscription_data(
+                Feed.objects.all(), user, subscription_datas=subscription_datas
             )
         ).filter(*search)
 
