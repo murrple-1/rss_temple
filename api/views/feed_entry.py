@@ -116,11 +116,18 @@ class FeedEntriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        subscription_datas = get_subscription_datas_from_cache(user, cache)
-        read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
-        favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
-            user, cache
-        )
+        (
+            subscription_datas,
+            subscription_datas_cache_hit,
+        ) = get_subscription_datas_from_cache(user, cache)
+        (
+            read_feed_entry_uuids,
+            read_feed_entry_uuids_cache_hit,
+        ) = get_read_feed_entry_uuids_from_cache(user, cache)
+        (
+            favorite_feed_entry_uuids,
+            favorite_feed_entry_uuids_cache_hit,
+        ) = get_favorite_feed_entry_uuids_from_cache(user, cache)
 
         feed_entries = (
             FeedEntry.annotate_search_vectors(
@@ -151,7 +158,15 @@ class FeedEntriesQueryView(APIView):
         if return_total_count:
             ret_obj["totalCount"] = feed_entries.count()
 
-        return Response(ret_obj)
+        response = Response(ret_obj)
+        response["X-Cache-Hit"] = ",".join(
+            (
+                "YES" if subscription_datas_cache_hit else "NO",
+                "YES" if read_feed_entry_uuids_cache_hit else "NO",
+                "YES" if favorite_feed_entry_uuids_cache_hit else "NO",
+            )
+        )
+        return response
 
 
 class FeedEntriesQueryStableCreateView(APIView):
@@ -177,11 +192,18 @@ class FeedEntriesQueryStableCreateView(APIView):
 
         token = f"feedentry-{uuid_.uuid4().int}"
 
-        subscription_datas = get_subscription_datas_from_cache(user, cache)
-        read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
-        favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
-            user, cache
-        )
+        (
+            subscription_datas,
+            subscription_datas_cache_hit,
+        ) = get_subscription_datas_from_cache(user, cache)
+        (
+            read_feed_entry_uuids,
+            read_feed_entry_uuids_cache_hit,
+        ) = get_read_feed_entry_uuids_from_cache(user, cache)
+        (
+            favorite_feed_entry_uuids,
+            favorite_feed_entry_uuids_cache_hit,
+        ) = get_favorite_feed_entry_uuids_from_cache(user, cache)
 
         stable_query_cache.set(
             token,
@@ -201,7 +223,15 @@ class FeedEntriesQueryStableCreateView(APIView):
             ),
         )
 
-        return Response(token)
+        response = Response(token)
+        response["X-Cache-Hit"] = ",".join(
+            (
+                "YES" if subscription_datas_cache_hit else "NO",
+                "YES" if read_feed_entry_uuids_cache_hit else "NO",
+                "YES" if favorite_feed_entry_uuids_cache_hit else "NO",
+            )
+        )
+        return response
 
 
 class FeedEntriesQueryStableView(APIView):
@@ -234,14 +264,24 @@ class FeedEntriesQueryStableView(APIView):
 
         ret_obj: dict[str, Any] = {}
 
+        subscription_datas_cache_hit: bool | None = None
+        read_feed_entry_uuids_cache_hit: bool | None = None
+        favorite_feed_entry_uuids_cache_hit: bool | None = None
         if return_objects:
             current_uuids = uuids[skip : skip + count]
 
-            subscription_datas = get_subscription_datas_from_cache(user, cache)
-            read_feed_entry_uuids = get_read_feed_entry_uuids_from_cache(user, cache)
-            favorite_feed_entry_uuids = get_favorite_feed_entry_uuids_from_cache(
-                user, cache
-            )
+            (
+                subscription_datas,
+                subscription_datas_cache_hit,
+            ) = get_subscription_datas_from_cache(user, cache)
+            (
+                read_feed_entry_uuids,
+                read_feed_entry_uuids_cache_hit,
+            ) = get_read_feed_entry_uuids_from_cache(user, cache)
+            (
+                favorite_feed_entry_uuids,
+                favorite_feed_entry_uuids_cache_hit,
+            ) = get_favorite_feed_entry_uuids_from_cache(user, cache)
 
             feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
@@ -270,7 +310,20 @@ class FeedEntriesQueryStableView(APIView):
         if return_total_count:
             ret_obj["totalCount"] = len(uuids)
 
-        return Response(ret_obj)
+        response = Response(ret_obj)
+        if (
+            subscription_datas_cache_hit is not None
+            and read_feed_entry_uuids_cache_hit is not None
+            and favorite_feed_entry_uuids_cache_hit is not None
+        ):
+            response["X-Cache-Hit"] = ",".join(
+                (
+                    "YES" if subscription_datas_cache_hit else "NO",
+                    "YES" if read_feed_entry_uuids_cache_hit else "NO",
+                    "YES" if favorite_feed_entry_uuids_cache_hit else "NO",
+                )
+            )
+        return response
 
 
 class FeedEntryReadView(APIView):

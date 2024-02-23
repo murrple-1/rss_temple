@@ -56,7 +56,8 @@ def _save_entries_to_cache(
 
 def get_count_lookups_from_cache(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> dict[uuid_.UUID, Feed._CountsDescriptor]:
+) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], bool]:
+    cache_hit = True
     count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {
         feed_uuid: Feed._CountsDescriptor(unread, read)
         for feed_uuid, unread, read in _generate_cached_entries(user, feed_uuids, cache)
@@ -72,7 +73,9 @@ def get_count_lookups_from_cache(
 
         _save_entries_to_cache(user, missing_count_lookups, cache)
 
-    return count_lookups
+        cache_hit = False
+
+    return count_lookups, cache_hit
 
 
 def increment_read_in_count_lookups_cache(

@@ -13,7 +13,8 @@ class SubscriptionData(TypedDict):
 
 def get_subscription_datas_from_cache(
     user: User, cache: BaseCache
-) -> list[SubscriptionData]:
+) -> tuple[list[SubscriptionData], bool]:
+    cache_hit = True
     cache_key = f"subscription_datas__{user.uuid}"
     subscription_datas: list[SubscriptionData] | None = cache.get(cache_key)
     if subscription_datas is None:
@@ -29,8 +30,9 @@ def get_subscription_datas_from_cache(
             subscription_datas,
             None,
         )
+        cache_hit = False
 
-    return subscription_datas
+    return subscription_datas, cache_hit
 
 
 def delete_subscription_data_cache(user: User, cache: BaseCache) -> None:

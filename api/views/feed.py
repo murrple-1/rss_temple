@@ -85,7 +85,10 @@ class FeedView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
-        subscription_datas = get_subscription_datas_from_cache(user, cache)
+        (
+            subscription_datas,
+            subscription_datas_cache_hit,
+        ) = get_subscription_datas_from_cache(user, cache)
 
         feed: Feed
         try:
@@ -102,15 +105,25 @@ class FeedView(APIView):
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
+        count_lookups, count_lookups_cache_hit = get_count_lookups_from_cache(
+            user, (feed.uuid,), cache
+        )
         setattr(
             request,
             "_count_lookups",
-            get_count_lookups_from_cache(user, (feed.uuid,), cache),
+            count_lookups,
         )
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
-        return Response(ret_obj)
+        response = Response(ret_obj)
+        response["X-Cache-Hit"] = ",".join(
+            (
+                "YES" if subscription_datas_cache_hit else "NO",
+                "YES" if count_lookups_cache_hit else "NO",
+            ),
+        )
+        return response
 
 
 class FeedsQueryView(APIView):
@@ -138,7 +151,10 @@ class FeedsQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        subscription_datas = get_subscription_datas_from_cache(user, cache)
+        (
+            subscription_datas,
+            subscription_datas_cache_hit,
+        ) = get_subscription_datas_from_cache(user, cache)
 
         feeds = Feed.annotate_search_vectors(
             Feed.annotate_subscription_data(
@@ -148,12 +164,14 @@ class FeedsQueryView(APIView):
 
         feeds_qs = feeds.order_by(*sort)[skip : skip + count]
 
+        count_lookups, count_lookups_cache_hit = get_count_lookups_from_cache(
+            user, frozenset(f.uuid for f in feeds_qs), cache
+        )
+
         setattr(
             request,
             "_count_lookups",
-            get_count_lookups_from_cache(
-                user, frozenset(f.uuid for f in feeds_qs), cache
-            ),
+            count_lookups,
         )
 
         ret_obj: dict[str, Any] = {}
@@ -171,7 +189,14 @@ class FeedsQueryView(APIView):
         if return_total_count:
             ret_obj["totalCount"] = feeds.count()
 
-        return Response(ret_obj)
+        response = Response(ret_obj)
+        response["X-Cache-Hit"] = ",".join(
+            (
+                "YES" if subscription_datas_cache_hit else "NO",
+                "YES" if count_lookups_cache_hit else "NO",
+            )
+        )
+        return response
 
 
 class FeedLookupView(APIView):
