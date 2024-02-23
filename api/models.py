@@ -2,19 +2,37 @@ import random
 import uuid as uuid_
 from collections import defaultdict
 from functools import cached_property
-from typing import TYPE_CHECKING, Collection, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Any, Collection, NamedTuple, Sequence
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.signals import setting_changed
 from django.db import connection, models
+from django.dispatch import receiver
 from django.utils import timezone, tree
 from rest_framework.authtoken.models import Token as _Token
 
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
+    from django.db.models.query import _QuerySet
+
     from api.cache_utils.subscription_datas import SubscriptionData
+
+_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET: bool
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET
+
+    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET = getattr(
+        settings, "FEED_COUNTS_LOOKUP_COMBINED_QUERYSET", True
+    )
+
+
+_load_global_settings()
 
 
 class UserManager(BaseUserManager["User"]):
@@ -309,20 +327,51 @@ class Feed(models.Model):
 
     @staticmethod
     def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
-        counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
-            total_count=models.Count("feed_entries__uuid"),
-            unread_count=models.Count(
-                "feed_entries__uuid",
-                filter=(
-                    models.Q(feed_entries__is_archived=False)
-                    & ~models.Q(
-                        feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                            user=user, feed_entry__feed_id=feed_uuid
-                        ).values("feed_entry_id")
-                    )
+        counts: dict[str, Any]
+        # Experimental: Arguably, the combined queryset *should* be better, as it should allow the DB query planner to
+        # (hopefully) plan the fastest calculation. However, in local experiments, it seems that splitting the
+        # "read UUIDs" into a separate query allows for better throughput. This might have more to do with the fact
+        # that the site is deployed currently on a very weak computer. Anyway, I'm leaving both entries in the code
+        # for now to see which one scales better.
+        if _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET:
+            # combined queryset
+            counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
+                total_count=models.Count("feed_entries__uuid"),
+                unread_count=models.Count(
+                    "feed_entries__uuid",
+                    filter=(
+                        models.Q(feed_entries__is_archived=False)
+                        & ~models.Q(
+                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                user=user, feed_entry__feed_id=feed_uuid
+                            ).values(
+                                "feed_entry_id"
+                            )
+                        )
+                    ),
                 ),
-            ),
-        )
+            )
+        else:
+            # split queryset
+
+            # TODO: this list could be very large for a very active user
+            read_entry_uuids = list(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=user, feed_entry__feed_id=feed_uuid
+                ).values_list("feed_entry_id", flat=True)
+            )
+
+            counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
+                total_count=models.Count("feed_entries__uuid"),
+                unread_count=models.Count(
+                    "feed_entries__uuid",
+                    filter=(
+                        models.Q(feed_entries__is_archived=False)
+                        & ~models.Q(feed_entries__uuid__in=read_entry_uuids)
+                    ),
+                ),
+            )
+
         total_count: int = counts["total_count"]
         unread_count: int = counts["unread_count"]
 
@@ -336,28 +385,62 @@ class Feed(models.Model):
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
-        read_entry_uuids = list(
-            ReadFeedEntryUserMapping.objects.filter(
-                user=user,
-                feed_entry__feed_id__in=feed_uuids,
-            ).values_list("feed_entry_id", flat=True)
-        )
-
-        qs = (
-            Feed.objects.filter(uuid__in=feed_uuids)
-            .values("uuid")
-            .annotate(
-                total_count=models.Count("feed_entries__uuid"),
-                unread_count=models.Count(
-                    "feed_entries__uuid",
-                    filter=(
-                        models.Q(feed_entries__is_archived=False)
-                        & ~models.Q(feed_entries__uuid__in=read_entry_uuids)
+        qs: _QuerySet["Feed", dict[str, Any]]
+        # Experimental: Arguably, the combined queryset *should* be better, as it should allow the DB query planner to
+        # (hopefully) plan the fastest calculation. However, in local experiments, it seems that splitting the
+        # "read UUIDs" into a separate query allows for better throughput. This might have more to do with the fact
+        # that the site is deployed currently on a very weak computer. Anyway, I'm leaving both entries in the code
+        # for now to see which one scales better.
+        if _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET:
+            # combined queryset
+            qs = (
+                Feed.objects.filter(uuid__in=feed_uuids)
+                .values("uuid")
+                .annotate(
+                    total_count=models.Count("feed_entries__uuid"),
+                    unread_count=models.Count(
+                        "feed_entries__uuid",
+                        filter=(
+                            models.Q(feed_entries__is_archived=False)
+                            & ~models.Q(
+                                feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                    user=user,
+                                    feed_entry__feed_id__in=feed_uuids,
+                                ).values(
+                                    "feed_entry_id"
+                                )
+                            )
+                        ),
                     ),
-                ),
+                )
+                .values("uuid", "total_count", "unread_count")
             )
-            .values("uuid", "total_count", "unread_count")
-        )
+        else:
+            # split queryset
+
+            # TODO: this list could be very large for a very active user
+            read_entry_uuids = list(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=user,
+                    feed_entry__feed_id__in=feed_uuids,
+                ).values_list("feed_entry_id", flat=True)
+            )
+
+            qs = (
+                Feed.objects.filter(uuid__in=feed_uuids)
+                .values("uuid")
+                .annotate(
+                    total_count=models.Count("feed_entries__uuid"),
+                    unread_count=models.Count(
+                        "feed_entries__uuid",
+                        filter=(
+                            models.Q(feed_entries__is_archived=False)
+                            & ~models.Q(feed_entries__uuid__in=read_entry_uuids)
+                        ),
+                    ),
+                )
+                .values("uuid", "total_count", "unread_count")
+            )
 
         return {
             r["uuid"]: Feed._CountsDescriptor(
