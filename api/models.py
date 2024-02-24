@@ -20,15 +20,15 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from api.cache_utils.subscription_datas import SubscriptionData
 
-_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET: bool
+_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT: int
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
-    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET
+    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
 
-    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET = getattr(
-        settings, "FEED_COUNTS_LOOKUP_COMBINED_QUERYSET", True
+    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT = (
+        settings.FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
     )
 
 
@@ -328,13 +328,10 @@ class Feed(models.Model):
     @staticmethod
     def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
         counts: dict[str, Any]
-        # Experimental: Arguably, the combined queryset *should* be better, as it should allow the DB query planner to
-        # (hopefully) plan the fastest calculation. However, in local experiments, it seems that splitting the
-        # "read UUIDs" into a separate query allows for better throughput. This might have more to do with the fact
-        # that the site is deployed currently on a very weak computer. Anyway, I'm leaving both entries in the code
-        # for now to see which one scales better.
-        if _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET:
-            # combined queryset
+        if ReadFeedEntryUserMapping.objects.filter(
+            user=user,
+            feed_entry__feed_id=feed_uuid,
+        )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
             counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
                 total_count=models.Count("feed_entries__uuid"),
                 unread_count=models.Count(
@@ -352,9 +349,6 @@ class Feed(models.Model):
                 ),
             )
         else:
-            # split queryset
-
-            # TODO: this list could be very large for a very active user
             read_entry_uuids = list(
                 ReadFeedEntryUserMapping.objects.filter(
                     user=user, feed_entry__feed_id=feed_uuid
@@ -386,13 +380,10 @@ class Feed(models.Model):
         feed_uuids = frozenset(feed_uuids)
 
         qs: _QuerySet["Feed", dict[str, Any]]
-        # Experimental: Arguably, the combined queryset *should* be better, as it should allow the DB query planner to
-        # (hopefully) plan the fastest calculation. However, in local experiments, it seems that splitting the
-        # "read UUIDs" into a separate query allows for better throughput. This might have more to do with the fact
-        # that the site is deployed currently on a very weak computer. Anyway, I'm leaving both entries in the code
-        # for now to see which one scales better.
-        if _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET:
-            # combined queryset
+        if ReadFeedEntryUserMapping.objects.filter(
+            user=user,
+            feed_entry__feed_id__in=feed_uuids,
+        )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
             qs = (
                 Feed.objects.filter(uuid__in=feed_uuids)
                 .values("uuid")
@@ -416,9 +407,6 @@ class Feed(models.Model):
                 .values("uuid", "total_count", "unread_count")
             )
         else:
-            # split queryset
-
-            # TODO: this list could be very large for a very active user
             read_entry_uuids = list(
                 ReadFeedEntryUserMapping.objects.filter(
                     user=user,
