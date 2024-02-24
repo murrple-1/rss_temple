@@ -20,15 +20,15 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from api.cache_utils.subscription_datas import SubscriptionData
 
-_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT: int
+_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT: int
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
-    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
+    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
 
-    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT = (
-        settings.FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
+    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT = (
+        settings.FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
     )
 
 
@@ -332,10 +332,14 @@ class Feed(models.Model):
                 user=user,
                 feed_entry__feed_id=feed_uuid,
             ).values_list("feed_entry_id", flat=True)[
-                :_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
+                : _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT + 1
             ]
         )
-        if len(read_entry_uuids) >= _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:
+        assert read_entry_uuids is not None
+        if (
+            len(read_entry_uuids)
+            > _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
+        ):
             read_entry_uuids = None
 
         counts: dict[str, Any]
@@ -390,10 +394,14 @@ class Feed(models.Model):
                 user=user,
                 feed_entry__feed_id__in=feed_uuids,
             ).values_list("feed_entry_id", flat=True)[
-                :_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT
+                : _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT + 1
             ]
         )
-        if len(read_entry_uuids) >= _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:
+        assert read_entry_uuids is not None
+        if (
+            len(read_entry_uuids)
+            > _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
+        ):
             read_entry_uuids = None
 
         qs: _QuerySet["Feed", dict[str, Any]]
