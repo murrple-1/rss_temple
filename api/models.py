@@ -329,7 +329,7 @@ class Feed(models.Model):
     def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
         read_entry_uuids: list[uuid_.UUID] | None = list(ReadFeedEntryUserMapping.objects.filter(
             user=user,
-            feed_entry__feed_id__in=feed_uuids,
+            feed_entry__feed_id=feed_uuid,
         ).values_list("feed_entry_id", flat=True)[:_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT])
         if len(read_entry_uuids) >= _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:
             read_entry_uuids = None
