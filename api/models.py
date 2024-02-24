@@ -327,11 +327,15 @@ class Feed(models.Model):
 
     @staticmethod
     def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
-        counts: dict[str, Any]
-        if ReadFeedEntryUserMapping.objects.filter(
+        read_entry_uuids: list[uuid_.UUID] | None = list(ReadFeedEntryUserMapping.objects.filter(
             user=user,
-            feed_entry__feed_id=feed_uuid,
-        )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
+            feed_entry__feed_id__in=feed_uuids,
+        ).values_list("feed_entry_id", flat=True)[:_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT])
+        if len(read_entry_uuids) >= _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:
+            read_entry_uuids = None
+        
+        counts: dict[str, Any]
+        if read_entry_uuids is None:
             # This is the canonical version of the queryset
             counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
                 total_count=models.Count("feed_entries__uuid"),
@@ -353,12 +357,6 @@ class Feed(models.Model):
             # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
             # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
             # roundtrips, and I trust the DB query planner to be more optimized than I can make it
-            read_entry_uuids = list(
-                ReadFeedEntryUserMapping.objects.filter(
-                    user=user, feed_entry__feed_id=feed_uuid
-                ).values_list("feed_entry_id", flat=True)
-            )
-
             counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
                 total_count=models.Count("feed_entries__uuid"),
                 unread_count=models.Count(
@@ -383,11 +381,15 @@ class Feed(models.Model):
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
-        qs: _QuerySet["Feed", dict[str, Any]]
-        if ReadFeedEntryUserMapping.objects.filter(
+        read_entry_uuids: list[uuid_.UUID] | None = list(ReadFeedEntryUserMapping.objects.filter(
             user=user,
             feed_entry__feed_id__in=feed_uuids,
-        )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
+        ).values_list("feed_entry_id", flat=True)[:_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT])
+        if len(read_entry_uuids) >= _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:
+            read_entry_uuids = None
+
+        qs: _QuerySet["Feed", dict[str, Any]]
+        if read_entry_uuids is None:
             # This is the canonical version of the queryset
             qs = (
                 Feed.objects.filter(uuid__in=feed_uuids)
@@ -415,13 +417,6 @@ class Feed(models.Model):
             # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
             # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
             # roundtrips, and I trust the DB query planner to be more optimized than I can make it
-            read_entry_uuids = list(
-                ReadFeedEntryUserMapping.objects.filter(
-                    user=user,
-                    feed_entry__feed_id__in=feed_uuids,
-                ).values_list("feed_entry_id", flat=True)
-            )
-
             qs = (
                 Feed.objects.filter(uuid__in=feed_uuids)
                 .values("uuid")
