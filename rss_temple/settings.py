@@ -416,7 +416,6 @@ LABELING_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 
 EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None = 60.0 * 60.0 * 12.0  # 12 hours
 
-# experimental
 FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT = 256
 
 try:
