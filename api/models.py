@@ -332,6 +332,7 @@ class Feed(models.Model):
             user=user,
             feed_entry__feed_id=feed_uuid,
         )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
+            # This is the canonical version of the queryset
             counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
                 total_count=models.Count("feed_entries__uuid"),
                 unread_count=models.Count(
@@ -349,6 +350,9 @@ class Feed(models.Model):
                 ),
             )
         else:
+            # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
+            # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
+            # roundtrips, and I trust the DB query planner to be more optimized than I can make it
             read_entry_uuids = list(
                 ReadFeedEntryUserMapping.objects.filter(
                     user=user, feed_entry__feed_id=feed_uuid
@@ -384,6 +388,7 @@ class Feed(models.Model):
             user=user,
             feed_entry__feed_id__in=feed_uuids,
         )[_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_MIN_COUNT:].exists():
+            # This is the canonical version of the queryset
             qs = (
                 Feed.objects.filter(uuid__in=feed_uuids)
                 .values("uuid")
@@ -407,6 +412,9 @@ class Feed(models.Model):
                 .values("uuid", "total_count", "unread_count")
             )
         else:
+            # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
+            # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
+            # roundtrips, and I trust the DB query planner to be more optimized than I can make it
             read_entry_uuids = list(
                 ReadFeedEntryUserMapping.objects.filter(
                     user=user,
