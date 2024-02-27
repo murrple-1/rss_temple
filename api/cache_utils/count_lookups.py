@@ -86,7 +86,9 @@ def increment_read_in_count_lookups_cache(
         user, feed_increments.keys(), cache
     ):
         incr = feed_increments[feed_uuid]
-        count_lookups[feed_uuid] = Feed._CountsDescriptor(unread - incr, read + incr)
+        count_lookups[feed_uuid] = Feed._CountsDescriptor(
+            max(0, unread - incr), max(0, read + incr)
+        )
 
     missing_feed_uuids = [
         k_uuid for k_uuid in feed_increments.keys() if k_uuid not in count_lookups
