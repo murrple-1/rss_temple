@@ -7,32 +7,14 @@ from typing import TYPE_CHECKING, Any, Collection, NamedTuple, Sequence
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.core.signals import setting_changed
 from django.db import connection, models
-from django.dispatch import receiver
 from django.utils import timezone, tree
 from rest_framework.authtoken.models import Token as _Token
 
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
-    from django.db.models.query import _QuerySet
-
     from api.cache_utils.subscription_datas import SubscriptionData
-
-_FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT: int
-
-
-@receiver(setting_changed)
-def _load_global_settings(*args: Any, **kwargs: Any):
-    global _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
-
-    _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT = (
-        settings.FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
-    )
-
-
-_load_global_settings()
 
 
 class UserManager(BaseUserManager["User"]):
@@ -327,52 +309,20 @@ class Feed(models.Model):
 
     @staticmethod
     def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
-        read_entry_uuids: list[uuid_.UUID] | None = list(
-            ReadFeedEntryUserMapping.objects.filter(
-                user=user,
-                feed_entry__feed_id=feed_uuid,
-            ).values_list("feed_entry_id", flat=True)[
-                : _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT + 1
-            ]
+        counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
+            total_count=models.Count("*"),
+            unread_count=models.Count(
+                "uuid",
+                filter=(
+                    models.Q(is_archived=False)
+                    & ~models.Q(
+                        uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                            user=user, feed_entry__feed_id=feed_uuid
+                        ).values("feed_entry_id")
+                    )
+                ),
+            ),
         )
-        assert read_entry_uuids is not None
-        if (
-            len(read_entry_uuids)
-            > _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
-        ):
-            read_entry_uuids = None
-
-        counts: dict[str, Any]
-        if read_entry_uuids is None:
-            # This is the canonical version of the queryset
-            counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
-                total_count=models.Count("*"),
-                unread_count=models.Count(
-                    "uuid",
-                    filter=(
-                        models.Q(is_archived=False)
-                        & ~models.Q(
-                            uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                user=user, feed_entry__feed_id=feed_uuid
-                            ).values("feed_entry_id")
-                        )
-                    ),
-                ),
-            )
-        else:
-            # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
-            # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
-            # roundtrips, and I trust the DB query planner to be more optimized than I can make it
-            counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
-                total_count=models.Count("*"),
-                unread_count=models.Count(
-                    "uuid",
-                    filter=(
-                        models.Q(is_archived=False)
-                        & ~models.Q(uuid__in=read_entry_uuids)
-                    ),
-                ),
-            )
 
         total_count: int = counts["total_count"]
         unread_count: int = counts["unread_count"]
@@ -387,69 +337,28 @@ class Feed(models.Model):
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
-        read_entry_uuids: list[uuid_.UUID] | None = list(
-            ReadFeedEntryUserMapping.objects.filter(
-                user=user,
-                feed_entry__feed_id__in=feed_uuids,
-            ).values_list("feed_entry_id", flat=True)[
-                : _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT + 1
-            ]
-        )
-        assert read_entry_uuids is not None
-        if (
-            len(read_entry_uuids)
-            > _FEED_COUNTS_LOOKUP_COMBINED_QUERYSET_THRESHOLD_COUNT
-        ):
-            read_entry_uuids = None
-
-        qs: _QuerySet["Feed | FeedEntry", dict[str, Any]]
-        if read_entry_uuids is None:
-            # This is the canonical version of the queryset
-            qs = (
-                FeedEntry.objects.filter(feed_id__in=feed_uuids)
-                .values("feed_id")
-                .annotate(
-                    total_count=models.Count("*"),
-                    unread_count=models.Count(
-                        "uuid",
-                        filter=(
-                            models.Q(is_archived=False)
-                            & ~models.Q(
-                                uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                    user=user,
-                                    feed_entry__feed_id__in=feed_uuids,
-                                ).values("feed_entry_id")
-                            )
-                        ),
-                    ),
-                )
-                .values("feed_id", "total_count", "unread_count")
-            )
-        else:
-            # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
-            # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
-            # roundtrips, and I trust the DB query planner to be more optimized than I can make it
-            qs = (
-                FeedEntry.objects.filter(feed_id__in=feed_uuids)
-                .values("feed_id")
-                .annotate(
-                    total_count=models.Count("*"),
-                    unread_count=models.Count(
-                        "uuid",
-                        filter=(
-                            models.Q(is_archived=False)
-                            & ~models.Q(uuid__in=read_entry_uuids)
-                        ),
-                    ),
-                )
-                .values("feed_id", "total_count", "unread_count")
-            )
-
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
             r["feed_id"]: Feed._CountsDescriptor(
                 r["unread_count"], r["total_count"] - r["unread_count"]
             )
-            for r in qs
+            for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
+            .values("feed_id")
+            .annotate(
+                total_count=models.Count("*"),
+                unread_count=models.Count(
+                    "uuid",
+                    filter=(
+                        models.Q(is_archived=False)
+                        & ~models.Q(
+                            uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                user=user,
+                                feed_entry__feed_id__in=feed_uuids,
+                            ).values("feed_entry_id")
+                        )
+                    ),
+                ),
+            )
+            .values("feed_id", "total_count", "unread_count")
         }
 
         counts_lookup.update(
