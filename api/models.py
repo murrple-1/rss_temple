@@ -445,16 +445,21 @@ class Feed(models.Model):
                 .values("feed_id", "total_count", "unread_count")
             )
 
-        count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = defaultdict(
-            lambda: Feed._CountsDescriptor(0, 0)
-        )
-
-        for r in qs:
-            count_lookups[r["feed_id"]] = Feed._CountsDescriptor(
+        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
+            r["feed_id"]: Feed._CountsDescriptor(
                 r["unread_count"], r["total_count"] - r["unread_count"]
             )
+            for r in qs
+        }
 
-        return count_lookups
+        counts_lookup.update(
+            {
+                feed_uuid: Feed._CountsDescriptor(0, 0)
+                for feed_uuid in feed_uuids.difference(counts_lookup.keys())
+            }
+        )
+
+        return counts_lookup
 
     def _counts(self, user: User) -> _CountsDescriptor:
         counts = getattr(self, "_counts_", None)
