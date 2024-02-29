@@ -1,4 +1,5 @@
 import uuid as uuid_
+from collections import defaultdict
 from typing import Any, Collection, Generator
 
 from django.conf import settings
@@ -75,7 +76,7 @@ def get_count_lookups_from_cache(
 
         cache_hit = False
 
-    return count_lookups, cache_hit
+    return defaultdict(lambda: Feed._CountsDescriptor(0, 0), count_lookups), cache_hit
 
 
 def increment_read_in_count_lookups_cache(

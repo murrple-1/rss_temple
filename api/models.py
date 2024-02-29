@@ -345,18 +345,16 @@ class Feed(models.Model):
         counts: dict[str, Any]
         if read_entry_uuids is None:
             # This is the canonical version of the queryset
-            counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
-                total_count=models.Count("feed_entries__uuid"),
+            counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
+                total_count=models.Count("*"),
                 unread_count=models.Count(
-                    "feed_entries__uuid",
+                    "uuid",
                     filter=(
-                        models.Q(feed_entries__is_archived=False)
+                        models.Q(is_archived=False)
                         & ~models.Q(
-                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                            uuid__in=ReadFeedEntryUserMapping.objects.filter(
                                 user=user, feed_entry__feed_id=feed_uuid
-                            ).values(
-                                "feed_entry_id"
-                            )
+                            ).values("feed_entry_id")
                         )
                     ),
                 ),
@@ -365,13 +363,13 @@ class Feed(models.Model):
             # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
             # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
             # roundtrips, and I trust the DB query planner to be more optimized than I can make it
-            counts = Feed.objects.filter(uuid=feed_uuid).aggregate(
-                total_count=models.Count("feed_entries__uuid"),
+            counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
+                total_count=models.Count("*"),
                 unread_count=models.Count(
-                    "feed_entries__uuid",
+                    "uuid",
                     filter=(
-                        models.Q(feed_entries__is_archived=False)
-                        & ~models.Q(feed_entries__uuid__in=read_entry_uuids)
+                        models.Q(is_archived=False)
+                        & ~models.Q(uuid__in=read_entry_uuids)
                     ),
                 ),
             )
@@ -404,57 +402,59 @@ class Feed(models.Model):
         ):
             read_entry_uuids = None
 
-        qs: _QuerySet["Feed", dict[str, Any]]
+        qs: _QuerySet["Feed | FeedEntry", dict[str, Any]]
         if read_entry_uuids is None:
             # This is the canonical version of the queryset
             qs = (
-                Feed.objects.filter(uuid__in=feed_uuids)
-                .values("uuid")
+                FeedEntry.objects.filter(feed_id__in=feed_uuids)
+                .values("feed_id")
                 .annotate(
-                    total_count=models.Count("feed_entries__uuid"),
+                    total_count=models.Count("*"),
                     unread_count=models.Count(
-                        "feed_entries__uuid",
+                        "uuid",
                         filter=(
-                            models.Q(feed_entries__is_archived=False)
+                            models.Q(is_archived=False)
                             & ~models.Q(
-                                feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                uuid__in=ReadFeedEntryUserMapping.objects.filter(
                                     user=user,
                                     feed_entry__feed_id__in=feed_uuids,
-                                ).values(
-                                    "feed_entry_id"
-                                )
+                                ).values("feed_entry_id")
                             )
                         ),
                     ),
                 )
-                .values("uuid", "total_count", "unread_count")
+                .values("feed_id", "total_count", "unread_count")
             )
         else:
             # TODO this codepath was found to be faster on the deployed server, which is a very weak PC at time of writing.
             # However, it's likely that the canonical version above can be used exclusively on a stronger PC, as it avoids
             # roundtrips, and I trust the DB query planner to be more optimized than I can make it
             qs = (
-                Feed.objects.filter(uuid__in=feed_uuids)
-                .values("uuid")
+                FeedEntry.objects.filter(feed_id__in=feed_uuids)
+                .values("feed_id")
                 .annotate(
-                    total_count=models.Count("feed_entries__uuid"),
+                    total_count=models.Count("*"),
                     unread_count=models.Count(
-                        "feed_entries__uuid",
+                        "uuid",
                         filter=(
-                            models.Q(feed_entries__is_archived=False)
-                            & ~models.Q(feed_entries__uuid__in=read_entry_uuids)
+                            models.Q(is_archived=False)
+                            & ~models.Q(uuid__in=read_entry_uuids)
                         ),
                     ),
                 )
-                .values("uuid", "total_count", "unread_count")
+                .values("feed_id", "total_count", "unread_count")
             )
 
-        return {
-            r["uuid"]: Feed._CountsDescriptor(
+        count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = defaultdict(
+            lambda: Feed._CountsDescriptor(0, 0)
+        )
+
+        for r in qs:
+            count_lookups[r["feed_id"]] = Feed._CountsDescriptor(
                 r["unread_count"], r["total_count"] - r["unread_count"]
             )
-            for r in qs
-        }
+
+        return count_lookups
 
     def _counts(self, user: User) -> _CountsDescriptor:
         counts = getattr(self, "_counts_", None)

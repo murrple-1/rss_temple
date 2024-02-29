@@ -245,6 +245,21 @@ class FeedTestCase(TestCase):
         self.assertEqual(feed.unread_count(user), 1)
         self.assertEqual(feed.read_count(user), 1)
 
+    def test_counts_empty(self):
+        user = User.objects.create_user("test_fields@test.com", None)
+
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        self.assertEqual(feed.unread_count(user), 0)
+        self.assertEqual(feed.read_count(user), 0)
+
     def test_str(self):
         feed = Feed(
             feed_url="http://example.com/rss.xml",
