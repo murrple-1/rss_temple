@@ -308,30 +308,6 @@ class Feed(models.Model):
         read_count: int
 
     @staticmethod
-    def generate_counts(feed_uuid: uuid_.UUID, user: User) -> _CountsDescriptor:
-        counts = FeedEntry.objects.filter(feed_id=feed_uuid).aggregate(
-            total_count=models.Count("*"),
-            unread_count=models.Count(
-                "uuid",
-                filter=(
-                    models.Q(is_archived=False)
-                    & ~models.Q(
-                        uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                            user=user, feed_entry__feed_id=feed_uuid
-                        ).values("feed_entry_id")
-                    )
-                ),
-            ),
-        )
-
-        total_count: int = counts["total_count"]
-        unread_count: int = counts["unread_count"]
-
-        read_count = total_count - unread_count
-
-        return Feed._CountsDescriptor(unread_count, read_count)
-
-    @staticmethod
     def generate_counts_lookup(
         user: User, feed_uuids: Collection[uuid_.UUID]
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
@@ -373,7 +349,7 @@ class Feed(models.Model):
     def _counts(self, user: User) -> _CountsDescriptor:
         counts = getattr(self, "_counts_", None)
         if counts is None:
-            counts = Feed.generate_counts(self.uuid, user)
+            counts = Feed.generate_counts_lookup(user, (self.uuid,))[self.uuid]
             self._counts_ = counts
 
         return counts
