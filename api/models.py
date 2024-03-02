@@ -1,8 +1,11 @@
+import json
+import logging
 import random
+import time
 import uuid as uuid_
 from collections import defaultdict
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Collection, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Collection, NamedTuple, Sequence
 
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
@@ -15,6 +18,8 @@ from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
     from api.cache_utils.subscription_datas import SubscriptionData
+
+_logger = logging.getLogger(__name__)
 
 
 class UserManager(BaseUserManager["User"]):
@@ -308,41 +313,113 @@ class Feed(models.Model):
         read_count: int
 
     @staticmethod
+    def _track_counts_lookup_perf(
+        context: str, duration: float, max_entries=1000
+    ) -> None:
+        try:
+            filename = f"counts_lookup_{context}_perf.json"
+
+            entries: list[float]
+            try:
+                with open(filename, "r") as f:
+                    entries = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                entries = []
+
+            entries.append(duration)
+            while len(entries) > max_entries:
+                entries.pop(0)
+
+            if len(entries) > 0:
+                _logger.info(
+                    "counts lookup perf (%s): current average: %f seconds",
+                    context,
+                    sum(entries) / len(entries),
+                )
+
+            with open(filename, "w") as f:
+                json.dump(entries, f)
+        except Exception:
+            _logger.exception("unable to safe counts lookup perf data")
+
+    @staticmethod
     def generate_counts_lookup(
         user: User, feed_uuids: Collection[uuid_.UUID]
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
-        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
-            r["feed_id"]: Feed._CountsDescriptor(
-                r["unread_count"], r["total_count"] - r["unread_count"]
-            )
-            for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
-            .values("feed_id")
-            .annotate(
-                total_count=models.Count("*"),
-                unread_count=models.Count(
-                    "uuid",
-                    filter=(
-                        models.Q(is_archived=False)
-                        & ~models.Q(
-                            uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                user=user,
-                                feed_entry__feed_id__in=feed_uuids,
-                            ).values("feed_entry_id")
-                        )
-                    ),
-                ),
-            )
-            .values("feed_id", "total_count", "unread_count")
-        }
+        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor]
 
-        counts_lookup.update(
-            {
-                feed_uuid: Feed._CountsDescriptor(0, 0)
-                for feed_uuid in feed_uuids.difference(counts_lookup.keys())
+        if random.choice((True, False)):
+            time_start = time.perf_counter()
+
+            # This is the canonical version of the queryset
+            counts_lookup = {
+                r["uuid"]: Feed._CountsDescriptor(
+                    r["unread_count"], r["total_count"] - r["unread_count"]
+                )
+                for r in Feed.objects.filter(uuid__in=feed_uuids)
+                .values("uuid")
+                .annotate(
+                    total_count=models.Count("feed_entries__uuid"),
+                    unread_count=models.Count(
+                        "feed_entries__uuid",
+                        filter=(
+                            models.Q(feed_entries__is_archived=False)
+                            & ~models.Q(
+                                feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                    user=user,
+                                    feed_entry__feed_id__in=feed_uuids,
+                                ).values(
+                                    "feed_entry_id"
+                                )
+                            )
+                        ),
+                    ),
+                )
+                .values("uuid", "total_count", "unread_count")
             }
-        )
+
+            time_end = time.perf_counter()
+
+            Feed._track_counts_lookup_perf("feed", time_end - time_start)
+        else:
+            time_start = time.perf_counter()
+
+            counts_lookup = {
+                r["feed_id"]: Feed._CountsDescriptor(
+                    r["unread_count"], r["total_count"] - r["unread_count"]
+                )
+                for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
+                .values("feed_id")
+                .annotate(
+                    total_count=models.Count("*"),
+                    unread_count=models.Count(
+                        "uuid",
+                        filter=(
+                            models.Q(is_archived=False)
+                            & ~models.Q(
+                                uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                    user=user,
+                                    feed_entry__feed_id__in=feed_uuids,
+                                ).values("feed_entry_id")
+                            )
+                        ),
+                    ),
+                )
+                .values("feed_id", "total_count", "unread_count")
+            }
+
+            counts_lookup.update(
+                {
+                    feed_uuid: Feed._CountsDescriptor(0, 0)
+                    for feed_uuid in feed_uuids.difference(counts_lookup.keys())
+                }
+            )
+
+            time_end = time.perf_counter()
+
+            Feed._track_counts_lookup_perf("feedentry", time_end - time_start)
 
         return counts_lookup
 
