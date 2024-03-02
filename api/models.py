@@ -317,11 +317,11 @@ class Feed(models.Model):
         context: str, duration: float, max_entries=1000
     ) -> None:
         try:
-            filename = f"counts_lookup_{context}_perf.json"
+            filepath = f"mount/counts_lookup_{context}_perf.json"
 
             entries: list[float]
             try:
-                with open(filename, "r") as f:
+                with open(filepath, "r") as f:
                     entries = json.load(f)
             except (FileNotFoundError, json.JSONDecodeError):
                 entries = []
@@ -337,7 +337,7 @@ class Feed(models.Model):
                     sum(entries) / len(entries),
                 )
 
-            with open(filename, "w") as f:
+            with open(filepath, "w") as f:
                 json.dump(entries, f)
         except Exception:
             _logger.exception("unable to safe counts lookup perf data")
