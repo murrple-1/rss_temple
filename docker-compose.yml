@@ -22,22 +22,22 @@ services:
       - caddy_data:/data/
       - django_static:/static/
     networks:
-      - rss_temple_net
       - default
+      - rss_temple_net
   rss_temple:
     env_file:
       - .env
     volumes:
       - django_static:/code/_static/
     networks:
-      - rss_temple_net
       - default
+      - rss_temple_net
   rss_temple_dramatiq:
     env_file:
       - .env
     networks:
-      - rss_temple_net
       - default
+      - rss_temple_net
   rss_temple_schedulerdaemon:
     env_file:
       - .env
