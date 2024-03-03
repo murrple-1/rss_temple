@@ -38,7 +38,7 @@ beautifulsoup4 = "*"
 dramatiq = {version = "*", extras = ["redis", "watch"]}
 apscheduler = "*"
 django-apscheduler = "*"
-jellyfish = "*"
+python-redis-lock = {version = "*", extras = ["django"]}
 
 [dev-packages]
 coverage = "*"

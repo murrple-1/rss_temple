@@ -210,25 +210,25 @@ LOGGING = {
 if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
     CACHES = {
         "default": {
-            "BACKEND": "django_redis.cache.RedisCache",
+            "BACKEND": "redis_lock.django_cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/1",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             "TIMEOUT": 60 * 5,  # 5 minutes
         },
         "stable_query": {
-            "BACKEND": "django_redis.cache.RedisCache",
+            "BACKEND": "redis_lock.django_cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/2",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             "TIMEOUT": 60 * 60,  # 1 hour
         },
         "captcha": {
-            "BACKEND": "django_redis.cache.RedisCache",
+            "BACKEND": "redis_lock.django_cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/3",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
             "TIMEOUT": 60 * 5,  # 5 minutes
         },
         "throttle": {
-            "BACKEND": "django_redis.cache.RedisCache",
+            "BACKEND": "redis_lock.django_cache.RedisCache",
             "LOCATION": f"{REDIS_URL}/4",
             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
         },

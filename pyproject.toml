@@ -20,5 +20,6 @@ module = [
     "drf_yasg.*",
     "apscheduler.*",
     "django_apscheduler.*",
+    "redis_lock.*",
 ]
 ignore_missing_imports = true

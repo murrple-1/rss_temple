@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.cache import BaseCache
 from django.core.signals import setting_changed
 from django.dispatch import receiver
+from redis_lock.django_cache import RedisCache as RedisLockCache
 
 from api.models import Feed, User
 
@@ -57,25 +58,41 @@ def _save_entries_to_cache(
 def get_count_lookups_from_cache(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], bool]:
-    cache_hit = True
-    count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {
-        feed_uuid: Feed._CountsDescriptor(unread, read)
-        for feed_uuid, unread, read in _generate_cached_entries(user, feed_uuids, cache)
-    }
+    lock = (
+        cache.lock(f"count_lookup_lock__{user.uuid}", expire=60, auto_renewal=True)
+        if isinstance(cache, RedisLockCache)
+        else None
+    )
+    if lock is not None:
+        lock.acquire()
 
-    missing_feed_uuids = [
-        f_uuid for f_uuid in feed_uuids if f_uuid not in count_lookups
-    ]
+    try:
+        cache_hit = True
+        count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {
+            feed_uuid: Feed._CountsDescriptor(unread, read)
+            for feed_uuid, unread, read in _generate_cached_entries(
+                user, feed_uuids, cache
+            )
+        }
 
-    if missing_feed_uuids:
-        missing_count_lookups = Feed.generate_counts_lookup(user, missing_feed_uuids)
-        count_lookups.update(missing_count_lookups)
+        missing_feed_uuids = [
+            f_uuid for f_uuid in feed_uuids if f_uuid not in count_lookups
+        ]
 
-        _save_entries_to_cache(user, missing_count_lookups, cache)
+        if missing_feed_uuids:
+            missing_count_lookups = Feed.generate_counts_lookup(
+                user, missing_feed_uuids
+            )
+            count_lookups.update(missing_count_lookups)
 
-        cache_hit = False
+            _save_entries_to_cache(user, missing_count_lookups, cache)
 
-    return count_lookups, cache_hit
+            cache_hit = False
+
+        return count_lookups, cache_hit
+    finally:
+        if lock is not None:
+            lock.release()
 
 
 def increment_read_in_count_lookups_cache(
