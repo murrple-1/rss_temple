@@ -315,7 +315,7 @@ class Feed(models.Model):
     @staticmethod
     def _track_counts_lookup_perf(
         context: str, duration: float, max_entries=1000
-    ) -> None:
+    ) -> None:  # pragma: no cover
         try:
             filepath = f"mount/counts_lookup_{context}_perf.json"
 

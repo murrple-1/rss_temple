@@ -98,7 +98,7 @@ class CaptchaImageView(APIView):
         response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
 
         if _CAPTCHA_SEND_ANSWER:
-            response["X-Answer"] = captcha.secret_phrase
+            response["X-Answer"] = captcha.secret_phrase  # pragma: no cover
 
         return response
 
@@ -133,6 +133,6 @@ class CaptchaAudioView(APIView):
         response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
 
         if _CAPTCHA_SEND_ANSWER:
-            response["X-Answer"] = captcha.secret_phrase
+            response["X-Answer"] = captcha.secret_phrase  # pragma: no cover
 
         return response
