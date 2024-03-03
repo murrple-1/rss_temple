@@ -3,12 +3,12 @@ from typing import Any, TypedDict, cast
 from django.core.cache import BaseCache, caches
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
-from redis_lock.django_cache import RedisCache as RedisLockCache
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
+from api.lock_context import lock_context
 from api.models import AlternateFeedURL, Feed, SubscribedFeedUserMapping, User
 from api.serializers import ExploreSerializer
 
@@ -116,18 +116,11 @@ TODO: for the time being, this will just be static data (based on my personal OP
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
 
-        lock = (
-            cache.lock("explore_lock", expire=60, auto_renewal=True)
-            if isinstance(cache, RedisLockCache)
-            else None
-        )
-        if lock is not None:
-            lock.acquire()
-
-        try:
+        ret_obj: list[dict[str, Any]] | None
+        cache_hit = True
+        with lock_context(cache, "explore_lock"):
             cache_key = "explore__ret_obj"
-            ret_obj: list[dict[str, Any]] | None = cache.get(cache_key)
-            cache_hit = True
+            ret_obj = cache.get(cache_key)
             if ret_obj is None:
                 ret_obj = []
 
@@ -182,22 +175,19 @@ TODO: for the time being, this will just be static data (based on my personal OP
                         )
 
                 cache_hit = False
-                cast(BaseCache, cache).set(cache_key, ret_obj, 60.0 * 60.0 * 3.0)
+                cache.set(cache_key, ret_obj, 60.0 * 60.0 * 3.0)
 
-            subscribed_feed_uuids = frozenset(
-                SubscribedFeedUserMapping.objects.filter(
-                    user=cast(User, request.user)
-                ).values_list("feed_id", flat=True)
-            )
+        subscribed_feed_uuids = frozenset(
+            SubscribedFeedUserMapping.objects.filter(
+                user=cast(User, request.user)
+            ).values_list("feed_id", flat=True)
+        )
 
-            for json_ in ret_obj:
-                for feed_json in json_["feeds"]:
-                    uuid_ = feed_json.pop("_uuid")
-                    feed_json["isSubscribed"] = uuid_ in subscribed_feed_uuids
+        for json_ in ret_obj:
+            for feed_json in json_["feeds"]:
+                uuid_ = feed_json.pop("_uuid")
+                feed_json["isSubscribed"] = uuid_ in subscribed_feed_uuids
 
-            response = Response(ExploreSerializer(ret_obj, many=True).data)
-            response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
-            return response
-        finally:
-            if lock is not None:
-                lock.release()
+        response = Response(ExploreSerializer(ret_obj, many=True).data)
+        response["X-Cache-Hit"] = "YES" if cache_hit else "NO"
+        return response

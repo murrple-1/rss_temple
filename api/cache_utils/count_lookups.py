@@ -5,8 +5,8 @@ from django.conf import settings
 from django.core.cache import BaseCache
 from django.core.signals import setting_changed
 from django.dispatch import receiver
-from redis_lock.django_cache import RedisCache as RedisLockCache
 
+from api.lock_context import lock_context
 from api.models import Feed, User
 
 _FEED_COUNT_LOOKUPS_CACHE_TIMEOUT_SECONDS: float | None
@@ -58,15 +58,7 @@ def _save_entries_to_cache(
 def get_count_lookups_from_cache(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], bool]:
-    lock = (
-        cache.lock(f"count_lookup_lock__{user.uuid}", expire=60, auto_renewal=True)
-        if isinstance(cache, RedisLockCache)
-        else None
-    )
-    if lock is not None:
-        lock.acquire()
-
-    try:
+    with lock_context(cache, f"count_lookup_lock__{user.uuid}"):
         cache_hit = True
         count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {
             feed_uuid: Feed._CountsDescriptor(unread, read)
@@ -90,28 +82,26 @@ def get_count_lookups_from_cache(
             cache_hit = False
 
         return count_lookups, cache_hit
-    finally:
-        if lock is not None:
-            lock.release()
 
 
 def increment_read_in_count_lookups_cache(
     user: User, feed_increments: dict[uuid_.UUID, int], cache: BaseCache
 ) -> None:
-    count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
-    for feed_uuid, unread, read in _generate_cached_entries(
-        user, feed_increments.keys(), cache
-    ):
-        incr = feed_increments[feed_uuid]
-        count_lookups[feed_uuid] = Feed._CountsDescriptor(
-            max(0, unread - incr), max(0, read + incr)
-        )
+    with lock_context(cache, f"count_lookup_lock__{user.uuid}"):
+        count_lookups: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
+        for feed_uuid, unread, read in _generate_cached_entries(
+            user, feed_increments.keys(), cache
+        ):
+            incr = feed_increments[feed_uuid]
+            count_lookups[feed_uuid] = Feed._CountsDescriptor(
+                max(0, unread - incr), max(0, read + incr)
+            )
 
-    missing_feed_uuids = [
-        k_uuid for k_uuid in feed_increments.keys() if k_uuid not in count_lookups
-    ]
+        missing_feed_uuids = [
+            k_uuid for k_uuid in feed_increments.keys() if k_uuid not in count_lookups
+        ]
 
-    if missing_feed_uuids:
-        count_lookups.update(Feed.generate_counts_lookup(user, missing_feed_uuids))
+        if missing_feed_uuids:
+            count_lookups.update(Feed.generate_counts_lookup(user, missing_feed_uuids))
 
-    _save_entries_to_cache(user, count_lookups, cache)
+        _save_entries_to_cache(user, count_lookups, cache)

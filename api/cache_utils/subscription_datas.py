@@ -1,9 +1,9 @@
 import uuid as uuid_
-from typing import TypedDict, cast
+from typing import TypedDict
 
 from django.core.cache import BaseCache
-from redis_lock.django_cache import RedisCache as RedisLockCache
 
+from api.lock_context import lock_context
 from api.models import SubscribedFeedUserMapping, User
 
 
@@ -15,17 +15,7 @@ class SubscriptionData(TypedDict):
 def get_subscription_datas_from_cache(
     user: User, cache: BaseCache
 ) -> tuple[list[SubscriptionData], bool]:
-    lock = (
-        cache.lock(
-            f"subscription_datas_lock__{user.uuid}", expire=60, auto_renewal=True
-        )
-        if isinstance(cache, RedisLockCache)
-        else None
-    )
-    if lock is not None:
-        lock.acquire()
-
-    try:
+    with lock_context(cache, f"subscription_datas_lock__{user.uuid}"):
         cache_hit = True
         cache_key = f"subscription_datas__{user.uuid}"
         subscription_datas: list[SubscriptionData] | None = cache.get(cache_key)
@@ -39,7 +29,7 @@ def get_subscription_datas_from_cache(
                     user=user
                 ).iterator()
             ]
-            cast(BaseCache, cache).set(
+            cache.set(
                 cache_key,
                 subscription_datas,
                 None,
@@ -47,9 +37,6 @@ def get_subscription_datas_from_cache(
             cache_hit = False
 
         return subscription_datas, cache_hit
-    finally:
-        if lock is not None:
-            lock.release()
 
 
 def delete_subscription_data_cache(user: User, cache: BaseCache) -> None:
