@@ -1,9 +1,9 @@
 import uuid as uuid_
-from typing import Any, cast
+from typing import Any, Collection, cast
 
+from django.core.cache import BaseCache, caches
 from django.db import transaction
-from django.db.models import Count, OuterRef, QuerySet, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
@@ -11,15 +11,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import (
-    ClassifierLabel,
-    ClassifierLabelFeedEntryCalculated,
-    ClassifierLabelFeedEntryVote,
-    FeedEntry,
-    User,
+from api.cache_utils.classifier_label_vote_counts import (
+    get_classifier_label_vote_counts_from_cache,
 )
+from api.models import ClassifierLabel, ClassifierLabelFeedEntryVote, FeedEntry, User
 from api.serializers import (
     ClassifierLabelListQuerySerializer,
+    ClassifierLabelMultiListQuerySerializer,
+    ClassifierLabelMultiSerializer,
     ClassifierLabelSerializer,
     ClassifierLabelVotesListQuerySerializer,
     ClassifierLabelVotesListSerializer,
@@ -35,6 +34,8 @@ class ClassifierLabelListView(APIView):
         operation_description="Return a list of classifier labels",
     )
     def get(self, request: Request):
+        cache: BaseCache = caches["default"]
+
         serializer = ClassifierLabelListQuerySerializer(
             data=request.query_params,
         )
@@ -44,41 +45,92 @@ class ClassifierLabelListView(APIView):
             "feed_entry_uuid"
         )
 
-        classifier_labels: QuerySet[ClassifierLabel]
+        classifier_labels: Collection[ClassifierLabel]
+        cache_hit: bool | None = None
         if feed_entry_uuid is not None:
             if not FeedEntry.objects.filter(uuid=feed_entry_uuid).exists():
                 raise NotFound("feed entry not found")
 
+            (
+                classifier_label_vote_counts,
+                cache_hit,
+            ) = get_classifier_label_vote_counts_from_cache((feed_entry_uuid,), cache)
+
+            vote_counts = classifier_label_vote_counts[feed_entry_uuid]
+
             classifier_labels = ClassifierLabel.objects.annotate(
-                vote_count=Coalesce(
-                    Subquery(
-                        ClassifierLabelFeedEntryVote.objects.filter(
-                            feed_entry_id=feed_entry_uuid,
-                            classifier_label_id=OuterRef("uuid"),
-                        )
-                        .values("feed_entry")
-                        .annotate(c1=Count("uuid"))
-                        .values("c1")
+                vote_count=Case(
+                    *(
+                        When(condition=Q(uuid=uuid), then=Value(count))
+                        for uuid, count in vote_counts.items()
                     ),
-                    0,
+                    default=Value(-1),
+                    output_field=IntegerField()
                 )
-                + Coalesce(
-                    Subquery(
-                        ClassifierLabelFeedEntryCalculated.objects.filter(
-                            feed_entry_id=feed_entry_uuid,
-                            classifier_label_id=OuterRef("uuid"),
-                        )
-                        .values("feed_entry")
-                        .annotate(c2=Count("uuid"))
-                        .values("c2")
-                    ),
-                    0,
-                ),
             ).order_by("-vote_count", "?")
         else:
             classifier_labels = ClassifierLabel.objects.order_by("?")
 
-        return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
+        response = Response(
+            ClassifierLabelSerializer(classifier_labels, many=True).data
+        )
+        if cache_hit is not None:
+            response["X-Cache-Hit"] = ",".join(("YES" if cache_hit else "NO",))
+        return response
+
+
+class ClassifierLabelMultiListView(APIView):
+    @swagger_auto_schema(
+        query_serializer=ClassifierLabelMultiListQuerySerializer,
+        responses={200: ClassifierLabelMultiSerializer()},
+        operation_summary="Return a list of classifier labels",
+        operation_description="Return a list of classifier labels",
+    )
+    def get(self, request: Request):
+        cache: BaseCache = caches["default"]
+
+        serializer = ClassifierLabelMultiListQuerySerializer(
+            data=request.query_params,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        feed_entry_uuids: frozenset[uuid_.UUID] = frozenset(
+            serializer.validated_data["feed_entry_uuids"]
+        )
+
+        if FeedEntry.objects.filter(uuid__in=feed_entry_uuids).count() != len(
+            feed_entry_uuids
+        ):
+            raise NotFound("feed entry not found")
+
+        (
+            classifier_label_vote_counts,
+            cache_hit,
+        ) = get_classifier_label_vote_counts_from_cache(feed_entry_uuids, cache)
+
+        classifier_labels: dict[str, list[ClassifierLabel]] = {
+            str(feed_entry_uuid): list(
+                ClassifierLabel.objects.annotate(
+                    vote_count=Case(
+                        *(
+                            When(condition=Q(uuid=uuid), then=Value(count))
+                            for uuid, count in vote_counts.items()
+                        ),
+                        default=Value(-1),
+                        output_field=IntegerField()
+                    )
+                ).order_by("-vote_count", "?")
+            )
+            for feed_entry_uuid, vote_counts in classifier_label_vote_counts.items()
+        }
+
+        response = Response(
+            ClassifierLabelMultiSerializer(
+                {"classifier_labels": classifier_labels}
+            ).data
+        )
+        response["X-Cache-Hit"] = ",".join(("YES" if cache_hit else "NO",))
+        return response
 
 
 class ClassifierLabelFeedEntryVotesView(APIView):

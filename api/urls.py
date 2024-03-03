@@ -123,6 +123,9 @@ urlpatterns = [
     re_path(r"^explore/?$", views.ExploreView.as_view()),
     re_path(r"^classifierlabels/?$", views.ClassifierLabelListView.as_view()),
     re_path(
+        r"^classifierlabels/multi/?$", views.ClassifierLabelMultiListView.as_view()
+    ),
+    re_path(
         rf"^classifierlabels/votes/?$",
         views.ClassifierLabelVotesListView.as_view(),
     ),

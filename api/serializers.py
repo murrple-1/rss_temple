@@ -679,6 +679,19 @@ class ClassifierLabelSerializer(serializers.ModelSerializer[ClassifierLabel]):
         fields = "__all__"
 
 
+class ClassifierLabelMultiListQuerySerializer(serializers.Serializer):
+    feedEntryUuids = serializers.ListField(
+        child=serializers.UUIDField(), required=True, source="feed_entry_uuids"
+    )
+
+
+class ClassifierLabelMultiSerializer(serializers.Serializer):
+    classifierLabels = serializers.DictField(
+        child=serializers.ListField(child=ClassifierLabelSerializer()),
+        source="classifier_labels",
+    )
+
+
 class ClassifierLabelVotesListQuerySerializer(serializers.Serializer):
     count = serializers.IntegerField(
         max_value=1000, min_value=0, default=50, required=False

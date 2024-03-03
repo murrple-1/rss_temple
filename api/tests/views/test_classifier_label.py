@@ -3,6 +3,7 @@ import logging
 import uuid
 from typing import ClassVar
 
+from django.core.cache import BaseCache, caches
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -75,6 +76,8 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertGreaterEqual(len(json_), 1)
 
     def test_ClassifierLabelListView_get_feed_entry(self):
+        cache: BaseCache = caches["default"]
+
         label1 = ClassifierLabel.objects.create(text="Label 1")
         label2 = ClassifierLabel.objects.create(text="Label 2")
 
@@ -90,6 +93,7 @@ class ClassifierLabelTestCase(APITestCase):
             db_updated_at=None,
         )
 
+        cache.clear()
         response = self.client.get(
             f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
@@ -105,6 +109,7 @@ class ClassifierLabelTestCase(APITestCase):
             user=ClassifierLabelTestCase.user,
         )
 
+        cache.clear()
         response = self.client.get(
             f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
@@ -127,6 +132,7 @@ class ClassifierLabelTestCase(APITestCase):
             classifier_label=label2, feed_entry=feed_entry, user=user2
         )
 
+        cache.clear()
         response = self.client.get(
             f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
@@ -141,6 +147,115 @@ class ClassifierLabelTestCase(APITestCase):
     def test_ClassifierLabelListView_get_feed_entry_notfound(self):
         response = self.client.get(
             f"/api/classifierlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
+        )
+        self.assertEqual(response.status_code, 404, response.content)
+
+    def test_ClassifierLabelMultiListView_get_feed_entry(self):
+        cache: BaseCache = caches["default"]
+
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        feed_entry1 = FeedEntry.objects.create(
+            id=None,
+            feed=ClassifierLabelTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title 1",
+            url="http://example.com/entry1.html",
+            content="Some Entry content 1",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        feed_entry2 = FeedEntry.objects.create(
+            id=None,
+            feed=ClassifierLabelTestCase.feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry Title 2",
+            url="http://example.com/entry2.html",
+            content="Some Entry content 2",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        cache.clear()
+        response = self.client.get(
+            f"/api/classifierlabels/multi",
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIn("classifierLabels", json_)
+        self.assertIs(type(json_["classifierLabels"]), dict)
+        self.assertIn(str(feed_entry1.uuid), json_["classifierLabels"])
+        self.assertGreaterEqual(
+            len(json_["classifierLabels"][str(feed_entry1.uuid)]), 1
+        )
+
+        ClassifierLabelFeedEntryVote.objects.create(
+            classifier_label=label1,
+            feed_entry=feed_entry1,
+            user=ClassifierLabelTestCase.user,
+        )
+
+        cache.clear()
+        response = self.client.get(
+            f"/api/classifierlabels/multi",
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIn("classifierLabels", json_)
+        self.assertIs(type(json_["classifierLabels"]), dict)
+        self.assertIn(str(feed_entry1.uuid), json_["classifierLabels"])
+        self.assertGreaterEqual(
+            len(json_["classifierLabels"][str(feed_entry1.uuid)]), 1
+        )
+        self.assertIn("text", json_["classifierLabels"][str(feed_entry1.uuid)][0])
+        self.assertEqual(
+            json_["classifierLabels"][str(feed_entry1.uuid)][0]["text"], "Label 1"
+        )
+
+        user2 = User.objects.create_user("test2@test.com", None)
+
+        ClassifierLabelFeedEntryCalculated.objects.create(
+            classifier_label=label2,
+            feed_entry=feed_entry1,
+            expires_at=(timezone.now() + datetime.timedelta(days=7)),
+        )
+        ClassifierLabelFeedEntryVote.objects.create(
+            classifier_label=label2, feed_entry=feed_entry1, user=user2
+        )
+
+        cache.clear()
+        response = self.client.get(
+            f"/api/classifierlabels/multi",
+            {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIn("classifierLabels", json_)
+        self.assertIs(type(json_["classifierLabels"]), dict)
+        self.assertIn(str(feed_entry1.uuid), json_["classifierLabels"])
+        self.assertGreaterEqual(
+            len(json_["classifierLabels"][str(feed_entry1.uuid)]), 1
+        )
+        self.assertIn("text", json_["classifierLabels"][str(feed_entry1.uuid)][0])
+        self.assertEqual(
+            json_["classifierLabels"][str(feed_entry1.uuid)][0]["text"], "Label 2"
+        )
+
+    def test_ClassifierLabelMultiListView_get_feed_entry_notfound(self):
+        response = self.client.get(
+            f"/api/classifierlabels/multi", {"feedEntryUuids": [str(uuid.UUID(int=0))]}
         )
         self.assertEqual(response.status_code, 404, response.content)
 
