@@ -2,7 +2,7 @@ import uuid as uuid_
 from typing import Any, cast
 
 from django.db import transaction
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.db.models.functions import Coalesce
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
@@ -40,16 +40,16 @@ class ClassifierLabelListView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        classifier_labels = ClassifierLabel.objects.all()
-
         feed_entry_uuid: uuid_.UUID | None = serializer.validated_data.get(
             "feed_entry_uuid"
         )
+
+        classifier_labels: QuerySet[ClassifierLabel]
         if feed_entry_uuid is not None:
             if not FeedEntry.objects.filter(uuid=feed_entry_uuid).exists():
                 raise NotFound("feed entry not found")
 
-            classifier_labels = classifier_labels.annotate(
+            classifier_labels = ClassifierLabel.objects.annotate(
                 vote_count=Coalesce(
                     Subquery(
                         ClassifierLabelFeedEntryVote.objects.filter(
@@ -76,7 +76,7 @@ class ClassifierLabelListView(APIView):
                 ),
             ).order_by("-vote_count", "?")
         else:
-            classifier_labels = classifier_labels.order_by("?")
+            classifier_labels = ClassifierLabel.objects.order_by("?")
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
 
