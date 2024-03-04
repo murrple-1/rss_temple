@@ -62,6 +62,8 @@ def get_classifier_label_vote_counts_from_cache(
         else:
             params = tuple(missing_feed_entry_uuids)
 
+        # There isn't a foreign-key between ClassifierLabel's and FeedEntry's,
+        # so this is the only way to write this as a single query within Django that I've found
         rows = ClassifierLabel.objects.raw(
             f"""
             SELECT
