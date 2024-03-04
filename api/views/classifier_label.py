@@ -1,3 +1,4 @@
+import random
 import uuid as uuid_
 from typing import Any, Collection, cast
 
@@ -108,25 +109,29 @@ class ClassifierLabelMultiListView(APIView):
             cache_hit,
         ) = get_classifier_label_vote_counts_from_cache(feed_entry_uuids, cache)
 
-        classifier_labels: dict[str, list[ClassifierLabel]] = {
-            str(feed_entry_uuid): list(
-                ClassifierLabel.objects.annotate(
-                    vote_count=Case(
-                        *(
-                            When(condition=Q(uuid=uuid), then=Value(count))
-                            for uuid, count in vote_counts.items()
-                        ),
-                        default=Value(-1),
-                        output_field=IntegerField()
-                    )
-                ).order_by("-vote_count", "?")
-            )
-            for feed_entry_uuid, vote_counts in classifier_label_vote_counts.items()
-        }
+        classifier_labels = list(ClassifierLabel.objects.all())
+
+        classifier_labels_by_feed_entry_uuid: dict[str, list[ClassifierLabel]] = {}
+
+        for feed_entry_uuid, vote_counts in classifier_label_vote_counts.items():
+            classifier_labels_with_order_keys: list[
+                tuple[ClassifierLabel, tuple[int, float]]
+            ] = [
+                (
+                    classifier_label,
+                    (vote_counts.get(classifier_label.uuid, -1), random.random()),
+                )
+                for classifier_label in classifier_labels
+            ]
+            classifier_labels_with_order_keys.sort(key=lambda t: t[1], reverse=True)
+
+            classifier_labels_by_feed_entry_uuid[str(feed_entry_uuid)] = [
+                t[0] for t in classifier_labels_with_order_keys
+            ]
 
         response = Response(
             ClassifierLabelMultiSerializer(
-                {"classifier_labels": classifier_labels}
+                {"classifier_labels": classifier_labels_by_feed_entry_uuid}
             ).data
         )
         response["X-Cache-Hit"] = ",".join(("YES" if cache_hit else "NO",))
