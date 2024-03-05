@@ -8,7 +8,12 @@ from django.core.signals import setting_changed
 from django.db import connection
 from django.dispatch import receiver
 
-from api.models import ClassifierLabel
+from api.models import (
+    ClassifierLabel,
+    ClassifierLabelFeedEntryCalculated,
+    ClassifierLabelFeedEntryVote,
+    FeedEntry,
+)
 
 _CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS: float | None
 
@@ -74,23 +79,23 @@ def get_classifier_label_vote_counts_from_cache(
                     SELECT
                         COUNT(*)
                     FROM
-                        api_classifierlabelfeedentryvote AS u1
+                        {ClassifierLabelFeedEntryVote._meta.db_table} AS u1
                     WHERE
                         u1."classifier_label_id" = t1."uuid"
                         AND u1."feed_entry_id" = t2."uuid"
-            ) + (
+                ) + (
                     SELECT
                         COUNT(*)
                     FROM
-                        api_classifierlabelfeedentrycalculated AS u2
+                        {ClassifierLabelFeedEntryCalculated._meta.db_table} AS u2
                     WHERE
                         u2."classifier_label_id" = t1."uuid"
                         AND u2."feed_entry_id" = t2."uuid"
                 )
             ) AS "vote_count"
             FROM
-                api_classifierlabel AS t1
-                JOIN api_feedentry AS t2 ON TRUE
+                {ClassifierLabel._meta.db_table} AS t1
+                JOIN {FeedEntry._meta.db_table} AS t2 ON TRUE
             WHERE
                 t2."uuid" IN ({placeholders})
             GROUP BY
