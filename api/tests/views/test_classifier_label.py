@@ -150,7 +150,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 404, response.content)
 
-    def test_ClassifierLabelMultiListView_get_feed_entry(self):
+    def test_ClassifierLabelListByEntryView_post_feed_entry(self):
         cache: BaseCache = caches["default"]
 
         label1 = ClassifierLabel.objects.create(text="Label 1")
@@ -181,8 +181,8 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         cache.clear()
-        response = self.client.get(
-            f"/api/classifierlabels/multi",
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -203,8 +203,8 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         cache.clear()
-        response = self.client.get(
-            f"/api/classifierlabels/multi",
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -234,8 +234,8 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         cache.clear()
-        response = self.client.get(
-            f"/api/classifierlabels/multi",
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -253,9 +253,10 @@ class ClassifierLabelTestCase(APITestCase):
             json_["classifierLabels"][str(feed_entry1.uuid)][0]["text"], "Label 2"
         )
 
-    def test_ClassifierLabelMultiListView_get_feed_entry_notfound(self):
-        response = self.client.get(
-            f"/api/classifierlabels/multi", {"feedEntryUuids": [str(uuid.UUID(int=0))]}
+    def test_ClassifierLabelListByEntryView_post_feed_entry_notfound(self):
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
+            {"feedEntryUuids": [str(uuid.UUID(int=0))]},
         )
         self.assertEqual(response.status_code, 404, response.content)
 

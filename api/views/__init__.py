@@ -11,8 +11,8 @@ from .auth import (
 from .captcha import CaptchaAudioView, CaptchaImageView, NewCaptchaView
 from .classifier_label import (
     ClassifierLabelFeedEntryVotesView,
+    ClassifierLabelListByEntryView,
     ClassifierLabelListView,
-    ClassifierLabelMultiListView,
     ClassifierLabelVotesListView,
 )
 from .explore import ExploreView
@@ -92,7 +92,7 @@ __all__ = [
     "FeedSubscriptionProgressView",
     "ExploreView",
     "ClassifierLabelListView",
-    "ClassifierLabelMultiListView",
+    "ClassifierLabelListByEntryView",
     "ClassifierLabelVotesListView",
     "ClassifierLabelFeedEntryVotesView",
 ]

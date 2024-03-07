@@ -17,9 +17,9 @@ from api.cache_utils.classifier_label_vote_counts import (
 )
 from api.models import ClassifierLabel, ClassifierLabelFeedEntryVote, FeedEntry, User
 from api.serializers import (
+    ClassifierLabelListByEntryBodySerializer,
+    ClassifierLabelListByEntrySerializer,
     ClassifierLabelListQuerySerializer,
-    ClassifierLabelMultiListQuerySerializer,
-    ClassifierLabelMultiSerializer,
     ClassifierLabelSerializer,
     ClassifierLabelVotesListQuerySerializer,
     ClassifierLabelVotesListSerializer,
@@ -80,18 +80,18 @@ class ClassifierLabelListView(APIView):
         return response
 
 
-class ClassifierLabelMultiListView(APIView):
+class ClassifierLabelListByEntryView(APIView):
     @swagger_auto_schema(
-        query_serializer=ClassifierLabelMultiListQuerySerializer,
-        responses={200: ClassifierLabelMultiSerializer()},
-        operation_summary="Return a list of classifier labels",
-        operation_description="Return a list of classifier labels",
+        responses={200: ClassifierLabelListByEntrySerializer()},
+        operation_summary="Return lists of classifier labels, by feed entry UUIDs",
+        operation_description="Return lists of classifier labels, by feed entry UUIDs",
+        request_body=ClassifierLabelListByEntryBodySerializer,
     )
-    def get(self, request: Request):
+    def post(self, request: Request):
         cache: BaseCache = caches["default"]
 
-        serializer = ClassifierLabelMultiListQuerySerializer(
-            data=request.query_params,
+        serializer = ClassifierLabelListByEntryBodySerializer(
+            data=request.data,
         )
         serializer.is_valid(raise_exception=True)
 
@@ -130,7 +130,7 @@ class ClassifierLabelMultiListView(APIView):
             ]
 
         response = Response(
-            ClassifierLabelMultiSerializer(
+            ClassifierLabelListByEntrySerializer(
                 {"classifier_labels": classifier_labels_by_feed_entry_uuid}
             ).data
         )
