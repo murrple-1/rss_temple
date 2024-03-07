@@ -493,6 +493,8 @@ class FeedEntry(models.Model):
     class Meta:
         indexes = (
             models.Index(fields=("-published_at",)),
+            models.Index(fields=("-created_at",)),
+            models.Index(fields=("-updated_at",)),
             models.Index(fields=("is_archived",)),
             models.Index(fields=("has_top_image_been_processed",)),
         )
