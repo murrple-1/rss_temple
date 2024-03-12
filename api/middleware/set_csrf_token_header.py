@@ -10,7 +10,7 @@ class SetCSRFTokenHeaderMiddleware:  # pragma: no cover
     def __call__(self, request: HttpRequest):
         response = self.get_response(request)
 
-        csrf_token = request.META.get("CSRF_TOKEN")
+        csrf_token = request.META.get("CSRF_COOKIE")
         if csrf_token:
             response["X-CSRFToken"] = csrf_token
 
