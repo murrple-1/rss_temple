@@ -38,13 +38,7 @@ class GoogleLogin(SocialLoginView):
         security=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        response = super().post(request, *args, **kwargs)
-
-        csrf_token = request.META.get("CSRF_COOKIE")
-        if csrf_token:
-            response["X-CSRFToken"] = csrf_token
-
-        return response
+        return super().post(request, *args, **kwargs)
 
 
 class GoogleConnect(SocialConnectView):
@@ -98,13 +92,7 @@ class FacebookLogin(SocialLoginView):
         security=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        response = super().post(request, *args, **kwargs)
-
-        csrf_token = request.META.get("CSRF_COOKIE")
-        if csrf_token:
-            response["X-CSRFToken"] = csrf_token
-
-        return response
+        return super().post(request, *args, **kwargs)
 
 
 class FacebookConnect(SocialConnectView):
