@@ -51,7 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
-    attributes = models.JSONField(null=False, default=dict)
+    attributes = models.JSONField(null=False, blank=True, default=dict)
     subscribed_feeds: models.ManyToManyField = models.ManyToManyField(
         "Feed", through="SubscribedFeedUserMapping", related_name="subscribed_user_set"
     )

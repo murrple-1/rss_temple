@@ -110,6 +110,7 @@ if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
     SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
     SESSION_CACHE_ALIAS = "default"
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "None"
 else:
     # Basically used in CI test phase or when running tests locally.
     # We don't load redis for that, so avoid setting the cache.
@@ -259,8 +260,10 @@ else:
 CSRF_TRUSTED_ORIGINS = (
     csrf_trusted_origins.split(",")
     if (csrf_trusted_origins := os.getenv("APP_CSRF_TRUSTED_ORIGINS"))
-    else []
+    else ["http://localhost:4200"]
 )
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -283,6 +286,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "api.authentication.ExpiringTokenAuthentication",
         "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": ("drf_ujson.renderers.UJSONRenderer",),
@@ -345,6 +349,8 @@ SWAGGER_SETTINGS = {
 
 # corsheaders
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
 
 # app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
