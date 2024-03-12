@@ -3,7 +3,7 @@ from typing import Callable
 from django.http import HttpRequest, HttpResponse
 
 
-class SetCSRFTokenMiddleware:  # pragma: no cover
+class SetCSRFTokenHeaderMiddleware:  # pragma: no cover
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
 
