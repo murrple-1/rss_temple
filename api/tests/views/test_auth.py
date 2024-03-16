@@ -47,6 +47,23 @@ class AuthTestCase(APITestCase):
             {
                 "email": "test@test.com",
                 "password": "password",
+                "stayLoggedIn": True,
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+
+        self.assertIs(type(json_), dict)
+        self.assertIn("key", json_)
+        self.assertIsInstance(json_["key"], str)
+
+        response = self.client.post(
+            "/api/auth/login",
+            {
+                "email": "test@test.com",
+                "password": "password",
+                "stayLoggedIn": False,
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
