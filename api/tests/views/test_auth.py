@@ -96,6 +96,7 @@ class AuthTestCase(APITestCase):
             {
                 "email": "unknown@test.com",
                 "password": "badpassword",
+                "stayLoggedIn": False,
             },
         )
         self.assertEqual(response.status_code, 401, response.content)
