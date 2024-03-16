@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import User
-from api.serializers import UserDeleteSerializer
+from api.serializers import LoginAdditionalParamsSerializer, UserDeleteSerializer
 
 _logger = logging.getLogger("rss_temple")
 
@@ -42,7 +42,16 @@ class LoginView(_LoginView):  # pragma: no cover
         security=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        serializer = LoginAdditionalParamsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        stay_logged_in: bool = serializer.validated_data["stay_logged_in"]
+        if not stay_logged_in:
+            request.session.set_expiry(0)
+
+        return response
 
 
 class LogoutView(_LogoutView):  # pragma: no cover

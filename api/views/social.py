@@ -16,7 +16,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from api.serializers import SocialLoginSerializer
+from api.serializers import LoginAdditionalParamsSerializer, SocialLoginSerializer
 
 
 class SocialAccountListView(_SocialAccountListView):
@@ -38,7 +38,16 @@ class GoogleLogin(SocialLoginView):
         security=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        serializer = LoginAdditionalParamsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        stay_logged_in: bool = serializer.validated_data["stay_logged_in"]
+        if not stay_logged_in:
+            request.session.set_expiry(0)
+
+        return response
 
 
 class GoogleConnect(SocialConnectView):
@@ -92,7 +101,16 @@ class FacebookLogin(SocialLoginView):
         security=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+
+        serializer = LoginAdditionalParamsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        stay_logged_in: bool = serializer.validated_data["stay_logged_in"]
+        if not stay_logged_in:
+            request.session.set_expiry(0)
+
+        return response
 
 
 class FacebookConnect(SocialConnectView):

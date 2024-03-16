@@ -386,6 +386,10 @@ class SocialLoginSerializer(SocialLoginSerializer_):  # pragma: no cover
         return attrs
 
 
+class LoginAdditionalParamsSerializer(serializers.Serializer):
+    stayLoggedIn = serializers.BooleanField(source="stay_logged_in")
+
+
 class UserDeleteSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 

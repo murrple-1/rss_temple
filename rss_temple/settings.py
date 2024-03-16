@@ -65,7 +65,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "api.middleware.set_csrf_token_header.SetCSRFTokenHeaderMiddleware",
 ]
 
 if DEBUG:
@@ -110,8 +109,6 @@ if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
 
     SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
     SESSION_CACHE_ALIAS = "default"
-    SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = "None"
 else:
     # Basically used in CI test phase or when running tests locally.
     # We don't load redis for that, so avoid setting the cache.
@@ -121,7 +118,10 @@ else:
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
-    SESSION_COOKIE_SECURE = False
+
+SESSION_COOKIE_SECURE = os.getenv("APP_SESSION_COOKIE_SECURE", "true") == "true"
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_DOMAIN = os.getenv("APP_SESSION_COOKIE_DOMAIN", "localhost")
 
 
 # Password validation
@@ -263,8 +263,9 @@ CSRF_TRUSTED_ORIGINS = (
     if (csrf_trusted_origins := os.getenv("APP_CSRF_TRUSTED_ORIGINS"))
     else ["http://localhost:4200"]
 )
+CSRF_COOKIE_SECURE = os.getenv("APP_CSRF_COOKIE_SECURE", "true") == "true"
 CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_DOMAIN = os.getenv("APP_CSRF_COOKIE_DOMAIN", "localhost")
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
