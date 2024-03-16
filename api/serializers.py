@@ -46,6 +46,8 @@ _logger = logging.getLogger("rss_temple")
 
 
 class LoginSerializer(_LoginSerializer):  # pragma: no cover
+    stayLoggedIn = serializers.BooleanField(source="stay_logged_in")
+
     def get_auth_user(self, username, email, password):
         if "allauth" in settings.INSTALLED_APPS:
             try:
@@ -262,6 +264,8 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
 
 
 class SocialLoginSerializer(SocialLoginSerializer_):  # pragma: no cover
+    stayLoggedIn = serializers.BooleanField(source="stay_logged_in")
+
     # copy-paste of `SocialLoginSerializer_.validate()`, but I wanted
     # the exception raised if `account_exists` to be different than
     # the original implementation
@@ -384,10 +388,6 @@ class SocialLoginSerializer(SocialLoginSerializer_):  # pragma: no cover
         attrs["user"] = login.account.user
 
         return attrs
-
-
-class LoginAdditionalParamsSerializer(serializers.Serializer):
-    stayLoggedIn = serializers.BooleanField(source="stay_logged_in")
 
 
 class UserDeleteSerializer(serializers.Serializer):
