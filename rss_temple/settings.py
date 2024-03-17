@@ -122,6 +122,7 @@ else:
 SESSION_COOKIE_SECURE = os.getenv("APP_SESSION_COOKIE_SECURE", "true") == "true"
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_DOMAIN = os.getenv("APP_SESSION_COOKIE_DOMAIN", "localhost")
+SESSION_SAVE_EVERY_REQUEST = True
 
 
 # Password validation
