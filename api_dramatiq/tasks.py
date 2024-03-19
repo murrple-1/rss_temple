@@ -1,4 +1,5 @@
 import django
+from django.db.models import F, Q
 
 django.setup()
 
@@ -14,7 +15,12 @@ from requests.exceptions import RequestException
 from api import content_type_util, rss_requests
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
-from api.models import DuplicateFeedSuggestion, Feed, FeedEntry
+from api.models import (
+    DuplicateFeedSuggestion,
+    Feed,
+    FeedEntry,
+    SubscribedFeedUserMapping,
+)
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
 from api.tasks import extract_top_images as extract_top_images_
@@ -42,7 +48,7 @@ dramatiq.set_encoder(UJSONEncoder())
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def archive_feed_entries(limit=1000) -> None:
+def archive_feed_entries(*args, limit=1000, **kwargs) -> None:
     count = 0
     with transaction.atomic():
         for feed in Feed.objects.filter(
@@ -62,7 +68,7 @@ def archive_feed_entries(limit=1000) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def purge_expired_data() -> None:
+def purge_expired_data(*args, **kwargs) -> None:
     purge_expired_data_()
     purge_expired_data.logger.info("purged expired data")
 
@@ -70,12 +76,14 @@ def purge_expired_data() -> None:
 @dramatiq.actor(queue_name="rss_temple")
 def extract_top_images(
     response_max_byte_count: int,
+    *args,
     max_processing_attempts=3,
     min_image_byte_count=4500,
     min_image_width=250,
     min_image_height=250,
     db_limit=50,
     since: str | None = None,
+    **kwargs,
 ) -> None:
     since_ = (
         datetime.datetime.fromisoformat(since)
@@ -98,25 +106,40 @@ def extract_top_images(
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def label_feeds(top_x=3) -> None:
+def label_feeds(*args, top_x=3, **kwargs) -> None:
     label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
     label_feeds.logger.info("feeds labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def label_users(top_x=10) -> None:
+def label_users(*args, top_x=10, **kwargs) -> None:
     label_users_(top_x, settings.LABELING_EXPIRY_INTERVAL)
     label_users.logger.info("users labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
+def feed_scrape(
+    response_max_byte_count: int,
+    should_scrape_dead_feeds: bool,
+    *args,
+    db_limit=1000,
+    max_consecutive_update_fail_count=5,
+    **kwargs,
+) -> None:
     count = 0
     feed_urls_succeeded: list[str] = []
+
     with transaction.atomic():
+        feed_q = Q(
+            update_backoff_until__lte=Now(),
+            consecutive_update_fail_count__lt=max_consecutive_update_fail_count,
+        )
+        if not should_scrape_dead_feeds:
+            feed_q &= Q(uuid__in=SubscribedFeedUserMapping.objects.values("feed_id"))
+
         for feed in (
             Feed.objects.select_for_update(skip_locked=True)
-            .filter(update_backoff_until__lte=Now())
+            .filter(feed_q)
             .order_by("update_backoff_until")[:db_limit]
             .iterator()
         ):
@@ -144,11 +167,13 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                 feed.update_backoff_until = feed_scrape__success_update_backoff_until(
                     feed, settings.SUCCESS_BACKOFF_SECONDS
                 )
+                feed.consecutive_update_fail_count = 0
                 feed.save(
-                    update_fields=[
+                    update_fields=(
                         "db_updated_at",
                         "update_backoff_until",
-                    ]
+                        "consecutive_update_fail_count",
+                    )
                 )
             except (
                 RequestException,
@@ -160,12 +185,15 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
                     "failed to scrape feed '%s'", feed.feed_url
                 )
 
-                feed.update_backoff_until = feed_scrape__error_update_backoff_until(
-                    feed,
-                    settings.MIN_ERROR_BACKOFF_SECONDS,
-                    settings.MAX_ERROR_BACKOFF_SECONDS,
+                Feed.objects.filter(uuid=feed.uuid).update(
+                    update_backoff_until=feed_scrape__error_update_backoff_until(
+                        feed,
+                        settings.MIN_ERROR_BACKOFF_SECONDS,
+                        settings.MAX_ERROR_BACKOFF_SECONDS,
+                    ),
+                    consecutive_update_fail_count=F("consecutive_update_fail_count")
+                    + 1,
                 )
-                feed.save(update_fields=["update_backoff_until"])
 
     if feed_urls_succeeded:
         feed_scrape.logger.info(
@@ -178,9 +206,7 @@ def feed_scrape(response_max_byte_count: int, db_limit=1000) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def setup_subscriptions(
-    response_max_byte_count: int,
-) -> None:
+def setup_subscriptions(response_max_byte_count: int, *args, **kwargs) -> None:
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:
         setup_subscriptions_(feed_subscription_progress_entry, response_max_byte_count)
@@ -191,7 +217,11 @@ def setup_subscriptions(
 
 @dramatiq.actor(queue_name="rss_temple")
 def flag_duplicate_feeds(
-    feed_count=1000, entry_compare_count=50, entry_intersection_threshold=5
+    *args,
+    feed_count=1000,
+    entry_compare_count=50,
+    entry_intersection_threshold=5,
+    **kwargs,
 ) -> None:
     duplicate_feed_suggestions: list[DuplicateFeedSuggestion] = []
 
@@ -218,6 +248,6 @@ def flag_duplicate_feeds(
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def purge_duplicate_feed_urls() -> None:
+def purge_duplicate_feed_urls(*args, **kwargs) -> None:
     purge_duplicate_feed_urls_()
     purge_duplicate_feed_urls.logger.info("purged duplicate feed URLs")

@@ -219,6 +219,14 @@ class Command(BaseCommand):
             "--feed-scrape-response-max-byte-count", type=int, default=-1
         )
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
+        parser.add_argument(
+            "--feed-scrape-max-consecutive-update-fail-count",
+            type=int,
+            default=settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT,
+        )
+        parser.add_argument(
+            "--feed-scrape-should-scrape-dead-feeds", action="store_true"
+        )
 
         parser.add_argument(
             "--setup-subscriptions-interval-seconds", type=int, default=30
@@ -339,12 +347,18 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
-            args=(options["feed_scrape_response_max_byte_count"],),
+            args=(
+                options["feed_scrape_response_max_byte_count"],
+                options["feed_scrape_should_scrape_dead_feeds"],
+            ),
             kwargs={
                 "options": {
                     "max_age": options["feed_scrape_max_age"],
                 },
                 "db_limit": options["feed_scrape_db_limit"],
+                "max_consecutive_update_fail_count": options[
+                    "feed_scrape_max_consecutive_update_fail_count"
+                ],
             },
         )
         scheduler.add_job(

@@ -3,9 +3,26 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Callable, Collection, TypedDict, cast
 
+from django.conf import settings
+from django.core.signals import setting_changed
+from django.dispatch import receiver
 from django.http import HttpRequest
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User, UserCategory
+
+_FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT: int
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
+
+    _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT = (
+        settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
+    )
+
+
+_load_global_settings()
 
 
 @dataclass(slots=True)
@@ -170,6 +187,11 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "readCount": _FieldConfig(_feed_readCount, False),
         "unreadCount": _FieldConfig(_feed_unreadCount, False),
+        "isDormant": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.consecutive_update_fail_count
+            > _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT,
+            False,
+        ),
     },
     "feedentry": {
         "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
