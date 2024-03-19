@@ -123,16 +123,21 @@ def feed_scrape(
     should_scrape_dead_feeds: bool,
     *args,
     db_limit=1000,
-    max_consecutive_update_fail_count=5,
+    max_consecutive_update_fail_count: int | None = None,
     **kwargs,
 ) -> None:
+    if max_consecutive_update_fail_count is None:
+        max_consecutive_update_fail_count = (
+            settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
+        )
+
     count = 0
     feed_urls_succeeded: list[str] = []
 
     with transaction.atomic():
         feed_q = Q(
             update_backoff_until__lte=Now(),
-            consecutive_update_fail_count__lt=max_consecutive_update_fail_count,
+            consecutive_update_fail_count__lte=max_consecutive_update_fail_count,
         )
         if not should_scrape_dead_feeds:
             feed_q &= Q(uuid__in=SubscribedFeedUserMapping.objects.values("feed_id"))

@@ -76,18 +76,18 @@ def feed_scrape(feed: Feed, response_text: str):
 
 
 def success_update_backoff_until(
-    feed: Feed, success_backoff_seconds: int
+    feed: Feed, success_backoff_seconds: float
 ) -> datetime.datetime:
     assert feed.db_updated_at is not None
     return feed.db_updated_at + datetime.timedelta(seconds=success_backoff_seconds)
 
 
 def error_update_backoff_until(
-    feed: Feed, min_error_backoff_seconds: int, max_error_backoff_seconds: int
+    feed: Feed, min_error_backoff_seconds: float, max_error_backoff_seconds: float
 ) -> datetime.datetime:
     last_written_at = feed.db_updated_at or feed.db_created_at
 
-    backoff_delta_seconds = (
+    backoff_delta_seconds: float = (
         feed.update_backoff_until - last_written_at
     ).total_seconds()
 
@@ -96,6 +96,6 @@ def error_update_backoff_until(
     elif backoff_delta_seconds > max_error_backoff_seconds:
         backoff_delta_seconds += max_error_backoff_seconds
     else:
-        backoff_delta_seconds *= 2
+        backoff_delta_seconds *= 2.0
 
     return last_written_at + datetime.timedelta(seconds=backoff_delta_seconds)
