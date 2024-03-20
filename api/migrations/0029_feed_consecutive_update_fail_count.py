@@ -11,7 +11,7 @@ def _forward_func_reset_feed_update_backoff_until(
 ):
     Feed = apps.get_model("api", "Feed")
 
-    Feed.objects.update(update_backoff_until=Now())
+    Feed.objects.update(update_backoff_until=Now(), db_updated_at=Now())
 
 
 class Migration(migrations.Migration):
