@@ -82,7 +82,7 @@ class TaskTestCase(TestCase):
 
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
-                (feed.db_updated_at + datetime.timedelta(seconds=60)).timestamp(),
+                (feed.db_updated_at + datetime.timedelta(seconds=60.0)).timestamp(),
                 delta=1,
             )
 
