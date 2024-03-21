@@ -187,7 +187,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "readCount": _FieldConfig(_feed_readCount, False),
         "unreadCount": _FieldConfig(_feed_unreadCount, False),
-        "isDormant": _FieldConfig(
+        "isDead": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.consecutive_update_fail_count
             > _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT,
             False,
