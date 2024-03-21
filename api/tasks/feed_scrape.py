@@ -87,15 +87,22 @@ def error_update_backoff_until(
 ) -> datetime.datetime:
     last_written_at = feed.db_updated_at or feed.db_created_at
 
-    backoff_delta_seconds: float = (
+    initial_backoff_delta_seconds: float = (
         feed.update_backoff_until - last_written_at
     ).total_seconds()
 
+    backoff_delta_seconds = initial_backoff_delta_seconds
+
     if backoff_delta_seconds < min_error_backoff_seconds:
         backoff_delta_seconds = min_error_backoff_seconds
-    elif backoff_delta_seconds > max_error_backoff_seconds:
-        backoff_delta_seconds += max_error_backoff_seconds
     else:
         backoff_delta_seconds *= 2.0
+
+    if (
+        backoff_delta_seconds - initial_backoff_delta_seconds
+    ) > max_error_backoff_seconds:
+        backoff_delta_seconds = (
+            initial_backoff_delta_seconds + max_error_backoff_seconds
+        )
 
     return last_written_at + datetime.timedelta(seconds=backoff_delta_seconds)

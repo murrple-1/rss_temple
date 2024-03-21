@@ -37,7 +37,7 @@ class TaskTestCase(TestCase):
 
         db_migrations_state()
 
-    def test_scrape_feed(self):
+    def test_feed_scrape(self):
         feed = Feed.objects.create(
             feed_url="http://example.com/rss.xml",
             title="Fake Feed",
@@ -87,7 +87,9 @@ class TaskTestCase(TestCase):
             )
 
     def test_error_update_backoff_until(self):
-        with self.settings(MIN_ERROR_BACKOFF_SECONDS=60, MAX_ERROR_BACKOFF_SECONDS=110):
+        with self.settings(
+            MIN_ERROR_BACKOFF_SECONDS=60.0, MAX_ERROR_BACKOFF_SECONDS=230.0
+        ):
             feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Fake Feed",
@@ -97,41 +99,22 @@ class TaskTestCase(TestCase):
             self.assertAlmostEqual(
                 feed.db_created_at.timestamp(),
                 feed.update_backoff_until.timestamp(),
-                delta=1,
+                delta=1.0,
             )
             self.assertIsNone(feed.db_updated_at)
 
             feed.update_backoff_until = feed.db_created_at
 
-            feed.update_backoff_until = error_update_backoff_until(
-                feed,
-                settings.MIN_ERROR_BACKOFF_SECONDS,
-                settings.MAX_ERROR_BACKOFF_SECONDS,
-            )
-            self.assertAlmostEqual(
-                feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(),
-                delta=1,
-            )
-
-            feed.update_backoff_until = error_update_backoff_until(
-                feed,
-                settings.MIN_ERROR_BACKOFF_SECONDS,
-                settings.MAX_ERROR_BACKOFF_SECONDS,
-            )
-            self.assertAlmostEqual(
-                feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=120)).timestamp(),
-                delta=1,
-            )
-
-            feed.update_backoff_until = error_update_backoff_until(
-                feed,
-                settings.MIN_ERROR_BACKOFF_SECONDS,
-                settings.MAX_ERROR_BACKOFF_SECONDS,
-            )
-            self.assertAlmostEqual(
-                feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=230)).timestamp(),
-                delta=1,
-            )
+            for expected_value in (60.0, 120.0, 240.0, 470.0, 700.0):
+                feed.update_backoff_until = error_update_backoff_until(
+                    feed,
+                    settings.MIN_ERROR_BACKOFF_SECONDS,
+                    settings.MAX_ERROR_BACKOFF_SECONDS,
+                )
+                self.assertAlmostEqual(
+                    feed.update_backoff_until.timestamp(),
+                    (
+                        feed.db_created_at + datetime.timedelta(seconds=expected_value)
+                    ).timestamp(),
+                    delta=1.0,
+                )
