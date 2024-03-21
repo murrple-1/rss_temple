@@ -394,11 +394,7 @@ USER_UNREAD_GRACE_MIN_COUNT = 10
 SUCCESS_BACKOFF_SECONDS = 60.0
 MIN_ERROR_BACKOFF_SECONDS = 60.0
 MAX_ERROR_BACKOFF_SECONDS = 60.0 * 60.0 * 24.0 * 28.0 * 3.0  # 3 months
-# 0th attempt: 60 seconds  # 1 minute; from `SUCCESS_BACKOFF_SECONDS`
-# 1st attempt: 3600 seconds  # 1 hour
-# 2nd attempt: 216000 seconds  # 2.5 days
-# 3rd attempt: 12960000 seconds  # 150 days
-FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT = 3
+FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT = 16
 
 ARCHIVE_BACKOFF_SECONDS = 60.0 * 60.0 * 24.0  # 1 day
 ARCHIVE_TIME_THRESHOLD = datetime.timedelta(days=-45)
