@@ -87,7 +87,9 @@ class TaskTestCase(TestCase):
             )
 
     def test_error_update_backoff_until(self):
-        with self.settings(MIN_ERROR_BACKOFF_SECONDS=60, MAX_ERROR_BACKOFF_SECONDS=110):
+        with self.settings(
+            MIN_ERROR_BACKOFF_SECONDS=60.0, MAX_ERROR_BACKOFF_SECONDS=220.0
+        ):
             feed = Feed.objects.create(
                 feed_url="http://example.com/rss.xml",
                 title="Fake Feed",
@@ -110,7 +112,7 @@ class TaskTestCase(TestCase):
             )
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=60)).timestamp(),
+                (feed.db_created_at + datetime.timedelta(seconds=60.0)).timestamp(),
                 delta=1,
             )
 
@@ -121,7 +123,7 @@ class TaskTestCase(TestCase):
             )
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=120)).timestamp(),
+                (feed.db_created_at + datetime.timedelta(seconds=120.0)).timestamp(),
                 delta=1,
             )
 
@@ -132,6 +134,6 @@ class TaskTestCase(TestCase):
             )
             self.assertAlmostEqual(
                 feed.update_backoff_until.timestamp(),
-                (feed.db_created_at + datetime.timedelta(seconds=230)).timestamp(),
+                (feed.db_created_at + datetime.timedelta(seconds=220.0)).timestamp(),
                 delta=1,
             )
