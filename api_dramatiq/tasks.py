@@ -173,10 +173,12 @@ def feed_scrape(
                 feed.update_backoff_until = feed_scrape__success_update_backoff_until(
                     feed, settings.SUCCESS_BACKOFF_SECONDS
                 )
+                feed.consecutive_update_fail_count = 0
                 feed.save(
                     update_fields=(
                         "db_updated_at",
                         "update_backoff_until",
+                        "consecutive_update_fail_count",
                     )
                 )
             except (
@@ -189,13 +191,15 @@ def feed_scrape(
                     "failed to scrape feed '%s'", feed.feed_url
                 )
 
-                feed.update_backoff_until = feed_scrape__error_update_backoff_until(
-                    feed,
-                    settings.MIN_ERROR_BACKOFF_SECONDS,
-                    settings.MAX_ERROR_BACKOFF_SECONDS,
+                Feed.objects.filter(uuid=feed.uuid).update(
+                    update_backoff_until=feed_scrape__error_update_backoff_until(
+                        feed,
+                        settings.MIN_ERROR_BACKOFF_SECONDS,
+                        settings.MAX_ERROR_BACKOFF_SECONDS,
+                    ),
+                    consecutive_update_fail_count=F("consecutive_update_fail_count")
+                    + 1,
                 )
-
-                feed.save(update_fields=("update_backoff_until",))
 
     if feed_urls_succeeded:
         feed_scrape.logger.info(
