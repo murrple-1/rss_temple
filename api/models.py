@@ -241,7 +241,6 @@ class Feed(models.Model):
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
-    consecutive_update_fail_count = models.PositiveSmallIntegerField(default=0)
     archive_update_backoff_until = models.DateTimeField(default=timezone.now)
     calculated_classifier_labels: models.ManyToManyField = models.ManyToManyField(
         ClassifierLabel,

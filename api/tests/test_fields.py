@@ -1,3 +1,4 @@
+import datetime
 import logging
 import uuid
 from typing import Any, Callable, ClassVar
@@ -370,6 +371,47 @@ class FieldFnsTestCase(TestCase):
                     ),
                     1,
                 )
+
+    def test_feed_isDead(self):
+        with self.settings(FEED_IS_DEAD_MAX_INTERVAL=datetime.timedelta(days=28.0)):
+            feed = Feed.objects.create(
+                feed_url="http://example.com/rss.xml",
+                title="Sample Feed",
+                home_url="http://example.com",
+                published_at=timezone.now(),
+                updated_at=None,
+            )
+
+            for queryset in [None, Feed.objects.all()]:
+                with self.subTest(queryset_type=type(queryset)):
+                    feed.db_updated_at = None
+                    feed.save(update_fields=("db_updated_at",))
+
+                    self.assertFalse(
+                        fields._feed_isDead(
+                            FieldFnsTestCase.MockRequest(), feed, queryset
+                        )
+                    )
+
+                    feed.db_updated_at = timezone.now()
+                    feed.save(update_fields=("db_updated_at",))
+
+                    self.assertFalse(
+                        fields._feed_isDead(
+                            FieldFnsTestCase.MockRequest(), feed, queryset
+                        )
+                    )
+
+                    feed.db_updated_at = timezone.now() + datetime.timedelta(
+                        days=-(28.0 * 2.0)
+                    )
+                    feed.save(update_fields=("db_updated_at",))
+
+                    self.assertTrue(
+                        fields._feed_isDead(
+                            FieldFnsTestCase.MockRequest(), feed, queryset
+                        )
+                    )
 
     def test_feedentry_readAt(self):
         feed = Feed.objects.create(

@@ -220,9 +220,9 @@ class Command(BaseCommand):
         )
         parser.add_argument("--feed-scrape-db-limit", type=int, default=1000)
         parser.add_argument(
-            "--feed-scrape-max-consecutive-update-fail-count",
-            type=int,
-            default=settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT,
+            "--feed-scrape-is-dead-max-interval-seconds",
+            type=float,
+            default=settings.FEED_IS_DEAD_MAX_INTERVAL.total_seconds(),
         )
         parser.add_argument(
             "--feed-scrape-should-scrape-dead-feeds", action="store_true"
@@ -356,8 +356,8 @@ class Command(BaseCommand):
                     "max_age": options["feed_scrape_max_age"],
                 },
                 "db_limit": options["feed_scrape_db_limit"],
-                "max_consecutive_update_fail_count": options[
-                    "feed_scrape_max_consecutive_update_fail_count"
+                "is_dead_max_interval_seconds": options[
+                    "feed_scrape_is_dead_max_interval_seconds"
                 ],
             },
         )

@@ -7,19 +7,18 @@ from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
 from django.http import HttpRequest
+from django.utils import timezone
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User, UserCategory
 
-_FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT: int
+_FEED_IS_DEAD_MAX_INTERVAL: datetime.timedelta
 
 
 @receiver(setting_changed)
 def _load_global_settings(*args: Any, **kwargs: Any):
-    global _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
+    global _FEED_IS_DEAD_MAX_INTERVAL
 
-    _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT = (
-        settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
-    )
+    _FEED_IS_DEAD_MAX_INTERVAL = settings.FEED_IS_DEAD_MAX_INTERVAL
 
 
 _load_global_settings()
@@ -111,6 +110,20 @@ def _feed_unreadCount(
     return count_lookups[db_obj.uuid].unread_count
 
 
+def _feed_isDead(
+    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+) -> bool:
+    if db_obj.db_updated_at is None:
+        return False
+
+    now: datetime.datetime | None = getattr(request, "_now", None)
+    if now is None:
+        now = timezone.now()
+        setattr(request, "_now", now)
+
+    return (now - db_obj.db_updated_at) > _FEED_IS_DEAD_MAX_INTERVAL
+
+
 def _feedentry_readAt(
     request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
 ) -> str | None:
@@ -188,8 +201,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         "readCount": _FieldConfig(_feed_readCount, False),
         "unreadCount": _FieldConfig(_feed_unreadCount, False),
         "isDead": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.consecutive_update_fail_count
-            > _FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT,
+            _feed_isDead,
             False,
         ),
     },

@@ -123,13 +123,14 @@ def feed_scrape(
     should_scrape_dead_feeds: bool,
     *args,
     db_limit=1000,
-    max_consecutive_update_fail_count: int | None = None,
+    is_dead_max_interval_seconds: float | None = None,
     **kwargs,
 ) -> None:
-    if max_consecutive_update_fail_count is None:
-        max_consecutive_update_fail_count = (
-            settings.FEED_MAX_CONSECUTIVE_UPDATE_FAIL_COUNT
-        )
+    is_dead_max_interval = (
+        datetime.timedelta(seconds=is_dead_max_interval_seconds)
+        if is_dead_max_interval_seconds is not None
+        else settings.FEED_IS_DEAD_MAX_INTERVAL
+    )
 
     count = 0
     feed_urls_succeeded: list[str] = []
@@ -137,7 +138,7 @@ def feed_scrape(
     with transaction.atomic():
         feed_q = Q(
             update_backoff_until__lte=Now(),
-            consecutive_update_fail_count__lte=max_consecutive_update_fail_count,
+            db_updated_at__gte=Now() - is_dead_max_interval,
         )
         if not should_scrape_dead_feeds:
             feed_q &= Q(uuid__in=SubscribedFeedUserMapping.objects.values("feed_id"))
@@ -172,12 +173,10 @@ def feed_scrape(
                 feed.update_backoff_until = feed_scrape__success_update_backoff_until(
                     feed, settings.SUCCESS_BACKOFF_SECONDS
                 )
-                feed.consecutive_update_fail_count = 0
                 feed.save(
                     update_fields=(
                         "db_updated_at",
                         "update_backoff_until",
-                        "consecutive_update_fail_count",
                     )
                 )
             except (
@@ -190,15 +189,13 @@ def feed_scrape(
                     "failed to scrape feed '%s'", feed.feed_url
                 )
 
-                Feed.objects.filter(uuid=feed.uuid).update(
-                    update_backoff_until=feed_scrape__error_update_backoff_until(
-                        feed,
-                        settings.MIN_ERROR_BACKOFF_SECONDS,
-                        settings.MAX_ERROR_BACKOFF_SECONDS,
-                    ),
-                    consecutive_update_fail_count=F("consecutive_update_fail_count")
-                    + 1,
+                feed.update_backoff_until = feed_scrape__error_update_backoff_until(
+                    feed,
+                    settings.MIN_ERROR_BACKOFF_SECONDS,
+                    settings.MAX_ERROR_BACKOFF_SECONDS,
                 )
+
+                feed.save(update_fields=("update_backoff_until",))
 
     if feed_urls_succeeded:
         feed_scrape.logger.info(
