@@ -1,10 +1,10 @@
 services:
   redis:
-    image: redis:7
+    image: redis:7-alpine
     networks:
       - rss_temple_net
   postgresql:
-    image: postgres:15
+    image: postgres:15-alpine
     shm_size: '256m'
     env_file:
       - .env
@@ -13,7 +13,7 @@ services:
     networks:
       - rss_temple_net
   caddy:
-    image: caddy:2
+    image: caddy:2-alpine
     ports:
       - '8000:8000'
     volumes:
