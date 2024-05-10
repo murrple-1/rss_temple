@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from api import fields as fieldutils
 from api.exceptions import Conflict
-from api.fields import FieldMap
+from api.fields import FieldMap, generate_only_fields
 from api.models import Feed, User, UserCategory
 from api.serializers import (
     GetManySerializer,
@@ -46,8 +46,10 @@ class UserCategoryView(APIView):
 
         user_category: UserCategory
         try:
-            user_category = UserCategory.objects.prefetch_related("feeds").get(
-                uuid=uuid, user=cast(User, request.user)
+            user_category = (
+                UserCategory.objects.only(*generate_only_fields(field_maps))
+                .prefetch_related("feeds")
+                .get(uuid=uuid, user=cast(User, request.user))
             )
         except UserCategory.DoesNotExist:
             return Response("user category not found", status=404)
@@ -150,7 +152,9 @@ class UserCategoriesQueryView(APIView):
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
-        user_categories = UserCategory.objects.filter(*search)
+        user_categories = UserCategory.objects.filter(*search).only(
+            *generate_only_fields(field_maps)
+        )
 
         ret_obj: dict[str, Any] = {}
 

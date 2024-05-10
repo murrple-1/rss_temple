@@ -27,7 +27,7 @@ from api.cache_utils.read_feed_entry_uuids import (
 )
 from api.cache_utils.subscription_datas import get_subscription_datas_from_cache
 from api.django_extensions import bulk_create_iter
-from api.fields import FieldMap
+from api.fields import FieldMap, generate_only_fields
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
     FeedEntriesMarkReadSerializer,
@@ -81,7 +81,13 @@ class FeedEntryView(APIView):
 
         feed_entry: FeedEntry
         try:
-            feed_entry = FeedEntry.objects.select_related("language").get(uuid=uuid)
+            feed_entry = (
+                FeedEntry.objects.only(
+                    *generate_only_fields(field_maps).union({"language"})
+                )
+                .select_related("language")
+                .get(uuid=uuid)
+            )
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
@@ -140,6 +146,7 @@ class FeedEntriesQueryView(APIView):
                 )
             )
             .filter(*search)
+            .only(*generate_only_fields(field_maps).union({"language"}))
             .select_related("language")
         )
 
@@ -286,9 +293,9 @@ class FeedEntriesQueryStableView(APIView):
             feed_entries: dict[uuid_.UUID, FeedEntry] = {
                 feed_entry.uuid: feed_entry
                 for feed_entry in FeedEntry.annotate_user_data(
-                    FeedEntry.objects.filter(uuid__in=current_uuids).select_related(
-                        "language"
-                    ),
+                    FeedEntry.objects.filter(uuid__in=current_uuids)
+                    .only(*generate_only_fields(field_maps).union({"uuid", "language"}))
+                    .select_related("language"),
                     user,
                     subscription_datas=subscription_datas,
                     read_feed_entry_uuids=read_feed_entry_uuids,

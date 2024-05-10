@@ -26,7 +26,7 @@ from api.cache_utils.subscription_datas import (
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
-from api.fields import FieldMap
+from api.fields import FieldMap, generate_only_fields
 from api.models import (
     AlternateFeedURL,
     Feed,
@@ -92,14 +92,20 @@ class FeedView(APIView):
 
         feed: Feed
         try:
-            feed = Feed.annotate_subscription_data(
-                Feed.objects.all(), user, subscription_datas=subscription_datas
-            ).get(
-                Q(feed_url=url)
-                | Q(
-                    uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values(
-                        "feed_id"
-                    )[:1]
+            feed = (
+                Feed.annotate_subscription_data(
+                    Feed.objects.all(),
+                    user,
+                    subscription_datas=subscription_datas,
+                )
+                .only(*generate_only_fields(field_maps))
+                .get(
+                    Q(feed_url=url)
+                    | Q(
+                        uuid__in=AlternateFeedURL.objects.filter(feed_url=url).values(
+                            "feed_id"
+                        )[:1]
+                    )
                 )
             )
         except Feed.DoesNotExist:
@@ -156,11 +162,17 @@ class FeedsQueryView(APIView):
             subscription_datas_cache_hit,
         ) = get_subscription_datas_from_cache(user, cache)
 
-        feeds = Feed.annotate_search_vectors(
-            Feed.annotate_subscription_data(
-                Feed.objects.all(), user, subscription_datas=subscription_datas
+        feeds = (
+            Feed.annotate_search_vectors(
+                Feed.annotate_subscription_data(
+                    Feed.objects.all(),
+                    user,
+                    subscription_datas=subscription_datas,
+                )
             )
-        ).filter(*search)
+            .filter(*search)
+            .only(*generate_only_fields(field_maps))
+        )
 
         feeds_qs = feeds.order_by(*sort)[skip : skip + count]
 

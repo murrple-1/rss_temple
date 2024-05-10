@@ -1,7 +1,8 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any, Callable, Collection, TypedDict, cast
+from functools import reduce
+from typing import AbstractSet, Any, Callable, Collection, TypedDict, cast
 
 from django.conf import settings
 from django.core.signals import setting_changed
@@ -28,6 +29,7 @@ _load_global_settings()
 class _FieldConfig:
     accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
     default: bool
+    only_fields: AbstractSet[str]
 
 
 def _usercategory_feedUuids(
@@ -156,123 +158,195 @@ def _feedentry_readAt(
 
 _field_configs: dict[str, dict[str, _FieldConfig]] = {
     "usercategory": {
-        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
-        "text": _FieldConfig(lambda request, db_obj, queryset: db_obj.text, True),
+        "uuid": _FieldConfig(
+            lambda request, db_obj, queryset: str(db_obj.uuid),
+            True,
+            {"uuid"},
+        ),
+        "text": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.text,
+            True,
+            {"text"},
+        ),
         "feedUuids": _FieldConfig(
             _usercategory_feedUuids,
             False,
+            {"uuid"},
         ),
     },
     "feed": {
-        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
-        "title": _FieldConfig(lambda request, db_obj, queryset: db_obj.title, False),
+        "uuid": _FieldConfig(
+            lambda request, db_obj, queryset: str(db_obj.uuid),
+            True,
+            {"uuid"},
+        ),
+        "title": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.title,
+            False,
+            {"title"},
+        ),
         "feedUrl": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.feed_url, False
+            lambda request, db_obj, queryset: db_obj.feed_url,
+            False,
+            {"feed_url"},
         ),
         "homeUrl": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.home_url, False
+            lambda request, db_obj, queryset: db_obj.home_url,
+            False,
+            {"home_url"},
         ),
         "publishedAt": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.published_at.isoformat(), False
+            lambda request, db_obj, queryset: db_obj.published_at.isoformat(),
+            False,
+            {"published_at"},
         ),
         "updatedAt": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
             if db_obj.updated_at is not None
             else None,
             False,
+            {"updated_at"},
         ),
         "isSubscribed": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_subscribed,
             False,
+            frozenset(),
         ),
         "customTitle": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.custom_title, False
+            lambda request, db_obj, queryset: db_obj.custom_title,
+            False,
+            frozenset(),
         ),
         "calculatedTitle": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.custom_title
             if db_obj.custom_title is not None
             else db_obj.title,
             False,
+            {"title"},
         ),
         "userCategoryUuids": _FieldConfig(
             _feed_userCategoryUuids,
             False,
+            {"uuid"},
         ),
-        "readCount": _FieldConfig(_feed_readCount, False),
-        "unreadCount": _FieldConfig(_feed_unreadCount, False),
+        "readCount": _FieldConfig(_feed_readCount, False, {"uuid"}),
+        "unreadCount": _FieldConfig(_feed_unreadCount, False, {"uuid"}),
         "isDead": _FieldConfig(
             _feed_isDead,
             False,
+            {"db_updated_at"},
         ),
     },
     "feedentry": {
-        "uuid": _FieldConfig(lambda request, db_obj, queryset: str(db_obj.uuid), True),
-        "id": _FieldConfig(lambda request, db_obj, queryset: db_obj.id, False),
+        "uuid": _FieldConfig(
+            lambda request, db_obj, queryset: str(db_obj.uuid),
+            True,
+            {"uuid"},
+        ),
+        "id": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.id,
+            False,
+            {"id"},
+        ),
         "createdAt": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.created_at.isoformat()
             if db_obj.created_at is not None
             else None,
             False,
+            {"created_at"},
         ),
         "publishedAt": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.published_at.isoformat(), False
+            lambda request, db_obj, queryset: db_obj.published_at.isoformat(),
+            False,
+            {"published_at"},
         ),
         "updatedAt": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
             if db_obj.updated_at is not None
             else None,
             False,
+            {"updated_at"},
         ),
-        "title": _FieldConfig(lambda request, db_obj, queryset: db_obj.title, False),
-        "url": _FieldConfig(lambda request, db_obj, queryset: db_obj.url, False),
+        "title": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.title,
+            False,
+            {"title"},
+        ),
+        "url": _FieldConfig(
+            lambda request, db_obj, queryset: db_obj.url,
+            False,
+            {"url"},
+        ),
         "content": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.content, False
+            lambda request, db_obj, queryset: db_obj.content,
+            False,
+            {"content"},
         ),
         "authorName": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.author_name, False
+            lambda request, db_obj, queryset: db_obj.author_name,
+            False,
+            {"author_name"},
         ),
         "feedUuid": _FieldConfig(
-            lambda request, db_obj, queryset: str(db_obj.feed_id), False
+            lambda request, db_obj, queryset: str(db_obj.feed_id),
+            False,
+            {"feed_id"},
         ),
         "isFromSubscription": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_from_subscription,
             False,
+            frozenset(),
         ),
         "isRead": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_read,
             False,
+            frozenset(),
         ),
         "isFavorite": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.is_favorite,
             False,
+            frozenset(),
         ),
-        "readAt": _FieldConfig(_feedentry_readAt, False),
+        "readAt": _FieldConfig(
+            _feedentry_readAt,
+            False,
+            frozenset(),
+        ),
         "isArchived": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.is_archived, False
+            lambda request, db_obj, queryset: db_obj.is_archived,
+            False,
+            {"is_archived"},
         ),
         "languageIso639_3": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.language.iso639_3
             if db_obj.language is not None
             else None,
             False,
+            {"language"},
         ),
         "languageIso639_1": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.language.iso639_1
             if db_obj.language is not None
             else None,
             False,
+            {"language"},
         ),
         "languageName": _FieldConfig(
             lambda request, db_obj, queryset: db_obj.language.name
             if db_obj.language is not None
             else None,
             False,
+            {"language"},
         ),
         "hasTopImageBeenProcessed": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.has_top_image_been_processed, False
+            lambda request, db_obj, queryset: db_obj.has_top_image_been_processed,
+            False,
+            {"has_top_image_been_processed"},
         ),
         "topImageSrc": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.top_image_src, False
+            lambda request, db_obj, queryset: db_obj.top_image_src,
+            False,
+            {"top_image_src"},
         ),
     },
 }
@@ -281,6 +355,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
 class FieldMap(TypedDict):
     field_name: str
     accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
+    only_fields: AbstractSet[str]
 
 
 def get_default_field_maps(object_name: str):
@@ -292,6 +367,7 @@ def get_default_field_maps(object_name: str):
             default_field_map: FieldMap = {
                 "field_name": field_name,
                 "accessor": field_config.accessor,
+                "only_fields": field_config.only_fields,
             }
 
             default_field_maps.append(default_field_map)
@@ -307,6 +383,7 @@ def get_all_field_maps(object_name: str):
         field_map: FieldMap = {
             "field_name": field_name,
             "accessor": field_config.accessor,
+            "only_fields": field_config.only_fields,
         }
 
         all_field_maps.append(field_map)
@@ -322,6 +399,7 @@ def to_field_map(object_name: str, field_name: str) -> FieldMap | None:
             return {
                 "field_name": _field_name,
                 "accessor": field_config.accessor,
+                "only_fields": field_config.only_fields,
             }
     return None
 
@@ -342,3 +420,9 @@ def generate_return_object(
         return_obj[field_name] = field_map["accessor"](request, db_obj, queryset)
 
     return return_obj
+
+
+def generate_only_fields(field_maps: list[FieldMap]) -> frozenset[str]:
+    return reduce(
+        lambda a, b: a.union(b), (fm["only_fields"] for fm in field_maps), frozenset()
+    )

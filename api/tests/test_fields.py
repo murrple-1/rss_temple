@@ -4,6 +4,7 @@ import uuid
 from typing import Any, Callable, ClassVar
 from unittest.mock import Mock
 
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.test import TestCase
 from django.utils import timezone
@@ -68,7 +69,9 @@ class FieldsTestCase(TestCase):
                 self.assertTrue(callable(field_map["accessor"]))
 
     def test_fieldconfig(self):
-        fc = fields._FieldConfig(lambda request, db_obj, queryset: "test", True)
+        fc = fields._FieldConfig(
+            lambda request, db_obj, queryset: "test", True, {"field_name"}
+        )
 
         db_obj = object()
         queryset = [db_obj]
@@ -100,6 +103,7 @@ class FieldsTestCase(TestCase):
             {
                 "field_name": "uuid",
                 "accessor": lambda request, db_obj, queryset: db_obj.uuid,
+                "only_fields": {"uuid"},
             }
         ]
 
@@ -117,10 +121,29 @@ class FieldsTestCase(TestCase):
             },
         )
 
+    def test_generate_only_fields(self):
+        field_maps: list[fields.FieldMap] = [
+            {
+                "field_name": "uuid",
+                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
+                "only_fields": {"uuid"},
+            },
+            {
+                "field_name": "text",
+                "accessor": lambda request, db_obj, queryset: db_obj.text,
+                "only_fields": {"text"},
+            },
+        ]
+
+        self.assertEqual(
+            fields.generate_only_fields(field_maps),
+            {"uuid", "text"},
+        )
+
 
 class AllFieldsTestCase(TestCase):
     old_logger_level: ClassVar[int]
-    TRIALS: ClassVar[dict[str, Callable[[], list[Any]]]]
+    TRIALS: ClassVar[dict[str, Callable[[], QuerySet[Any]]]]
     user: ClassVar[User]
     user_category: ClassVar[UserCategory]
     feed_with_category: ClassVar[Feed]
@@ -128,26 +151,20 @@ class AllFieldsTestCase(TestCase):
     feed_entry: ClassVar[FeedEntry]
 
     @classmethod
-    def generate_usercategories(cls):
-        return [cls.user_category]
+    def generate_usercategories(cls) -> QuerySet[UserCategory]:
+        return UserCategory.objects.filter(uuid=cls.user_category.uuid)
 
     @classmethod
     def generate_feeds(cls):
-        feeds = [cls.feed_with_category, cls.feed_without_category]
-
-        for feed in feeds:
-            feed.with_subscription_data()
-
-        return feeds
+        return Feed.annotate_subscription_data(Feed.objects.all(), cls.user).filter(
+            uuid__in=[cls.feed_with_category.uuid, cls.feed_without_category.uuid]
+        )
 
     @classmethod
     def generate_feedentries(cls):
-        feed_entries = [cls.feed_entry]
-
-        for feed_entry in feed_entries:
-            feed_entry.with_user_data()
-
-        return feed_entries
+        return FeedEntry.annotate_user_data(FeedEntry.objects.all(), cls.user).filter(
+            uuid=cls.feed_entry.uuid
+        )
 
     class MockRequest(Mock):
         def __init__(self):
@@ -230,8 +247,9 @@ class AllFieldsTestCase(TestCase):
 
                 fields_dict = fields._field_configs[key]
 
-                for db_obj in db_objs:
-                    for field_config in fields_dict.values():
+                has_run = False
+                for field_config in fields_dict.values():
+                    for db_obj in db_objs.only(*field_config.only_fields):
                         self.assertEqual(
                             field_config.accessor(
                                 AllFieldsTestCase.MockRequest(), db_obj, db_objs
@@ -240,6 +258,9 @@ class AllFieldsTestCase(TestCase):
                                 AllFieldsTestCase.MockRequest(), db_obj, None
                             ),
                         )
+                        has_run = True
+
+                self.assertTrue(has_run)
 
 
 class FieldFnsTestCase(TestCase):
