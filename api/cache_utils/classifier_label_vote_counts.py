@@ -33,6 +33,9 @@ _load_global_settings()
 def _generate_cached_entries(
     feed_entry_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> Generator[tuple[uuid_.UUID, dict[uuid_.UUID, int]], None, None]:
+    if not feed_entry_uuids:
+        return
+
     cache_entries: dict[str, dict[uuid_.UUID, int] | None] = cache.get_many(
         f"classifier_label_vote_counts__{fe_uuid}" for fe_uuid in feed_entry_uuids
     )

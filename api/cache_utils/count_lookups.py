@@ -27,6 +27,9 @@ _load_global_settings()
 def _generate_cached_entries(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> Generator[tuple[uuid_.UUID, int, int], None, None]:
+    if not feed_uuids:
+        return
+
     cache_entries: dict[str, tuple[int, int] | None] = cache.get_many(
         f"counts_lookup_{user.uuid}_{f_uuid}" for f_uuid in feed_uuids
     )
