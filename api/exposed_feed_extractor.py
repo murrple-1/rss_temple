@@ -52,11 +52,11 @@ def extract_exposed_feeds(
             d = feedparser.parse(f, sanitize_html=False)
 
         if not d.get("bozo", True):
-            if not d.version:
-                # TODO double-check this heuristic
-                # `feedparser` seems to occasionally mis-read HTML as a valid feed
-                # (see https://www.forksoverknives.com/, at time of writing)
-                # so this heuristic shortcuts if something gets though
+            # TODO double-check this heuristic
+            # `feedparser` seems to occasionally mis-read HTML as a valid feed
+            # (see https://www.forksoverknives.com/, at time of writing)
+            # so this heuristic shortcuts if something gets though
+            if not d.get("version"):
                 return []
 
             _logger.info(pprint.pformat(d))

@@ -33,7 +33,7 @@ def text_2_d(text: str):
     # `feedparser` seems to occasionally mis-read HTML as a valid feed
     # (see https://www.forksoverknives.com/, at time of writing)
     # so this heuristic raises an exception if something gets though
-    if not d.version:
+    if not d.get("version"):
         raise FeedHandlerError("not a recognized feed version")
 
     return d
