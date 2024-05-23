@@ -25,7 +25,12 @@ jobs:
       - setup_remote_docker
       - run:
           name: Docker Build
-          command: docker build -t rss_temple:latest --build-arg BUILD_ENV=production .
+          command: >
+            docker build
+            -t rss_temple:latest
+            --progress=plain
+            --build-arg BUILD_ENV=production
+            .
       - run:
           name: Docker Upload
           command: |
@@ -41,7 +46,12 @@ jobs:
       - setup_remote_docker
       - run:
           name: Docker Build
-          command: docker build -t rss_temple:latest --build-arg BUILD_ENV=production .
+          command: >
+            docker build
+            -t rss_temple:latest
+            --progress=plain
+            --build-arg BUILD_ENV=production
+            .
       - run:
           name: Docker Upload
           command: |
