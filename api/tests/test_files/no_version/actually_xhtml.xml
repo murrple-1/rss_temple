@@ -1,0 +1,13 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">
+<html>
+        <head>
+                <title>My First HTML</title>
+                <meta charset="UTF-8" />
+        </head>
+        <body>
+                <p>I am normal</p>
+                <p style="color: red;">I am red</p>
+                <p style="color: blue;">I am blue</p>
+                <p style="font-size: 50px;">I am big</p>
+        </body>
+</html>

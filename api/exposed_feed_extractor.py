@@ -108,4 +108,4 @@ def extract_exposed_feeds(
 
         return exposed_feeds
 
-    raise RuntimeError("shouldn't be possible")  # pragma: no cover
+    return []

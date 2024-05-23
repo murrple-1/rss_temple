@@ -276,6 +276,38 @@ class FeedTestCase(TestCase):
 
 
 class FeedEntryTestCase(TestCase):
+    def test_with_user_data(self):
+        feed = Feed(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        feed_entry = FeedEntry(
+            id=None,
+            feed=feed,
+            created_at=None,
+            updated_at=None,
+            title="Feed Entry 1 Title",
+            url="http://example.com/entry1.html",
+            content="Some Entry content",
+            author_name="John Doe",
+            db_updated_at=None,
+        )
+
+        self.assertFalse(hasattr(feed_entry, "is_from_subscription"))
+        self.assertFalse(hasattr(feed_entry, "is_read"))
+        self.assertFalse(hasattr(feed_entry, "is_favorite"))
+
+        feed_entry.with_user_data()
+
+        self.assertTrue(hasattr(feed_entry, "is_from_subscription"))
+        self.assertTrue(hasattr(feed_entry, "is_read"))
+        self.assertTrue(hasattr(feed_entry, "is_favorite"))
+
     def test_eq(self):
         feed = Feed(
             feed_url="http://example.com/rss.xml",

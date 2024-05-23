@@ -45,13 +45,27 @@ class FeedHandlerTestCase(TestCase):
             feed_handler.text_2_d(text)
 
     def test_malformed(self):
+        text: str
         for feed_type in FeedHandlerTestCase.FEED_TYPES:
-            text: str
             with open(f"api/tests/test_files/{feed_type}/malformed.xml", "r") as f:
                 text = f.read()
 
             with self.assertRaises(feed_handler.FeedHandlerError):
                 feed_handler.text_2_d(text)
+
+        with open("api/tests/test_files/no_version/actually_xhtml.xml", "r") as f:
+            text = f.read()
+
+        with self.assertRaisesRegex(
+            feed_handler.FeedHandlerError, r"^not a recognized feed version$"
+        ):
+            feed_handler.text_2_d(text)
+
+        with open("api/tests/test_files/no_version/actually_html.xml", "r") as f:
+            text = f.read()
+
+        with self.assertRaisesRegex(feed_handler.FeedHandlerError, r"^$"):
+            feed_handler.text_2_d(text)
 
     def test_d_feed_2_feed(self):
         for feed_type in FeedHandlerTestCase.FEED_TYPES:

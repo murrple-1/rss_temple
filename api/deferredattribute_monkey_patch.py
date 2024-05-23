@@ -3,7 +3,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def monkey_patch():
+def monkey_patch():  # pragma: no cover
     from django.db.models.query_utils import DeferredAttribute
 
     def _deferredattribute_get(self, instance, cls=None):

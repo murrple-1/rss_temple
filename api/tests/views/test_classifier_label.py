@@ -181,6 +181,25 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         cache.clear()
+
+        # do it once to "warm" the `get_classifier_label_vote_counts_from_cache()` cache
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
+            {"feedEntryUuids": [str(feed_entry1.uuid)]},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIn("classifierLabels", json_)
+        self.assertIs(type(json_["classifierLabels"]), dict)
+        self.assertIn(str(feed_entry1.uuid), json_["classifierLabels"])
+        self.assertGreaterEqual(
+            len(json_["classifierLabels"][str(feed_entry1.uuid)]), 1
+        )
+
+        # do it a second time with the "warmed" `get_classifier_label_vote_counts_from_cache()` cache,
+        # so the code path is slightly different
         response = self.client.post(
             f"/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
@@ -259,6 +278,25 @@ class ClassifierLabelTestCase(APITestCase):
             {"feedEntryUuids": [str(uuid.UUID(int=0))]},
         )
         self.assertEqual(response.status_code, 404, response.content)
+
+    def test_ClassifierLabelListByEntryView_post_emptyqueryset(self):
+        # this tests the `get_count_lookups_from_cache()` code when the queryset is empty
+        cache: BaseCache = caches["default"]
+
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        cache.clear()
+        response = self.client.post(
+            f"/api/classifierlabels/entries",
+            {"feedEntryUuids": []},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIn("classifierLabels", json_)
+        self.assertIs(type(json_["classifierLabels"]), dict)
 
     def test_ClassifierLabelFeedEntryVotesView_get(self):
         label1 = ClassifierLabel.objects.create(text="Label 1")

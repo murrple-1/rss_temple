@@ -107,6 +107,23 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertIs(type(json_["objects"]), list)
         self.assertGreaterEqual(len(json_["objects"]), 1)
 
+    def test_FeedsQueryView_post_emptyresult(self):
+        # this tests the `get_count_lookups_from_cache()` code when the queryset is empty
+        self.generate_credentials()
+
+        response = self.client.post(
+            "/api/feeds/query",
+            {"fields": list(fields.field_list("feed"))},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        json_ = response.json()
+
+        self.assertIs(type(json_), dict)
+        self.assertIn("objects", json_)
+        self.assertIs(type(json_["objects"]), list)
+        self.assertGreaterEqual(len(json_["objects"]), 0)
+
     def test_FeedLookupView_get(self):
         cache: BaseCache = caches["captcha"]
 

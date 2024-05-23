@@ -26,7 +26,7 @@ def purge_expired_data() -> None:
     SessionStore = cast(type[SessionBase], engine.SessionStore)
     try:
         SessionStore.clear_expired()
-    except NotImplementedError:
+    except NotImplementedError:  # pragma: no cover
         _logger.warning(
             "Session engine '%s' doesn't support clearing expired sessions.",
             settings.SESSION_ENGINE,

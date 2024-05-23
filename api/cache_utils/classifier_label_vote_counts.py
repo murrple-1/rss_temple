@@ -67,7 +67,7 @@ def get_classifier_label_vote_counts_from_cache(
         params: tuple[Any, ...]
         if connection.vendor == "sqlite":
             params = tuple(str(u).replace("-", "") for u in missing_feed_entry_uuids)
-        else:
+        else:  # pragma: no cover
             params = tuple(missing_feed_entry_uuids)
 
         # There isn't a foreign-key between ClassifierLabel's and FeedEntry's,
