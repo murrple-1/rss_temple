@@ -235,11 +235,11 @@ class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_url = models.URLField(max_length=2048, unique=True)
     title = models.TextField()
-    home_url = models.URLField(max_length=2048, null=True)
+    home_url = models.URLField(max_length=2048, null=True, blank=True)
     published_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(null=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     db_created_at = models.DateTimeField(default=timezone.now)
-    db_updated_at = models.DateTimeField(null=True)
+    db_updated_at = models.DateTimeField(null=True, blank=True)
     update_backoff_until = models.DateTimeField(default=timezone.now)
     consecutive_update_fail_count = models.PositiveSmallIntegerField(default=0)
     archive_update_backoff_until = models.DateTimeField(default=timezone.now)
@@ -251,6 +251,11 @@ class Feed(models.Model):
 
     custom_title: str | None
     is_subscribed: bool
+
+    def save(self, *args, **kwargs):
+        if not self.home_url:
+            self.home_url = None
+        super().save(*args, **kwargs)
 
     @staticmethod
     def annotate_search_vectors(qs: models.QuerySet["Feed"]) -> models.QuerySet["Feed"]:
@@ -523,19 +528,19 @@ class FeedEntry(models.Model):
         )
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    id = models.CharField(max_length=2048, null=True)
+    id = models.CharField(max_length=2048, null=True, blank=True)
     feed = models.ForeignKey(
         Feed, on_delete=models.CASCADE, related_name="feed_entries"
     )
-    created_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(null=True, blank=True)
     published_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(null=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     title = models.TextField()
     url = models.URLField(max_length=2048)
     content = models.TextField()
-    author_name = models.CharField(max_length=1024, null=True)
+    author_name = models.CharField(max_length=1024, null=True, blank=True)
     db_created_at = models.DateTimeField(default=timezone.now)
-    db_updated_at = models.DateTimeField(null=True)
+    db_updated_at = models.DateTimeField(null=True, blank=True)
     is_archived = models.BooleanField(default=False)
     language = models.ForeignKey(
         Language, related_name="feed_entries", null=True, on_delete=models.SET_NULL
@@ -557,6 +562,13 @@ class FeedEntry(models.Model):
     is_from_subscription: bool
     is_read: bool
     is_favorite: bool
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = None
+        if not self.author_name:
+            self.author_name = None
+        super().save(*args, **kwargs)
 
     @staticmethod
     def annotate_search_vectors(
