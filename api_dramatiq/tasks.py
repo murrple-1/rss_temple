@@ -124,6 +124,7 @@ def feed_scrape(
     *args,
     db_limit=1000,
     is_dead_max_interval_seconds: float | None = None,
+    log_exception_traceback=False,
     **kwargs,
 ) -> None:
     is_dead_max_interval = (
@@ -186,10 +187,17 @@ def feed_scrape(
                 FeedHandlerError,
                 ResponseTooBig,
                 WrongContentTypeError,
-            ):
-                feed_scrape.logger.exception(
-                    "failed to scrape feed '%s'", feed.feed_url
-                )
+            ) as e:
+                if log_exception_traceback:
+                    feed_scrape.logger.exception(
+                        "failed to scrape feed '%s'", feed.feed_url
+                    )
+                else:
+                    feed_scrape.logger.error(
+                        "failed to scrape feed '%s' - %s",
+                        feed.feed_url,
+                        repr(e),
+                    )
 
                 Feed.objects.filter(uuid=feed.uuid).update(
                     update_backoff_until=feed_scrape__error_update_backoff_until(

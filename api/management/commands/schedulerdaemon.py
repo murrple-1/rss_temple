@@ -227,6 +227,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--feed-scrape-should-scrape-dead-feeds", action="store_true"
         )
+        parser.add_argument(
+            "--feed-scrape-log-exception-traceback", action="store_true"
+        )
 
         parser.add_argument(
             "--setup-subscriptions-interval-seconds", type=int, default=30
@@ -358,6 +361,9 @@ class Command(BaseCommand):
                 "db_limit": options["feed_scrape_db_limit"],
                 "is_dead_max_interval_seconds": options[
                     "feed_scrape_is_dead_max_interval_seconds"
+                ],
+                "log_exception_traceback": options[
+                    "feed_scrape_log_exception_traceback"
                 ],
             },
         )
