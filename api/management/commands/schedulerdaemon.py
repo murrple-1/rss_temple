@@ -14,7 +14,10 @@ from api_dramatiq.encoder import UJSONEncoder
 
 
 @util.close_old_connections
-def _delete_old_job_executions(max_age=604_800):
+def _delete_old_job_executions(max_age: int | None = None):
+    if max_age is None:
+        max_age = 604_800
+
     DjangoJobExecution.objects.delete_old_job_executions(max_age)
 
 
@@ -172,6 +175,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--delete-old-job-executions-crontab", default="0 0 * * 0"
         )  # every Sunday at midnight
+        parser.add_argument("--delete-old-job-executions-max-age", type=int)
 
         parser.add_argument(
             "--archive-feed-entries-crontab", default="*/30 * * * *"
@@ -279,6 +283,7 @@ class Command(BaseCommand):
             max_instances=1,
             replace_existing=True,
             coalesce=True,
+            kwargs={"max_age": options["delete_old_job_executions_max_age"]},
         )
 
         scheduler.add_job(
