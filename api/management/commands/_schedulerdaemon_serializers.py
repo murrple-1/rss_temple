@@ -15,7 +15,7 @@ class _DeleteOldJobExecutionsSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.delete_old_job_executions,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="delete_old_job_executions",
@@ -25,7 +25,7 @@ class _DeleteOldJobExecutionsSerializer(serializers.Serializer):
             kwargs={"max_age": validated_data["max_age"]},
         )
 
-        return True
+        return job
 
 
 class _ArchiveFeedEntriesSerializer(serializers.Serializer):
@@ -36,7 +36,7 @@ class _ArchiveFeedEntriesSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.archive_feed_entries,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="archive_feed_entries",
@@ -47,7 +47,7 @@ class _ArchiveFeedEntriesSerializer(serializers.Serializer):
                 "limit": validated_data["limit"],
             },
         )
-        return True
+        return job
 
 
 class _ExtractTopImagesSerializer(serializers.Serializer):
@@ -70,7 +70,7 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.extract_top_images,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="extract_top_images",
@@ -87,7 +87,7 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
                 "since": validated_data["since"],
             },
         )
-        return True
+        return job
 
 
 class _LabelFeedsSerializer(serializers.Serializer):
@@ -96,7 +96,7 @@ class _LabelFeedsSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.label_feeds,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="label_feeds",
@@ -107,7 +107,7 @@ class _LabelFeedsSerializer(serializers.Serializer):
                 "top_x": validated_data["top_x"],
             },
         )
-        return True
+        return job
 
 
 class _LabelUsersSerializer(serializers.Serializer):
@@ -116,7 +116,7 @@ class _LabelUsersSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.label_users,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="label_users",
@@ -127,7 +127,7 @@ class _LabelUsersSerializer(serializers.Serializer):
                 "top_x": validated_data["top_x"],
             },
         )
-        return True
+        return job
 
 
 class _FeedScrapeSerializer(serializers.Serializer):
@@ -152,7 +152,7 @@ class _FeedScrapeSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.feed_scrape,
             trigger=IntervalTrigger(seconds=validated_data["interval_seconds"]),
             id="feed_scrape",
@@ -174,7 +174,7 @@ class _FeedScrapeSerializer(serializers.Serializer):
                 "log_exception_traceback": validated_data["log_exception_traceback"],
             },
         )
-        return True
+        return job
 
 
 class _SetupSubscriptionsSerializer(serializers.Serializer):
@@ -188,7 +188,7 @@ class _SetupSubscriptionsSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.setup_subscriptions,
             trigger=IntervalTrigger(seconds=validated_data["interval_seconds"]),
             id="setup_subscriptions",
@@ -202,7 +202,7 @@ class _SetupSubscriptionsSerializer(serializers.Serializer):
                 },
             },
         )
-        return True
+        return job
 
 
 class _PurgeExpiredDataSerializer(serializers.Serializer):
@@ -212,7 +212,7 @@ class _PurgeExpiredDataSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.purge_expired_data,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="purge_expired_data",
@@ -220,7 +220,7 @@ class _PurgeExpiredDataSerializer(serializers.Serializer):
             replace_existing=True,
             coalesce=True,
         )
-        return True
+        return job
 
 
 class _FlagDuplicateFeedsSerializer(serializers.Serializer):
@@ -235,7 +235,7 @@ class _FlagDuplicateFeedsSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.flag_duplicate_feeds,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="flag_duplicate_feeds",
@@ -250,7 +250,7 @@ class _FlagDuplicateFeedsSerializer(serializers.Serializer):
                 ],
             },
         )
-        return True
+        return job
 
 
 class _PurgeDuplicateFeedUrlsSerializer(serializers.Serializer):
@@ -260,7 +260,7 @@ class _PurgeDuplicateFeedUrlsSerializer(serializers.Serializer):
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
-        scheduler.add_job(
+        job = scheduler.add_job(
             jobs.purge_duplicate_feed_urls,
             trigger=CronTrigger.from_crontab(validated_data["crontab"]),
             id="purge_duplicate_feed_urls",
@@ -268,7 +268,7 @@ class _PurgeDuplicateFeedUrlsSerializer(serializers.Serializer):
             replace_existing=True,
             coalesce=True,
         )
-        return True
+        return job
 
 
 class SetupSerializer(serializers.Serializer):
@@ -284,8 +284,10 @@ class SetupSerializer(serializers.Serializer):
     purge_duplicate_feed_urls = _PurgeDuplicateFeedUrlsSerializer()
 
     def create(self, validated_data: Any) -> Any:
+        jobs: list[Any] = []
         for field_name, serializer in self.fields.items():
             assert isinstance(serializer, serializers.Serializer)
-            serializer.create(validated_data[field_name])
+            job = serializer.create(validated_data[field_name])
+            jobs.append(job)
 
-        return True
+        return jobs
