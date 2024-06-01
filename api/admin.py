@@ -41,6 +41,7 @@ class UserCategoryAdmin(admin.ModelAdmin):
 class FeedAdmin(admin.ModelAdmin):
     list_display = ["feed_url", "title", "home_url", "published_at"]
     search_fields = ["title", "feed_url", "home_url"]
+    readonly_fields = ["home_url"]
 
 
 @admin.register(FeedEntry)
@@ -58,7 +59,7 @@ class FeedEntryAdmin(admin.ModelAdmin):
     list_select_related = ["feed"]
     autocomplete_fields = ["feed"]
     search_fields = ["feed__feed_url"]
-    readonly_fields = ["id"]
+    readonly_fields = ["id", "author_name"]
 
     @admin.display(description="Parent Feed URL")
     def feed__feed_url(self, obj: FeedEntry):  # pragma: no cover
