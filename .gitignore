@@ -108,3 +108,4 @@ local_settings.py
 docker-compose.override.yml
 _static/
 Caddyfile
+schedulerdaemon.json

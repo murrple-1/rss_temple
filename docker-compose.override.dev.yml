@@ -53,8 +53,7 @@ services:
         python ./manage.py checkclassifierlabels
 
         exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
-          python ./manage.py schedulerdaemon \\
-            --feed-scrape-should-scrape-dead-feeds
+          python ./manage.py schedulerdaemon /code/schedulerdaemon.json
       "
     build:
       context: ./

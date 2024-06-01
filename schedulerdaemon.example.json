@@ -1,0 +1,14 @@
+{
+	"delete_old_job_executions": {},
+	"archive_feed_entries": {},
+	"extract_top_images": {},
+	"label_feeds": {},
+	"label_users": {},
+	"feed_scrape": {
+		"shouldScrapeDeadFeeds": true
+	},
+	"setup_subscriptions": {},
+	"purge_expired_data": {},
+	"flag_duplicate_feeds": {},
+	"purge_duplicate_feed_urls": {}
+}
