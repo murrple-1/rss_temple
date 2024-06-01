@@ -235,7 +235,11 @@ class Feed(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
     feed_url = models.URLField(max_length=2048, unique=True)
     title = models.TextField()
-    home_url = models.URLField(max_length=2048, null=True)
+    home_url = models.URLField(
+        max_length=2048,
+        null=True,
+        help_text="Cannot be edited with UI due to ambiguity between empty string and NULL",
+    )
     published_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(null=True, blank=True)
     db_created_at = models.DateTimeField(default=timezone.now)
@@ -523,7 +527,11 @@ class FeedEntry(models.Model):
         )
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    id = models.CharField(max_length=2048, null=True)
+    id = models.CharField(
+        max_length=2048,
+        null=True,
+        help_text="Cannot be edited with UI due to ambiguity between empty string and NULL",
+    )
     feed = models.ForeignKey(
         Feed, on_delete=models.CASCADE, related_name="feed_entries"
     )
@@ -533,7 +541,11 @@ class FeedEntry(models.Model):
     title = models.TextField()
     url = models.URLField(max_length=2048)
     content = models.TextField()
-    author_name = models.CharField(max_length=1024, null=True)
+    author_name = models.CharField(
+        max_length=1024,
+        null=True,
+        help_text="Cannot be edited with UI due to ambiguity between empty string and NULL",
+    )
     db_created_at = models.DateTimeField(default=timezone.now)
     db_updated_at = models.DateTimeField(null=True, blank=True)
     is_archived = models.BooleanField(default=False)

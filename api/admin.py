@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http.request import HttpRequest
@@ -43,6 +45,16 @@ class FeedAdmin(admin.ModelAdmin):
     search_fields = ["title", "feed_url", "home_url"]
     readonly_fields = ["home_url"]
 
+    def get_fields(
+        self, request: HttpRequest, obj: Feed | None = None
+    ) -> Sequence[str | Sequence[str]]:
+        fields = super().get_fields(request, obj)
+        assert isinstance(fields, list)
+        assert fields[2] == "title"
+        assert fields[10] == "home_url"
+        fields.insert(3, fields.pop(10))
+        return fields
+
 
 @admin.register(FeedEntry)
 class FeedEntryAdmin(admin.ModelAdmin):
@@ -68,6 +80,19 @@ class FeedEntryAdmin(admin.ModelAdmin):
     @admin.display(description="Parent Feed Title")
     def feed__title(self, obj: FeedEntry):  # pragma: no cover
         return obj.feed.title
+
+    def get_fields(
+        self, request: HttpRequest, obj: FeedEntry | None = None
+    ) -> Sequence[str | Sequence[str]]:
+        fields = super().get_fields(request, obj)
+        assert isinstance(fields, list)
+        assert fields[0] == "uuid"
+        assert fields[15] == "id"
+        fields.insert(1, fields.pop(15))
+        assert fields[8] == "content"
+        assert fields[16] == "author_name"
+        fields.insert(9, fields.pop(16))
+        return fields
 
 
 @admin.register(AlternateFeedURL)
