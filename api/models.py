@@ -528,7 +528,7 @@ class FeedEntry(models.Model):
         )
 
     uuid = models.UUIDField(primary_key=True, default=uuid_.uuid4)
-    id = models.CharField(max_length=2048, null=True, blank=True)
+    id = models.CharField(max_length=2048, null=True)
     feed = models.ForeignKey(
         Feed, on_delete=models.CASCADE, related_name="feed_entries"
     )
@@ -564,8 +564,6 @@ class FeedEntry(models.Model):
     is_favorite: bool
 
     def save(self, *args, **kwargs):
-        if not self.id:
-            self.id = None
         if not self.author_name:
             self.author_name = None
         super().save(*args, **kwargs)

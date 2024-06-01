@@ -58,6 +58,7 @@ class FeedEntryAdmin(admin.ModelAdmin):
     list_select_related = ["feed"]
     autocomplete_fields = ["feed"]
     search_fields = ["feed__feed_url"]
+    readonly_fields = ["id"]
 
     @admin.display(description="Parent Feed URL")
     def feed__feed_url(self, obj: FeedEntry):  # pragma: no cover
