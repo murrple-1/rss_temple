@@ -28,13 +28,13 @@ services:
     volumes:
       - django_static:/code/_static/
     networks:
-      - default
+      - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
   rss_temple_dramatiq:
     env_file:
       - .env
     networks:
-      - default
+      - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
   rss_temple_schedulerdaemon:
     env_file:
