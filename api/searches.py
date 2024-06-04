@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, cast
+from typing import AbstractSet, Callable, cast
 
 from django.db import connection
 from django.db.models import Q
@@ -29,7 +29,7 @@ _iso_code_639_3_names: frozenset[str] = frozenset(
 
 class LanguageIso639_3Set(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj: str):
+    def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
@@ -47,7 +47,7 @@ _iso_code_639_1_names: frozenset[str] = frozenset(
 
 class LanguageIso639_1Set(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj: str):
+    def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
@@ -65,7 +65,7 @@ _language_names: frozenset[str] = frozenset(
 
 class LanguageNameSet(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj: str):
+    def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
         for l in search_obj.split(","):
             l = l.upper()
@@ -78,7 +78,7 @@ class LanguageNameSet(CustomConvertTo):
 
 class URL(CustomConvertTo):
     @staticmethod
-    def convertto(search_obj: str):
+    def convertto(search_obj: str) -> str:
         try:
             return cast(str, url_normalize(search_obj))
         except Exception as e:
@@ -307,9 +307,11 @@ def _handle_parse_result(
         # if search_obj is "" (empty string), 'StringTerm' will not exist, so default it
         search_obj = cast(
             str,
-            exclude_named_expression["StringTerm"]
-            if "StringTerm" in exclude_named_expression
-            else "",
+            (
+                exclude_named_expression["StringTerm"]
+                if "StringTerm" in exclude_named_expression
+                else ""
+            ),
         )
 
         return ~_q(request, field_name, search_obj, object_search_fns)

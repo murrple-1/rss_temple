@@ -5,7 +5,6 @@ from django.test import TestCase
 
 from api.search.convertto import (
     Bool,
-    CustomConvertTo,
     DateTime,
     DateTimeDeltaRange,
     DateTimeRange,
@@ -19,10 +18,6 @@ from api.search.convertto import (
 
 
 class ConvertToTestCase(TestCase):
-    def test_customconvertto(self):
-        with self.assertRaises(RuntimeError):
-            CustomConvertTo.convertto("")
-
     def test_bool(self):
         self.assertTrue(Bool.convertto("true"))
         self.assertFalse(Bool.convertto("false"))
