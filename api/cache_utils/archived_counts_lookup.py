@@ -31,12 +31,12 @@ def _generate_cached_entries(
         return
 
     cache_entries: dict[str, int | None] = cache.get_many(
-        f"counts_lookup_{f_uuid}" for f_uuid in feed_uuids
+        f"archived_counts_lookup_{f_uuid}" for f_uuid in feed_uuids
     )
 
     for key, archived_count in cache_entries.items():
         if archived_count is not None:
-            feed_uuid = uuid_.UUID(key.removeprefix(f"counts_lookup_"))
+            feed_uuid = uuid_.UUID(key.removeprefix(f"archived_counts_lookup_"))
             yield feed_uuid, archived_count
 
 

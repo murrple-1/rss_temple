@@ -49,10 +49,10 @@ def _save_entries_to_cache(
     cache.set_many(
         {
             f"counts_lookup_{user.uuid}_{feed_uuid}": (
-                count_lookup.unread_count,
-                count_lookup.read_count,
+                counts_descriptor.unread_count,
+                counts_descriptor.read_count,
             )
-            for feed_uuid, count_lookup in counts_lookup.items()
+            for feed_uuid, counts_descriptor in counts_lookup.items()
         },
         _FEED_COUNT_LOOKUPS_CACHE_TIMEOUT_SECONDS,
     )
@@ -61,7 +61,7 @@ def _save_entries_to_cache(
 def get_counts_lookup_from_cache(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], bool]:
-    with lock_context(cache, f"count_lookup_lock__{user.uuid}"):
+    with lock_context(cache, f"counts_lookup_lock__{user.uuid}"):
         cache_hit = True
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
             feed_uuid: Feed._CountsDescriptor(unread, read)
@@ -90,7 +90,7 @@ def get_counts_lookup_from_cache(
 def increment_read_in_counts_lookup_cache(
     user: User, feed_increments: dict[uuid_.UUID, int], cache: BaseCache
 ) -> None:
-    with lock_context(cache, f"count_lookup_lock__{user.uuid}"):
+    with lock_context(cache, f"counts_lookup_lock__{user.uuid}"):
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
         for feed_uuid, unread, read in _generate_cached_entries(
             user, feed_increments.keys(), cache
