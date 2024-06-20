@@ -300,9 +300,9 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_THROTTLE_CLASSES": ("api.throttling.UserRateThrottle",),
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "10/minute",
-        "user": "60/minute",
-        "dj_rest_auth": "10/minute",
+        "anon": "50/minute",
+        "user": "100/minute",
+        "dj_rest_auth": "50/minute",
         "user_delete": "3/minute",
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
