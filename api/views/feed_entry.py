@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import fields as fieldutils
-from api.cache_utils.count_lookups import increment_read_in_count_lookups_cache
+from api.cache_utils.counts_lookup import increment_read_in_counts_lookup_cache
 from api.cache_utils.favorite_feed_entry_uuids import (
     delete_favorite_feed_entry_uuids_cache,
     get_favorite_feed_entry_uuids_from_cache,
@@ -376,7 +376,7 @@ class FeedEntryReadView(APIView):
                     ret_obj = read_feed_entry_user_mapping.read_at.isoformat()
 
                 if created:
-                    increment_read_in_count_lookups_cache(
+                    increment_read_in_counts_lookup_cache(
                         user, {feed_entry.feed_id: 1}, cache
                     )
                     delete_read_feed_entry_uuids_cache(user, cache)
@@ -412,7 +412,7 @@ class FeedEntryReadView(APIView):
                 )
 
         if deleted:
-            increment_read_in_count_lookups_cache(user, {feed_entry.feed_id: -1}, cache)
+            increment_read_in_counts_lookup_cache(user, {feed_entry.feed_id: -1}, cache)
             delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
@@ -479,7 +479,7 @@ class FeedEntriesReadView(APIView):
                 )
 
         if increment_counter:
-            increment_read_in_count_lookups_cache(user, increment_counter, cache)
+            increment_read_in_counts_lookup_cache(user, increment_counter, cache)
             delete_read_feed_entry_uuids_cache(user, cache)
 
         return Response(status=204)
@@ -527,7 +527,7 @@ class FeedEntriesReadView(APIView):
                 )
 
         if increment_counter:
-            increment_read_in_count_lookups_cache(
+            increment_read_in_counts_lookup_cache(
                 user,
                 {feed_uuid: -incr for feed_uuid, incr in increment_counter.items()},
                 cache,

@@ -280,7 +280,7 @@ class ClassifierLabelTestCase(APITestCase):
         self.assertEqual(response.status_code, 404, response.content)
 
     def test_ClassifierLabelListByEntryView_post_emptyqueryset(self):
-        # this tests the `get_count_lookups_from_cache()` code when the queryset is empty
+        # this tests the `get_counts_lookup_from_cache()` code when the queryset is empty
         cache: BaseCache = caches["default"]
 
         label1 = ClassifierLabel.objects.create(text="Label 1")

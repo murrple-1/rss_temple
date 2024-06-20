@@ -7,7 +7,7 @@ def archive_feed_entries(
     feed: Feed,
     now: datetime.datetime,
     archive_time_threshold: datetime.timedelta,
-    archive_count_threshold: int,
+    archived_count_threshold: int,
     backoff_seconds: float,
 ) -> None:
     time_cutoff = now + archive_time_threshold
@@ -18,7 +18,7 @@ def archive_feed_entries(
         "-published_at", "-created_at", "-updated_at"
     ):
         count += 1
-        if feed_entry.published_at < time_cutoff or count >= archive_count_threshold:
+        if feed_entry.published_at < time_cutoff or count >= archived_count_threshold:
             feed_entry.is_archived = True
             newly_archived.append(feed_entry)
 

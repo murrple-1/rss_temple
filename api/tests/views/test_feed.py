@@ -108,7 +108,7 @@ class FeedTestCase(TestFileServerTestCase):
         self.assertGreaterEqual(len(json_["objects"]), 1)
 
     def test_FeedsQueryView_post_emptyresult(self):
-        # this tests the `get_count_lookups_from_cache()` code when the queryset is empty
+        # this tests the `get_counts_lookup_from_cache()` code when the queryset is empty
         self.generate_credentials()
 
         response = self.client.post(

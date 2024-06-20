@@ -18,7 +18,8 @@ from url_normalize import url_normalize
 from api import content_type_util, feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
-from api.cache_utils.count_lookups import get_count_lookups_from_cache
+from api.cache_utils.archived_counts_lookup import get_archived_counts_lookup_from_cache
+from api.cache_utils.counts_lookup import get_counts_lookup_from_cache
 from api.cache_utils.subscription_datas import (
     delete_subscription_data_cache,
     get_subscription_datas_from_cache,
@@ -111,14 +112,19 @@ class FeedView(APIView):
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
-        count_lookups, count_lookups_cache_hit = get_count_lookups_from_cache(
+        counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
             user, (feed.uuid,), cache
         )
         setattr(
             request,
-            "_count_lookups",
-            count_lookups,
+            "_counts_lookup",
+            counts_lookup,
         )
+
+        archived_counts_lookup, archived_counts_lookup_cache_hit = (
+            get_archived_counts_lookup_from_cache((feed.uuid,), cache)
+        )
+        setattr(request, "_archived_counts_lookup", archived_counts_lookup)
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -126,7 +132,8 @@ class FeedView(APIView):
         response["X-Cache-Hit"] = ",".join(
             (
                 "YES" if subscription_datas_cache_hit else "NO",
-                "YES" if count_lookups_cache_hit else "NO",
+                "YES" if counts_lookup_cache_hit else "NO",
+                "YES" if archived_counts_lookup_cache_hit else "NO",
             ),
         )
         return response
@@ -176,15 +183,21 @@ class FeedsQueryView(APIView):
 
         feeds_qs = feeds.order_by(*sort)[skip : skip + count]
 
-        count_lookups, count_lookups_cache_hit = get_count_lookups_from_cache(
-            user, frozenset(f.uuid for f in feeds_qs), cache
-        )
+        feed_uuids = frozenset(f.uuid for f in feeds_qs)
 
+        counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
+            user, feed_uuids, cache
+        )
         setattr(
             request,
-            "_count_lookups",
-            count_lookups,
+            "_counts_lookup",
+            counts_lookup,
         )
+
+        archived_counts_lookup, archived_counts_lookup_cache_hit = (
+            get_archived_counts_lookup_from_cache(feed_uuids, cache)
+        )
+        setattr(request, "_archived_counts_lookup", archived_counts_lookup)
 
         ret_obj: dict[str, Any] = {}
 
@@ -205,7 +218,8 @@ class FeedsQueryView(APIView):
         response["X-Cache-Hit"] = ",".join(
             (
                 "YES" if subscription_datas_cache_hit else "NO",
-                "YES" if count_lookups_cache_hit else "NO",
+                "YES" if counts_lookup_cache_hit else "NO",
+                "YES" if archived_counts_lookup_cache_hit else "NO",
             )
         )
         return response

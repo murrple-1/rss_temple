@@ -345,7 +345,7 @@ class Feed(models.Model):
             with open(filepath, "w") as f:
                 json.dump(entries, f)
         except Exception:
-            _logger.exception("unable to safe counts lookup perf data")
+            _logger.exception("unable to save counts lookup perf data")
 
     @staticmethod
     def generate_counts_lookup(
@@ -441,6 +441,93 @@ class Feed(models.Model):
 
     def read_count(self, user: User) -> int:
         return self._counts(user).read_count
+
+    @staticmethod
+    def _track_archived_counts_lookup_perf(
+        context: str, duration: float, max_entries=1000
+    ) -> None:  # pragma: no cover
+        try:
+            filepath = f"mount/archived_counts_lookup_{context}_perf.json"
+
+            entries: list[float]
+            try:
+                with open(filepath, "r") as f:
+                    entries = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                entries = []
+
+            entries.append(duration)
+            while len(entries) > max_entries:
+                entries.pop(0)
+
+            if len(entries) > 0:
+                _logger.info(
+                    "archived counts lookup perf (%s): current average: %f seconds",
+                    context,
+                    sum(entries) / len(entries),
+                )
+
+            with open(filepath, "w") as f:
+                json.dump(entries, f)
+        except Exception:
+            _logger.exception("unable to save counts lookup perf data")
+
+    @staticmethod
+    def generate_archived_counts_lookup(
+        feed_uuids: Collection[uuid_.UUID],
+    ) -> dict[uuid_.UUID, int]:
+        feed_uuids = frozenset(feed_uuids)
+
+        archived_counts_lookup: dict[uuid_.UUID, int]
+        if random.choice((True, False)):
+            time_start = time.perf_counter()
+
+            # This is the canonical version of the queryset
+            archived_counts_lookup = {
+                r["uuid"]: r["archived_count"]
+                for r in Feed.objects.filter(uuid__in=feed_uuids)
+                .values("uuid")
+                .annotate(
+                    archived_count=models.Count(
+                        "feed_entries__uuid",
+                        filter=(models.Q(feed_entries__is_archived=True)),
+                    ),
+                )
+                .values("uuid", "archived_count")
+            }
+
+            time_end = time.perf_counter()
+
+            Feed._track_archived_counts_lookup_perf("feed", time_end - time_start)
+        else:
+            time_start = time.perf_counter()
+            archived_counts_lookup = {
+                r["feed_id"]: r["archived_count"]
+                for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
+                .values("feed_id")
+                .annotate(
+                    archived_count=models.Count(
+                        "uuid",
+                        filter=(models.Q(is_archived=True)),
+                    ),
+                )
+                .values("feed_id", "archived_count")
+            }
+
+            archived_counts_lookup.update(
+                {
+                    feed_uuid: 0
+                    for feed_uuid in feed_uuids.difference(
+                        archived_counts_lookup.keys()
+                    )
+                }
+            )
+
+            time_end = time.perf_counter()
+
+            Feed._track_archived_counts_lookup_perf("feedentry", time_end - time_start)
+
+        return archived_counts_lookup
 
     def __str__(self) -> str:
         return f"{self.title} - {self.feed_url} - {self.uuid}"

@@ -82,34 +82,59 @@ def _feed_userCategoryUuids(
         return [str(uuid_) for uuid_ in user_category_uuids_dict[db_obj.uuid]]
 
 
-def _feed__generate_count_lookups(
+def _feed__generate_counts_lookup(
     request: HttpRequest, queryset: Collection[Feed]
 ) -> dict[uuid.UUID, Feed._CountsDescriptor]:
-    count_lookups: dict[uuid.UUID, Feed._CountsDescriptor] | None = getattr(
-        request, "_count_lookups", None
+    counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] | None = getattr(
+        request, "_counts_lookup", None
     )
-    if count_lookups is None:
-        count_lookups = Feed.generate_counts_lookup(
+    if counts_lookup is None:
+        counts_lookup = Feed.generate_counts_lookup(
             cast(User, request.user), [f.uuid for f in queryset]
         )
 
-        setattr(request, "_count_lookups", count_lookups)
+        setattr(request, "_counts_lookup", counts_lookup)
 
-    return count_lookups
+    return counts_lookup
 
 
 def _feed_readCount(
     request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
 ) -> int:
-    count_lookups = _feed__generate_count_lookups(request, queryset or (db_obj,))
-    return count_lookups[db_obj.uuid].read_count
+    counts_lookup = _feed__generate_counts_lookup(request, queryset or (db_obj,))
+    return counts_lookup[db_obj.uuid].read_count
 
 
 def _feed_unreadCount(
     request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
 ) -> int:
-    count_lookups = _feed__generate_count_lookups(request, queryset or (db_obj,))
-    return count_lookups[db_obj.uuid].unread_count
+    counts_lookup = _feed__generate_counts_lookup(request, queryset or (db_obj,))
+    return counts_lookup[db_obj.uuid].unread_count
+
+
+def _feed__generate_archived_counts_lookup(
+    request: HttpRequest, queryset: Collection[Feed]
+) -> dict[uuid.UUID, int]:
+    archived_counts_lookup: dict[uuid.UUID, int] | None = getattr(
+        request, "_archived_counts_lookup", None
+    )
+    if archived_counts_lookup is None:
+        archived_counts_lookup = Feed.generate_archived_counts_lookup(
+            [f.uuid for f in queryset]
+        )
+
+        setattr(request, "_archived_counts_lookup", archived_counts_lookup)
+
+    return archived_counts_lookup
+
+
+def _feed_archivedCount(
+    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+) -> int:
+    archived_counts_lookup = _feed__generate_archived_counts_lookup(
+        request, queryset or (db_obj,)
+    )
+    return archived_counts_lookup[db_obj.uuid]
 
 
 def _feed_isDead(
@@ -201,9 +226,9 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             {"published_at"},
         ),
         "updatedAt": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
-            if db_obj.updated_at is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.updated_at.isoformat() if db_obj.updated_at is not None else None
+            ),
             False,
             {"updated_at"},
         ),
@@ -218,9 +243,9 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             frozenset(),
         ),
         "calculatedTitle": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.custom_title
-            if db_obj.custom_title is not None
-            else db_obj.title,
+            lambda request, db_obj, queryset: (
+                db_obj.custom_title if db_obj.custom_title is not None else db_obj.title
+            ),
             False,
             {"title"},
         ),
@@ -231,6 +256,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
         ),
         "readCount": _FieldConfig(_feed_readCount, False, {"uuid"}),
         "unreadCount": _FieldConfig(_feed_unreadCount, False, {"uuid"}),
+        "archivedCount": _FieldConfig(_feed_archivedCount, False, {"uuid"}),
         "isDead": _FieldConfig(
             _feed_isDead,
             False,
@@ -249,9 +275,9 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             {"id"},
         ),
         "createdAt": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.created_at.isoformat()
-            if db_obj.created_at is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.created_at.isoformat() if db_obj.created_at is not None else None
+            ),
             False,
             {"created_at"},
         ),
@@ -261,9 +287,9 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             {"published_at"},
         ),
         "updatedAt": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.updated_at.isoformat()
-            if db_obj.updated_at is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.updated_at.isoformat() if db_obj.updated_at is not None else None
+            ),
             False,
             {"updated_at"},
         ),
@@ -318,23 +344,23 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
             {"is_archived"},
         ),
         "languageIso639_3": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.language.iso639_3
-            if db_obj.language is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.language.iso639_3 if db_obj.language is not None else None
+            ),
             False,
             {"language"},
         ),
         "languageIso639_1": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.language.iso639_1
-            if db_obj.language is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.language.iso639_1 if db_obj.language is not None else None
+            ),
             False,
             {"language"},
         ),
         "languageName": _FieldConfig(
-            lambda request, db_obj, queryset: db_obj.language.name
-            if db_obj.language is not None
-            else None,
+            lambda request, db_obj, queryset: (
+                db_obj.language.name if db_obj.language is not None else None
+            ),
             False,
             {"language"},
         ),
