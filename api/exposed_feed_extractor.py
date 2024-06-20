@@ -82,30 +82,51 @@ def extract_exposed_feeds(
         else:
             base_href = url
 
+        exposed_feeds: list[ExposedFeed] = []
         rss_links: ResultSet[Tag] = soup.findAll(
             "link", rel="alternate", type="application/rss+xml"
         )
-
-        exposed_feeds: list[ExposedFeed] = []
         for rss_link in rss_links:
-            href = rss_link.get("href")
-            if not href or not isinstance(href, str):
-                continue
+            exposed_feed = _handle_feed_link(
+                rss_link,
+                base_href,
+            )
 
-            href = urljoin(base_href, href)
+            if exposed_feed is not None:
+                exposed_feeds.append(exposed_feed)
 
-            if (href_parse := urlparse(href)).scheme not in (
-                "http",
-                "https",
-            ) or not href_parse.netloc:
-                continue
+        atom_links: ResultSet[Tag] = soup.findAll(
+            "link", rel="alternate", type="application/atom+xml"
+        )
+        for atom_link in atom_links:
+            exposed_feed = _handle_feed_link(
+                atom_link,
+                base_href,
+            )
 
-            title = rss_link.get("title")
-            if not title or not isinstance(title, str):
-                title = href
-
-            exposed_feeds.append(ExposedFeed(title, href))
+            if exposed_feed is not None:
+                exposed_feeds.append(exposed_feed)
 
         return exposed_feeds
 
     return []
+
+
+def _handle_feed_link(link: Tag, base_href: str) -> ExposedFeed | None:
+    href = link.get("href")
+    if not href or not isinstance(href, str):
+        return None
+
+    href = urljoin(base_href, href)
+
+    if (href_parse := urlparse(href)).scheme not in (
+        "http",
+        "https",
+    ) or not href_parse.netloc:
+        return None
+
+    title = link.get("title")
+    if not title or not isinstance(title, str):
+        title = href
+
+    return ExposedFeed(title, href)
