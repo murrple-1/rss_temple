@@ -13,9 +13,16 @@ from api.models import (
     DuplicateFeedSuggestion,
     Feed,
     FeedEntry,
+    SubscribedFeedUserMapping,
     User,
     UserCategory,
 )
+
+
+class SubscribedFeedsInline(admin.TabularInline):
+    model = SubscribedFeedUserMapping
+    extra = 0
+    autocomplete_fields = ["feed", "user"]
 
 
 @admin.register(User)
@@ -25,25 +32,28 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ["is_active", "is_staff"]
     search_fields = ["email"]
     exclude = ["read_feed_entries", "favorite_feed_entries"]
+    inlines = [SubscribedFeedsInline]
 
 
 @admin.register(UserCategory)
 class UserCategoryAdmin(admin.ModelAdmin):
-    list_display = ["text", "user__email"]
+    list_display = ["text", "user"]
     list_select_related = ["user"]
     search_fields = ["text", "user__email"]
     autocomplete_fields = ["feeds"]
 
-    @admin.display(description="Username")
-    def user__email(self, obj: UserCategory):  # pragma: no cover
-        return obj.user.email
-
 
 @admin.register(Feed)
 class FeedAdmin(admin.ModelAdmin):
-    list_display = ["feed_url", "title", "home_url", "published_at"]
+    list_display = [
+        "feed_url",
+        "title",
+        "home_url",
+        "published_at",
+        "subscribed_user_set__count",
+    ]
     search_fields = ["title", "feed_url", "home_url"]
-    readonly_fields = ["home_url"]
+    readonly_fields = ["home_url", "subscribed_user_set__count"]
 
     def get_fields(
         self, request: HttpRequest, obj: Feed | None = None
@@ -54,6 +64,10 @@ class FeedAdmin(admin.ModelAdmin):
         assert fields[10] == "home_url"
         fields.insert(3, fields.pop(10))
         return fields
+
+    @admin.display(description="Number of subscribed users")
+    def subscribed_user_set__count(self, obj: Feed):
+        return obj.subscribed_user_set.count()
 
 
 @admin.register(FeedEntry)

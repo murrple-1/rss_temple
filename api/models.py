@@ -225,6 +225,9 @@ class Language(models.Model):
     iso639_1 = models.CharField(max_length=2)
     name = models.CharField(max_length=64)
 
+    def __str__(self) -> str:
+        return self.iso639_3
+
 
 class Feed(models.Model):
     class Meta:
