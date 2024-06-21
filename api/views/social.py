@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from allauth.socialaccount import signals
 from allauth.socialaccount.adapter import get_adapter as get_social_adapter
@@ -10,12 +10,14 @@ from dj_rest_auth.registration.views import (
     SocialAccountListView as _SocialAccountListView,
 )
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from api.models import User
 from api.serializers import SocialLoginSerializer
 
 
@@ -43,6 +45,10 @@ class GoogleLogin(SocialLoginView):
         stay_logged_in: bool = self.serializer.validated_data["stay_logged_in"]
         if not stay_logged_in:
             request.session.set_expiry(0)
+
+        user = cast(User, self.user)
+        user.last_login = timezone.now()
+        user.save(update_fields=("last_login",))
 
         return response
 
@@ -103,6 +109,10 @@ class FacebookLogin(SocialLoginView):
         stay_logged_in: bool = self.serializer.validated_data["stay_logged_in"]
         if not stay_logged_in:
             request.session.set_expiry(0)
+
+        user = cast(User, self.user)
+        user.last_login = timezone.now()
+        user.save(update_fields=("last_login",))
 
         return response
 

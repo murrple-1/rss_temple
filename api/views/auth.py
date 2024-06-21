@@ -9,6 +9,7 @@ from dj_rest_auth.views import PasswordResetView as _PasswordResetView
 from dj_rest_auth.views import UserDetailsView as _UserDetailsView
 from django.contrib.auth import authenticate
 from django.http.response import HttpResponseBase
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
 from drf_yasg import openapi
@@ -47,6 +48,10 @@ class LoginView(_LoginView):  # pragma: no cover
         stay_logged_in: bool = self.serializer.validated_data["stay_logged_in"]
         if not stay_logged_in:
             request.session.set_expiry(0)
+
+        user = cast(User, self.user)
+        user.last_login = timezone.now()
+        user.save(update_fields=("last_login",))
 
         return response
 
