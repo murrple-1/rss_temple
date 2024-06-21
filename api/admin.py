@@ -27,20 +27,34 @@ class SubscribedFeedsInline(admin.TabularInline):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ["email", "created_at", "is_staff", "is_active"]
+    list_display = [
+        "email",
+        "created_at",
+        "is_staff",
+        "is_active",
+        "subscribed_feeds__count",
+    ]
     list_editable = ["is_staff", "is_active"]
     list_filter = ["is_active", "is_staff"]
     search_fields = ["email"]
     exclude = ["read_feed_entries", "favorite_feed_entries"]
     inlines = [SubscribedFeedsInline]
 
+    @admin.display(description="Number of subscriptions")
+    def subscribed_feeds__count(self, obj: User):
+        return obj.subscribed_feeds.count()
+
 
 @admin.register(UserCategory)
 class UserCategoryAdmin(admin.ModelAdmin):
-    list_display = ["text", "user"]
+    list_display = ["text", "user", "feeds__count"]
     list_select_related = ["user"]
     search_fields = ["text", "user__email"]
     autocomplete_fields = ["feeds"]
+
+    @admin.display(description="Number of feeds")
+    def feeds__count(self, obj: UserCategory):
+        return obj.feeds.count()
 
 
 @admin.register(Feed)
@@ -51,9 +65,10 @@ class FeedAdmin(admin.ModelAdmin):
         "home_url",
         "published_at",
         "subscribed_user_set__count",
+        "feed_entries__count",
     ]
     search_fields = ["title", "feed_url", "home_url"]
-    readonly_fields = ["home_url", "subscribed_user_set__count"]
+    readonly_fields = ["home_url", "subscribed_user_set__count", "feed_entries__count"]
 
     def get_fields(
         self, request: HttpRequest, obj: Feed | None = None
@@ -68,6 +83,10 @@ class FeedAdmin(admin.ModelAdmin):
     @admin.display(description="Number of subscribed users")
     def subscribed_user_set__count(self, obj: Feed):
         return obj.subscribed_user_set.count()
+
+    @admin.display(description="Number of entries")
+    def feed_entries__count(self, obj: Feed):
+        return obj.feed_entries.count()
 
 
 @admin.register(FeedEntry)
