@@ -47,7 +47,7 @@ codecov = "*"
 unittest-xml-reporting = "*"
 coverage-conditional-plugin = "*"
 packaging = "*"
-black = "*"
+black = "24.4.2"
 isort = "*"
 django-stubs = { version = "*", extras = ["compatible-mypy"] }
 djangorestframework-stubs = { version = "*", extras = ["compatible-mypy"] }

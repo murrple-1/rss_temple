@@ -132,12 +132,16 @@ class TaskTestCase(TestFileServerTestCase):
                     feed_subscription_progress_entry_descriptor = FeedSubscriptionProgressEntryDescriptor.objects.create(
                         feed_subscription_progress_entry=feed_subscription_progress_entry,
                         feed_url=feed_url.format(s=count),
-                        custom_feed_title=None
-                        if custom_feed_title is None
-                        else custom_feed_title.format(s=count),
-                        user_category_text=None
-                        if user_category_text is None
-                        else user_category_text.format(s=count),
+                        custom_feed_title=(
+                            None
+                            if custom_feed_title is None
+                            else custom_feed_title.format(s=count)
+                        ),
+                        user_category_text=(
+                            None
+                            if user_category_text is None
+                            else user_category_text.format(s=count)
+                        ),
                     )
                     self.assertFalse(
                         feed_subscription_progress_entry_descriptor.is_finished

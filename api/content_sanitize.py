@@ -65,9 +65,11 @@ class EmptyAnchorFilter(HTML5LibFilter):
 
                 if tag_depth <= 0:
                     if any(
-                        True
-                        if (t["type"] == "Characters" and len(t["data"]) > 0)
-                        else False
+                        (
+                            True
+                            if (t["type"] == "Characters" and len(t["data"]) > 0)
+                            else False
+                        )
                         for t in seen_tokens
                     ):
                         for t in seen_tokens:

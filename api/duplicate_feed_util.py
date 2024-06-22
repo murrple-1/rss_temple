@@ -67,9 +67,9 @@ def convert_duplicate_feeds_to_alternate_feed_urls(
                 moving_favorite_mappings.append(favorite_mapping)
 
         for user_category in duplicate_feed.user_categories.iterator():
-            user_category_feeds_tuple: tuple[
-                UserCategory, list[Feed]
-            ] | None = user_category_additions.get(user_category.uuid)
+            user_category_feeds_tuple: tuple[UserCategory, list[Feed]] | None = (
+                user_category_additions.get(user_category.uuid)
+            )
             if not user_category_feeds_tuple:
                 user_category_feeds_tuple = (user_category, [])
                 user_category_additions[user_category.uuid] = user_category_feeds_tuple
