@@ -83,7 +83,7 @@ jobs:
             - "~/.local/share/virtualenvs/"
             - "~/.pyenv/"
       - run:
-          name: tests
+          name: Test
           command: pipenv run coverage run manage.py test
           environment:
             TEST_RUNNER_TYPE: xml
