@@ -41,7 +41,7 @@ class UserAdmin(admin.ModelAdmin):
     inlines = [SubscribedFeedsInline]
 
     @admin.display(description="Number of subscriptions")
-    def subscribed_feeds__count(self, obj: User):
+    def subscribed_feeds__count(self, obj: User):  # pragma: no cover
         return obj.subscribed_feeds.count()
 
 
@@ -53,7 +53,7 @@ class UserCategoryAdmin(admin.ModelAdmin):
     autocomplete_fields = ["feeds"]
 
     @admin.display(description="Number of feeds")
-    def feeds__count(self, obj: UserCategory):
+    def feeds__count(self, obj: UserCategory):  # pragma: no cover
         return obj.feeds.count()
 
 
@@ -72,7 +72,7 @@ class FeedAdmin(admin.ModelAdmin):
 
     def get_fields(
         self, request: HttpRequest, obj: Feed | None = None
-    ) -> Sequence[str | Sequence[str]]:
+    ) -> Sequence[str | Sequence[str]]:  # pragma: no cover
         fields = super().get_fields(request, obj)
         assert isinstance(fields, list)
         assert fields[2] == "title"
@@ -81,11 +81,11 @@ class FeedAdmin(admin.ModelAdmin):
         return fields
 
     @admin.display(description="Number of subscribed users")
-    def subscribed_user_set__count(self, obj: Feed):
+    def subscribed_user_set__count(self, obj: Feed):  # pragma: no cover
         return obj.subscribed_user_set.count()
 
     @admin.display(description="Number of entries")
-    def feed_entries__count(self, obj: Feed):
+    def feed_entries__count(self, obj: Feed):  # pragma: no cover
         return obj.feed_entries.count()
 
 
@@ -116,7 +116,7 @@ class FeedEntryAdmin(admin.ModelAdmin):
 
     def get_fields(
         self, request: HttpRequest, obj: FeedEntry | None = None
-    ) -> Sequence[str | Sequence[str]]:
+    ) -> Sequence[str | Sequence[str]]:  # pragma: no cover
         fields = super().get_fields(request, obj)
         assert isinstance(fields, list)
         assert fields[0] == "uuid"

@@ -1,15 +1,18 @@
 import datetime
 import random
+from typing import ClassVar
 
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
+from lingua import Language as Language_
 
 from api.models import (
     Captcha,
     Feed,
     FeedEntry,
+    Language,
     ReadFeedEntryUserMapping,
     SubscribedFeedUserMapping,
     User,
@@ -119,6 +122,14 @@ class UserTestCase(TestCase):
 
         self.assertEqual(len(uuids), 1)
         self.assertIn(feed_entry.uuid, uuids)
+
+
+class LanguageTestCase(TestCase):
+    def test_str(self):
+        self.assertGreater(Language.objects.count(), 0)
+
+        for l in Language.objects.all():
+            self.assertIsInstance(str(l), str)
 
 
 class UserCategoryTestCase(TestCase):

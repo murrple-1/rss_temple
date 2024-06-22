@@ -1,9 +1,11 @@
 import itertools
 import os
-from typing import Generator, NamedTuple
+from typing import Callable, Generator, NamedTuple
+from unittest import TestCase
 
 from bs4 import BeautifulSoup, Tag
 from django.core import mail
+from django.http.response import HttpResponse
 from django.template.loader import get_template
 from lingua import Language
 
@@ -139,3 +141,19 @@ def generate_top_image_pages(
         )
 
         i += 1
+
+
+def assert_x_cache_hit_working(
+    test_case: TestCase, run_fn: Callable[[], HttpResponse], all_caches_involved=True
+):
+    response = run_fn()
+    cache_hit_iter = (h == "NO" for h in response.headers["X-Cache-Hit"].split(","))
+    test_case.assertTrue(
+        all(cache_hit_iter) if all_caches_involved else any(cache_hit_iter)
+    )
+
+    response = run_fn()
+    cache_hit_iter = (h == "YES" for h in response.headers["X-Cache-Hit"].split(","))
+    test_case.assertTrue(
+        all(cache_hit_iter) if all_caches_involved else any(cache_hit_iter)
+    )

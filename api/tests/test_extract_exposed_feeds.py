@@ -32,24 +32,28 @@ class ExtractExposedFeedsTestCase(TestFileServerTestCase):
     def test_extract_exposed_feeds(self):
         for url, expected_feed_count in [
             (
-                f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/single.html",
+                f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/single_rss_xml.html",
+                1,
+            ),
+            (
+                f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/single_atom_xml.html",
                 1,
             ),
             (
                 f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/multi.html",
-                3,
+                6,
             ),
             (
                 f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/relative.html",
-                1,
+                2,
             ),
             (
                 f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/base_absolute.html",
-                1,
+                2,
             ),
             (
                 f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/base_relative.html",
-                1,
+                2,
             ),
             (
                 f"{ExtractExposedFeedsTestCase.live_server_url}/site/exposed_feeds/bad_base_relative.html",

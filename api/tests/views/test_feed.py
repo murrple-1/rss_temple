@@ -2,13 +2,18 @@ import logging
 from typing import ClassVar
 
 from django.core.cache import BaseCache, caches
+from django.http.response import HttpResponse
 from django.test import tag
 from django.utils import timezone
 
 from api import fields
 from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
-from api.tests.utils import db_migrations_state, throttling_monkey_patch
+from api.tests.utils import (
+    assert_x_cache_hit_working,
+    db_migrations_state,
+    throttling_monkey_patch,
+)
 
 
 class FeedTestCase(TestFileServerTestCase):
@@ -49,14 +54,19 @@ class FeedTestCase(TestFileServerTestCase):
     def test_FeedView_get(self):
         self.generate_credentials()
 
-        response = self.client.get(
-            "/api/feed",
-            {
-                "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-                "fields": fields.field_list("feed"),
-            },
-        )
-        self.assertEqual(response.status_code, 200, response.content)
+        def _run() -> HttpResponse:
+            response = self.client.get(
+                "/api/feed",
+                {
+                    "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
+                    "fields": fields.field_list("feed"),
+                },
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+
+            return response
+
+        assert_x_cache_hit_working(self, _run)
 
     def test_FeedView_get_no_url(self):
         self.generate_credentials()
@@ -135,29 +145,21 @@ class FeedTestCase(TestFileServerTestCase):
 
             self.generate_credentials()
 
-            response = self.client.get(
-                "/api/feed/lookup",
-                {"url": url},
-            )
-            self.assertEqual(response.status_code, 200, response.content)
+            def _run() -> HttpResponse:
+                response = self.client.get(
+                    "/api/feed/lookup",
+                    {"url": url},
+                )
+                self.assertEqual(response.status_code, 200, response.content)
 
-            json_ = response.json()
+                json_ = response.json()
 
-            self.assertIs(type(json_), list)
-            self.assertEqual(len(json_), 1)
-            self.assertEqual(response.headers["X-Cache-Hit"], "NO")
+                self.assertIs(type(json_), list)
+                self.assertEqual(len(json_), 1)
 
-            response = self.client.get(
-                "/api/feed/lookup",
-                {"url": url},
-            )
-            self.assertEqual(response.status_code, 200, response.content)
+                return response
 
-            json_ = response.json()
-
-            self.assertIs(type(json_), list)
-            self.assertEqual(len(json_), 1)
-            self.assertEqual(response.headers["X-Cache-Hit"], "YES")
+            assert_x_cache_hit_working(self, _run)
 
     @tag("slow")
     def test_FeedSubscribeView_post(self):
