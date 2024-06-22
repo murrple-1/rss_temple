@@ -65,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 if DEBUG:
@@ -354,6 +355,10 @@ SWAGGER_SETTINGS = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
+
+# django-csp
+CSP_IMG_SRC = ["'self'", "data:"]
+CSP_STYLE_SRC_ELEM = ["'self'", "'unsafe-inline'"]
 
 # app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
