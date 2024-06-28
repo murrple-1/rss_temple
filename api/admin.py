@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as UserAdmin_
 from django.db.models import QuerySet
 from django.http.request import HttpRequest
 
@@ -23,10 +24,11 @@ class SubscribedFeedsInline(admin.TabularInline):
     model = SubscribedFeedUserMapping
     extra = 0
     autocomplete_fields = ["feed", "user"]
+    readonly_fields = ["custom_feed_title"]
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(UserAdmin_):
     list_display = [
         "email",
         "created_at",
@@ -39,6 +41,31 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ["email"]
     exclude = ["read_feed_entries", "favorite_feed_entries"]
     inlines = [SubscribedFeedsInline]
+    ordering = ["email"]
+    fieldsets = (
+        (None, {"fields": ("email", "password", "last_login")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+    )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "password1", "password2"),
+            },
+        ),
+    )
 
     @admin.display(description="Number of subscriptions")
     def subscribed_feeds__count(self, obj: User):  # pragma: no cover
