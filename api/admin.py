@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Any, Sequence
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as UserAdmin_
@@ -22,9 +22,11 @@ from api.models import (
 
 class SubscribedFeedsInline(admin.TabularInline):
     model = SubscribedFeedUserMapping
-    extra = 0
     autocomplete_fields = ["feed", "user"]
     readonly_fields = ["custom_feed_title"]
+
+    def has_add_permission(self, request: HttpRequest, obj: Any | None) -> bool:
+        return False
 
 
 @admin.register(User)
