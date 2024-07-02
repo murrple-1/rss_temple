@@ -1,3 +1,5 @@
+import logging
+import traceback
 from typing import Any, cast
 
 from allauth.socialaccount import signals
@@ -5,11 +7,13 @@ from allauth.socialaccount.adapter import get_adapter as get_social_adapter
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Error
 from dj_rest_auth.registration.serializers import SocialConnectSerializer
 from dj_rest_auth.registration.views import (
     SocialAccountListView as _SocialAccountListView,
 )
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
+from dj_rest_auth.views import APIView
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.exceptions import NotFound
@@ -19,6 +23,18 @@ from rest_framework.response import Response
 
 from api.models import User
 from api.serializers import SocialLoginSerializer
+
+_logger = logging.getLogger("rss_temple")
+
+
+class _SocialHandleExceptionMixin(APIView):
+    def handle_exception(self, exc: Exception) -> Response:
+        if isinstance(exc, OAuth2Error):
+            _logger.error("OAuth2 error", exc_info=exc)
+            # based on default DRF error
+            return Response({"detail": f"OAuth2 error: {exc}"}, status=401)
+
+        return super().handle_exception(exc)
 
 
 class SocialAccountListView(_SocialAccountListView):
@@ -30,7 +46,7 @@ class SocialAccountListView(_SocialAccountListView):
         return super().get(request, *args, **kwargs)
 
 
-class GoogleLogin(SocialLoginView):
+class GoogleLogin(SocialLoginView, _SocialHandleExceptionMixin):
     adapter_class = GoogleOAuth2Adapter
     serializer_class = SocialLoginSerializer
 
@@ -53,7 +69,7 @@ class GoogleLogin(SocialLoginView):
         return response
 
 
-class GoogleConnect(SocialConnectView):
+class GoogleConnect(SocialConnectView, _SocialHandleExceptionMixin):
     adapter_class = GoogleOAuth2Adapter
 
     @swagger_auto_schema(
@@ -64,7 +80,7 @@ class GoogleConnect(SocialConnectView):
         return super().post(request, *args, **kwargs)
 
 
-class GoogleDisconnect(GenericAPIView):
+class GoogleDisconnect(GenericAPIView, _SocialHandleExceptionMixin):
     serializer_class = SocialConnectSerializer
 
     def get_queryset(self):
@@ -94,7 +110,7 @@ class GoogleDisconnect(GenericAPIView):
         return Response(self.get_serializer(account).data)
 
 
-class FacebookLogin(SocialLoginView):
+class FacebookLogin(SocialLoginView, _SocialHandleExceptionMixin):
     adapter_class = FacebookOAuth2Adapter
     serializer_class = SocialLoginSerializer
 
@@ -116,8 +132,14 @@ class FacebookLogin(SocialLoginView):
 
         return response
 
+    def handle_exception(self, exc: Exception) -> Response:
+        if isinstance(exc, OAuth2Error):
+            return Response({"test": "TEST"}, 401)
 
-class FacebookConnect(SocialConnectView):
+        return super().handle_exception(exc)
+
+
+class FacebookConnect(SocialConnectView, _SocialHandleExceptionMixin):
     adapter_class = FacebookOAuth2Adapter
 
     @swagger_auto_schema(
@@ -128,7 +150,7 @@ class FacebookConnect(SocialConnectView):
         return super().post(request, *args, **kwargs)
 
 
-class FacebookDisconnect(GenericAPIView):
+class FacebookDisconnect(GenericAPIView, _SocialHandleExceptionMixin):
     serializer_class = SocialConnectSerializer
 
     def get_queryset(self):
