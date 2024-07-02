@@ -25,7 +25,9 @@ class SubscribedFeedsInline(admin.TabularInline):
     autocomplete_fields = ["feed", "user"]
     readonly_fields = ["custom_feed_title"]
 
-    def has_add_permission(self, request: HttpRequest, obj: Any | None) -> bool:
+    def has_add_permission(
+        self, request: HttpRequest, obj: Any | None
+    ) -> bool:  # pragma: no cover
         return False
 
 
