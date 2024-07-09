@@ -1,5 +1,4 @@
 import logging
-import traceback
 from typing import Any, cast
 
 from allauth.socialaccount import signals
@@ -14,15 +13,39 @@ from dj_rest_auth.registration.views import (
 )
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from dj_rest_auth.views import APIView
+from django.conf import settings
+from django.core.signals import setting_changed
+from django.dispatch import receiver
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 
 from api.models import User
 from api.serializers import SocialLoginSerializer
+
+_TEST_SOCIAL_LOGIN_SERIALIZER_CLASS: type[serializers.BaseSerializer] | None
+_TEST_SOCIAL_CONNECT_SERIALIZER_CLASS: type[serializers.BaseSerializer] | None
+
+
+@receiver(setting_changed)
+def _load_global_settings(*args: Any, **kwargs: Any):
+    global _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS
+    global _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS
+
+    _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS = getattr(
+        settings, "TEST_SOCIAL_LOGIN_SERIALIZER_CLASS", None
+    )
+    _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS = getattr(
+        settings, "TEST_SOCIAL_CONNECT_SERIALIZER_CLASS", None
+    )
+
+
+_load_global_settings()
 
 _logger = logging.getLogger("rss_temple")
 
@@ -50,6 +73,12 @@ class GoogleLogin(SocialLoginView, _SocialHandleExceptionMixin):
     adapter_class = GoogleOAuth2Adapter
     serializer_class = SocialLoginSerializer
 
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS:
+            return _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS
+        else:  # pragma: no cover
+            return super().get_serializer_class()
+
     @swagger_auto_schema(
         operation_summary="Login or create account via Google",
         operation_description="Login or create account via Google",
@@ -71,6 +100,12 @@ class GoogleLogin(SocialLoginView, _SocialHandleExceptionMixin):
 
 class GoogleConnect(SocialConnectView, _SocialHandleExceptionMixin):
     adapter_class = GoogleOAuth2Adapter
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS:
+            return _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS
+        else:  # pragma: no cover
+            return super().get_serializer_class()
 
     @swagger_auto_schema(
         operation_summary="Connect your account to Google",
@@ -114,6 +149,12 @@ class FacebookLogin(SocialLoginView, _SocialHandleExceptionMixin):
     adapter_class = FacebookOAuth2Adapter
     serializer_class = SocialLoginSerializer
 
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS:
+            return _TEST_SOCIAL_LOGIN_SERIALIZER_CLASS
+        else:  # pragma: no cover
+            return super().get_serializer_class()
+
     @swagger_auto_schema(
         operation_summary="Login or create account via Facebook",
         operation_description="Login or create account via Facebook",
@@ -132,15 +173,15 @@ class FacebookLogin(SocialLoginView, _SocialHandleExceptionMixin):
 
         return response
 
-    def handle_exception(self, exc: Exception) -> Response:
-        if isinstance(exc, OAuth2Error):
-            return Response({"test": "TEST"}, 401)
-
-        return super().handle_exception(exc)
-
 
 class FacebookConnect(SocialConnectView, _SocialHandleExceptionMixin):
     adapter_class = FacebookOAuth2Adapter
+
+    def get_serializer_class(self) -> type[BaseSerializer]:
+        if _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS:
+            return _TEST_SOCIAL_CONNECT_SERIALIZER_CLASS
+        else:  # pragma: no cover
+            return super().get_serializer_class()
 
     @swagger_auto_schema(
         operation_summary="Connect your account to Facebook",

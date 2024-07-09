@@ -1,30 +1,40 @@
 import logging
-import os
-import unittest
 from typing import ClassVar
 
+import jwt
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount
+from dj_rest_auth.registration.serializers import SocialConnectSerializer
 from django.contrib.sites.models import Site
-from django.test import tag
+from django.test import override_settings
+from rest_framework import serializers
 from rest_framework.test import APITestCase
 
 from api.models import User
+from api.serializers import SocialLoginSerializer
 from api.tests.utils import throttling_monkey_patch
 
 
-def _is_google_testable():
-    return frozenset(os.environ).issuperset(
-        ("TEST_GOOGLE_CLIENT_ID", "TEST_GOOGLE_SECRET")
-    )
+class _TestSocialLoginSerializer(SocialLoginSerializer):
+    def validate(self, attrs):
+        attrs = serializers.Serializer.validate(self, attrs)
+        request = self._get_request()
+        attrs["user"] = request.user
+        return attrs
 
 
-def _is_facebook_testable():
-    return frozenset(os.environ).issuperset(
-        ("TEST_FACEBOOK_CLIENT_ID", "TEST_FACEBOOK_SECRET")
-    )
+class _TestSocialConnectSerializer(SocialConnectSerializer):
+    def validate(self, attrs):
+        attrs = serializers.Serializer.validate(self, attrs)
+        request = self._get_request()
+        attrs["user"] = request.user
+        return attrs
 
 
+@override_settings(
+    TEST_SOCIAL_LOGIN_SERIALIZER_CLASS=_TestSocialLoginSerializer,
+    TEST_SOCIAL_CONNECT_SERIALIZER_CLASS=_TestSocialConnectSerializer,
+)
 class SocialTestCase(APITestCase):
     old_django_logger_level: ClassVar[int]
 
@@ -45,19 +55,19 @@ class SocialTestCase(APITestCase):
         logging.getLogger("django").setLevel(cls.old_django_logger_level)
 
     def setup_google(self):
-        Site.objects.get_current().socialapp_set.create(
+        return Site.objects.get_current().socialapp_set.create(
             provider="google",
             name="Google",
-            client_id=os.environ["TEST_GOOGLE_CLIENT_ID"],
-            secret=os.environ["TEST_GOOGLE_SECRET"],
+            client_id="asdf",
+            secret="asdf",
         )
 
     def setup_facebook(self):
-        Site.objects.get_current().socialapp_set.create(
+        return Site.objects.get_current().socialapp_set.create(
             provider="facebook",
             name="Facebook",
-            client_id=os.environ["TEST_FACEBOOK_CLIENT_ID"],
-            secret=os.environ["TEST_FACEBOOK_SECRET"],
+            client_id="asdf",
+            secret="asdf",
         )
 
     def test_SocialAccountListView_get(self):
@@ -73,8 +83,6 @@ class SocialTestCase(APITestCase):
         self.assertIs(type(json_), list)
         self.assertEqual(len(json_), 0)
 
-    @unittest.skipIf(not _is_google_testable(), "social env vars not setup for Google")
-    @tag("slow")
     def test_GoogleLogin_post(self):
         self.setup_google()
 
@@ -85,16 +93,14 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/google",
             {
-                "access_token": "asdf",
+                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
                 "stayLoggedIn": False,
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    @unittest.skipIf(not _is_google_testable(), "social env vars not setup for Google")
-    @tag("slow")
     def test_GoogleConnect_post(self):
-        self.setup_google()
+        provider = self.setup_google()
 
         user = User.objects.create_user("test@test.com", None)
 
@@ -103,13 +109,11 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/google/connect",
             {
-                "access_token": "asdf",
+                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    @unittest.skipIf(not _is_google_testable(), "social env vars not setup for Google")
-    @tag("slow")
     def test_GoogleDisconnect_post(self):
         self.setup_google()
 
@@ -124,10 +128,6 @@ class SocialTestCase(APITestCase):
         response = self.client.post("/api/social/google/disconnect")
         self.assertEqual(response.status_code, 200, response.content)
 
-    @unittest.skipIf(
-        not _is_facebook_testable(), "social env vars not setup for Facebook"
-    )
-    @tag("slow")
     def test_FacebookLogin_post(self):
         self.setup_facebook()
 
@@ -138,16 +138,12 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/facebook",
             {
-                "access_token": "asdf",
+                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
                 "stayLoggedIn": False,
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    @unittest.skipIf(
-        not _is_facebook_testable(), "social env vars not setup for Facebook"
-    )
-    @tag("slow")
     def test_FacebookConnect_post(self):
         self.setup_facebook()
 
@@ -158,15 +154,11 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/facebook/connect",
             {
-                "access_token": "asdf",
+                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
 
-    @unittest.skipIf(
-        not _is_facebook_testable(), "social env vars not setup for Facebook"
-    )
-    @tag("slow")
     def test_FacebookDisconnect_post(self):
         self.setup_facebook()
 
