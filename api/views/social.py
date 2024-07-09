@@ -50,7 +50,7 @@ _load_global_settings()
 _logger = logging.getLogger("rss_temple")
 
 
-class _SocialHandleExceptionMixin(APIView):
+class _SocialHandleExceptionMixin(APIView):  # pragma: no cover
     def handle_exception(self, exc: Exception) -> Response:
         if isinstance(exc, OAuth2Error):
             _logger.error("OAuth2 error", exc_info=exc)

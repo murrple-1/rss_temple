@@ -100,7 +100,7 @@ class SocialTestCase(APITestCase):
         self.assertEqual(response.status_code, 200, response.content)
 
     def test_GoogleConnect_post(self):
-        provider = self.setup_google()
+        self.setup_google()
 
         user = User.objects.create_user("test@test.com", None)
 
@@ -127,6 +127,41 @@ class SocialTestCase(APITestCase):
 
         response = self.client.post("/api/social/google/disconnect")
         self.assertEqual(response.status_code, 200, response.content)
+
+    def test_GoogleDisconnect_post_noconnection(self):
+        self.setup_google()
+
+        user = User.objects.create_user("test@test.com", "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/google/disconnect")
+        self.assertEqual(response.status_code, 404, response.content)
+
+    def test_GoogleDisconnect_post_nouserpassword(self):
+        self.setup_google()
+
+        user = User.objects.create_user("test@test.com", None)
+        SocialAccount.objects.create(user=user, provider="google")
+        EmailAddress.objects.create(
+            user=user, email="test@test.com", verified=True, primary=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/google/disconnect")
+        self.assertEqual(response.status_code, 409, response.content)
+
+    def test_GoogleDisconnect_post_noverifiedemail(self):
+        self.setup_google()
+
+        user = User.objects.create_user("test@test.com", "password")
+        SocialAccount.objects.create(user=user, provider="google")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/google/disconnect")
+        self.assertEqual(response.status_code, 409, response.content)
 
     def test_FacebookLogin_post(self):
         self.setup_facebook()
@@ -172,3 +207,38 @@ class SocialTestCase(APITestCase):
 
         response = self.client.post("/api/social/facebook/disconnect")
         self.assertEqual(response.status_code, 200, response.content)
+
+    def test_FacebookDisconnect_post_noconnection(self):
+        self.setup_facebook()
+
+        user = User.objects.create_user("test@test.com", "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/facebook/disconnect")
+        self.assertEqual(response.status_code, 404, response.content)
+
+    def test_FacebookDisconnect_post_nouserpassword(self):
+        self.setup_facebook()
+
+        user = User.objects.create_user("test@test.com", None)
+        SocialAccount.objects.create(user=user, provider="facebook")
+        EmailAddress.objects.create(
+            user=user, email="test@test.com", verified=True, primary=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/facebook/disconnect")
+        self.assertEqual(response.status_code, 409, response.content)
+
+    def test_FacebookDisconnect_post_noverifiedemail(self):
+        self.setup_facebook()
+
+        user = User.objects.create_user("test@test.com", "password")
+        SocialAccount.objects.create(user=user, provider="facebook")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/api/social/facebook/disconnect")
+        self.assertEqual(response.status_code, 409, response.content)
