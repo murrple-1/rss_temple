@@ -163,3 +163,28 @@ class TaskTestCase(TestFileServerTestCase):
             feed_subscription_progress_entry.status,
             FeedSubscriptionProgressEntry.FINISHED,
         )
+
+    def test_do_subscription_wrongcontenttype(self):
+        user = self.generate_credentials()
+
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.create(
+            user=user
+        )
+
+        FeedSubscriptionProgressEntryDescriptor.objects.create(
+            feed_subscription_progress_entry=feed_subscription_progress_entry,
+            feed_url=f"{TaskTestCase.live_server_url}/site/16bytes.txt",
+        )
+
+        self.assertEqual(
+            feed_subscription_progress_entry.status,
+            FeedSubscriptionProgressEntry.NOT_STARTED,
+        )
+
+        setup_subscriptions(feed_subscription_progress_entry, -1)
+
+        self.assertEqual(
+            feed_subscription_progress_entry.status,
+            FeedSubscriptionProgressEntry.FINISHED,
+        )
+        self.assertEqual(Feed.objects.count(), 0)

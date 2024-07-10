@@ -28,7 +28,7 @@ _logger = logging.getLogger("rss_temple")
 def setup_subscriptions(
     feed_subscription_progress_entry: FeedSubscriptionProgressEntry,
     response_max_byte_count: int,
-):  # pragma: testing-subscription-setup-daemon-do-subscription
+):
     feeds: dict[str, Feed] = {}
     subscriptions: set[str] = set()
     custom_titles: set[str] = set()
@@ -148,7 +148,7 @@ def setup_subscriptions(
 def _generate_feed(
     url: str,
     response_max_byte_count: int,
-):  # pragma: testing-subscription-setup-daemon-do-subscription
+):
     response_text: str
     with rss_requests.get(url, stream=True) as response:
         response.raise_for_status()
@@ -171,7 +171,7 @@ def _generate_feed(
         feed_entry: FeedEntry
         try:
             feed_entry = feed_handler.d_entry_2_feed_entry(d_entry, now)
-        except ValueError:
+        except ValueError:  # pragma: no cover
             continue
 
         feed_entry.feed = feed
