@@ -15,7 +15,7 @@ services:
         python ./manage.py migrate
 
         exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
-          daphne -b 0.0.0.0 -p 8000 rss_temple.asgi:application
+          gunicorn -b 0.0.0.0:8000 rss_temple.wsgi:application
       "
     build:
       context: ./
