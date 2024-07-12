@@ -14,8 +14,7 @@ services:
 
         python ./manage.py migrate
 
-        exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
-          gunicorn -b 0.0.0.0:8000 rss_temple.wsgi:application
+        exec gunicorn --reload -b 0.0.0.0:8000 rss_temple.wsgi:application
       "
     build:
       context: ./

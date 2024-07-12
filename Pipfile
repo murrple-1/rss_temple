@@ -61,6 +61,7 @@ types-beautifulsoup4 = "*"
 tblib = "*"
 lxml-stubs = "*"
 watchdog = "*"
+inotify = "*"
 
 [requires]
 python_version = "3.12"
