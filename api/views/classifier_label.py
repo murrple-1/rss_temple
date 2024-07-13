@@ -1,6 +1,6 @@
 import random
 import uuid as uuid_
-from typing import Any, Collection, cast
+from typing import Any, Iterable, cast
 
 from django.core.cache import BaseCache, caches
 from django.db import transaction
@@ -46,7 +46,7 @@ class ClassifierLabelListView(APIView):
             "feed_entry_uuid"
         )
 
-        classifier_labels: Collection[ClassifierLabel]
+        classifier_labels: Iterable[ClassifierLabel]
         cache_hit: bool | None = None
         if feed_entry_uuid is not None:
             if not FeedEntry.objects.filter(uuid=feed_entry_uuid).exists():

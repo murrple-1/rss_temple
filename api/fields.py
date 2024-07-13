@@ -2,7 +2,7 @@ import datetime
 import uuid
 from dataclasses import dataclass
 from functools import reduce
-from typing import AbstractSet, Any, Callable, Collection, TypedDict, cast
+from typing import AbstractSet, Any, Callable, Iterable, TypedDict, cast
 
 from django.conf import settings
 from django.core.signals import setting_changed
@@ -27,7 +27,7 @@ _load_global_settings()
 
 @dataclass(slots=True)
 class _FieldConfig:
-    accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
+    accessor: Callable[[HttpRequest, Any, Iterable[Any] | None], Any]
     default: bool
     only_fields: AbstractSet[str]
 
@@ -35,7 +35,7 @@ class _FieldConfig:
 def _usercategory_feedUuids(
     request: HttpRequest,
     db_obj: UserCategory,
-    queryset: Collection[UserCategory] | None,
+    queryset: Iterable[UserCategory] | None,
 ) -> list[str]:
     if queryset is None:
         return [str(uuid_) for uuid_ in db_obj.feed_uuids]
@@ -56,7 +56,7 @@ def _usercategory_feedUuids(
 
 
 def _feed_userCategoryUuids(
-    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+    request: HttpRequest, db_obj: Feed, queryset: Iterable[Feed] | None
 ) -> list[str]:
     if queryset is None:
         return [
@@ -83,7 +83,7 @@ def _feed_userCategoryUuids(
 
 
 def _feed__generate_counts_lookup(
-    request: HttpRequest, queryset: Collection[Feed]
+    request: HttpRequest, queryset: Iterable[Feed]
 ) -> dict[uuid.UUID, Feed._CountsDescriptor]:
     counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] | None = getattr(
         request, "_counts_lookup", None
@@ -99,21 +99,21 @@ def _feed__generate_counts_lookup(
 
 
 def _feed_readCount(
-    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+    request: HttpRequest, db_obj: Feed, queryset: Iterable[Feed] | None
 ) -> int:
     counts_lookup = _feed__generate_counts_lookup(request, queryset or (db_obj,))
     return counts_lookup[db_obj.uuid].read_count
 
 
 def _feed_unreadCount(
-    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+    request: HttpRequest, db_obj: Feed, queryset: Iterable[Feed] | None
 ) -> int:
     counts_lookup = _feed__generate_counts_lookup(request, queryset or (db_obj,))
     return counts_lookup[db_obj.uuid].unread_count
 
 
 def _feed__generate_archived_counts_lookup(
-    request: HttpRequest, queryset: Collection[Feed]
+    request: HttpRequest, queryset: Iterable[Feed]
 ) -> dict[uuid.UUID, int]:
     archived_counts_lookup: dict[uuid.UUID, int] | None = getattr(
         request, "_archived_counts_lookup", None
@@ -129,7 +129,7 @@ def _feed__generate_archived_counts_lookup(
 
 
 def _feed_archivedCount(
-    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+    request: HttpRequest, db_obj: Feed, queryset: Iterable[Feed] | None
 ) -> int:
     archived_counts_lookup = _feed__generate_archived_counts_lookup(
         request, queryset or (db_obj,)
@@ -138,7 +138,7 @@ def _feed_archivedCount(
 
 
 def _feed_isDead(
-    request: HttpRequest, db_obj: Feed, queryset: Collection[Feed] | None
+    request: HttpRequest, db_obj: Feed, queryset: Iterable[Feed] | None
 ) -> bool:
     if db_obj.db_updated_at is None:
         return False
@@ -152,7 +152,7 @@ def _feed_isDead(
 
 
 def _feedentry_readAt(
-    request: HttpRequest, db_obj: FeedEntry, queryset: Collection[FeedEntry] | None
+    request: HttpRequest, db_obj: FeedEntry, queryset: Iterable[FeedEntry] | None
 ) -> str | None:
     if queryset is None:
         try:
@@ -380,7 +380,7 @@ _field_configs: dict[str, dict[str, _FieldConfig]] = {
 
 class FieldMap(TypedDict):
     field_name: str
-    accessor: Callable[[HttpRequest, Any, Collection[Any] | None], Any]
+    accessor: Callable[[HttpRequest, Any, Iterable[Any] | None], Any]
     only_fields: AbstractSet[str]
 
 
@@ -438,7 +438,7 @@ def generate_return_object(
     field_maps: list[FieldMap],
     db_obj: Any,
     request: HttpRequest,
-    queryset: Collection[Any] | None,
+    queryset: Iterable[Any] | None,
 ):
     return_obj: dict[str, Any] = {}
     for field_map in field_maps:
