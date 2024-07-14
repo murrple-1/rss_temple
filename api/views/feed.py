@@ -27,7 +27,7 @@ from api.cache_utils.subscription_datas import (
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
-from api.fields import FieldMap, generate_only_fields
+from api.fields import FieldMap, generate_field_names, generate_only_fields
 from api.models import (
     AlternateFeedURL,
     Feed,
@@ -112,19 +112,29 @@ class FeedView(APIView):
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
-        counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
-            user, (feed.uuid,), cache
-        )
-        setattr(
-            request,
-            "_counts_lookup",
-            counts_lookup,
-        )
+        field_names = generate_field_names(field_maps)
 
-        archived_counts_lookup, archived_counts_lookup_cache_hit = (
-            get_archived_counts_lookup_from_cache((feed.uuid,), cache)
-        )
-        setattr(request, "_archived_counts_lookup", archived_counts_lookup)
+        counts_lookup_cache_hit: bool
+        if field_names.intersection(("readCount", "unreadCount")):
+            counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
+                user, (feed.uuid,), cache
+            )
+            setattr(
+                request,
+                "_counts_lookup",
+                counts_lookup,
+            )
+        else:
+            counts_lookup_cache_hit = False
+
+        archived_counts_lookup_cache_hit: bool
+        if field_names.intersection(("archivedCount",)):
+            archived_counts_lookup, archived_counts_lookup_cache_hit = (
+                get_archived_counts_lookup_from_cache((feed.uuid,), cache)
+            )
+            setattr(request, "_archived_counts_lookup", archived_counts_lookup)
+        else:
+            archived_counts_lookup_cache_hit = False
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -185,19 +195,29 @@ class FeedsQueryView(APIView):
 
         feed_uuids = frozenset(f.uuid for f in feeds_qs)
 
-        counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
-            user, feed_uuids, cache
-        )
-        setattr(
-            request,
-            "_counts_lookup",
-            counts_lookup,
-        )
+        field_names = generate_field_names(field_maps)
 
-        archived_counts_lookup, archived_counts_lookup_cache_hit = (
-            get_archived_counts_lookup_from_cache(feed_uuids, cache)
-        )
-        setattr(request, "_archived_counts_lookup", archived_counts_lookup)
+        counts_lookup_cache_hit: bool
+        if field_names.intersection(("readCount", "unreadCount")):
+            counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
+                user, feed_uuids, cache
+            )
+            setattr(
+                request,
+                "_counts_lookup",
+                counts_lookup,
+            )
+        else:
+            counts_lookup_cache_hit = False
+
+        archived_counts_lookup_cache_hit: bool
+        if field_names.intersection(("archivedCount",)):
+            archived_counts_lookup, archived_counts_lookup_cache_hit = (
+                get_archived_counts_lookup_from_cache(feed_uuids, cache)
+            )
+            setattr(request, "_archived_counts_lookup", archived_counts_lookup)
+        else:
+            archived_counts_lookup_cache_hit = False
 
         ret_obj: dict[str, Any] = {}
 

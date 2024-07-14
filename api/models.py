@@ -19,7 +19,7 @@ from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 if TYPE_CHECKING:  # pragma: no cover
     from api.cache_utils.subscription_datas import SubscriptionData
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.models")
 
 
 class UserManager(BaseUserManager["User"]):

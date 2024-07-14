@@ -1,4 +1,5 @@
 import datetime
+import logging
 import uuid
 from dataclasses import dataclass
 from functools import reduce
@@ -11,6 +12,8 @@ from django.http import HttpRequest
 from django.utils import timezone
 
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User, UserCategory
+
+_logger = logging.getLogger("rss_temple.fields")
 
 _FEED_IS_DEAD_MAX_INTERVAL: datetime.timedelta
 
@@ -89,6 +92,7 @@ def _feed__generate_counts_lookup(
         request, "_counts_lookup", None
     )
     if counts_lookup is None:
+        _logger.warning("slow path: _feed__generate_counts_lookup")
         counts_lookup = Feed.generate_counts_lookup(
             cast(User, request.user), [f.uuid for f in queryset]
         )
@@ -119,6 +123,7 @@ def _feed__generate_archived_counts_lookup(
         request, "_archived_counts_lookup", None
     )
     if archived_counts_lookup is None:
+        _logger.warning("slow path: _feed__generate_archived_counts_lookup")
         archived_counts_lookup = Feed.generate_archived_counts_lookup(
             [f.uuid for f in queryset]
         )
@@ -452,3 +457,7 @@ def generate_only_fields(field_maps: list[FieldMap]) -> frozenset[str]:
     return reduce(
         lambda a, b: a.union(b), (fm["only_fields"] for fm in field_maps), frozenset()
     )
+
+
+def generate_field_names(field_maps: list[FieldMap]) -> frozenset[str]:
+    return frozenset(fm["field_name"] for fm in field_maps)

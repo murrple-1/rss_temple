@@ -124,12 +124,12 @@ class FieldsTestCase(TestCase):
     def test_generate_only_fields(self):
         field_maps: list[fields.FieldMap] = [
             {
-                "field_name": "uuid",
+                "field_name": "myUuid",
                 "accessor": lambda request, db_obj, queryset: db_obj.uuid,
                 "only_fields": {"uuid"},
             },
             {
-                "field_name": "text",
+                "field_name": "myText",
                 "accessor": lambda request, db_obj, queryset: db_obj.text,
                 "only_fields": {"text"},
             },
@@ -138,6 +138,25 @@ class FieldsTestCase(TestCase):
         self.assertEqual(
             fields.generate_only_fields(field_maps),
             {"uuid", "text"},
+        )
+
+    def test_generate_field_names(self):
+        field_maps: list[fields.FieldMap] = [
+            {
+                "field_name": "myUuid",
+                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
+                "only_fields": {"uuid"},
+            },
+            {
+                "field_name": "myText",
+                "accessor": lambda request, db_obj, queryset: db_obj.text,
+                "only_fields": {"text"},
+            },
+        ]
+
+        self.assertEqual(
+            fields.generate_field_names(field_maps),
+            {"myUuid", "myText"},
         )
 
 
