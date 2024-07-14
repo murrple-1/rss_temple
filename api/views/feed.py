@@ -114,7 +114,7 @@ class FeedView(APIView):
 
         field_names = generate_field_names(field_maps)
 
-        counts_lookup_cache_hit: bool
+        counts_lookup_cache_hit: bool | None
         if field_names.intersection(("readCount", "unreadCount")):
             counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
                 user, (feed.uuid,), cache
@@ -125,16 +125,16 @@ class FeedView(APIView):
                 counts_lookup,
             )
         else:
-            counts_lookup_cache_hit = False
+            counts_lookup_cache_hit = None
 
-        archived_counts_lookup_cache_hit: bool
+        archived_counts_lookup_cache_hit: bool | None
         if field_names.intersection(("archivedCount",)):
             archived_counts_lookup, archived_counts_lookup_cache_hit = (
                 get_archived_counts_lookup_from_cache((feed.uuid,), cache)
             )
             setattr(request, "_archived_counts_lookup", archived_counts_lookup)
         else:
-            archived_counts_lookup_cache_hit = False
+            archived_counts_lookup_cache_hit = None
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -142,8 +142,16 @@ class FeedView(APIView):
         response["X-Cache-Hit"] = ",".join(
             (
                 "YES" if subscription_datas_cache_hit else "NO",
-                "YES" if counts_lookup_cache_hit else "NO",
-                "YES" if archived_counts_lookup_cache_hit else "NO",
+                (
+                    ("YES" if counts_lookup_cache_hit else "NO")
+                    if counts_lookup_cache_hit is not None
+                    else "SKIP"
+                ),
+                (
+                    ("YES" if archived_counts_lookup_cache_hit else "NO")
+                    if archived_counts_lookup_cache_hit is not None
+                    else "SKIP"
+                ),
             ),
         )
         return response
@@ -197,7 +205,7 @@ class FeedsQueryView(APIView):
 
         field_names = generate_field_names(field_maps)
 
-        counts_lookup_cache_hit: bool
+        counts_lookup_cache_hit: bool | None
         if field_names.intersection(("readCount", "unreadCount")):
             counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
                 user, feed_uuids, cache
@@ -208,16 +216,16 @@ class FeedsQueryView(APIView):
                 counts_lookup,
             )
         else:
-            counts_lookup_cache_hit = False
+            counts_lookup_cache_hit = None
 
-        archived_counts_lookup_cache_hit: bool
+        archived_counts_lookup_cache_hit: bool | None
         if field_names.intersection(("archivedCount",)):
             archived_counts_lookup, archived_counts_lookup_cache_hit = (
                 get_archived_counts_lookup_from_cache(feed_uuids, cache)
             )
             setattr(request, "_archived_counts_lookup", archived_counts_lookup)
         else:
-            archived_counts_lookup_cache_hit = False
+            archived_counts_lookup_cache_hit = None
 
         ret_obj: dict[str, Any] = {}
 
@@ -238,8 +246,16 @@ class FeedsQueryView(APIView):
         response["X-Cache-Hit"] = ",".join(
             (
                 "YES" if subscription_datas_cache_hit else "NO",
-                "YES" if counts_lookup_cache_hit else "NO",
-                "YES" if archived_counts_lookup_cache_hit else "NO",
+                (
+                    ("YES" if counts_lookup_cache_hit else "NO")
+                    if counts_lookup_cache_hit is not None
+                    else "SKIP"
+                ),
+                (
+                    ("YES" if archived_counts_lookup_cache_hit else "NO")
+                    if archived_counts_lookup_cache_hit is not None
+                    else "SKIP"
+                ),
             )
         )
         return response
