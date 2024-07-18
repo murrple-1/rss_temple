@@ -14,7 +14,7 @@ from dramatiq import Message
 from dramatiq.errors import DramatiqError
 from drf_yasg.utils import swagger_auto_schema
 from requests.exceptions import RequestException
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -65,6 +65,8 @@ _logger = logging.getLogger("rss_temple.views.feed")
 _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None
 _DOWNLOAD_MAX_BYTE_COUNT: int
 _FEED_GET_REQUESTS_DRAMATIQ: bool
+_FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS: float
+_FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS: float
 
 
 @receiver(setting_changed)
@@ -72,10 +74,22 @@ def _load_global_settings(*args: Any, **kwargs: Any):
     global _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
     global _DOWNLOAD_MAX_BYTE_COUNT
     global _FEED_GET_REQUESTS_DRAMATIQ
+    global _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS
+    global _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
 
     _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS = settings.EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS
     _DOWNLOAD_MAX_BYTE_COUNT = settings.DOWNLOAD_MAX_BYTE_COUNT
     _FEED_GET_REQUESTS_DRAMATIQ = getattr(settings, "FEED_GET_REQUESTS_DRAMATIQ", True)
+    _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS = getattr(
+        settings,
+        "FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS",
+        1000.0 * 10.0,
+    )
+    _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS = getattr(
+        settings,
+        "FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS",
+        1000 * 10.0,
+    )
 
 
 _load_global_settings()
@@ -133,8 +147,12 @@ def _preprocess_get_request_from_cache__dramatiq(
                         [str(uuid_) for uuid_ in missing_counts_lookup_feed_uuids],
                     ),
                     kwargs={},
-                    # TODO options?
-                    options={},
+                    options={
+                        "max_age": (
+                            _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS
+                            * 1000.0
+                        ),
+                    },
                 )
             )
             counts_lookup_cache_hit = False
@@ -160,8 +178,12 @@ def _preprocess_get_request_from_cache__dramatiq(
                         ],
                     ),
                     kwargs={},
-                    # TODO options?
-                    options={},
+                    options={
+                        "max_age": (
+                            _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
+                            * 1000.0
+                        ),
+                    },
                 )
             )
             archived_counts_lookup_cache_hit = False
@@ -170,9 +192,11 @@ def _preprocess_get_request_from_cache__dramatiq(
 
     for k, message in messages.items():
         if k == "counts":
-            # TODO hardcorded timeout
             counts_results: dict[str, dict[str, Any]] = message.get_result(
-                block=True, timeout=10000
+                block=True,
+                timeout=int(
+                    _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS * 1000.0
+                ),
             )
 
             missing_counts_lookup = {
@@ -187,9 +211,12 @@ def _preprocess_get_request_from_cache__dramatiq(
             assert counts_lookup is not None
             counts_lookup.update(missing_counts_lookup)
         elif k == "archived_counts":
-            # TODO hardcorded timeout
             archived_counts_results: dict[str, int] = message.get_result(
-                block=True, timeout=10000
+                block=True,
+                timeout=int(
+                    _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
+                    * 1000.0
+                ),
             )
 
             missing_archived_counts_lookup = {
@@ -347,8 +374,7 @@ class FeedView(APIView):
             )
         except DramatiqError as e:  # pragma: no cover
             _logger.exception("failed to get values from cache")
-            # TODO better error
-            raise RuntimeError from e
+            raise APIException("failed to load data") from e
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -429,8 +455,7 @@ class FeedsQueryView(APIView):
             )
         except DramatiqError as e:  # pragma: no cover
             _logger.exception("failed to get values from cache")
-            # TODO better error
-            raise RuntimeError from e
+            raise APIException("failed to load data") from e
 
         ret_obj: dict[str, Any] = {}
 
