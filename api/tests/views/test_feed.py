@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from django.core.cache import BaseCache, caches
 from django.http.response import HttpResponse
-from django.test import tag
+from django.test import override_settings, tag
 from django.utils import timezone
 
 from api import fields
@@ -16,6 +16,7 @@ from api.tests.utils import (
 )
 
 
+@override_settings(FEED_GET_REQUESTS_DRAMATIQ=False)
 class FeedTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

@@ -1,5 +1,5 @@
 import uuid as uuid_
-from typing import Any, Collection, Generator, NamedTuple
+from typing import Any, Collection, Generator, NamedTuple, TypedDict
 
 from django.conf import settings
 from django.core.cache import BaseCache
@@ -95,3 +95,25 @@ def increment_read_in_counts_lookup_cache(
             )
 
         save_counts_lookup_to_cache(user, counts_lookup, cache)
+
+
+class _GetCountsLookupTaskResults_Lookup(TypedDict):
+    unread_count: int
+    read_count: int
+
+
+def get_counts_lookup_task(
+    user_uuid_str: str, feed_uuid_strs: list[str]
+) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
+    user = User.objects.get(uuid=uuid_.UUID(user_uuid_str))
+    counts_lookup = Feed.generate_counts_lookup(
+        user, [uuid_.UUID(fus) for fus in feed_uuid_strs]
+    )
+
+    return {
+        str(u): {
+            "unread_count": l.unread_count,
+            "read_count": l.read_count,
+        }
+        for u, l in counts_lookup.items()
+    }

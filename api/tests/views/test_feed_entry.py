@@ -6,8 +6,10 @@ from django.core.cache import BaseCache, caches
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from api.cache_utils.counts_lookup import save_counts_lookup_to_cache
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
 from api.tests.utils import throttling_monkey_patch
+from api.tests.views.test_feed import FeedTestCase
 
 
 class FeedEntryTestCase(APITestCase):
@@ -127,6 +129,46 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
+    def test_FeedEntryReadView_post_cachewarmed(self):
+        cache: BaseCache = caches["default"]
+
+        try:
+            feed_entry = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry Title",
+                url="http://example.com/entry1.html",
+                content="Some Entry content",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {
+                    FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5),
+                },
+                cache,
+            )
+
+            response = self.client.post(
+                f"/api/feedentry/{feed_entry.uuid}/read",
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+
+            json_ = response.json()
+            self.assertIsInstance(json_, str)
+
+            self.assertTrue(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user, feed_entry=feed_entry
+                ).exists()
+            )
+        finally:
+            cache.clear()
+
     def test_FeedEntryReadView_post_not_found(self):
         response = self.client.post(
             f"/api/feedentry/{uuid.uuid4()}/read",
@@ -224,6 +266,48 @@ class FeedEntryTestCase(APITestCase):
             ).exists()
         )
 
+    def test_FeedEntryReadView_delete_cachewarmed(self):
+        cache: BaseCache = caches["default"]
+
+        try:
+            feed_entry = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry Title",
+                url="http://example.com/entry1.html",
+                content="Some Entry content",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            ReadFeedEntryUserMapping.objects.create(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry
+            )
+
+            FeedEntryTestCase.user.read_feed_entries_counter = 1
+            FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5)},
+                cache,
+            )
+
+            response = self.client.delete(
+                f"/api/feedentry/{feed_entry.uuid}/read",
+            )
+            self.assertEqual(response.status_code, 204, response.content)
+
+            self.assertFalse(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user, feed_entry=feed_entry
+                ).exists()
+            )
+        finally:
+            cache.clear()
+
     def test_FeedEntryReadView_delete_not_exist(self):
         uuid_ = uuid.UUID(int=0)
 
@@ -306,6 +390,107 @@ class FeedEntryTestCase(APITestCase):
             ).count(),
             2,
         )
+
+    def test_FeedEntriesReadView_post_cachewarmed(self):
+        cache: BaseCache = caches["default"]
+
+        try:
+            feed_entry1 = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry 1 Title",
+                url="http://example.com/entry1.html",
+                content="Some Entry content 1",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            feed_entry2 = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry 2 Title",
+                url="http://example.com/entry2.html",
+                content="Some Entry content 2",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5)},
+                cache,
+            )
+
+            response = self.client.post(
+                "/api/feedentries/read",
+                {
+                    "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
+                },
+            )
+            self.assertEqual(response.status_code, 204, response.content)
+
+            self.assertEqual(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user,
+                    feed_entry__in=[feed_entry1, feed_entry2],
+                ).count(),
+                2,
+            )
+
+            ReadFeedEntryUserMapping.objects.all().delete()
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5)},
+                cache,
+            )
+
+            response = self.client.post(
+                "/api/feedentries/read",
+                {
+                    "feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)],
+                },
+            )
+            self.assertEqual(response.status_code, 204, response.content)
+
+            self.assertEqual(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user,
+                    feed_entry__in=[feed_entry1, feed_entry2],
+                ).count(),
+                2,
+            )
+
+            ReadFeedEntryUserMapping.objects.all().delete()
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5)},
+                cache,
+            )
+
+            response = self.client.post(
+                "/api/feedentries/read",
+                {
+                    "feedEntryUuids": [str(feed_entry1.uuid)],
+                    "feedUuids": [str(FeedEntryTestCase.feed.uuid)],
+                },
+            )
+            self.assertEqual(response.status_code, 204, response.content)
+
+            self.assertEqual(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user,
+                    feed_entry__in=[feed_entry1, feed_entry2],
+                ).count(),
+                2,
+            )
+        finally:
+            cache.clear()
 
     def test_FeedEntriesReadView_post_noentries(self):
         response = self.client.post(
@@ -450,6 +635,66 @@ class FeedEntryTestCase(APITestCase):
                 user=FeedEntryTestCase.user, feed_entry__in=[feed_entry1, feed_entry2]
             ).exists()
         )
+
+    def test_FeedEntriesReadView_delete_cachewarmed(self):
+        cache: BaseCache = caches["default"]
+
+        try:
+            feed_entry1 = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry 1 Title",
+                url="http://example.com/entry1.html",
+                content="Some Entry content 1",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            feed_entry2 = FeedEntry.objects.create(
+                id=None,
+                feed=FeedEntryTestCase.feed,
+                created_at=None,
+                updated_at=None,
+                title="Feed Entry 2 Title",
+                url="http://example.com/entry2.html",
+                content="Some Entry content 2",
+                author_name="John Doe",
+                db_updated_at=None,
+            )
+
+            ReadFeedEntryUserMapping.objects.create(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry1
+            )
+
+            ReadFeedEntryUserMapping.objects.create(
+                user=FeedEntryTestCase.user, feed_entry=feed_entry2
+            )
+
+            FeedEntryTestCase.user.read_feed_entries_counter = 2
+            FeedEntryTestCase.user.save(update_fields=("read_feed_entries_counter",))
+
+            save_counts_lookup_to_cache(
+                FeedEntryTestCase.user,
+                {FeedEntryTestCase.feed.uuid: Feed._CountsDescriptor(5, 5)},
+                cache,
+            )
+
+            response = self.client.delete(
+                "/api/feedentries/read",
+                {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
+            )
+            self.assertEqual(response.status_code, 204, response.content)
+
+            self.assertFalse(
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=FeedEntryTestCase.user,
+                    feed_entry__in=[feed_entry1, feed_entry2],
+                ).exists()
+            )
+        finally:
+            cache.clear()
 
     def test_FeedEntriesReadView_delete_shortcut(self):
         response = self.client.delete(

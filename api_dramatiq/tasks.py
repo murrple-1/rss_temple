@@ -15,6 +15,11 @@ from django.utils import timezone
 from requests.exceptions import RequestException
 
 from api import content_type_util, rss_requests
+from api.cache_utils.archived_counts_lookup import get_archived_counts_lookup_task
+from api.cache_utils.counts_lookup import (
+    _GetCountsLookupTaskResults_Lookup,
+    get_counts_lookup_task,
+)
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
 from api.models import (
@@ -45,42 +50,18 @@ from api.tasks.setup_subscriptions import (
 )
 
 
-class _GetCountsResults_Lookups(TypedDict):
-    unread_count: int
-    read_count: int
-
-
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
-def get_counts(
+def get_counts_lookup(
     user_uuid_str: str, feed_uuid_strs: list[str], *args, **kwargs
-) -> dict[str, _GetCountsResults_Lookups]:
-    get_counts.logger.info("starting get_counts...")
-
-    user = User.objects.get(uuid=uuid.UUID(user_uuid_str))
-    counts_lookup = Feed.generate_counts_lookup(
-        user, [uuid.UUID(fus) for fus in feed_uuid_strs]
-    )
-
-    get_counts.logger.info("done get_counts")
-    return {
-        str(u): {
-            "unread_count": l.unread_count,
-            "read_count": l.read_count,
-        }
-        for u, l in counts_lookup.items()
-    }
+) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
+    return get_counts_lookup_task(user_uuid_str, feed_uuid_strs)
 
 
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
-def get_archived_counts(feed_uuid_strs: list[str], *args, **kwargs) -> dict[str, int]:
-    get_archived_counts.logger.info("starting get_archived_counts...")
-
-    archived_counts_lookup = Feed.generate_archived_counts_lookup(
-        [uuid.UUID(fus) for fus in feed_uuid_strs]
-    )
-
-    get_archived_counts.logger.info("done get_archived_counts")
-    return {str(u): l for u, l in archived_counts_lookup.items()}
+def get_archived_counts_lookup(
+    feed_uuid_strs: list[str], *args, **kwargs
+) -> dict[str, int]:
+    return get_archived_counts_lookup_task(feed_uuid_strs)
 
 
 @dramatiq.actor(queue_name="rss_temple")

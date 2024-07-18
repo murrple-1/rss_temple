@@ -74,3 +74,11 @@ def get_archived_counts_lookup_from_cache(
         return _GetArchivedCountsLookupFromCacheResult(
             archived_counts_lookup, missing_feed_uuids
         )
+
+
+def get_archived_counts_lookup_task(feed_uuid_strs: list[str]) -> dict[str, int]:
+    archived_counts_lookup = Feed.generate_archived_counts_lookup(
+        [uuid_.UUID(fus) for fus in feed_uuid_strs]
+    )
+
+    return {str(u): l for u, l in archived_counts_lookup.items()}
