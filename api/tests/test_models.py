@@ -1,4 +1,5 @@
 import datetime
+import logging
 import random
 from typing import ClassVar
 
@@ -158,6 +159,22 @@ class UserCategoryTestCase(TestCase):
 
 
 class FeedTestCase(TestCase):
+    old_logger_level: ClassVar[int]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
+
+        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
+
     def test_with_subscription_data(self):
         feed = Feed(
             feed_url="http://example.com/rss.xml",

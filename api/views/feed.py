@@ -185,11 +185,7 @@ def _preprocess_get_request_from_cache__dramatiq(
             save_counts_lookup_to_cache(user, missing_counts_lookup, cache)
 
             assert counts_lookup is not None
-            setattr(
-                request,
-                "_counts_lookup",
-                counts_lookup | missing_counts_lookup,
-            )
+            counts_lookup.update(missing_counts_lookup)
         elif k == "archived_counts":
             # TODO hardcorded timeout
             archived_counts_results: dict[str, int] = message.get_result(
@@ -203,11 +199,21 @@ def _preprocess_get_request_from_cache__dramatiq(
             save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
 
             assert archived_counts_lookup is not None
-            setattr(
-                request,
-                "_archived_counts_lookup",
-                archived_counts_lookup | missing_archived_counts_lookup,
-            )
+            archived_counts_lookup.update(missing_archived_counts_lookup)
+
+    if counts_lookup is not None:
+        setattr(
+            request,
+            "_counts_lookup",
+            counts_lookup,
+        )
+
+    if archived_counts_lookup is not None:
+        setattr(
+            request,
+            "_archived_counts_lookup",
+            archived_counts_lookup,
+        )
 
     return _PreprocessGetRequestFromCacheResults(
         counts_lookup_cache_hit, archived_counts_lookup_cache_hit
@@ -238,14 +244,17 @@ def _preprocess_get_request_from_cache__sync(
                 for fus, l in missing_counts_lookup_results.items()
             }
             save_counts_lookup_to_cache(user, missing_counts_lookup, cache)
-            setattr(
-                request,
-                "_counts_lookup",
-                counts_lookup | missing_counts_lookup,
-            )
+
+            counts_lookup.update(missing_counts_lookup)
             counts_lookup_cache_hit = False
         else:
             counts_lookup_cache_hit = True
+
+        setattr(
+            request,
+            "_counts_lookup",
+            counts_lookup,
+        )
 
     archived_counts_lookup_cache_hit: bool | None = None
     if field_names.intersection(("archivedCount",)):
@@ -262,14 +271,17 @@ def _preprocess_get_request_from_cache__sync(
                 for fus, l in missing_archived_counts_lookup_results.items()
             }
             save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
-            setattr(
-                request,
-                "_archived_counts_lookup",
-                archived_counts_lookup | missing_archived_counts_lookup,
-            )
+
+            archived_counts_lookup.update(missing_archived_counts_lookup)
             archived_counts_lookup_cache_hit = False
         else:
             archived_counts_lookup_cache_hit = True
+
+        setattr(
+            request,
+            "_archived_counts_lookup",
+            archived_counts_lookup,
+        )
 
     return _PreprocessGetRequestFromCacheResults(
         counts_lookup_cache_hit, archived_counts_lookup_cache_hit

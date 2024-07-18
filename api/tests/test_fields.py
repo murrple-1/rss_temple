@@ -283,7 +283,22 @@ class AllFieldsTestCase(TestCase):
 
 
 class FieldFnsTestCase(TestCase):
+    old_logger_level: ClassVar[int]
     user: ClassVar[User]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
+
+        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+
+        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
 
     @classmethod
     def setUpTestData(cls):
