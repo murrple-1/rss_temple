@@ -20,7 +20,7 @@ sensitive_post_parameters_m = method_decorator(
 
 class RegisterView(_RegisterView):
     @sensitive_post_parameters_m
-    def dispatch(self, *args, **kwargs):
+    def dispatch(self, *args: Any, **kwargs: Any):
         return super().dispatch(*args, **kwargs)
 
     @swagger_auto_schema(

@@ -1,9 +1,10 @@
+from typing import Any
+
 import django
 
 django.setup()
 
 import datetime
-import uuid
 
 import dramatiq
 from django.conf import settings
@@ -50,7 +51,7 @@ from api.tasks.setup_subscriptions import (
 
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
 def get_counts_lookup(
-    user_uuid_str: str, feed_uuid_strs: list[str], *args, **kwargs
+    user_uuid_str: str, feed_uuid_strs: list[str], *args: Any, **kwargs: Any
 ) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
     get_counts_lookup.logger.info("get_counts_lookup() started...")
     return get_counts_lookup_task(user_uuid_str, feed_uuid_strs)
@@ -58,14 +59,14 @@ def get_counts_lookup(
 
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
 def get_archived_counts_lookup(
-    feed_uuid_strs: list[str], *args, **kwargs
+    feed_uuid_strs: list[str], *args: Any, **kwargs: Any
 ) -> dict[str, int]:
     get_archived_counts_lookup.logger.info("get_archived_counts_lookup() started...")
     return get_archived_counts_lookup_task(feed_uuid_strs)
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def archive_feed_entries(*args, limit=1000, **kwargs) -> None:
+def archive_feed_entries(*args: Any, limit=1000, **kwargs: Any) -> None:
     count = 0
     with transaction.atomic():
         for feed in Feed.objects.filter(
@@ -85,7 +86,7 @@ def archive_feed_entries(*args, limit=1000, **kwargs) -> None:
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def purge_expired_data(*args, **kwargs) -> None:
+def purge_expired_data(*args: Any, **kwargs: Any) -> None:
     purge_expired_data_()
     purge_expired_data.logger.info("purged expired data")
 
@@ -93,14 +94,14 @@ def purge_expired_data(*args, **kwargs) -> None:
 @dramatiq.actor(queue_name="rss_temple")
 def extract_top_images(
     response_max_byte_count: int,
-    *args,
+    *args: Any,
     max_processing_attempts=3,
     min_image_byte_count=4500,
     min_image_width=250,
     min_image_height=250,
     db_limit=50,
     since: str | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     since_ = (
         datetime.datetime.fromisoformat(since)
@@ -123,13 +124,13 @@ def extract_top_images(
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def label_feeds(*args, top_x=3, **kwargs) -> None:
+def label_feeds(*args: Any, top_x=3, **kwargs: Any) -> None:
     label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
     label_feeds.logger.info("feeds labelled")
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def label_users(*args, top_x=10, **kwargs) -> None:
+def label_users(*args: Any, top_x=10, **kwargs: Any) -> None:
     label_users_(top_x, settings.LABELING_EXPIRY_INTERVAL)
     label_users.logger.info("users labelled")
 
@@ -138,11 +139,11 @@ def label_users(*args, top_x=10, **kwargs) -> None:
 def feed_scrape(
     response_max_byte_count: int,
     should_scrape_dead_feeds: bool,
-    *args,
+    *args: Any,
     db_limit=1000,
     is_dead_max_interval_seconds: float | None = None,
     log_exception_traceback=False,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     is_dead_max_interval = (
         datetime.timedelta(seconds=is_dead_max_interval_seconds)
@@ -237,7 +238,9 @@ def feed_scrape(
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def setup_subscriptions(response_max_byte_count: int, *args, **kwargs) -> None:
+def setup_subscriptions(
+    response_max_byte_count: int, *args: Any, **kwargs: Any
+) -> None:
     feed_subscription_progress_entry = setup_subscriptions__get_first_entry()
     if feed_subscription_progress_entry is not None:
         setup_subscriptions_(feed_subscription_progress_entry, response_max_byte_count)
@@ -248,11 +251,11 @@ def setup_subscriptions(response_max_byte_count: int, *args, **kwargs) -> None:
 
 @dramatiq.actor(queue_name="rss_temple")
 def flag_duplicate_feeds(
-    *args,
+    *args: Any,
     feed_count=1000,
     entry_compare_count=50,
     entry_intersection_threshold=5,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     duplicate_feed_suggestions: list[DuplicateFeedSuggestion] = []
 
@@ -279,6 +282,6 @@ def flag_duplicate_feeds(
 
 
 @dramatiq.actor(queue_name="rss_temple")
-def purge_duplicate_feed_urls(*args, **kwargs) -> None:
+def purge_duplicate_feed_urls(*args: Any, **kwargs: Any) -> None:
     purge_duplicate_feed_urls_()
     purge_duplicate_feed_urls.logger.info("purged duplicate feed URLs")

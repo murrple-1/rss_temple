@@ -92,7 +92,7 @@ class UserDetailsSerializer(serializers.ModelSerializer[User]):  # pragma: no co
 class _SetPasswordForm(PasswordVerificationMixin, UserForm):  # pragma: no cover
     password = SetPasswordField()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         setattr(self.fields["password"], "user", self.user)
 
@@ -109,7 +109,7 @@ class PasswordChangeSerializer(serializers.Serializer):  # pragma: no cover
 
     request: HttpRequest
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.logout_on_password_change = api_settings.LOGOUT_ON_PASSWORD_CHANGE
         super().__init__(*args, **kwargs)
 
@@ -395,7 +395,7 @@ class UserDeleteSerializer(serializers.Serializer):
 
 
 class _FieldsField(serializers.ListField):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         kwargs["child"] = serializers.CharField()
         super().__init__(*args, **kwargs)
 
