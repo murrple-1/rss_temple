@@ -4,7 +4,6 @@ django.setup()
 
 import datetime
 import uuid
-from typing import TypedDict
 
 import dramatiq
 from django.conf import settings
@@ -27,7 +26,6 @@ from api.models import (
     Feed,
     FeedEntry,
     SubscribedFeedUserMapping,
-    User,
 )
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
@@ -54,6 +52,7 @@ from api.tasks.setup_subscriptions import (
 def get_counts_lookup(
     user_uuid_str: str, feed_uuid_strs: list[str], *args, **kwargs
 ) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
+    get_counts_lookup.logger.info("get_counts_lookup() started...")
     return get_counts_lookup_task(user_uuid_str, feed_uuid_strs)
 
 
@@ -61,6 +60,7 @@ def get_counts_lookup(
 def get_archived_counts_lookup(
     feed_uuid_strs: list[str], *args, **kwargs
 ) -> dict[str, int]:
+    get_archived_counts_lookup.logger.info("get_archived_counts_lookup() started...")
     return get_archived_counts_lookup_task(feed_uuid_strs)
 
 
