@@ -1,5 +1,5 @@
 import uuid as uuid_
-from typing import TypedDict
+from typing import NamedTuple, TypedDict
 
 from django.core.cache import BaseCache
 
@@ -12,9 +12,14 @@ class SubscriptionData(TypedDict):
     custom_title: str | None
 
 
+class _GetSubscriptionDatasFromCacheResults(NamedTuple):
+    subscription_datas: list[SubscriptionData]
+    cache_hit: bool
+
+
 def get_subscription_datas_from_cache(
     user: User, cache: BaseCache
-) -> tuple[list[SubscriptionData], bool]:
+) -> _GetSubscriptionDatasFromCacheResults:
     with lock_context(cache, f"subscription_datas_lock__{user.uuid}"):
         cache_hit = True
         cache_key = f"subscription_datas__{user.uuid}"
@@ -36,7 +41,7 @@ def get_subscription_datas_from_cache(
             )
             cache_hit = False
 
-        return subscription_datas, cache_hit
+        return _GetSubscriptionDatasFromCacheResults(subscription_datas, cache_hit)
 
 
 def delete_subscription_data_cache(user: User, cache: BaseCache) -> None:

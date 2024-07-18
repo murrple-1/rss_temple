@@ -1,4 +1,5 @@
 import uuid as uuid_
+from typing import NamedTuple
 
 from django.core.cache import BaseCache
 
@@ -6,9 +7,14 @@ from api.lock_context import lock_context
 from api.models import ReadFeedEntryUserMapping, User
 
 
+class _GetReadFeedEntryUuidsFromCacheResults(NamedTuple):
+    read_feed_entry_uuids: list[uuid_.UUID]
+    cache_hit: bool
+
+
 def get_read_feed_entry_uuids_from_cache(
     user: User, cache: BaseCache
-) -> tuple[list[uuid_.UUID], bool]:
+) -> _GetReadFeedEntryUuidsFromCacheResults:
     with lock_context(cache, f"read_feed_entry_uuids_lock__{user.uuid}"):
         cache_hit = True
         cache_key = f"read_feed_entry_uuids__{user.uuid}"
@@ -26,7 +32,7 @@ def get_read_feed_entry_uuids_from_cache(
             )
             cache_hit = False
 
-        return read_feed_entry_uuids, cache_hit
+        return _GetReadFeedEntryUuidsFromCacheResults(read_feed_entry_uuids, cache_hit)
 
 
 def delete_read_feed_entry_uuids_cache(user: User, cache: BaseCache) -> None:

@@ -1,5 +1,5 @@
 import uuid as uuid_
-from typing import Any, Collection, Generator
+from typing import Any, Collection, Generator, NamedTuple
 
 from django.conf import settings
 from django.core.cache import BaseCache
@@ -53,9 +53,14 @@ def save_archived_counts_lookup_to_cache(
     )
 
 
+class _GetArchivedCountsLookupFromCacheResult(NamedTuple):
+    archived_counts_lookup: dict[uuid_.UUID, int]
+    missing_feed_uuids: list[uuid_.UUID]
+
+
 def get_archived_counts_lookup_from_cache(
     feed_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> tuple[dict[uuid_.UUID, int], list[uuid_.UUID]]:
+) -> _GetArchivedCountsLookupFromCacheResult:
     with lock_context(cache, f"archived_counts_lookup_lock"):
         archived_counts_lookup: dict[uuid_.UUID, int] = {
             feed_uuid: archived_count
@@ -66,4 +71,6 @@ def get_archived_counts_lookup_from_cache(
             f_uuid for f_uuid in feed_uuids if f_uuid not in archived_counts_lookup
         ]
 
-        return archived_counts_lookup, missing_feed_uuids
+        return _GetArchivedCountsLookupFromCacheResult(
+            archived_counts_lookup, missing_feed_uuids
+        )

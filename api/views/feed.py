@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Collection, cast
+from typing import Any, Collection, NamedTuple, cast
 
 import dramatiq
 from django.conf import settings
@@ -78,13 +78,18 @@ _load_global_settings()
 _OBJECT_NAME = "feed"
 
 
+class _PreprocessGetRequestFromCacheResults(NamedTuple):
+    counts_lookup_cache_hit: bool | None
+    archived_counts_lookup_cache_hit: bool | None
+
+
 def _preprocess_get_request_from_cache(
     request: Request,
     cache: BaseCache,
     field_names: frozenset[str],
     user: User,
     feed_uuids: Collection[uuid.UUID],
-) -> tuple[bool | None, bool | None]:
+) -> _PreprocessGetRequestFromCacheResults:
     broker = dramatiq.get_broker()
 
     messages: dict[str, Message] = {}
@@ -182,7 +187,9 @@ def _preprocess_get_request_from_cache(
                 archived_counts_lookup | missing_archived_counts_lookup,
             )
 
-    return counts_lookup_cache_hit, archived_counts_lookup_cache_hit
+    return _PreprocessGetRequestFromCacheResults(
+        counts_lookup_cache_hit, archived_counts_lookup_cache_hit
+    )
 
 
 class FeedView(APIView):

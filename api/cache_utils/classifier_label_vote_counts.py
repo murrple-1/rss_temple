@@ -1,6 +1,6 @@
 import uuid as uuid_
 from collections import defaultdict
-from typing import Any, Collection, Generator
+from typing import Any, Collection, Generator, NamedTuple
 
 from django.conf import settings
 from django.core.cache import BaseCache
@@ -48,9 +48,14 @@ def _generate_cached_entries(
             yield feed_entry_uuid, entry
 
 
+class _GetClassifierLabelVoteCountsFromCacheResults(NamedTuple):
+    classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, int]]
+    cache_hit: bool
+
+
 def get_classifier_label_vote_counts_from_cache(
     feed_entry_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> tuple[dict[uuid_.UUID, dict[uuid_.UUID, int]], bool]:
+) -> _GetClassifierLabelVoteCountsFromCacheResults:
     feed_entry_uuids = frozenset(feed_entry_uuids)
 
     classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, int]] = {
@@ -131,4 +136,6 @@ def get_classifier_label_vote_counts_from_cache(
         )
         cache_hit = False
 
-    return classifier_label_vote_counts, cache_hit
+    return _GetClassifierLabelVoteCountsFromCacheResults(
+        classifier_label_vote_counts, cache_hit
+    )
