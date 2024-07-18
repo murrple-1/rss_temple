@@ -1,5 +1,8 @@
-from typing import Any, cast
+import logging
+import uuid
+from typing import Any, Collection, cast
 
+import dramatiq
 from django.conf import settings
 from django.core.cache import BaseCache, caches
 from django.core.signals import setting_changed
@@ -7,6 +10,8 @@ from django.db import transaction
 from django.db.models import OrderBy, Q
 from django.dispatch import receiver
 from django.utils import timezone
+from dramatiq import Message
+from dramatiq.errors import DramatiqError
 from drf_yasg.utils import swagger_auto_schema
 from requests.exceptions import RequestException
 from rest_framework.exceptions import NotFound
@@ -18,8 +23,14 @@ from url_normalize import url_normalize
 from api import content_type_util, feed_handler
 from api import fields as fieldutils
 from api import grace_period_util, rss_requests
-from api.cache_utils.archived_counts_lookup import get_archived_counts_lookup_from_cache
-from api.cache_utils.counts_lookup import get_counts_lookup_from_cache
+from api.cache_utils.archived_counts_lookup import (
+    get_archived_counts_lookup_from_cache,
+    save_archived_counts_lookup_to_cache,
+)
+from api.cache_utils.counts_lookup import (
+    get_counts_lookup_from_cache,
+    save_counts_lookup_to_cache,
+)
 from api.cache_utils.subscription_datas import (
     delete_subscription_data_cache,
     get_subscription_datas_from_cache,
@@ -47,6 +58,8 @@ from api.serializers import (
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
+_logger = logging.getLogger("rss_temple.views.feed")
+
 _EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None
 _DOWNLOAD_MAX_BYTE_COUNT: int
 
@@ -63,6 +76,113 @@ def _load_global_settings(*args: Any, **kwargs: Any):
 _load_global_settings()
 
 _OBJECT_NAME = "feed"
+
+
+def _preprocess_get_request_from_cache(
+    request: Request,
+    cache: BaseCache,
+    field_names: frozenset[str],
+    user: User,
+    feed_uuids: Collection[uuid.UUID],
+) -> tuple[bool | None, bool | None]:
+    broker = dramatiq.get_broker()
+
+    messages: dict[str, Message] = {}
+
+    counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] | None = None
+    counts_lookup_cache_hit: bool | None = None
+    if field_names.intersection(("readCount", "unreadCount")):
+        counts_lookup, missing_counts_lookup_feed_uuids = get_counts_lookup_from_cache(
+            user, feed_uuids, cache
+        )
+
+        if missing_counts_lookup_feed_uuids:
+            messages["counts"] = broker.enqueue(
+                Message(
+                    queue_name="rss_temple",
+                    actor_name="get_counts",
+                    args=(
+                        str(user.uuid),
+                        [str(uuid_) for uuid_ in missing_counts_lookup_feed_uuids],
+                    ),
+                    kwargs={},
+                    options={},
+                )
+            )
+            counts_lookup_cache_hit = False
+        else:
+            counts_lookup_cache_hit = True
+
+    archived_counts_lookup: dict[uuid.UUID, int] | None = None
+    archived_counts_lookup_cache_hit: bool | None = None
+    if field_names.intersection(("archivedCount",)):
+        archived_counts_lookup, missing_archived_counts_lookup_feed_uuids = (
+            get_archived_counts_lookup_from_cache(feed_uuids, cache)
+        )
+
+        if missing_archived_counts_lookup_feed_uuids:
+            messages["archived_counts"] = broker.enqueue(
+                Message(
+                    queue_name="rss_temple",
+                    actor_name="get_archived_counts",
+                    args=(
+                        [
+                            str(uuid_)
+                            for uuid_ in missing_archived_counts_lookup_feed_uuids
+                        ],
+                    ),
+                    kwargs={},
+                    options={},
+                )
+            )
+            archived_counts_lookup_cache_hit = False
+        else:
+            archived_counts_lookup_cache_hit = True
+
+    for k, message in messages.items():
+        if k == "counts":
+            # TODO hardcorded timeout
+            counts_results: dict[str, dict[str, Any]] = message.get_result(
+                block=True, timeout=10000
+            )
+            _logger.info("received get_counts result")
+
+            missing_counts_lookup = {
+                uuid.UUID(fus): Feed._CountsDescriptor(
+                    l["unread_count"], l["read_count"]
+                )
+                for fus, l in counts_results.items()
+            }
+
+            save_counts_lookup_to_cache(user, missing_counts_lookup, cache)
+
+            assert counts_lookup is not None
+            setattr(
+                request,
+                "_counts_lookup",
+                counts_lookup | missing_counts_lookup,
+            )
+        elif k == "archived_counts":
+            # TODO hardcorded timeout
+            archived_counts_results: dict[str, int] = message.get_result(
+                block=True, timeout=10000
+            )
+            _logger.info("received get_archived_counts result")
+
+            missing_archived_counts_lookup = {
+                uuid.UUID(fus): l for fus, l in archived_counts_results.items()
+            }
+
+            save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
+
+            assert archived_counts_lookup is not None
+            setattr(
+                request,
+                "_archived_counts_lookup",
+                archived_counts_lookup | missing_archived_counts_lookup,
+            )
+
+    return counts_lookup_cache_hit, archived_counts_lookup_cache_hit
 
 
 class FeedView(APIView):
@@ -115,26 +235,16 @@ class FeedView(APIView):
         field_names = generate_field_names(field_maps)
 
         counts_lookup_cache_hit: bool | None
-        if field_names.intersection(("readCount", "unreadCount")):
-            counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
-                user, (feed.uuid,), cache
-            )
-            setattr(
-                request,
-                "_counts_lookup",
-                counts_lookup,
-            )
-        else:
-            counts_lookup_cache_hit = None
-
         archived_counts_lookup_cache_hit: bool | None
-        if field_names.intersection(("archivedCount",)):
-            archived_counts_lookup, archived_counts_lookup_cache_hit = (
-                get_archived_counts_lookup_from_cache((feed.uuid,), cache)
+        try:
+            counts_lookup_cache_hit, archived_counts_lookup_cache_hit = (
+                _preprocess_get_request_from_cache(
+                    request, cache, field_names, user, (feed.uuid,)
+                )
             )
-            setattr(request, "_archived_counts_lookup", archived_counts_lookup)
-        else:
-            archived_counts_lookup_cache_hit = None
+        except DramatiqError:
+            _logger.exception("failed to get values from cache")
+            raise RuntimeError
 
         ret_obj = fieldutils.generate_return_object(field_maps, feed, request, None)
 
@@ -206,26 +316,16 @@ class FeedsQueryView(APIView):
         field_names = generate_field_names(field_maps)
 
         counts_lookup_cache_hit: bool | None
-        if field_names.intersection(("readCount", "unreadCount")):
-            counts_lookup, counts_lookup_cache_hit = get_counts_lookup_from_cache(
-                user, feed_uuids, cache
-            )
-            setattr(
-                request,
-                "_counts_lookup",
-                counts_lookup,
-            )
-        else:
-            counts_lookup_cache_hit = None
-
         archived_counts_lookup_cache_hit: bool | None
-        if field_names.intersection(("archivedCount",)):
-            archived_counts_lookup, archived_counts_lookup_cache_hit = (
-                get_archived_counts_lookup_from_cache(feed_uuids, cache)
+        try:
+            counts_lookup_cache_hit, archived_counts_lookup_cache_hit = (
+                _preprocess_get_request_from_cache(
+                    request, cache, field_names, user, feed_uuids
+                )
             )
-            setattr(request, "_archived_counts_lookup", archived_counts_lookup)
-        else:
-            archived_counts_lookup_cache_hit = None
+        except DramatiqError:
+            _logger.exception("failed to get values from cache")
+            raise RuntimeError
 
         ret_obj: dict[str, Any] = {}
 

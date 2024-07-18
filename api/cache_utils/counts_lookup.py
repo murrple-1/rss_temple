@@ -41,7 +41,7 @@ def _generate_cached_entries(
             yield feed_uuid, unread, read
 
 
-def _save_entries_to_cache(
+def save_counts_lookup_to_cache(
     user: User,
     counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor],
     cache: BaseCache,
@@ -60,9 +60,8 @@ def _save_entries_to_cache(
 
 def get_counts_lookup_from_cache(
     user: User, feed_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], bool]:
+) -> tuple[dict[uuid_.UUID, Feed._CountsDescriptor], list[uuid_.UUID]]:
     with lock_context(cache, f"counts_lookup_lock__{user.uuid}"):
-        cache_hit = True
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
             feed_uuid: Feed._CountsDescriptor(unread, read)
             for feed_uuid, unread, read in _generate_cached_entries(
@@ -74,17 +73,7 @@ def get_counts_lookup_from_cache(
             f_uuid for f_uuid in feed_uuids if f_uuid not in counts_lookup
         ]
 
-        if missing_feed_uuids:
-            missing_counts_lookup = Feed.generate_counts_lookup(
-                user, missing_feed_uuids
-            )
-            counts_lookup.update(missing_counts_lookup)
-
-            _save_entries_to_cache(user, missing_counts_lookup, cache)
-
-            cache_hit = False
-
-        return counts_lookup, cache_hit
+        return counts_lookup, missing_feed_uuids
 
 
 def increment_read_in_counts_lookup_cache(
@@ -100,11 +89,4 @@ def increment_read_in_counts_lookup_cache(
                 max(0, unread - incr), max(0, read + incr)
             )
 
-        missing_feed_uuids = [
-            k_uuid for k_uuid in feed_increments.keys() if k_uuid not in counts_lookup
-        ]
-
-        if missing_feed_uuids:
-            counts_lookup.update(Feed.generate_counts_lookup(user, missing_feed_uuids))
-
-        _save_entries_to_cache(user, counts_lookup, cache)
+        save_counts_lookup_to_cache(user, counts_lookup, cache)

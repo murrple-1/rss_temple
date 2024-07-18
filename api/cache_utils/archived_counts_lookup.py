@@ -40,7 +40,7 @@ def _generate_cached_entries(
             yield feed_uuid, archived_count
 
 
-def _save_entries_to_cache(
+def save_archived_counts_lookup_to_cache(
     archived_counts_lookup: dict[uuid_.UUID, int],
     cache: BaseCache,
 ) -> None:
@@ -55,9 +55,8 @@ def _save_entries_to_cache(
 
 def get_archived_counts_lookup_from_cache(
     feed_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> tuple[dict[uuid_.UUID, int], bool]:
+) -> tuple[dict[uuid_.UUID, int], list[uuid_.UUID]]:
     with lock_context(cache, f"archived_counts_lookup_lock"):
-        cache_hit = True
         archived_counts_lookup: dict[uuid_.UUID, int] = {
             feed_uuid: archived_count
             for feed_uuid, archived_count in _generate_cached_entries(feed_uuids, cache)
@@ -67,14 +66,4 @@ def get_archived_counts_lookup_from_cache(
             f_uuid for f_uuid in feed_uuids if f_uuid not in archived_counts_lookup
         ]
 
-        if missing_feed_uuids:
-            missing_archived_counts_lookup = Feed.generate_archived_counts_lookup(
-                missing_feed_uuids
-            )
-            archived_counts_lookup.update(missing_archived_counts_lookup)
-
-            _save_entries_to_cache(missing_archived_counts_lookup, cache)
-
-            cache_hit = False
-
-        return archived_counts_lookup, cache_hit
+        return archived_counts_lookup, missing_feed_uuids

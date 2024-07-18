@@ -11,9 +11,14 @@ from dramatiq.middleware import (
     ShutdownNotifications,
     TimeLimit,
 )
+from dramatiq.results import Results
+from dramatiq.results.backends import RedisBackend
 
 _REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
 _BROKER_URL = f"{_REDIS_URL}/5"
+_RESULTS_URL = f"{_REDIS_URL}/6"
+
+results_backend = RedisBackend(url=_RESULTS_URL)
 
 _middleware: list[Middleware] = [
     AgeLimit(),
@@ -22,6 +27,7 @@ _middleware: list[Middleware] = [
     Callbacks(),
     Pipelines(),
     Retries(),
+    Results(backend=results_backend),
 ]
 
 broker: Broker

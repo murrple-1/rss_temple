@@ -1,13 +1,15 @@
 import django
-from django.db.models import F, Q
 
 django.setup()
 
 import datetime
+import uuid
+from typing import TypedDict
 
 import dramatiq
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F, Q
 from django.db.models.functions import Now
 from django.utils import timezone
 from requests.exceptions import RequestException
@@ -20,6 +22,7 @@ from api.models import (
     Feed,
     FeedEntry,
     SubscribedFeedUserMapping,
+    User,
 )
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks import archive_feed_entries as archive_feed_entries_
@@ -40,11 +43,44 @@ from api.tasks.feed_scrape import (
 from api.tasks.setup_subscriptions import (
     get_first_entry as setup_subscriptions__get_first_entry,
 )
-from api_dramatiq.broker import broker
-from api_dramatiq.encoder import UJSONEncoder
 
-dramatiq.set_broker(broker)
-dramatiq.set_encoder(UJSONEncoder())
+
+class _GetCountsResults_Lookups(TypedDict):
+    unread_count: int
+    read_count: int
+
+
+@dramatiq.actor(queue_name="rss_temple", store_results=True)
+def get_counts(
+    user_uuid_str: str, feed_uuid_strs: list[str], *args, **kwargs
+) -> dict[str, _GetCountsResults_Lookups]:
+    get_counts.logger.info("starting get_counts...")
+
+    user = User.objects.get(uuid=uuid.UUID(user_uuid_str))
+    counts_lookup = Feed.generate_counts_lookup(
+        user, [uuid.UUID(fus) for fus in feed_uuid_strs]
+    )
+
+    get_counts.logger.info("done get_counts")
+    return {
+        str(u): {
+            "unread_count": l.unread_count,
+            "read_count": l.read_count,
+        }
+        for u, l in counts_lookup.items()
+    }
+
+
+@dramatiq.actor(queue_name="rss_temple", store_results=True)
+def get_archived_counts(feed_uuid_strs: list[str], *args, **kwargs) -> dict[str, int]:
+    get_archived_counts.logger.info("starting get_archived_counts...")
+
+    archived_counts_lookup = Feed.generate_archived_counts_lookup(
+        [uuid.UUID(fus) for fus in feed_uuid_strs]
+    )
+
+    get_archived_counts.logger.info("done get_archived_counts")
+    return {str(u): l for u, l in archived_counts_lookup.items()}
 
 
 @dramatiq.actor(queue_name="rss_temple")
