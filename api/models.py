@@ -592,6 +592,9 @@ class FeedEntry(models.Model):
             models.Index(fields=("-updated_at",)),
             models.Index(fields=("is_archived",)),
             models.Index(fields=("has_top_image_been_processed",)),
+            models.Index(
+                fields=("feed_id", "-published_at", "-created_at", "-updated_at")
+            ),
         )
 
         constraints = (
