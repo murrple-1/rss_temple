@@ -20,7 +20,7 @@ html5lib = "*"
 validators = "*"
 tabulate = "*"
 django-cors-headers = "*"
-gunicorn = "*"
+gunicorn = { verson = "*", extras = ["gthread"]}
 psycopg2 = "*"
 django-redis = "*"
 drf-yasg = "*"

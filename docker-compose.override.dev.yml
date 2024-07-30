@@ -14,7 +14,13 @@ services:
 
         python ./manage.py migrate
 
-        exec gunicorn --reload -b 0.0.0.0:8000 rss_temple.wsgi:application
+        exec gunicorn \\
+          --reload \\
+          -b 0.0.0.0:8000 \\
+          --worker-class gthread \\
+          --workers 4 \\
+          --threads 2 \\
+          rss_temple.wsgi:application
       "
     build:
       context: ./
@@ -51,7 +57,11 @@ services:
 
         python ./manage.py checkclassifierlabels
 
-        exec watchmedo auto-restart --directory=/code/ --pattern=*.py --ignore-patterns=**/.venv/* --recursive -- \\
+        exec watchmedo auto-restart \\
+          --directory=/code/ \\
+          --pattern=*.py \\
+          --ignore-patterns=**/.venv/* \\
+          --recursive -- \\
           python ./manage.py schedulerdaemon /code/schedulerdaemon.json
       "
     build:
