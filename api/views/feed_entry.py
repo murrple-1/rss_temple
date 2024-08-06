@@ -71,6 +71,10 @@ class FeedEntryView(APIView):
         query_serializer=GetSingleSerializer,
     )
     def get(self, request: Request, uuid: uuid_.UUID):
+        cache: BaseCache = caches["default"]
+
+        user = cast(User, request.user)
+
         serializer = GetSingleSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -79,12 +83,32 @@ class FeedEntryView(APIView):
 
         field_maps: list[FieldMap] = serializer.validated_data["fields"]
 
+        (
+            subscription_datas,
+            subscription_datas_cache_hit,
+        ) = get_subscription_datas_from_cache(user, cache)
+        (
+            read_feed_entry_uuids,
+            read_feed_entry_uuids_cache_hit,
+        ) = get_read_feed_entry_uuids_from_cache(user, cache)
+        (
+            favorite_feed_entry_uuids,
+            favorite_feed_entry_uuids_cache_hit,
+        ) = get_favorite_feed_entry_uuids_from_cache(user, cache)
+
         feed_entry: FeedEntry
         try:
             feed_entry = (
-                FeedEntry.objects.only(
-                    *generate_only_fields(field_maps).union({"language"})
+                FeedEntry.annotate_search_vectors(
+                    FeedEntry.annotate_user_data(
+                        FeedEntry.objects.all(),
+                        user,
+                        subscription_datas=subscription_datas,
+                        read_feed_entry_uuids=read_feed_entry_uuids,
+                        favorite_feed_entry_uuids=favorite_feed_entry_uuids,
+                    )
                 )
+                .only(*generate_only_fields(field_maps).union({"language"}))
                 .select_related("language")
                 .get(uuid=uuid)
             )
@@ -95,7 +119,16 @@ class FeedEntryView(APIView):
             field_maps, feed_entry, request, None
         )
 
-        return Response(ret_obj)
+        response = Response(ret_obj)
+        response["X-Cache-Hit"] = ",".join(
+            (
+                "YES" if subscription_datas_cache_hit else "NO",
+                "YES" if read_feed_entry_uuids_cache_hit else "NO",
+                "YES" if favorite_feed_entry_uuids_cache_hit else "NO",
+            )
+        )
+
+        return response
 
 
 class FeedEntriesQueryView(APIView):
