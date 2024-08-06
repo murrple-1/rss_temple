@@ -22,6 +22,8 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponseBadRequest
 from django.urls import exceptions as url_exceptions
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from requests.exceptions import HTTPError
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed, NotFound
@@ -430,6 +432,10 @@ class _FieldsField(serializers.ListField):
         return fieldutils.get_default_field_maps(object_name)
 
 
+@extend_schema_field(
+    component_name="SortField",
+    field=OpenApiTypes.STR,
+)
 class _SortField(serializers.Field):
     def get_default(self):
         object_name: str | None = self.context.get("object_name")
@@ -462,6 +468,7 @@ class _SortField(serializers.Field):
         ):
             raise serializers.ValidationError("Not a valid string.")
         data = str(data).strip()
+        assert isinstance(data, str)
 
         try:
             default_sort_enabled = not self.parent.initial_data.get(
@@ -481,7 +488,14 @@ class _SortField(serializers.Field):
         return value
 
 
+@extend_schema_field(
+    component_name="SearchField",
+    field=OpenApiTypes.STR,
+)
 class _SearchField(serializers.Field):
+    def get_default(self):
+        return []
+
     def to_internal_value(self, data: Any):
         if isinstance(data, bool) or not isinstance(
             data,
@@ -526,7 +540,7 @@ class GetManySerializer(serializers.Serializer):
         default=True, required=False, source="return_total_count"
     )
     sort = _SortField(required=False)
-    search = _SearchField(required=False, default=[])
+    search = _SearchField(required=False)
     disableDefaultSort = serializers.BooleanField(
         default=False, required=False, source="disable_default_sort"
     )
@@ -536,9 +550,14 @@ class GetManySerializer(serializers.Serializer):
         self.fields["fields"] = _FieldsField(required=False)
 
 
+class QuerySerializer(serializers.Serializer):
+    totalCount = serializers.IntegerField(required=False)
+    objects = serializers.ListField(child=serializers.DictField(), required=False)
+
+
 class StableQueryCreateSerializer(serializers.Serializer):
     sort = _SortField(required=False)
-    search = _SearchField(required=False, default=[])
+    search = _SearchField(required=False)
     disableDefaultSort = serializers.BooleanField(
         default=False, required=False, source="disable_default_sort"
     )
@@ -566,7 +585,7 @@ class StableQueryMultipleSerializer(serializers.Serializer):
         default=True, required=False, source="return_total_count"
     )
     sort = _SortField(required=False)
-    search = _SearchField(required=False, default=[])
+    search = _SearchField(required=False)
     disableDefaultSort = serializers.BooleanField(
         default=False, required=False, source="disable_default_sort"
     )

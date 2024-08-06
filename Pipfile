@@ -23,7 +23,7 @@ django-cors-headers = "*"
 gunicorn = { verson = "*", extras = ["gthread"]}
 psycopg2 = "*"
 django-redis = "*"
-drf-yasg = "*"
+drf-spectacular = {version = "*", extras = ["sidecar"]}
 # how it should be specified: will install dj-rest-auth *AND* django-allauth via `extras`
 # dj-rest-auth = {version = "*", extras = ["with_social"]}
 # pinned until integration with django-allauth fixed (last checked at 5.0.1)

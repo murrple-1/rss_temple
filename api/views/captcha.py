@@ -11,8 +11,8 @@ from django.db.models.functions import Now
 from django.dispatch import receiver
 from django.http import HttpResponse
 from django.utils import timezone
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -53,10 +53,11 @@ class NewCaptchaView(APIView):
     permission_classes = (permissions.AllowAny,)
     throttle_classes = (throttling.AnonRateThrottle,)
 
-    @swagger_auto_schema(
-        operation_summary="Get a new captcha key",
-        operation_description="Get a new captcha key",
-        responses={200: openapi.Schema(type="string")},
+    @extend_schema(
+        summary="Get a new captcha key",
+        description="Get a new captcha key",
+        request=None,
+        responses=OpenApiTypes.STR,
     )
     def post(self, request: Request):
         captcha = Captcha.objects.create(
@@ -72,9 +73,11 @@ class CaptchaImageView(APIView):
     permission_classes = (permissions.AllowAny,)
     throttle_classes = (throttling.AnonRateThrottle,)
 
-    @swagger_auto_schema(
-        operation_summary="Download an image captcha",
-        operation_description="Download an image captcha",
+    @extend_schema(
+        summary="Download an image captcha",
+        description="Download an image captcha",
+        request=None,
+        responses={(200, "image/png"): OpenApiTypes.BINARY},
     )
     def get(self, request: Request, *, key: str) -> HttpResponse:
         cache: BaseCache = caches["captcha"]
@@ -107,9 +110,11 @@ class CaptchaAudioView(APIView):
     permission_classes = (permissions.AllowAny,)
     throttle_classes = (throttling.AnonRateThrottle,)
 
-    @swagger_auto_schema(
-        operation_summary="Download an audio captcha",
-        operation_description="Download an audio captcha",
+    @extend_schema(
+        summary="Download an audio captcha",
+        description="Download an audio captcha",
+        request=None,
+        responses={(200, "audio/wav"): OpenApiTypes.BINARY},
     )
     def get(self, request: Request, *, key: str) -> HttpResponse:
         cache: BaseCache = caches["captcha"]

@@ -17,7 +17,6 @@ module = [
     "url_normalize",
     "allauth.*",
     "dj_rest_auth.*",
-    "drf_yasg.*",
     "apscheduler.*",
     "django_apscheduler.*",
     "redis_lock.*",

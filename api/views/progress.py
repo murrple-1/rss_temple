@@ -2,7 +2,8 @@ import uuid as uuid_
 from typing import Any, cast
 
 from django.http.response import HttpResponseBase
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -20,9 +21,16 @@ class FeedSubscriptionProgressView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Check on the progress of your subscription queue entry",
-        operation_description="Check on the progress of your subscription queue entry",
+    @extend_schema(
+        summary="Check on the progress of your subscription queue entry",
+        description="Check on the progress of your subscription queue entry",
+        responses=inline_serializer(
+            "FeedSubscriptionProgressSerializer",
+            {
+                "totalCount": serializers.IntegerField(),
+                "finishedCount": serializers.IntegerField(),
+            },
+        ),
     )
     def get(self, request: Request, *, uuid: uuid_.UUID):
         feed_subscription_progress_entry: FeedSubscriptionProgressEntry

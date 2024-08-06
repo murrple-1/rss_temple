@@ -9,9 +9,8 @@ from defusedxml.ElementTree import fromstring as defused_fromstring
 from django.db import transaction
 from django.db.models import Q
 from django.http.response import HttpResponse
-from drf_yasg import openapi
-from drf_yasg.inspectors import SwaggerAutoSchema
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -33,22 +32,13 @@ from api.models import (
 from api.negotiation import IgnoreClientContentNegotiation
 
 
-class _OPMLGetSwaggerAutoSchema(SwaggerAutoSchema):  # pragma: no cover
-    def get_consumes(self):
-        return ["text/xml"]
-
-    def get_produces(self):
-        return ["text/xml"]
-
-
 class OPMLView(APIView):
-    content_negotiation_class = IgnoreClientContentNegotiation
+    content_negotiation_class = IgnoreClientContentNegotiation  # type: ignore
 
-    @swagger_auto_schema(
-        auto_schema=_OPMLGetSwaggerAutoSchema,
-        responses={200: "OPML XML"},
-        operation_summary="Download your OPML file",
-        operation_description="""Download your OPML file.
+    @extend_schema(
+        responses={(200, "text/xml"): OpenApiTypes.BINARY},
+        summary="Download your OPML file",
+        description="""Download your OPML file.
 
 This will return [OPML](http://opml.org/spec2.opml) XML representing your subscribed feeds.""",
     )
@@ -99,13 +89,16 @@ This will return [OPML](http://opml.org/spec2.opml) XML representing your subscr
 
         return HttpResponse(lxml_etree.tostring(opml_element), content_type="text/xml")
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(type="string"),
-        responses={202: openapi.Schema(type="string"), 204: ""},
-        operation_summary="Download your OPML file",
-        operation_description="""Download your OPML file.
+    @extend_schema(
+        request={"text/xml": OpenApiTypes.BINARY},
+        responses={
+            202: OpenApiTypes.STR,
+            204: OpenApiResponse(description="No response body"),
+        },
+        summary="Upload your OPML file",
+        description="""Upload your OPML file.
 
-This will return [OPML](http://opml.org/spec2.opml) XML representing your subscribed feeds.""",
+Request body should be [OPML](http://opml.org/spec2.opml) XML representing feeds you intend to subscribe to.""",
     )
     def post(self, request: Request):
         user = cast(User, request.user)

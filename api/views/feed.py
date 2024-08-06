@@ -12,7 +12,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from dramatiq import Message
 from dramatiq.errors import DramatiqError
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from requests.exceptions import RequestException
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.request import Request
@@ -56,6 +57,7 @@ from api.serializers import (
     FeedGetSerializer,
     FeedSubscribeSerializer,
     GetManySerializer,
+    QuerySerializer,
 )
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
@@ -162,9 +164,10 @@ def _preprocess_get_request_from_cache__dramatiq(
     archived_counts_lookup: dict[uuid.UUID, int] | None = None
     archived_counts_lookup_cache_hit: bool | None = None
     if field_names.intersection(("archivedCount",)):
-        archived_counts_lookup, missing_archived_counts_lookup_feed_uuids = (
-            get_archived_counts_lookup_from_cache(feed_uuids, cache)
-        )
+        (
+            archived_counts_lookup,
+            missing_archived_counts_lookup_feed_uuids,
+        ) = get_archived_counts_lookup_from_cache(feed_uuids, cache)
 
         if missing_archived_counts_lookup_feed_uuids:
             messages["archived_counts"] = broker.enqueue(
@@ -285,9 +288,10 @@ def _preprocess_get_request_from_cache__sync(
 
     archived_counts_lookup_cache_hit: bool | None = None
     if field_names.intersection(("archivedCount",)):
-        archived_counts_lookup, missing_archived_counts_lookup_feed_uuids = (
-            get_archived_counts_lookup_from_cache(feed_uuids, cache)
-        )
+        (
+            archived_counts_lookup,
+            missing_archived_counts_lookup_feed_uuids,
+        ) = get_archived_counts_lookup_from_cache(feed_uuids, cache)
 
         if missing_archived_counts_lookup_feed_uuids:
             missing_archived_counts_lookup_results = get_archived_counts_lookup_task(
@@ -316,10 +320,12 @@ def _preprocess_get_request_from_cache__sync(
 
 
 class FeedView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Get Single Feed",
-        operation_description="Get Single Feed",
-        query_serializer=FeedGetSerializer,
+    @extend_schema(
+        summary="Get Single Feed",
+        description="Get Single Feed",
+        parameters=[FeedGetSerializer],
+        request=None,
+        responses=OpenApiTypes.OBJECT,
     )
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -367,10 +373,11 @@ class FeedView(APIView):
         counts_lookup_cache_hit: bool | None
         archived_counts_lookup_cache_hit: bool | None
         try:
-            counts_lookup_cache_hit, archived_counts_lookup_cache_hit = (
-                _preprocess_get_request_from_cache(
-                    request, cache, field_names, user, (feed.uuid,)
-                )
+            (
+                counts_lookup_cache_hit,
+                archived_counts_lookup_cache_hit,
+            ) = _preprocess_get_request_from_cache(
+                request, cache, field_names, user, (feed.uuid,)
             )
         except DramatiqError as e:  # pragma: no cover
             _logger.exception("failed to get values from cache")
@@ -398,10 +405,11 @@ class FeedView(APIView):
 
 
 class FeedsQueryView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Query for Feeds",
-        operation_description="Query for Feeds",
-        request_body=GetManySerializer,
+    @extend_schema(
+        summary="Query for Feeds",
+        description="Query for Feeds",
+        request=GetManySerializer,
+        responses=QuerySerializer,
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -448,10 +456,11 @@ class FeedsQueryView(APIView):
         counts_lookup_cache_hit: bool | None
         archived_counts_lookup_cache_hit: bool | None
         try:
-            counts_lookup_cache_hit, archived_counts_lookup_cache_hit = (
-                _preprocess_get_request_from_cache(
-                    request, cache, field_names, user, feed_uuids
-                )
+            (
+                counts_lookup_cache_hit,
+                archived_counts_lookup_cache_hit,
+            ) = _preprocess_get_request_from_cache(
+                request, cache, field_names, user, feed_uuids
             )
         except DramatiqError as e:  # pragma: no cover
             _logger.exception("failed to get values from cache")
@@ -492,11 +501,11 @@ class FeedsQueryView(APIView):
 
 
 class FeedLookupView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Given a URL, return a list of the exposed RSS feeds",
-        operation_description="Given a URL, return a list of the exposed RSS feeds",
-        query_serializer=FeedFindQuerySerializer,
-        responses={200: FeedFindSerializer(many=True)},
+    @extend_schema(
+        summary="Given a URL, return a list of the exposed RSS feeds",
+        description="Given a URL, return a list of the exposed RSS feeds",
+        parameters=[FeedFindQuerySerializer],
+        responses=FeedFindSerializer(many=True),
     )
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -531,10 +540,11 @@ class FeedLookupView(APIView):
 
 
 class FeedSubscribeView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Subscribe to feed",
-        operation_description="Subscribe to feed",
-        request_body=FeedSubscribeSerializer,
+    @extend_schema(
+        summary="Subscribe to feed",
+        description="Subscribe to feed",
+        request=FeedSubscribeSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -591,10 +601,11 @@ class FeedSubscribeView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Update subscription metadata",
-        operation_description="Update subscription metadata",
-        request_body=FeedSubscribeSerializer,
+    @extend_schema(
+        summary="Update subscription metadata",
+        description="Update subscription metadata",
+        request=FeedSubscribeSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def put(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -634,10 +645,11 @@ class FeedSubscribeView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Unsubscribe from feed",
-        operation_description="Unsubscribe from feed",
-        request_body=FeedGetSerializer,
+    @extend_schema(
+        summary="Unsubscribe from feed",
+        description="Unsubscribe from feed",
+        request=FeedGetSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request):
         cache: BaseCache = caches["default"]

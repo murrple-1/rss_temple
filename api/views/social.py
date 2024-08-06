@@ -17,7 +17,7 @@ from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
 from django.utils import timezone
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
@@ -61,9 +61,9 @@ class _SocialHandleExceptionMixin(APIView):  # pragma: no cover
 
 
 class SocialAccountListView(_SocialAccountListView):
-    @swagger_auto_schema(
-        operation_summary="List which social accounts are linked with your user account",
-        operation_description="List which social accounts are linked with your user account",
+    @extend_schema(
+        summary="List which social accounts are linked with your user account",
+        description="List which social accounts are linked with your user account",
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().get(request, *args, **kwargs)
@@ -79,10 +79,10 @@ class GoogleLogin(SocialLoginView, _SocialHandleExceptionMixin):
         else:  # pragma: no cover
             return super().get_serializer_class()
 
-    @swagger_auto_schema(
-        operation_summary="Login or create account via Google",
-        operation_description="Login or create account via Google",
-        security=[],
+    @extend_schema(
+        summary="Login or create account via Google",
+        description="Login or create account via Google",
+        auth=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         response = super().post(request, *args, **kwargs)
@@ -107,9 +107,9 @@ class GoogleConnect(SocialConnectView, _SocialHandleExceptionMixin):
         else:  # pragma: no cover
             return super().get_serializer_class()
 
-    @swagger_auto_schema(
-        operation_summary="Connect your account to Google",
-        operation_description="Connect your account to Google",
+    @extend_schema(
+        summary="Connect your account to Google",
+        description="Connect your account to Google",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
@@ -121,9 +121,9 @@ class GoogleDisconnect(GenericAPIView, _SocialHandleExceptionMixin):
     def get_queryset(self):
         return SocialAccount.objects.filter(user=self.request.user)
 
-    @swagger_auto_schema(
-        operation_summary="Disconnect your account from Google",
-        operation_description="Disconnect your account from Google",
+    @extend_schema(
+        summary="Disconnect your account from Google",
+        description="Disconnect your account from Google",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         accounts = self.get_queryset()
@@ -155,10 +155,10 @@ class FacebookLogin(SocialLoginView, _SocialHandleExceptionMixin):
         else:  # pragma: no cover
             return super().get_serializer_class()
 
-    @swagger_auto_schema(
-        operation_summary="Login or create account via Facebook",
-        operation_description="Login or create account via Facebook",
-        security=[],
+    @extend_schema(
+        summary="Login or create account via Facebook",
+        description="Login or create account via Facebook",
+        auth=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         response = super().post(request, *args, **kwargs)
@@ -183,9 +183,9 @@ class FacebookConnect(SocialConnectView, _SocialHandleExceptionMixin):
         else:  # pragma: no cover
             return super().get_serializer_class()
 
-    @swagger_auto_schema(
-        operation_summary="Connect your account to Facebook",
-        operation_description="Connect your account to Facebook",
+    @extend_schema(
+        summary="Connect your account to Facebook",
+        description="Connect your account to Facebook",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
@@ -197,9 +197,9 @@ class FacebookDisconnect(GenericAPIView, _SocialHandleExceptionMixin):
     def get_queryset(self):
         return SocialAccount.objects.filter(user=self.request.user)
 
-    @swagger_auto_schema(
-        operation_summary="Disconnect your account from Facebook",
-        operation_description="Disconnect your account from Facebook",
+    @extend_schema(
+        summary="Disconnect your account from Facebook",
+        description="Disconnect your account from Facebook",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         accounts = self.get_queryset()

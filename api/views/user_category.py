@@ -4,7 +4,8 @@ from typing import Any, cast
 from django.db import IntegrityError, transaction
 from django.db.models import OrderBy, Q
 from django.http.response import HttpResponseBase
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,6 +18,7 @@ from api.models import Feed, User, UserCategory
 from api.serializers import (
     GetManySerializer,
     GetSingleSerializer,
+    QuerySerializer,
     UserCategoryApplySerializer,
     UserCategoryCreateSerializer,
     UserCategorySerializer,
@@ -30,10 +32,11 @@ class UserCategoryView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Get Single User Category",
-        operation_description="Get Single User Category",
-        query_serializer=GetSingleSerializer,
+    @extend_schema(
+        summary="Get Single User Category",
+        description="Get Single User Category",
+        parameters=[GetSingleSerializer],
+        responses=OpenApiTypes.OBJECT,
     )
     def get(self, request: Request, *, uuid: uuid_.UUID):
         serializer = GetSingleSerializer(
@@ -60,10 +63,11 @@ class UserCategoryView(APIView):
 
         return Response(ret_obj)
 
-    @swagger_auto_schema(
-        operation_summary="Update a User Category",
-        operation_description="Update a User Category",
-        request_body=UserCategorySerializer,
+    @extend_schema(
+        summary="Update a User Category",
+        description="Update a User Category",
+        request=UserCategorySerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def put(self, request: Request, *, uuid: uuid_.UUID):
         user_category: UserCategory
@@ -85,9 +89,10 @@ class UserCategoryView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Delete a User Category",
-        operation_description="Delete a User Category",
+    @extend_schema(
+        summary="Delete a User Category",
+        description="Delete a User Category",
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
         count, _ = UserCategory.objects.filter(
@@ -101,10 +106,11 @@ class UserCategoryView(APIView):
 
 
 class UserCategoryCreateView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Create a User Category",
-        operation_description="Create a User Category",
-        request_body=UserCategoryCreateSerializer,
+    @extend_schema(
+        summary="Create a User Category",
+        description="Create a User Category",
+        request=UserCategoryCreateSerializer,
+        responses=OpenApiTypes.OBJECT,
     )
     def post(self, request: Request):
         serializer = UserCategoryCreateSerializer(
@@ -131,10 +137,11 @@ class UserCategoryCreateView(APIView):
 
 
 class UserCategoriesQueryView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Query for User Categories",
-        operation_description="Query for User Categories",
-        request_body=GetManySerializer,
+    @extend_schema(
+        summary="Query for User Categories",
+        description="Query for User Categories",
+        request=GetManySerializer,
+        responses=QuerySerializer,
     )
     def post(self, request: Request):
         serializer = GetManySerializer(
@@ -177,10 +184,11 @@ class UserCategoriesQueryView(APIView):
 
 
 class UserCategoriesApplyView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Add Feeds to a User Category",
-        operation_description="Add Feeds to a User Category",
-        request_body=UserCategoryApplySerializer,
+    @extend_schema(
+        summary="Add Feeds to a User Category",
+        description="Add Feeds to a User Category",
+        request=UserCategoryApplySerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def put(self, request: Request):
         serializer = UserCategoryApplySerializer(data=request.data)

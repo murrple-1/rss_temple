@@ -2,7 +2,7 @@ from typing import Any, TypedDict, cast
 
 from django.core.cache import BaseCache, caches
 from django.db.models import Q
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -105,10 +105,10 @@ _section_lookups: list[_Section] = [
 
 
 class ExploreView(APIView):
-    @swagger_auto_schema(
-        responses={200: ExploreSerializer(many=True)},
-        operation_summary="Return a list of feeds, with example headlines, which are tailored to you",
-        operation_description="""Return a list of feeds, with example headlines, which are tailored to you.
+    @extend_schema(
+        responses=ExploreSerializer(many=True),
+        summary="Return a list of feeds, with example headlines, which are tailored to you",
+        description="""Return a list of feeds, with example headlines, which are tailored to you.
 
 TODO: for the time being, this will just be static data (based on my personal OPML for now), because a recommendation engine is quite an endeavour
 """,

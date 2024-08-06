@@ -12,8 +12,8 @@ from django.http.response import HttpResponseBase
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import throttling
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
@@ -37,10 +37,10 @@ sensitive_post_parameters_m = method_decorator(
 class LoginView(_LoginView):  # pragma: no cover
     throttle_classes = (throttling.ScopedRateThrottle,)
 
-    @swagger_auto_schema(
-        operation_summary="Login and return token",
-        operation_description="Login and return token",
-        security=[],
+    @extend_schema(
+        summary="Login and return token",
+        description="Login and return token",
+        auth=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         response = super().post(request, *args, **kwargs)
@@ -59,13 +59,17 @@ class LoginView(_LoginView):  # pragma: no cover
 class LogoutView(_LogoutView):  # pragma: no cover
     throttle_classes = (throttling.ScopedRateThrottle,)
 
-    @swagger_auto_schema(auto_schema=None)
+    @extend_schema(
+        exclude=True,
+    )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().get(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Logout and delete token",
-        operation_description="Logout and delete token",
+    @extend_schema(
+        summary="Logout and delete token",
+        description="Logout and delete token",
+        request=None,
+        responses=OpenApiTypes.NONE,
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
@@ -85,9 +89,9 @@ class PasswordChangeView(_PasswordChangeView):  # pragma: no cover
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Change your password",
-        operation_description="Change your password",
+    @extend_schema(
+        summary="Change your password",
+        description="Change your password",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
@@ -96,10 +100,10 @@ class PasswordChangeView(_PasswordChangeView):  # pragma: no cover
 class PasswordResetView(_PasswordResetView):  # pragma: no cover
     throttle_classes = (throttling.ScopedRateThrottle,)
 
-    @swagger_auto_schema(
-        operation_summary="Initiate a password reset",
-        operation_description="Initiate a password reset",
-        security=[],
+    @extend_schema(
+        summary="Initiate a password reset",
+        description="Initiate a password reset",
+        auth=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
@@ -112,52 +116,48 @@ class PasswordResetConfirmView(_PasswordResetConfirmView):  # pragma: no cover
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Complete a password reset",
-        operation_description="Complete a password reset",
-        security=[],
+    @extend_schema(
+        summary="Complete a password reset",
+        description="Complete a password reset",
+        auth=[],
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
 
 
 class UserDetailsView(_UserDetailsView):  # pragma: no cover
-    @swagger_auto_schema(
-        operation_summary="Return details about your user profile",
-        operation_description="Return details about your user profile",
+    @extend_schema(
+        summary="Return details about your user profile",
+        description="Return details about your user profile",
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().get(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Set details about your user profile",
-        operation_description="Set details about your user profile",
+    @extend_schema(
+        summary="Set details about your user profile",
+        description="Set details about your user profile",
     )
     def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().put(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Patch details about your user profile",
-        operation_description="Patch details about your user profile",
+    @extend_schema(
+        summary="Patch details about your user profile",
+        description="Patch details about your user profile",
     )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().patch(request, *args, **kwargs)
 
 
 class UserAttributesView(APIView):
-    @swagger_auto_schema(
-        responses={204: ""},
-        request_body=openapi.Schema(
-            title="User attributes",
-            description="Arbitrary user attributes",
-            type="object",
-        ),
-        operation_summary="Update the user attributes additively",
-        operation_description="""Update the user attributes additively.
+    @extend_schema(
+        summary="Update the user attributes additively",
+        description="""Update the user attributes additively.
 
 The request body must be a JSON object with arbitrary key-values.
 If a value is `null`, it will be deleted from the attributes.
 Otherwise, that value will be added to the attribute unchanged.""",
+        request=OpenApiTypes.OBJECT,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def put(self, request: Request):
         user = cast(User, request.user)
@@ -185,11 +185,11 @@ class UserDeleteView(APIView):
     def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        responses={204: ""},
-        request_body=UserDeleteSerializer,
-        operation_summary="Delete your user permanently",
-        operation_description="Delete your user permanently",
+    @extend_schema(
+        responses={204: OpenApiResponse(description="No response body")},
+        request=UserDeleteSerializer,
+        summary="Delete your user permanently",
+        description="Delete your user permanently",
     )
     def post(self, request: Request):
         user = cast(User, request.user)

@@ -6,7 +6,8 @@ from django.core.cache import BaseCache, caches
 from django.db import transaction
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import HttpResponseBase
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,11 +29,11 @@ from api.serializers import (
 
 
 class ClassifierLabelListView(APIView):
-    @swagger_auto_schema(
-        query_serializer=ClassifierLabelListQuerySerializer,
-        responses={200: ClassifierLabelSerializer(many=True)},
-        operation_summary="Return a list of classifier labels",
-        operation_description="Return a list of classifier labels",
+    @extend_schema(
+        parameters=[ClassifierLabelListQuerySerializer],
+        responses=ClassifierLabelSerializer(many=True),
+        summary="Return a list of classifier labels",
+        description="Return a list of classifier labels",
     )
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -81,11 +82,11 @@ class ClassifierLabelListView(APIView):
 
 
 class ClassifierLabelListByEntryView(APIView):
-    @swagger_auto_schema(
-        responses={200: ClassifierLabelListByEntrySerializer()},
-        operation_summary="Return lists of classifier labels, by feed entry UUIDs",
-        operation_description="Return lists of classifier labels, by feed entry UUIDs",
-        request_body=ClassifierLabelListByEntryBodySerializer,
+    @extend_schema(
+        responses=ClassifierLabelListByEntrySerializer,
+        summary="Return lists of classifier labels, by feed entry UUIDs",
+        description="Return lists of classifier labels, by feed entry UUIDs",
+        request=ClassifierLabelListByEntryBodySerializer,
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -143,10 +144,10 @@ class ClassifierLabelFeedEntryVotesView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        responses={200: ClassifierLabelSerializer(many=True)},
-        operation_summary="Return a list of classifier labels voted for by current user on feed entry",
-        operation_description="Return a list of classifier labels voted for by current user on feed entry",
+    @extend_schema(
+        responses=ClassifierLabelSerializer(many=True),
+        summary="Return a list of classifier labels voted for by current user on feed entry",
+        description="Return a list of classifier labels voted for by current user on feed entry",
     )
     def get(self, request: Request, *, uuid: uuid_.UUID):
         user = cast(User, request.user)
@@ -162,11 +163,11 @@ class ClassifierLabelFeedEntryVotesView(APIView):
 
         return Response(ClassifierLabelSerializer(classifier_labels, many=True).data)
 
-    @swagger_auto_schema(
-        responses={204: ""},
-        request_body=ClassifierLabelVotesSerializer,
-        operation_summary="Submit Classifier Label votes for a feed entry",
-        operation_description="Submit Classifier Label votes for a feed entry",
+    @extend_schema(
+        responses={204: OpenApiResponse(description="No response body")},
+        request=ClassifierLabelVotesSerializer,
+        summary="Submit Classifier Label votes for a feed entry",
+        description="Submit Classifier Label votes for a feed entry",
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
         user = cast(User, request.user)
@@ -205,10 +206,11 @@ class ClassifierLabelFeedEntryVotesView(APIView):
 
 
 class ClassifierLabelVotesListView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Query for Classifier Label votes",
-        operation_description="Query for Classifier Label votes",
-        query_serializer=ClassifierLabelVotesListQuerySerializer,
+    @extend_schema(
+        summary="Query for Classifier Label votes",
+        description="Query for Classifier Label votes",
+        parameters=[ClassifierLabelVotesListQuerySerializer],
+        responses=ClassifierLabelVotesListSerializer,
     )
     def get(self, request: Request):
         user = cast(User, request.user)

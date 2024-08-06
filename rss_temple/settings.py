@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.facebook",
     "allauth.socialaccount.providers.google",
-    "drf_yasg",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "corsheaders",
     "django_apscheduler",
     "api.apps.ApiConfig",
@@ -319,6 +320,7 @@ REST_FRAMEWORK = {
         "drf_ujson.renderers.UJSONRenderer",
         "rest_framework.renderers.MultiPartRenderer",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # AllAuth
@@ -346,16 +348,16 @@ REST_AUTH = {
     "TOKEN_MODEL": "api.models.Token",
 }
 
-# drf-yasg
-SWAGGER_SETTINGS = {
-    "USE_SESSION_AUTH": False,
-    "SECURITY_DEFINITIONS": {
-        "Basic": {"type": "basic"},
-        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"},
-    },
-    "SECURITY_REQUIREMENTS": [
-        {"Basic": []},
-        {"Bearer": []},
+# drf-spectacular
+SPECTACULAR_SETTINGS = {
+    "TITLE": "RSS Temple API",
+    "DESCRIPTION": "RSS Temple is a RSS/Atom service",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "AUTHENTICATION_WHITELIST": [
+        "api.authentication.ExpiringTokenAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
 }
 
@@ -365,8 +367,16 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
 
 # django-csp
-CSP_IMG_SRC = ["'self'", "data:"]
-CSP_STYLE_SRC_ELEM = ["'self'", "'unsafe-inline'"]
+CSP_IMG_SRC = ("'self'", "data:", "cdn.redoc.ly", "cdn.jsdelivr.net")
+CSP_STYLE_SRC_ELEM = (
+    "'self'",
+    "'unsafe-inline'",
+    "fonts.googleapis.com",
+    "cdn.jsdelivr.net",
+)
+CSP_SCRIPT_SRC_ELEM = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net")
+CSP_WORKER_SRC = ("'self'", "blob:")
+CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
 
 # app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()

@@ -9,7 +9,8 @@ from django.db import transaction
 from django.db.models import F, OrderBy, Q
 from django.dispatch import receiver
 from django.http.response import HttpResponseBase
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -36,6 +37,7 @@ from api.serializers import (
     FeedEntryLanguagesSerializer,
     GetManySerializer,
     GetSingleSerializer,
+    QuerySerializer,
     StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
 )
@@ -65,10 +67,11 @@ class FeedEntryView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Get Single Feed Entry",
-        operation_description="Get Single Feed Entry",
-        query_serializer=GetSingleSerializer,
+    @extend_schema(
+        summary="Get Single Feed Entry",
+        description="Get Single Feed Entry",
+        parameters=[GetSingleSerializer],
+        responses=OpenApiTypes.OBJECT,
     )
     def get(self, request: Request, uuid: uuid_.UUID):
         cache: BaseCache = caches["default"]
@@ -132,10 +135,12 @@ class FeedEntryView(APIView):
 
 
 class FeedEntriesQueryView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Query for Feed Entries",
-        operation_description="Query for Feed Entries",
-        request_body=GetManySerializer,
+    @extend_schema(
+        summary="Query for Feed Entries",
+        description="Query for Feed Entries",
+        parameters=[GetManySerializer],
+        request=None,
+        responses=QuerySerializer,
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -210,10 +215,11 @@ class FeedEntriesQueryView(APIView):
 
 
 class FeedEntriesQueryStableCreateView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Stable Query Creation for Feed Entries",
-        operation_description="Stable Query Creation for Feed Entries",
-        request_body=StableQueryCreateSerializer,
+    @extend_schema(
+        summary="Stable Query Creation for Feed Entries",
+        description="Returns a token to access to stable query",
+        request=StableQueryCreateSerializer,
+        responses=OpenApiTypes.STR,
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -275,10 +281,11 @@ class FeedEntriesQueryStableCreateView(APIView):
 
 
 class FeedEntriesQueryStableView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Stable Query for Feed Entries",
-        operation_description="Stable Query for Feed Entries",
-        request_body=StableQueryMultipleSerializer,
+    @extend_schema(
+        summary="Stable Query for Feed Entries",
+        description="Stable Query for Feed Entries",
+        request=StableQueryMultipleSerializer,
+        responses=QuerySerializer,
     )
     def post(self, request: Request):
         user = cast(User, request.user)
@@ -371,9 +378,11 @@ class FeedEntryReadView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Mark a feed entry as 'read'",
-        operation_description="Mark a feed entry as 'read'",
+    @extend_schema(
+        summary="Mark a feed entry as 'read'",
+        description="Mark a feed entry as 'read'",
+        request=None,
+        responses=OpenApiTypes.STR,
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
         cache: BaseCache = caches["default"]
@@ -416,9 +425,11 @@ class FeedEntryReadView(APIView):
 
         return Response(ret_obj)
 
-    @swagger_auto_schema(
-        operation_summary="Unmark a feed entry as 'read'",
-        operation_description="Unmark a feed entry as 'read'",
+    @extend_schema(
+        summary="Unmark a feed entry as 'read'",
+        description="Unmark a feed entry as 'read'",
+        request=None,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
         cache: BaseCache = caches["default"]
@@ -452,10 +463,11 @@ class FeedEntryReadView(APIView):
 
 
 class FeedEntriesReadView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Mark multiple feed entries as 'read'",
-        operation_description="Mark multiple feed entries as 'read'",
-        request_body=FeedEntriesMarkReadSerializer,
+    @extend_schema(
+        summary="Mark multiple feed entries as 'read'",
+        description="Mark multiple feed entries as 'read'",
+        request=FeedEntriesMarkReadSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -517,10 +529,11 @@ class FeedEntriesReadView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Unmark multiple feed entries as 'read'",
-        operation_description="Unmark multiple feed entries as 'read'",
-        request_body=FeedEntriesMarkSerializer,
+    @extend_schema(
+        summary="Unmark multiple feed entries as 'read'",
+        description="Unmark multiple feed entries as 'read'",
+        request=FeedEntriesMarkSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -575,9 +588,11 @@ class FeedEntryFavoriteView(APIView):
         kwargs["uuid"] = uuid_.UUID(kwargs["uuid"])
         return super().dispatch(*args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_summary="Mark a feed entry as 'favorite'",
-        operation_description="Mark a feed entry as 'favorite'",
+    @extend_schema(
+        summary="Mark a feed entry as 'favorite'",
+        description="Mark a feed entry as 'favorite'",
+        request=None,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def post(self, request: Request, *, uuid: uuid_.UUID):
         cache: BaseCache = caches["default"]
@@ -596,9 +611,11 @@ class FeedEntryFavoriteView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Unmark a feed entry as 'favorite'",
-        operation_description="Unmark a feed entry as 'favorite'",
+    @extend_schema(
+        summary="Unmark a feed entry as 'favorite'",
+        description="Unmark a feed entry as 'favorite'",
+        request=None,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request, *, uuid: uuid_.UUID):
         cache: BaseCache = caches["default"]
@@ -615,10 +632,11 @@ class FeedEntryFavoriteView(APIView):
 
 
 class FeedEntriesFavoriteView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Mark multiple feed entries as 'favorite'",
-        operation_description="Mark multiple feed entries as 'favorite'",
-        request_body=FeedEntriesMarkSerializer,
+    @extend_schema(
+        summary="Mark multiple feed entries as 'favorite'",
+        description="Mark multiple feed entries as 'favorite'",
+        request=FeedEntriesMarkSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def post(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -646,10 +664,11 @@ class FeedEntriesFavoriteView(APIView):
 
         return Response(status=204)
 
-    @swagger_auto_schema(
-        operation_summary="Unmark multiple feed entries as 'favorite'",
-        operation_description="Unmark multiple feed entries as 'favorite'",
-        request_body=FeedEntriesMarkSerializer,
+    @extend_schema(
+        summary="Unmark multiple feed entries as 'favorite'",
+        description="Unmark multiple feed entries as 'favorite'",
+        request=FeedEntriesMarkSerializer,
+        responses={204: OpenApiResponse(description="No response body")},
     )
     def delete(self, request: Request):
         cache: BaseCache = caches["default"]
@@ -676,11 +695,11 @@ class FeedEntriesFavoriteView(APIView):
 
 
 class FeedEntryLanguagesView(APIView):
-    @swagger_auto_schema(
-        operation_summary="Get List of Languages in the system",
-        operation_description="Get List of Languages in the system",
-        query_serializer=FeedEntryLanguagesQuerySerializer,
-        responses={200: FeedEntryLanguagesSerializer},
+    @extend_schema(
+        summary="Get List of Languages in the system",
+        description="Get List of Languages in the system",
+        parameters=[FeedEntryLanguagesQuerySerializer],
+        responses=FeedEntryLanguagesSerializer,
     )
     def get(self, request: Request):
         cache: BaseCache = caches["default"]
