@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import random
 import time
 import uuid as uuid_
@@ -356,9 +357,20 @@ class Feed(models.Model):
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
+        generate_counts_lookup_override: int | None
+        try:
+            generate_counts_lookup_override = (
+                int(s)
+                if (s := os.getenv("APP_GENERATE_COUNTS_LOOKUP_OVERRIDE")) is not None
+                else None
+            )
+        except ValueError:
+            _logger.warning("APP_GENERATE_COUNTS_LOOKUP_OVERRIDE malformed")
+            generate_counts_lookup_override = None
+
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor]
 
-        if c := random.choice((0, 1, 2)) == 0:
+        if generate_counts_lookup_override == 0 or (c := random.choice((0, 1, 2))) == 0:
             time_start = time.perf_counter()
 
             # This is the canonical version of the queryset
@@ -391,7 +403,7 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("feed", time_end - time_start)
-        elif c == 1:
+        elif generate_counts_lookup_override == 1 or c == 1:
             time_start = time.perf_counter()
 
             counts_lookup = {
@@ -431,14 +443,17 @@ class Feed(models.Model):
         else:
             time_start = time.perf_counter()
 
-            counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
+            counts_lookup = {}
             for feed_uuid in feed_uuids:
-                total_count = FeedEntry.objects.filter(
-                    is_archived=False, feed_id=feed_uuid
-                ).count()
-                read_count = ReadFeedEntryUserMapping.objects.filter(
-                    user=user, feed_entry__feed_id=feed_uuid
-                ).count()
+                total_count = FeedEntry.objects.filter(feed_id=feed_uuid).count()
+                read_count = (
+                    ReadFeedEntryUserMapping.objects.filter(
+                        user=user, feed_entry__feed_id=feed_uuid
+                    ).count()
+                    + FeedEntry.objects.filter(
+                        feed_id=feed_uuid, is_archived=True
+                    ).count()
+                )
 
                 counts_lookup[feed_uuid] = Feed._CountsDescriptor(
                     total_count - read_count, read_count
@@ -500,8 +515,24 @@ class Feed(models.Model):
     ) -> dict[uuid_.UUID, int]:
         feed_uuids = frozenset(feed_uuids)
 
+        generate_archived_counts_lookup_override: int | None
+        try:
+            generate_archived_counts_lookup_override = (
+                int(s)
+                if (s := os.getenv("APP_GENERATE_ARCHIVED_COUNTS_LOOKUP_OVERRIDE"))
+                is not None
+                else None
+            )
+        except ValueError:
+            _logger.warning("APP_GENERATE_ARCHIVED_COUNTS_LOOKUP_OVERRIDE malformed")
+            generate_archived_counts_lookup_override = None
+
         archived_counts_lookup: dict[uuid_.UUID, int]
-        if random.choice((True, False)):
+
+        if (
+            generate_archived_counts_lookup_override == 0
+            or (c := random.choice((0, 1, 2))) == 0
+        ):
             time_start = time.perf_counter()
 
             # This is the canonical version of the queryset
@@ -521,7 +552,7 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_archived_counts_lookup_perf("feed", time_end - time_start)
-        else:
+        elif generate_archived_counts_lookup_override == 1 or c == 1:
             time_start = time.perf_counter()
             archived_counts_lookup = {
                 r["feed_id"]: r["archived_count"]
@@ -548,6 +579,20 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_archived_counts_lookup_perf("feedentry", time_end - time_start)
+        else:
+            time_start = time.perf_counter()
+
+            archived_counts_lookup = {}
+            for feed_uuid in feed_uuids:
+                archived_counts_lookup[feed_uuid] = FeedEntry.objects.filter(
+                    feed_id=feed_uuid, is_archived=True
+                ).count()
+
+            time_end = time.perf_counter()
+
+            Feed._track_archived_counts_lookup_perf(
+                "iterate_step", time_end - time_start
+            )
 
         return archived_counts_lookup
 
