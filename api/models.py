@@ -358,7 +358,7 @@ class Feed(models.Model):
 
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor]
 
-        if random.choice((True, False)):
+        if c := random.choice((0, 1, 2)) == 0:
             time_start = time.perf_counter()
 
             # This is the canonical version of the queryset
@@ -391,7 +391,7 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("feed", time_end - time_start)
-        else:
+        elif c == 1:
             time_start = time.perf_counter()
 
             counts_lookup = {
@@ -428,6 +428,25 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("feedentry", time_end - time_start)
+        else:
+            time_start = time.perf_counter()
+
+            counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
+            for feed_uuid in feed_uuids:
+                total_count = FeedEntry.objects.filter(
+                    is_archived=False, feed_id=feed_uuid
+                ).count()
+                read_count = ReadFeedEntryUserMapping.objects.filter(
+                    user=user, feed_entry__feed_id=feed_uuid
+                ).count()
+
+                counts_lookup[feed_uuid] = Feed._CountsDescriptor(
+                    total_count - read_count, read_count
+                )
+
+            time_end = time.perf_counter()
+
+            Feed._track_counts_lookup_perf("iterate_step", time_end - time_start)
 
         return counts_lookup
 
@@ -598,6 +617,8 @@ class FeedEntry(models.Model):
             models.Index(
                 fields=("feed_id", "-published_at", "-created_at", "-updated_at")
             ),
+            # Speed up the "iterate_step" counts generation
+            models.Index(fields=("feed_id", "is_archived")),
         )
 
         constraints = (
