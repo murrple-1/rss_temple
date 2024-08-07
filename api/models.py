@@ -445,9 +445,7 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("feedentry", time_end - time_start)
-        elif generate_counts_lookup_override == 2 or (
-            generate_counts_lookup_override is None and c == 2
-        ):
+        else:
             time_start = time.perf_counter()
 
             counts_lookup = {}
@@ -469,30 +467,6 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("iterate_step", time_end - time_start)
-        else:
-            time_start = time.perf_counter()
-
-            counts_lookup = {}
-            for feed_uuid in feed_uuids:
-                total_count = FeedEntry.objects.filter(feed_id=feed_uuid).count()
-                read_count = FeedEntry.objects.filter(
-                    models.Q(feed_id=feed_uuid, is_archived=True)
-                    | models.Q(
-                        feed_id=feed_uuid,
-                        is_archived=False,
-                        uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                            user=user
-                        ).values("feed_entry_id"),
-                    )
-                ).count()
-
-                counts_lookup[feed_uuid] = Feed._CountsDescriptor(
-                    total_count - read_count, read_count
-                )
-
-            time_end = time.perf_counter()
-
-            Feed._track_counts_lookup_perf("iterate_step2", time_end - time_start)
 
         return counts_lookup
 
