@@ -370,7 +370,10 @@ class Feed(models.Model):
 
         counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor]
 
-        if generate_counts_lookup_override == 0 or (c := random.choice((0, 1, 2))) == 0:
+        c = random.choice((0, 1, 2))
+        if generate_counts_lookup_override == 0 or (
+            generate_counts_lookup_override is None and c == 0
+        ):
             time_start = time.perf_counter()
 
             # This is the canonical version of the queryset
@@ -403,7 +406,9 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_counts_lookup_perf("feed", time_end - time_start)
-        elif generate_counts_lookup_override == 1 or c == 1:
+        elif generate_counts_lookup_override == 1 or (
+            generate_counts_lookup_override is None and c == 1
+        ):
             time_start = time.perf_counter()
 
             counts_lookup = {
@@ -529,9 +534,9 @@ class Feed(models.Model):
 
         archived_counts_lookup: dict[uuid_.UUID, int]
 
-        if (
-            generate_archived_counts_lookup_override == 0
-            or (c := random.choice((0, 1, 2))) == 0
+        c = random.choice((0, 1, 2))
+        if generate_archived_counts_lookup_override == 0 or (
+            generate_archived_counts_lookup_override is None and c == 0
         ):
             time_start = time.perf_counter()
 
@@ -552,7 +557,9 @@ class Feed(models.Model):
             time_end = time.perf_counter()
 
             Feed._track_archived_counts_lookup_perf("feed", time_end - time_start)
-        elif generate_archived_counts_lookup_override == 1 or c == 1:
+        elif generate_archived_counts_lookup_override == 1 or (
+            generate_archived_counts_lookup_override is None and c == 1
+        ):
             time_start = time.perf_counter()
             archived_counts_lookup = {
                 r["feed_id"]: r["archived_count"]
