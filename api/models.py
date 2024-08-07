@@ -1,8 +1,4 @@
-import json
-import logging
-import os
 import random
-import time
 import uuid as uuid_
 from collections import defaultdict
 from functools import cached_property
@@ -19,8 +15,6 @@ from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
     from api.cache_utils.subscription_datas import SubscriptionData
-
-_logger = logging.getLogger("rss_temple.models")
 
 
 class UserManager(BaseUserManager["User"]):
@@ -322,151 +316,64 @@ class Feed(models.Model):
         read_count: int
 
     @staticmethod
-    def _track_counts_lookup_perf(
-        context: str, duration: float, max_entries=1000
-    ) -> None:  # pragma: no cover
-        try:
-            filepath = f"mount/counts_lookup_{context}_perf.json"
-
-            entries: list[float]
-            try:
-                with open(filepath, "r") as f:
-                    entries = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                entries = []
-
-            entries.append(duration)
-            while len(entries) > max_entries:
-                entries.pop(0)
-
-            if len(entries) > 0:
-                _logger.info(
-                    "counts lookup perf (%s): current average: %f seconds",
-                    context,
-                    sum(entries) / len(entries),
-                )
-
-            with open(filepath, "w") as f:
-                json.dump(entries, f)
-        except Exception:
-            _logger.exception("unable to save counts lookup perf data")
+    def generate_counts_lookup(
+        user: User, feed_uuids: Collection[uuid_.UUID]
+    ) -> dict[uuid_.UUID, _CountsDescriptor]:
+        return Feed.generate_counts_lookup__fast(user, feed_uuids)
 
     @staticmethod
-    def generate_counts_lookup(
+    def generate_counts_lookup__fast(
         user: User, feed_uuids: Collection[uuid_.UUID]
     ) -> dict[uuid_.UUID, _CountsDescriptor]:
         feed_uuids = frozenset(feed_uuids)
 
-        generate_counts_lookup_override: int | None
-        try:
-            generate_counts_lookup_override = (
-                int(s)
-                if (s := os.getenv("APP_GENERATE_COUNTS_LOOKUP_OVERRIDE")) is not None
-                else None
-            )
-        except ValueError:
-            _logger.warning("APP_GENERATE_COUNTS_LOOKUP_OVERRIDE malformed")
-            generate_counts_lookup_override = None
-
-        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor]
-
-        c = random.choice((0, 1, 2, 3))
-        if generate_counts_lookup_override == 0 or (
-            generate_counts_lookup_override is None and c == 0
-        ):
-            time_start = time.perf_counter()
-
-            # This is the canonical version of the queryset
-            counts_lookup = {
-                r["uuid"]: Feed._CountsDescriptor(
-                    r["unread_count"], r["total_count"] - r["unread_count"]
-                )
-                for r in Feed.objects.filter(uuid__in=feed_uuids)
-                .values("uuid")
-                .annotate(
-                    total_count=models.Count("feed_entries__uuid"),
-                    unread_count=models.Count(
-                        "feed_entries__uuid",
-                        filter=(
-                            models.Q(feed_entries__is_archived=False)
-                            & ~models.Q(
-                                feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                    user=user,
-                                    feed_entry__feed_id__in=feed_uuids,
-                                ).values(
-                                    "feed_entry_id"
-                                )
-                            )
-                        ),
-                    ),
-                )
-                .values("uuid", "total_count", "unread_count")
-            }
-
-            time_end = time.perf_counter()
-
-            Feed._track_counts_lookup_perf("feed", time_end - time_start)
-        elif generate_counts_lookup_override == 1 or (
-            generate_counts_lookup_override is None and c == 1
-        ):
-            time_start = time.perf_counter()
-
-            counts_lookup = {
-                r["feed_id"]: Feed._CountsDescriptor(
-                    r["unread_count"], r["total_count"] - r["unread_count"]
-                )
-                for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
-                .values("feed_id")
-                .annotate(
-                    total_count=models.Count("*"),
-                    unread_count=models.Count(
-                        "uuid",
-                        filter=(
-                            models.Q(is_archived=False)
-                            & ~models.Q(
-                                uuid__in=ReadFeedEntryUserMapping.objects.filter(
-                                    user=user,
-                                    feed_entry__feed_id__in=feed_uuids,
-                                ).values("feed_entry_id")
-                            )
-                        ),
-                    ),
-                )
-                .values("feed_id", "total_count", "unread_count")
-            }
-
-            counts_lookup.update(
-                {
-                    feed_uuid: Feed._CountsDescriptor(0, 0)
-                    for feed_uuid in feed_uuids.difference(counts_lookup.keys())
-                }
+        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {}
+        for feed_uuid in feed_uuids:
+            total_count = FeedEntry.objects.filter(feed_id=feed_uuid).count()
+            read_count = (
+                ReadFeedEntryUserMapping.objects.filter(
+                    user=user, feed_entry__feed_id=feed_uuid
+                ).count()
+                + FeedEntry.objects.filter(feed_id=feed_uuid, is_archived=True).count()
             )
 
-            time_end = time.perf_counter()
+            counts_lookup[feed_uuid] = Feed._CountsDescriptor(
+                total_count - read_count, read_count
+            )
 
-            Feed._track_counts_lookup_perf("feedentry", time_end - time_start)
-        else:
-            time_start = time.perf_counter()
+        return counts_lookup
 
-            counts_lookup = {}
-            for feed_uuid in feed_uuids:
-                total_count = FeedEntry.objects.filter(feed_id=feed_uuid).count()
-                read_count = (
-                    ReadFeedEntryUserMapping.objects.filter(
-                        user=user, feed_entry__feed_id=feed_uuid
-                    ).count()
-                    + FeedEntry.objects.filter(
-                        feed_id=feed_uuid, is_archived=True
-                    ).count()
-                )
+    @staticmethod
+    def generate_counts_lookup__canonical(
+        user: User, feed_uuids: Collection[uuid_.UUID]
+    ) -> dict[uuid_.UUID, _CountsDescriptor]:  # pragma: no cover
+        feed_uuids = frozenset(feed_uuids)
 
-                counts_lookup[feed_uuid] = Feed._CountsDescriptor(
-                    total_count - read_count, read_count
-                )
-
-            time_end = time.perf_counter()
-
-            Feed._track_counts_lookup_perf("iterate_step", time_end - time_start)
+        counts_lookup: dict[uuid_.UUID, Feed._CountsDescriptor] = {
+            r["uuid"]: Feed._CountsDescriptor(
+                r["unread_count"], r["total_count"] - r["unread_count"]
+            )
+            for r in Feed.objects.filter(uuid__in=feed_uuids)
+            .values("uuid")
+            .annotate(
+                total_count=models.Count("feed_entries__uuid"),
+                unread_count=models.Count(
+                    "feed_entries__uuid",
+                    filter=(
+                        models.Q(feed_entries__is_archived=False)
+                        & ~models.Q(
+                            feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
+                                user=user,
+                                feed_entry__feed_id__in=feed_uuids,
+                            ).values(
+                                "feed_entry_id"
+                            )
+                        )
+                    ),
+                ),
+            )
+            .values("uuid", "total_count", "unread_count")
+        }
 
         return counts_lookup
 
@@ -485,122 +392,43 @@ class Feed(models.Model):
         return self._counts(user).read_count
 
     @staticmethod
-    def _track_archived_counts_lookup_perf(
-        context: str, duration: float, max_entries=1000
-    ) -> None:  # pragma: no cover
-        try:
-            filepath = f"mount/archived_counts_lookup_{context}_perf.json"
-
-            entries: list[float]
-            try:
-                with open(filepath, "r") as f:
-                    entries = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                entries = []
-
-            entries.append(duration)
-            while len(entries) > max_entries:
-                entries.pop(0)
-
-            if len(entries) > 0:
-                _logger.info(
-                    "archived counts lookup perf (%s): current average: %f seconds",
-                    context,
-                    sum(entries) / len(entries),
-                )
-
-            with open(filepath, "w") as f:
-                json.dump(entries, f)
-        except Exception:
-            _logger.exception("unable to save counts lookup perf data")
+    def generate_archived_counts_lookup(
+        feed_uuids: Collection[uuid_.UUID],
+    ) -> dict[uuid_.UUID, int]:
+        return Feed.generate_archived_counts_lookup__fast(feed_uuids)
 
     @staticmethod
-    def generate_archived_counts_lookup(
+    def generate_archived_counts_lookup__fast(
         feed_uuids: Collection[uuid_.UUID],
     ) -> dict[uuid_.UUID, int]:
         feed_uuids = frozenset(feed_uuids)
 
-        generate_archived_counts_lookup_override: int | None
-        try:
-            generate_archived_counts_lookup_override = (
-                int(s)
-                if (s := os.getenv("APP_GENERATE_ARCHIVED_COUNTS_LOOKUP_OVERRIDE"))
-                is not None
-                else None
+        archived_counts_lookup: dict[uuid_.UUID, int] = {}
+        for feed_uuid in feed_uuids:
+            archived_counts_lookup[feed_uuid] = FeedEntry.objects.filter(
+                feed_id=feed_uuid, is_archived=True
+            ).count()
+
+        return archived_counts_lookup
+
+    @staticmethod
+    def generate_archived_counts_lookup__canonical(
+        feed_uuids: Collection[uuid_.UUID],
+    ) -> dict[uuid_.UUID, int]:  # pragma: no cover
+        feed_uuids = frozenset(feed_uuids)
+
+        archived_counts_lookup: dict[uuid_.UUID, int] = {
+            r["uuid"]: r["archived_count"]
+            for r in Feed.objects.filter(uuid__in=feed_uuids)
+            .values("uuid")
+            .annotate(
+                archived_count=models.Count(
+                    "feed_entries__uuid",
+                    filter=(models.Q(feed_entries__is_archived=True)),
+                ),
             )
-        except ValueError:
-            _logger.warning("APP_GENERATE_ARCHIVED_COUNTS_LOOKUP_OVERRIDE malformed")
-            generate_archived_counts_lookup_override = None
-
-        archived_counts_lookup: dict[uuid_.UUID, int]
-
-        c = random.choice((0, 1, 2))
-        if generate_archived_counts_lookup_override == 0 or (
-            generate_archived_counts_lookup_override is None and c == 0
-        ):
-            time_start = time.perf_counter()
-
-            # This is the canonical version of the queryset
-            archived_counts_lookup = {
-                r["uuid"]: r["archived_count"]
-                for r in Feed.objects.filter(uuid__in=feed_uuids)
-                .values("uuid")
-                .annotate(
-                    archived_count=models.Count(
-                        "feed_entries__uuid",
-                        filter=(models.Q(feed_entries__is_archived=True)),
-                    ),
-                )
-                .values("uuid", "archived_count")
-            }
-
-            time_end = time.perf_counter()
-
-            Feed._track_archived_counts_lookup_perf("feed", time_end - time_start)
-        elif generate_archived_counts_lookup_override == 1 or (
-            generate_archived_counts_lookup_override is None and c == 1
-        ):
-            time_start = time.perf_counter()
-
-            archived_counts_lookup = {
-                r["feed_id"]: r["archived_count"]
-                for r in FeedEntry.objects.filter(feed_id__in=feed_uuids)
-                .values("feed_id")
-                .annotate(
-                    archived_count=models.Count(
-                        "uuid",
-                        filter=(models.Q(is_archived=True)),
-                    ),
-                )
-                .values("feed_id", "archived_count")
-            }
-
-            archived_counts_lookup.update(
-                {
-                    feed_uuid: 0
-                    for feed_uuid in feed_uuids.difference(
-                        archived_counts_lookup.keys()
-                    )
-                }
-            )
-
-            time_end = time.perf_counter()
-
-            Feed._track_archived_counts_lookup_perf("feedentry", time_end - time_start)
-        else:
-            time_start = time.perf_counter()
-
-            archived_counts_lookup = {}
-            for feed_uuid in feed_uuids:
-                archived_counts_lookup[feed_uuid] = FeedEntry.objects.filter(
-                    feed_id=feed_uuid, is_archived=True
-                ).count()
-
-            time_end = time.perf_counter()
-
-            Feed._track_archived_counts_lookup_perf(
-                "iterate_step", time_end - time_start
-            )
+            .values("uuid", "archived_count")
+        }
 
         return archived_counts_lookup
 
