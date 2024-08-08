@@ -498,7 +498,7 @@ class FeedEntry(models.Model):
             models.Index(
                 fields=("feed_id", "-published_at", "-created_at", "-updated_at")
             ),
-            # Speed up the "iterate_step" counts generation
+            # Speed up the counts generation
             models.Index(fields=("feed_id", "is_archived")),
         )
 
