@@ -331,8 +331,11 @@ class Feed(models.Model):
         for feed_uuid in feed_uuids:
             total_count = FeedEntry.objects.filter(feed_id=feed_uuid).count()
             read_count = (
-                ReadFeedEntryUserMapping.objects.filter(
-                    user=user, feed_entry__feed_id=feed_uuid
+                FeedEntry.objects.filter(
+                    uuid__in=ReadFeedEntryUserMapping.objects.filter(user=user).values(
+                        "feed_entry_id"
+                    ),
+                    feed_id=feed_uuid,
                 ).count()
                 + FeedEntry.objects.filter(feed_id=feed_uuid, is_archived=True).count()
             )
