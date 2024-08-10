@@ -103,12 +103,10 @@ class _GetCountsLookupTaskResults_Lookup(TypedDict):
 
 
 def get_counts_lookup_task(
-    user_uuid_str: str, feed_uuid_strs: list[str]
+    user_uuid_str: str, feed_uuid_str: str
 ) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
     user = User.objects.get(uuid=uuid_.UUID(user_uuid_str))
-    counts_lookup = Feed.generate_counts_lookup(
-        user, [uuid_.UUID(fus) for fus in feed_uuid_strs]
-    )
+    counts_lookup = Feed.generate_counts_lookup(user, [uuid_.UUID(feed_uuid_str)])
 
     return {
         str(u): {

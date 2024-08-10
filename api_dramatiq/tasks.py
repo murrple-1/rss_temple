@@ -51,18 +51,18 @@ from api.tasks.setup_subscriptions import (
 
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
 def get_counts_lookup(
-    user_uuid_str: str, feed_uuid_strs: list[str], *args: Any, **kwargs: Any
+    user_uuid_str: str, feed_uuid_str: str, *args: Any, **kwargs: Any
 ) -> dict[str, _GetCountsLookupTaskResults_Lookup]:
     get_counts_lookup.logger.info("get_counts_lookup() started...")
-    return get_counts_lookup_task(user_uuid_str, feed_uuid_strs)
+    return get_counts_lookup_task(user_uuid_str, feed_uuid_str)
 
 
 @dramatiq.actor(queue_name="rss_temple", store_results=True)
 def get_archived_counts_lookup(
-    feed_uuid_strs: list[str], *args: Any, **kwargs: Any
+    feed_uuid_str: str, *args: Any, **kwargs: Any
 ) -> dict[str, int]:
     get_archived_counts_lookup.logger.info("get_archived_counts_lookup() started...")
-    return get_archived_counts_lookup_task(feed_uuid_strs)
+    return get_archived_counts_lookup_task(feed_uuid_str)
 
 
 @dramatiq.actor(queue_name="rss_temple")

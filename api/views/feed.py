@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import OrderBy, Q
 from django.dispatch import receiver
 from django.utils import timezone
-from dramatiq import Message
+from dramatiq import Message, group
 from dramatiq.errors import DramatiqError
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -130,7 +130,7 @@ def _preprocess_get_request_from_cache__dramatiq(
 ) -> _PreprocessGetRequestFromCacheResults:  # pragma: no cover
     broker = dramatiq.get_broker()
 
-    messages: dict[str, Message] = {}
+    messages: dict[str, Message | group] = {}
 
     counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] | None = None
     counts_lookup_cache_hit: bool | None = None
@@ -140,23 +140,28 @@ def _preprocess_get_request_from_cache__dramatiq(
         )
 
         if missing_counts_lookup_feed_uuids:
-            messages["counts"] = broker.enqueue(
-                Message(
-                    queue_name="rss_temple",
-                    actor_name="get_counts_lookup",
-                    args=(
-                        str(user.uuid),
-                        [str(uuid_) for uuid_ in missing_counts_lookup_feed_uuids],
-                    ),
-                    kwargs={},
-                    options={
-                        "max_age": (
-                            _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS
-                            * 1000.0
+            g = group(
+                [
+                    Message(
+                        queue_name="rss_temple",
+                        actor_name="get_counts_lookup",
+                        args=(
+                            str(user.uuid),
+                            str(uuid_),
                         ),
-                    },
-                )
+                        kwargs={},
+                        options={
+                            "max_age": (
+                                _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS
+                                * 1000.0
+                            ),
+                        },
+                    )
+                    for uuid_ in missing_counts_lookup_feed_uuids
+                ],
+                broker=broker,
             )
+            messages["counts"] = g.run()
             counts_lookup_cache_hit = False
         else:
             counts_lookup_cache_hit = True
@@ -170,61 +175,71 @@ def _preprocess_get_request_from_cache__dramatiq(
         ) = get_archived_counts_lookup_from_cache(feed_uuids, cache)
 
         if missing_archived_counts_lookup_feed_uuids:
-            messages["archived_counts"] = broker.enqueue(
-                Message(
-                    queue_name="rss_temple",
-                    actor_name="get_archived_counts_lookup",
-                    args=(
-                        [
-                            str(uuid_)
-                            for uuid_ in missing_archived_counts_lookup_feed_uuids
-                        ],
-                    ),
-                    kwargs={},
-                    options={
-                        "max_age": (
-                            _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
-                            * 1000.0
-                        ),
-                    },
-                )
+            g = group(
+                [
+                    Message(
+                        queue_name="rss_temple",
+                        actor_name="get_archived_counts_lookup",
+                        args=(str(uuid_),),
+                        kwargs={},
+                        options={
+                            "max_age": (
+                                _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
+                                * 1000.0
+                            ),
+                        },
+                    )
+                    for uuid_ in missing_archived_counts_lookup_feed_uuids
+                ],
+                broker=broker,
             )
+            messages["archived_counts"] = g.run()
             archived_counts_lookup_cache_hit = False
         else:
             archived_counts_lookup_cache_hit = True
 
     for k, message in messages.items():
         if k == "counts":
-            counts_results: dict[str, dict[str, Any]] = message.get_result(
+            assert isinstance(message, group)
+
+            missing_counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] = {}
+            for counts_results in message.get_results(
                 block=True,
                 timeout=int(
                     _FEED_GET_REQUESTS_DRAMATIQ_COUNTS_LOOKUP_TIMEOUT_SECONDS * 1000.0
                 ),
-            )
+            ):
+                counts_results = cast(dict[str, dict[str, Any]], counts_results)
 
-            missing_counts_lookup = {
-                uuid.UUID(fus): Feed._CountsDescriptor(
-                    l["unread_count"], l["read_count"]
+                missing_counts_lookup.update(
+                    {
+                        uuid.UUID(fus): Feed._CountsDescriptor(
+                            l["unread_count"], l["read_count"]
+                        )
+                        for fus, l in counts_results.items()
+                    }
                 )
-                for fus, l in counts_results.items()
-            }
 
             save_counts_lookup_to_cache(user, missing_counts_lookup, cache)
 
             assert counts_lookup is not None
             counts_lookup.update(missing_counts_lookup)
         elif k == "archived_counts":
-            archived_counts_results: dict[str, int] = message.get_result(
+            assert isinstance(message, group)
+
+            missing_archived_counts_lookup: dict[uuid.UUID, int] = {}
+            for archived_counts_results in message.get_results(
                 block=True,
                 timeout=int(
                     _FEED_GET_REQUESTS_DRAMATIQ_ARCHIVED_COUNTS_LOOKUP_TIMEOUT_SECONDS
                     * 1000.0
                 ),
-            )
+            ):
+                archived_counts_results = cast(dict[str, int], archived_counts_results)
 
-            missing_archived_counts_lookup = {
-                uuid.UUID(fus): l for fus, l in archived_counts_results.items()
-            }
+                missing_archived_counts_lookup.update(
+                    {uuid.UUID(fus): l for fus, l in archived_counts_results.items()}
+                )
 
             save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
 
