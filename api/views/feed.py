@@ -279,15 +279,21 @@ def _preprocess_get_request_from_cache__sync(
         )
 
         if missing_counts_lookup_feed_uuids:
-            missing_counts_lookup_results = get_counts_lookup_task(
-                str(user.uuid), [str(u) for u in feed_uuids]
-            )
-            missing_counts_lookup = {
-                uuid.UUID(fus): Feed._CountsDescriptor(
-                    l["unread_count"], l["read_count"]
+            missing_counts_lookup: dict[uuid.UUID, Feed._CountsDescriptor] = {}
+
+            for feed_uuid in feed_uuids:
+                missing_counts_lookup_results = get_counts_lookup_task(
+                    str(user.uuid), str(feed_uuid)
                 )
-                for fus, l in missing_counts_lookup_results.items()
-            }
+                missing_counts_lookup.update(
+                    {
+                        uuid.UUID(fus): Feed._CountsDescriptor(
+                            l["unread_count"], l["read_count"]
+                        )
+                        for fus, l in missing_counts_lookup_results.items()
+                    }
+                )
+
             save_counts_lookup_to_cache(user, missing_counts_lookup, cache)
 
             counts_lookup.update(missing_counts_lookup)
@@ -309,13 +315,19 @@ def _preprocess_get_request_from_cache__sync(
         ) = get_archived_counts_lookup_from_cache(feed_uuids, cache)
 
         if missing_archived_counts_lookup_feed_uuids:
-            missing_archived_counts_lookup_results = get_archived_counts_lookup_task(
-                [str(u) for u in feed_uuids]
-            )
-            missing_archived_counts_lookup = {
-                uuid.UUID(fus): l
-                for fus, l in missing_archived_counts_lookup_results.items()
-            }
+            missing_archived_counts_lookup: dict[uuid.UUID, int] = {}
+
+            for feed_uuid in feed_uuids:
+                missing_archived_counts_lookup_results = (
+                    get_archived_counts_lookup_task(str(feed_uuid))
+                )
+                missing_archived_counts_lookup.update(
+                    {
+                        uuid.UUID(fus): l
+                        for fus, l in missing_archived_counts_lookup_results.items()
+                    }
+                )
+
             save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
 
             archived_counts_lookup.update(missing_archived_counts_lookup)
