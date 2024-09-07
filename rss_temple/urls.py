@@ -1,5 +1,4 @@
-from typing import Any
-
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -7,7 +6,6 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework import permissions
 
 urlpatterns = [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
@@ -19,3 +17,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns.append(path("silk/", include("silk.urls", namespace="silk")))

@@ -70,7 +70,8 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    MIDDLEWARE.append("api.middleware.profiler.ProfilerMiddleware")
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "rss_temple.urls"
 
@@ -377,6 +378,12 @@ CSP_STYLE_SRC_ELEM = (
 CSP_SCRIPT_SRC_ELEM = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net")
 CSP_WORKER_SRC = ("'self'", "blob:")
 CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
+
+# django-silk
+SILKY_AUTHENTICATION = True
+SILKY_AUTHORISATION = True
+SILKY_MAX_RECORDED_REQUESTS = 10**4
+SILKY_MAX_RECORDED_REQUESTS_CHECK_PERCENT = 10
 
 # app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
