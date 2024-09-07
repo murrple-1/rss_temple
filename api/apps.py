@@ -9,11 +9,11 @@ class ApiConfig(AppConfig):
     name = "api"
 
     def ready(self) -> None:
+        super().ready()
+
         import api.signals
 
         assert api.signals
-
-        super().ready()
 
         dramatiq.set_broker(broker)
         dramatiq.set_encoder(UJSONEncoder())
