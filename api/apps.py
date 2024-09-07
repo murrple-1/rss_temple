@@ -9,6 +9,10 @@ class ApiConfig(AppConfig):
     name = "api"
 
     def ready(self) -> None:
+        import api.signals
+
+        assert api.signals
+
         super().ready()
 
         dramatiq.set_broker(broker)

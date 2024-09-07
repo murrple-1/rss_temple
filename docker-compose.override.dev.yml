@@ -34,7 +34,12 @@ services:
       - ./:/code/
   rss_temple_dramatiq:
     image: rss_temple
-    command: dramatiq --watch . api_dramatiq.main -Q rss_temple
+    command: >
+      dramatiq
+      --watch /code/
+      --watch-include '*.py'
+      -Q rss_temple
+      api_dramatiq.main
     build:
       context: ./
     environment:

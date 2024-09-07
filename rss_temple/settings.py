@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "corsheaders",
     "django_apscheduler",
+    "silk",
     "api.apps.ApiConfig",
 ]
 
@@ -67,11 +68,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "csp.middleware.CSPMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
-
-if DEBUG:
-    INSTALLED_APPS.append("silk")
-    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "rss_temple.urls"
 
@@ -384,6 +382,11 @@ SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
 SILKY_MAX_RECORDED_REQUESTS = 10**4
 SILKY_MAX_RECORDED_REQUESTS_CHECK_PERCENT = 10
+SILKY_PYTHON_PROFILER = True
+SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(BASE_DIR, "_silk_profiles")
+SILKY_PYTHON_PROFILER_EXTENDED_FILE_NAME = True
+SILKY_DELETE_PROFILES = True
 
 # app
 _test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
