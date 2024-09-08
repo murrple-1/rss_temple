@@ -387,18 +387,24 @@ SILKY_PYTHON_PROFILER_BINARY = True
 SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(BASE_DIR, "_silk_profiles")
 SILKY_PYTHON_PROFILER_EXTENDED_FILE_NAME = True
 SILKY_DELETE_PROFILES = True
+SILKY_MAX_REQUEST_BODY_SIZE = int(
+    os.getenv("APP_SILKY_MAX_REQUEST_BODY_SIZE", "8192")
+)  # 8kb
+SILKY_MAX_RESPONSE_BODY_SIZE = int(
+    os.getenv("APP_SILKY_MAX_RESPONSE_BODY_SIZE", "8192")
+)  # 8kb
 
 # app
-_test_runner_type = os.environ.get("TEST_RUNNER_TYPE", "standard").lower()
+_test_runner_type = os.getenv("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
     pass
 elif _test_runner_type == "xml":
     TEST_RUNNER = "xmlrunner.extra.djangotestrunner.XMLTestRunner"
     TEST_OUTPUT_DIR = "./test-results/"
-    TEST_OUTPUT_VERBOSE = int(os.environ.get("TEST_OUTPUT_VERBOSE", "1"))
+    TEST_OUTPUT_VERBOSE = int(os.getenv("TEST_OUTPUT_VERBOSE", "1"))
 elif _test_runner_type == "timed":
     TEST_RUNNER = "rss_temple.testrunner.DjangoTimedTestRunner"
-    TEST_SLOW_TEST_THRESHOLD = float(os.environ.get("TEST_SLOW_TEST_THRESHOLD", "0.5"))
+    TEST_SLOW_TEST_THRESHOLD = float(os.getenv("TEST_SLOW_TEST_THRESHOLD", "0.5"))
 else:
     raise RuntimeError("unknown 'TEST_RUNNER_TYPE'")
 
