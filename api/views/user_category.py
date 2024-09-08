@@ -171,7 +171,10 @@ class UserCategoriesQueryView(APIView):
                 *sort
             )[skip : skip + count]:
                 obj = fieldutils.generate_return_object(
-                    field_maps, user_category, request, user_categories
+                    field_maps,
+                    user_category,
+                    request,
+                    user_categories.prefetch_related("feeds"),
                 )
                 objs.append(obj)
 
