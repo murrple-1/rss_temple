@@ -1,12 +1,14 @@
 import datetime
 import logging
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
 from typing import AbstractSet, Any, Callable, Iterable, TypedDict, cast
 
 from django.conf import settings
 from django.core.signals import setting_changed
+from django.db.models import QuerySet
 from django.dispatch import receiver
 from django.http import HttpRequest
 from django.utils import timezone
@@ -47,11 +49,18 @@ def _usercategory_feedUuids(
         if (
             feed_uuids_dict := getattr(request, "_usercategory_feedUuids", None)
         ) is None:
-            feed_uuids_dict = {uc.uuid: [] for uc in queryset}
-            for t in UserCategory.feeds.through.objects.filter(
-                usercategory_id__in=feed_uuids_dict.keys()
-            ):
-                feed_uuids_dict[t.usercategory_id].append(t.feed_id)
+            if isinstance(queryset, QuerySet):
+                feed_uuids_dict = defaultdict(list)
+                for t in UserCategory.feeds.through.objects.filter(
+                    usercategory_id__in=queryset.values("uuid")
+                ):
+                    feed_uuids_dict[t.usercategory_id].append(t.feed_id)
+            else:
+                feed_uuids_dict = {uc.uuid: [] for uc in queryset}
+                for t in UserCategory.feeds.through.objects.filter(
+                    usercategory_id__in=feed_uuids_dict.keys()
+                ):
+                    feed_uuids_dict[t.usercategory_id].append(t.feed_id)
 
             setattr(request, "_usercategory_feedUuids", feed_uuids_dict)
 
@@ -73,12 +82,20 @@ def _feed_userCategoryUuids(
                 request, "_feed_userCategoryUuids", None
             )
         ) is None:
-            user_category_uuids_dict = {f.uuid: [] for f in queryset}
-            for t in UserCategory.feeds.through.objects.filter(
-                usercategory__user=cast(User, request.user),
-                feed_id__in=user_category_uuids_dict.keys(),
-            ):
-                user_category_uuids_dict[t.feed_id].append(t.usercategory_id)
+            if isinstance(queryset, QuerySet):
+                user_category_uuids_dict = defaultdict(list)
+                for t in UserCategory.feeds.through.objects.filter(
+                    usercategory__user=cast(User, request.user),
+                    feed_id__in=queryset.values("uuid"),
+                ):
+                    user_category_uuids_dict[t.feed_id].append(t.usercategory_id)
+            else:
+                user_category_uuids_dict = {f.uuid: [] for f in queryset}
+                for t in UserCategory.feeds.through.objects.filter(
+                    usercategory__user=cast(User, request.user),
+                    feed_id__in=user_category_uuids_dict.keys(),
+                ):
+                    user_category_uuids_dict[t.feed_id].append(t.usercategory_id)
 
             setattr(request, "_feed_userCategoryUuids", user_category_uuids_dict)
 
