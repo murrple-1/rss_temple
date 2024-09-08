@@ -374,6 +374,7 @@ CSP_STYLE_SRC_ELEM = (
     "cdn.jsdelivr.net",
 )
 CSP_SCRIPT_SRC_ELEM = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net")
+CSP_SCRIPT_SRC_ATTR = ("'self'", "'unsafe-inline'")
 CSP_WORKER_SRC = ("'self'", "blob:")
 CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
 
