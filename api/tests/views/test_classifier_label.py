@@ -15,9 +15,10 @@ from api.models import (
     FeedEntry,
     User,
 )
-from api.tests.utils import throttling_monkey_patch
+from api.tests.utils import disable_silk, throttling_monkey_patch
 
 
+@disable_silk()
 class ClassifierLabelTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

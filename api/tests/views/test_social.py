@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 
 from api.models import User
 from api.serializers import SocialLoginSerializer
-from api.tests.utils import throttling_monkey_patch
+from api.tests.utils import disable_silk, throttling_monkey_patch
 
 
 class _TestSocialLoginSerializer(SocialLoginSerializer):
@@ -31,6 +31,7 @@ class _TestSocialConnectSerializer(SocialConnectSerializer):
         return attrs
 
 
+@disable_silk()
 @override_settings(
     TEST_SOCIAL_LOGIN_SERIALIZER_CLASS=_TestSocialLoginSerializer,
     TEST_SOCIAL_CONNECT_SERIALIZER_CLASS=_TestSocialConnectSerializer,

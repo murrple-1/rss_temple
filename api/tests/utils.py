@@ -7,7 +7,9 @@ from bs4 import BeautifulSoup, Tag
 from django.core import mail
 from django.http.response import HttpResponse
 from django.template.loader import get_template
+from django.test.utils import TestContextDecorator
 from lingua import Language
+from silk.config import SilkyConfig
 
 from api.models import Language as Language_
 
@@ -52,6 +54,16 @@ def throttling_monkey_patch():
         return True
 
     setattr(SimpleRateThrottle, "allow_request", _allow_request)
+
+
+class disable_silk(TestContextDecorator):
+    def enable(self):
+        self.old_attrs = SilkyConfig().attrs
+        SilkyConfig().attrs["SILKY_PYTHON_PROFILER"] = False
+        SilkyConfig().attrs["SILKY_INTERCEPT_PERCENT"] = 0
+
+    def disable(self):
+        SilkyConfig().attrs = self.old_attrs
 
 
 class TopImagePage(NamedTuple):

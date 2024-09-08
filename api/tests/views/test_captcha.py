@@ -8,12 +8,14 @@ from django.utils import timezone
 
 from api.models import Captcha
 from api.tests.utils import (
+    disable_silk,
     reusable_captcha_key,
     reusable_captcha_seed,
     throttling_monkey_patch,
 )
 
 
+@disable_silk()
 class CaptchaTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

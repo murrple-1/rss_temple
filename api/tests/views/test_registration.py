@@ -10,12 +10,14 @@ from rest_framework.test import APITestCase
 from api.models import Captcha, User
 from api.tests.utils import (
     debug_print_last_email,
+    disable_silk,
     reusable_captcha_key,
     reusable_captcha_seed,
     throttling_monkey_patch,
 )
 
 
+@disable_silk()
 class RegistrationTestCase(APITestCase):
     old_django_logger_level: ClassVar[int]
 

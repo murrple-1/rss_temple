@@ -12,11 +12,15 @@ from api.tests import TestFileServerTestCase
 from api.tests.utils import (
     assert_x_cache_hit_working,
     db_migrations_state,
+    disable_silk,
     throttling_monkey_patch,
 )
 
 
-@override_settings(FEED_GET_REQUESTS_DRAMATIQ=False)
+@disable_silk()
+@override_settings(
+    FEED_GET_REQUESTS_DRAMATIQ=False,
+)
 class FeedTestCase(TestFileServerTestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

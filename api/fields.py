@@ -47,11 +47,9 @@ def _usercategory_feedUuids(
         if (
             feed_uuids_dict := getattr(request, "_usercategory_feedUuids", None)
         ) is None:
-            feed_uuids_dict = {uc.uuid: [] for uc in queryset}
-            for t in UserCategory.feeds.through.objects.filter(
-                usercategory_id__in=feed_uuids_dict.keys()
-            ):
-                feed_uuids_dict[t.usercategory_id].append(t.feed_id)
+            feed_uuids_dict = {
+                uc.uuid: [f.uuid for f in uc.feeds.all()] for uc in queryset
+            }
 
             setattr(request, "_usercategory_feedUuids", feed_uuids_dict)
 

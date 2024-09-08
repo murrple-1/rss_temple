@@ -6,9 +6,10 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from api.models import Feed, User, UserCategory
-from api.tests.utils import throttling_monkey_patch
+from api.tests.utils import disable_silk, throttling_monkey_patch
 
 
+@disable_silk()
 class UserCategoryTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

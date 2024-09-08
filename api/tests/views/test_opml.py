@@ -5,9 +5,10 @@ from django.core.management import call_command
 from rest_framework.test import APITestCase
 
 from api.models import SubscribedFeedUserMapping, User
-from api.tests.utils import throttling_monkey_patch
+from api.tests.utils import disable_silk, throttling_monkey_patch
 
 
+@disable_silk()
 class OPMLTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

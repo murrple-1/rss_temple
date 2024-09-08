@@ -8,10 +8,10 @@ from rest_framework.test import APITestCase
 
 from api.cache_utils.counts_lookup import save_counts_lookup_to_cache
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
-from api.tests.utils import throttling_monkey_patch
-from api.tests.views.test_feed import FeedTestCase
+from api.tests.utils import disable_silk, throttling_monkey_patch
 
 
+@disable_silk()
 class FeedEntryTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]

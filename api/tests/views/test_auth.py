@@ -9,9 +9,14 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from api.models import Token, User
-from api.tests.utils import debug_print_last_email, throttling_monkey_patch
+from api.tests.utils import (
+    debug_print_last_email,
+    disable_silk,
+    throttling_monkey_patch,
+)
 
 
+@disable_silk()
 class AuthTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
