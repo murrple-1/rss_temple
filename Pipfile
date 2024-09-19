@@ -41,6 +41,7 @@ django-apscheduler = "*"
 python-redis-lock = {version = "*", extras = ["django"]}
 django-csp = "*"
 django-silk = "*"
+uuid7 = "*"
 
 [dev-packages]
 coverage = "*"

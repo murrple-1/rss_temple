@@ -20,5 +20,6 @@ module = [
     "apscheduler.*",
     "django_apscheduler.*",
     "redis_lock.*",
+    "uuid_extensions",
 ]
 ignore_missing_imports = true
