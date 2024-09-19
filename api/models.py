@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import cached_property
 from typing import TYPE_CHECKING, Collection, NamedTuple, Sequence
 
-# TODO replace with regular `uuid` module when finalize in Python
+# TODO replace with regular `uuid` module when finalized in Python
 import uuid_extensions
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
