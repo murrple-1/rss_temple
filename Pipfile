@@ -20,8 +20,8 @@ html5lib = "*"
 validators = "*"
 tabulate = "*"
 django-cors-headers = "*"
-gunicorn = { verson = "*", extras = ["gthread"]}
-psycopg2 = "*"
+gunicorn = {verson = "*", extras = ["gthread"]}
+psycopg = {version = "*", extras = ["binary"]}
 django-redis = "*"
 drf-spectacular = {version = "*", extras = ["sidecar"]}
 # how it should be specified: will install dj-rest-auth *AND* django-allauth via `extras`
