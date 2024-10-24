@@ -45,8 +45,6 @@ uuid7 = "*"
 
 [dev-packages]
 coverage = "*"
-codecov = "*"
-unittest-xml-reporting = "*"
 packaging = "*"
 black = "24.4.2"
 isort = "*"

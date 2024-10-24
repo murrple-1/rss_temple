@@ -387,10 +387,6 @@ SILKY_MAX_RESPONSE_BODY_SIZE = int(
 _test_runner_type = os.getenv("TEST_RUNNER_TYPE", "standard").lower()
 if _test_runner_type == "standard":
     pass
-elif _test_runner_type == "xml":
-    TEST_RUNNER = "xmlrunner.extra.djangotestrunner.XMLTestRunner"
-    TEST_OUTPUT_DIR = "./test-results/"
-    TEST_OUTPUT_VERBOSE = int(os.getenv("TEST_OUTPUT_VERBOSE", "1"))
 elif _test_runner_type == "timed":
     TEST_RUNNER = "rss_temple.testrunner.DjangoTimedTestRunner"
     TEST_SLOW_TEST_THRESHOLD = float(os.getenv("TEST_SLOW_TEST_THRESHOLD", "0.5"))
