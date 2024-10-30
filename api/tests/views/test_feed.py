@@ -6,7 +6,7 @@ from django.http.response import HttpResponse
 from django.test import override_settings, tag
 from django.utils import timezone
 
-from api import fields
+from api.fields import field_configs
 from api.models import Feed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
 from api.tests.utils import (
@@ -15,6 +15,7 @@ from api.tests.utils import (
     disable_silk,
     throttling_monkey_patch,
 )
+from query_utils import fields as fieldutils
 
 
 @disable_silk()
@@ -64,7 +65,7 @@ class FeedTestCase(TestFileServerTestCase):
                 "/api/feed",
                 {
                     "url": f"{FeedTestCase.live_server_url}/rss_2.0/well_formed.xml",
-                    "fields": fields.field_list("feed"),
+                    "fields": fieldutils.field_list("feed", field_configs),
                 },
             )
             self.assertEqual(response.status_code, 200, response.content)
@@ -111,7 +112,7 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.post(
             "/api/feeds/query",
-            {"fields": list(fields.field_list("feed"))},
+            {"fields": list(fieldutils.field_list("feed", field_configs))},
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -128,7 +129,7 @@ class FeedTestCase(TestFileServerTestCase):
 
         response = self.client.post(
             "/api/feeds/query",
-            {"fields": list(fields.field_list("feed"))},
+            {"fields": list(fieldutils.field_list("feed", field_configs))},
         )
         self.assertEqual(response.status_code, 200, response.content)
 

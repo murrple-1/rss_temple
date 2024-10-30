@@ -11,9 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api import fields as fieldutils
 from api.exceptions import Conflict
-from api.fields import FieldMap, generate_only_fields
 from api.models import Feed, User, UserCategory
 from api.serializers import (
     GetManySerializer,
@@ -23,6 +21,7 @@ from api.serializers import (
     UserCategoryCreateSerializer,
     UserCategorySerializer,
 )
+from query_utils import fields as fieldutils
 
 _OBJECT_NAME = "usercategory"
 
@@ -45,12 +44,12 @@ class UserCategoryView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
 
         user_category: UserCategory
         try:
             user_category = (
-                UserCategory.objects.only(*generate_only_fields(field_maps))
+                UserCategory.objects.only(*fieldutils.generate_only_fields(field_maps))
                 .prefetch_related("feeds")
                 .get(uuid=uuid, user=cast(User, request.user))
             )
@@ -118,7 +117,7 @@ class UserCategoryCreateView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
 
         user_category = UserCategory(
             user=cast(User, request.user), text=serializer.validated_data["text"]
@@ -155,12 +154,12 @@ class UserCategoriesQueryView(APIView):
         search: list[Q] = [
             Q(user=cast(User, request.user))
         ] + serializer.validated_data["search"]
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
         user_categories = UserCategory.objects.filter(*search).only(
-            *generate_only_fields(field_maps)
+            *fieldutils.generate_only_fields(field_maps)
         )
 
         ret_obj: dict[str, Any] = {}

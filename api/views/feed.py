@@ -21,9 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from url_normalize import url_normalize
 
-from api import content_type_util, feed_handler
-from api import fields as fieldutils
-from api import grace_period_util, rss_requests
+from api import content_type_util, feed_handler, grace_period_util, rss_requests
 from api.cache_utils.archived_counts_lookup import (
     get_archived_counts_lookup_from_cache,
     get_archived_counts_lookup_task,
@@ -41,7 +39,6 @@ from api.cache_utils.subscription_datas import (
 from api.exceptions import Conflict, InsufficientStorage
 from api.exposed_feed_extractor import ExposedFeed, extract_exposed_feeds
 from api.feed_handler import FeedHandlerError
-from api.fields import FieldMap, generate_field_names, generate_only_fields
 from api.models import (
     AlternateFeedURL,
     Feed,
@@ -61,6 +58,7 @@ from api.serializers import (
 )
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
+from query_utils import fields as fieldutils
 
 _logger = logging.getLogger("rss_temple.views.feed")
 
@@ -367,7 +365,7 @@ class FeedView(APIView):
 
         url = cast(str, url_normalize(serializer.validated_data["url"]))
 
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
 
         (
             subscription_datas,
@@ -382,7 +380,7 @@ class FeedView(APIView):
                     user,
                     subscription_datas=subscription_datas,
                 )
-                .only(*generate_only_fields(field_maps))
+                .only(*fieldutils.generate_only_fields(field_maps))
                 .get(
                     Q(feed_url=url)
                     | Q(
@@ -395,7 +393,7 @@ class FeedView(APIView):
         except Feed.DoesNotExist:
             feed = _save_feed(url)
 
-        field_names = generate_field_names(field_maps)
+        field_names = fieldutils.generate_field_names(field_maps)
 
         counts_lookup_cache_hit: bool | None
         archived_counts_lookup_cache_hit: bool | None
@@ -453,7 +451,7 @@ class FeedsQueryView(APIView):
         skip: int = serializer.validated_data["skip"]
         sort: list[OrderBy] = serializer.validated_data["sort"]
         search: list[Q] = serializer.validated_data["search"]
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
@@ -471,14 +469,14 @@ class FeedsQueryView(APIView):
                 )
             )
             .filter(*search)
-            .only(*generate_only_fields(field_maps))
+            .only(*fieldutils.generate_only_fields(field_maps))
         )
 
         feeds_qs = feeds.order_by(*sort)[skip : skip + count]
 
         feed_uuids = frozenset(f.uuid for f in feeds_qs)
 
-        field_names = generate_field_names(field_maps)
+        field_names = fieldutils.generate_field_names(field_maps)
 
         counts_lookup_cache_hit: bool | None
         archived_counts_lookup_cache_hit: bool | None

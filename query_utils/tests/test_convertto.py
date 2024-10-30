@@ -3,7 +3,7 @@ import uuid
 
 from django.test import TestCase
 
-from api.search.convertto import (
+from query_utils.search.convertto import (
     Bool,
     DateTime,
     DateTimeDeltaRange,

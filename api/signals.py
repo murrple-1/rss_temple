@@ -6,7 +6,9 @@ from silk.models import Request
 
 
 @receiver(models.signals.post_delete, sender=Request)
-def auto_delete_request_prof_file_on_delete(sender, instance, **kwargs):
+def auto_delete_request_prof_file_on_delete(
+    sender, instance, **kwargs
+):  # pragma: no cover
     assert isinstance(instance, Request)
 
     if instance.prof_file:

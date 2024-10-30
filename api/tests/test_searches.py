@@ -12,117 +12,7 @@ from api import searches
 from api.models import Feed, FeedEntry, User, UserCategory
 
 
-class SearchesTestCase(TestCase):
-    old_logger_level: ClassVar[int]
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
-
-        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
-
-    def test_standard(self):
-        q_list = searches.to_filter_args(
-            "feed",
-            Mock(HttpRequest),
-            'uuid:"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
-        )
-
-        try:
-            self.assertEqual(
-                q_list,
-                [
-                    Q(
-                        uuid__in=[
-                            uuid.UUID("c54a1f76-f350-4336-b7c4-33ec8f5e81a3"),
-                            uuid.UUID("99d63124-59e2-4204-ba61-be294dcb4d22"),
-                        ]
-                    )
-                ],
-            )
-        except AssertionError:
-            self.assertEqual(
-                q_list,
-                [
-                    Q(
-                        uuid__in=[
-                            uuid.UUID("99d63124-59e2-4204-ba61-be294dcb4d22"),
-                            uuid.UUID("c54a1f76-f350-4336-b7c4-33ec8f5e81a3"),
-                        ]
-                    )
-                ],
-            )
-
-    def test_standard_with_inner_quote(self):
-        q_list = searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"\\"test\\""'
-        )
-        try:
-            self.assertEqual(q_list, [Q(title_search_vector='"test"')])
-        except AssertionError:
-            self.assertEqual(q_list, [Q(title__icontains='"test"')])
-
-    def test_malformed(self):
-        with self.assertRaises(ValueError):
-            searches.to_filter_args("feed", Mock(HttpRequest), "")
-
-        with self.assertRaises(ValueError):
-            searches.to_filter_args("feed", Mock(HttpRequest), '((title:"test")')
-
-    def test_unknown_field(self):
-        with self.assertRaises(AttributeError):
-            searches.to_filter_args("feed", Mock(HttpRequest), 'unknownfield:"test"')
-
-    def test_malformed_value(self):
-        with self.assertRaises(ValueError):
-            searches.to_filter_args("feed", Mock(HttpRequest), 'uuid:"bad uuid"')
-
-    def test_and(self):
-        searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"test" or title:"example"'
-        )
-        searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"test" OR title:"example"'
-        )
-
-    def test_or(self):
-        searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"test" and title:"example"'
-        )
-        searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"test" AND title:"example"'
-        )
-
-    def test_parenthesized(self):
-        searches.to_filter_args(
-            "feed",
-            Mock(HttpRequest),
-            'title:"word" or (title:"test" and title:"example")',
-        )
-        searches.to_filter_args(
-            "feed", Mock(HttpRequest), 'title:"test" or (title:"example")'
-        )
-        searches.to_filter_args("feed", Mock(HttpRequest), '(title:"test")')
-        searches.to_filter_args("feed", Mock(HttpRequest), '((title:"test"))')
-
-    def test_exclude(self):
-        searches.to_filter_args(
-            "feed",
-            Mock(HttpRequest),
-            'uuid:!"99d63124-59e2-4204-ba61-be294dcb4d22,c54a1f76-f350-4336-b7c4-33ec8f5e81a3"',
-        )
-
-
 class AllSearchesTestCase(TestCase):
-    old_logger_level: ClassVar[int]
     user: ClassVar[User]
 
     class _Trial(TypedDict):
@@ -209,31 +99,17 @@ class AllSearchesTestCase(TestCase):
             self.user = AllSearchesTestCase.user
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
-
-        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
-
-    @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
 
         cls.user = User.objects.create_user("test_searches@test.com", None)
 
     def test_run(self):
-        self.assertEqual(len(AllSearchesTestCase.TRIALS), len(searches._search_fns))
+        self.assertEqual(len(AllSearchesTestCase.TRIALS), len(searches.search_fns))
 
         for key, trial_dict in AllSearchesTestCase.TRIALS.items():
             with self.subTest(key=key):
-                search_fns_dict = searches._search_fns[key]
+                search_fns_dict = searches.search_fns[key]
 
                 trial_searches = trial_dict["searches"]
                 self.assertEqual(len(trial_searches), len(search_fns_dict))

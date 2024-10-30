@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from api import fields
@@ -18,6 +18,7 @@ from api.models import (
     User,
     UserCategory,
 )
+from query_utils import fields as fieldutils
 
 
 class _ObjectConfig:
@@ -43,10 +44,12 @@ _object_configs = [
 ]
 
 
-class FieldsTestCase(TestCase):
+class FieldsTestCase(SimpleTestCase):
     def test_default_field_maps(self):
         for oc in _object_configs:
-            default_field_maps = fields.get_default_field_maps(oc.object_name)
+            default_field_maps = fieldutils.get_default_field_maps(
+                oc.object_name, fields.field_configs
+            )
 
             self.assertEqual(len(default_field_maps), oc.default_count)
 
@@ -58,7 +61,9 @@ class FieldsTestCase(TestCase):
 
     def test_all_field_maps(self):
         for oc in _object_configs:
-            all_field_maps = fields.get_all_field_maps(oc.object_name)
+            all_field_maps = fieldutils.get_all_field_maps(
+                oc.object_name, fields.field_configs
+            )
 
             self.assertEqual(len(all_field_maps), oc.all_count)
 
@@ -68,19 +73,11 @@ class FieldsTestCase(TestCase):
                 self.assertIn("accessor", field_map)
                 self.assertTrue(callable(field_map["accessor"]))
 
-    def test_fieldconfig(self):
-        fc = fields._FieldConfig(
-            lambda request, db_obj, queryset: "test", True, {"field_name"}
-        )
-
-        db_obj = object()
-        queryset = [db_obj]
-        self.assertEqual(fc.accessor(Mock(HttpRequest), db_obj, queryset), "test")
-        self.assertTrue(fc.default)
-
     def test_to_field_map(self):
         for oc in _object_configs:
-            field_map = fields.to_field_map(oc.object_name, oc.good_field_name)
+            field_map = fieldutils.to_field_map(
+                oc.object_name, oc.good_field_name, fields.field_configs
+            )
 
             assert field_map is not None
 
@@ -95,69 +92,10 @@ class FieldsTestCase(TestCase):
 
             field_map["accessor"](Mock(HttpRequest), db_obj, queryset)
 
-            field_map = fields.to_field_map(oc.object_name, oc.bad_field_name)
+            field_map = fieldutils.to_field_map(
+                oc.object_name, oc.bad_field_name, fields.field_configs
+            )
             self.assertIsNone(field_map)
-
-    def test_generate_return_object(self):
-        field_maps: list[fields.FieldMap] = [
-            {
-                "field_name": "uuid",
-                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
-                "only_fields": {"uuid"},
-            }
-        ]
-
-        db_obj = Mock()
-        db_obj.uuid = "test string"
-
-        queryset = [db_obj]
-
-        self.assertEqual(
-            fields.generate_return_object(
-                field_maps, db_obj, Mock(HttpRequest), queryset
-            ),
-            {
-                "uuid": "test string",
-            },
-        )
-
-    def test_generate_only_fields(self):
-        field_maps: list[fields.FieldMap] = [
-            {
-                "field_name": "myUuid",
-                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
-                "only_fields": {"uuid"},
-            },
-            {
-                "field_name": "myText",
-                "accessor": lambda request, db_obj, queryset: db_obj.text,
-                "only_fields": {"text"},
-            },
-        ]
-
-        self.assertEqual(
-            fields.generate_only_fields(field_maps),
-            {"uuid", "text"},
-        )
-
-    def test_generate_field_names(self):
-        field_maps: list[fields.FieldMap] = [
-            {
-                "field_name": "myUuid",
-                "accessor": lambda request, db_obj, queryset: db_obj.uuid,
-                "only_fields": {"uuid"},
-            },
-            {
-                "field_name": "myText",
-                "accessor": lambda request, db_obj, queryset: db_obj.text,
-                "only_fields": {"text"},
-            },
-        ]
-
-        self.assertEqual(
-            fields.generate_field_names(field_maps),
-            {"myUuid", "myText"},
-        )
 
 
 class AllFieldsTestCase(TestCase):
@@ -258,13 +196,13 @@ class AllFieldsTestCase(TestCase):
         cls.user_category.feeds.add(cls.feed_with_category)
 
     def test_run(self):
-        self.assertEqual(len(AllFieldsTestCase.TRIALS), len(fields._field_configs))
+        self.assertEqual(len(AllFieldsTestCase.TRIALS), len(fields.field_configs))
 
         for key, generator in AllFieldsTestCase.TRIALS.items():
             with self.subTest(key=key):
                 db_objs = generator()
 
-                fields_dict = fields._field_configs[key]
+                fields_dict = fields.field_configs[key]
 
                 has_run = False
                 for field_config in fields_dict.values():
@@ -327,7 +265,7 @@ class FieldFnsTestCase(TestCase):
         )
         user_category.feeds.add(feed)
 
-        for queryset in [None, UserCategory.objects.all()]:
+        for queryset in [None, UserCategory.objects.all(), [user_category]]:
             with self.subTest(queryset_type=type(queryset)):
                 feed_uuids = fields._usercategory_feedUuids(
                     FieldFnsTestCase.MockRequest(), user_category, queryset
@@ -351,7 +289,7 @@ class FieldFnsTestCase(TestCase):
         )
         user_category.feeds.add(feed)
 
-        for queryset in [None, Feed.objects.all()]:
+        for queryset in [None, Feed.objects.all(), [feed]]:
             with self.subTest(queryset_type=type(queryset)):
                 user_category_uuids = fields._feed_userCategoryUuids(
                     FieldFnsTestCase.MockRequest(), feed, queryset

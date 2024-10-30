@@ -6,29 +6,16 @@ from django.http import HttpRequest
 from django.test import SimpleTestCase
 from rest_framework import serializers
 
-from api import fields as fieldutils
-from api import searches as searchutils
-from api import sorts as sortutils
+from api.fields import field_configs
+from api.searches import search_fns
 from api.serializers import GetManySerializer, GetSingleSerializer
+from api.sorts import sort_configs
+from query_utils import fields as fieldutils
+from query_utils import search as searchutils
+from query_utils import sort as sortutils
 
 
 class GetSingleSerializerTestCase(SimpleTestCase):
-    old_logger_level: ClassVar[int]
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
-        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
-
-        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-
-        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
-
     def test_fields(self):
         serializer = GetSingleSerializer(
             data={"fields": []}, context={"object_name": "feed"}
@@ -39,7 +26,7 @@ class GetSingleSerializerTestCase(SimpleTestCase):
                 serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
             ),
             sorted(
-                fieldutils.get_default_field_maps("feed"),
+                fieldutils.get_default_field_maps("feed", field_configs),
                 key=lambda fm: fm["field_name"],
             ),
         )
@@ -54,7 +41,8 @@ class GetSingleSerializerTestCase(SimpleTestCase):
             ),
             sorted(
                 cast(
-                    list[fieldutils.FieldMap], [fieldutils.to_field_map("feed", "uuid")]
+                    list[fieldutils.FieldMap],
+                    [fieldutils.to_field_map("feed", "uuid", field_configs)],
                 ),
                 key=lambda fm: fm["field_name"],
             ),
@@ -72,8 +60,8 @@ class GetSingleSerializerTestCase(SimpleTestCase):
                 cast(
                     list[fieldutils.FieldMap],
                     [
-                        fieldutils.to_field_map("feed", "uuid"),
-                        fieldutils.to_field_map("feed", "title"),
+                        fieldutils.to_field_map("feed", "uuid", field_configs),
+                        fieldutils.to_field_map("feed", "title", field_configs),
                     ],
                 ),
                 key=lambda fm: fm["field_name"],
@@ -90,7 +78,7 @@ class GetSingleSerializerTestCase(SimpleTestCase):
                     serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
                 ),
                 sorted(
-                    fieldutils.get_all_field_maps("feed"),
+                    fieldutils.get_all_field_maps("feed", field_configs),
                     key=lambda fm: fm["field_name"],
                 ),
             )
@@ -104,7 +92,7 @@ class GetSingleSerializerTestCase(SimpleTestCase):
                 serializer.validated_data["fields"], key=lambda fm: fm["field_name"]
             ),
             sorted(
-                fieldutils.get_default_field_maps("feed"),
+                fieldutils.get_default_field_maps("feed", field_configs),
                 key=lambda fm: fm["field_name"],
             ),
         )
@@ -124,26 +112,32 @@ class GetSingleSerializerTestCase(SimpleTestCase):
 
 
 class GetManySerializerTestCase(SimpleTestCase):
-    old_logger_level: ClassVar[int]
+    old_query_utils_logger_level: ClassVar[int]
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logging.getLogger("rss_temple").getEffectiveLevel()
+        cls.old_query_utils_logger_level = logging.getLogger(
+            "query_utils"
+        ).getEffectiveLevel()
 
-        logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
+        logging.getLogger("query_utils").setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logging.getLogger("rss_temple").setLevel(cls.old_logger_level)
+        logging.getLogger("query_utils").setLevel(cls.old_query_utils_logger_level)
 
     @staticmethod
     def _to_order_by_args(object_name: str, sort: str, default_sort_enabled: bool):
-        sort_list = sortutils.to_sort_list(object_name, sort, default_sort_enabled)
-        order_by_args = sortutils.sort_list_to_order_by_args(object_name, sort_list)
+        sort_list = sortutils.to_sort_list(
+            object_name, sort, default_sort_enabled, sort_configs
+        )
+        order_by_args = sortutils.sort_list_to_order_by_args(
+            object_name, sort_list, sort_configs
+        )
 
         return order_by_args
 
@@ -254,7 +248,9 @@ class GetManySerializerTestCase(SimpleTestCase):
         serializer.is_valid(raise_exception=True)
         self.assertEqual(
             serializer.validated_data["search"],
-            searchutils.to_filter_args("feed", Mock(HttpRequest), 'title:"test"'),
+            searchutils.to_filter_args(
+                "feed", Mock(HttpRequest), 'title:"test"', search_fns
+            ),
         )
 
     def test_search_typeerror(self):

@@ -38,11 +38,14 @@ try:
 except ImportError:  # pragma: no cover
     raise ImportError("allauth needs to be added to INSTALLED_APPS.")
 
-from api import fields as fieldutils
-from api import searches as searchutils
-from api import sorts as sortutils
 from api.exceptions import Conflict, UnprocessableContent
+from api.fields import field_configs
 from api.models import Captcha, ClassifierLabel, Feed, User, UserCategory
+from api.searches import search_fns
+from api.sorts import sort_configs
+from query_utils import fields as fieldutils
+from query_utils import search as searchutils
+from query_utils import sort as sortutils
 
 _logger = logging.getLogger("rss_temple")
 
@@ -411,16 +414,20 @@ class _FieldsField(serializers.ListField):
             return []
 
         if settings.DEBUG and len(data) == 1 and data[0] == "_all":
-            field_maps = fieldutils.get_all_field_maps(object_name)
+            field_maps = fieldutils.get_all_field_maps(object_name, field_configs)
         else:
             field_maps = []
             for field_name in data:
-                field_map = fieldutils.to_field_map(object_name, field_name)
+                field_map = fieldutils.to_field_map(
+                    object_name, field_name, field_configs
+                )
                 if field_map:
                     field_maps.append(field_map)
 
             if len(field_maps) < 1:
-                field_maps = fieldutils.get_default_field_maps(object_name)
+                field_maps = fieldutils.get_default_field_maps(
+                    object_name, field_configs
+                )
 
         return field_maps
 
@@ -429,7 +436,7 @@ class _FieldsField(serializers.ListField):
         if not object_name:  # pragma: no cover
             return []
 
-        return fieldutils.get_default_field_maps(object_name)
+        return fieldutils.get_default_field_maps(object_name, field_configs)
 
 
 @extend_schema_field(
@@ -450,8 +457,12 @@ class _SortField(serializers.Field):
             _logger.exception("unable to load `default_sort_enabled`. defaulting...")
             default_sort_enabled = True
 
-        sort_list = sortutils.to_sort_list(object_name, None, default_sort_enabled)
-        return sortutils.sort_list_to_order_by_args(object_name, sort_list)
+        sort_list = sortutils.to_sort_list(
+            object_name, None, default_sort_enabled, sort_configs
+        )
+        return sortutils.sort_list_to_order_by_args(
+            object_name, sort_list, sort_configs
+        )
 
     def to_internal_value(self, data: Any):
         object_name: str | None = self.context.get("object_name")
@@ -479,8 +490,12 @@ class _SortField(serializers.Field):
             default_sort_enabled = True
 
         try:
-            sort_list = sortutils.to_sort_list(object_name, data, default_sort_enabled)
-            return sortutils.sort_list_to_order_by_args(object_name, sort_list)
+            sort_list = sortutils.to_sort_list(
+                object_name, data, default_sort_enabled, sort_configs
+            )
+            return sortutils.sort_list_to_order_by_args(
+                object_name, sort_list, sort_configs
+            )
         except (ValueError, AttributeError) as e:
             raise serializers.ValidationError("sort malformed") from e
 
@@ -514,7 +529,7 @@ class _SearchField(serializers.Field):
             return []
 
         try:
-            return searchutils.to_filter_args(object_name, request, data)
+            return searchutils.to_filter_args(object_name, request, data, search_fns)
         except (ValueError, AttributeError) as e:
             raise serializers.ValidationError("search malformed") from e
 

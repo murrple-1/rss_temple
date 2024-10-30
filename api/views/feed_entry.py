@@ -16,7 +16,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api import fields as fieldutils
 from api.cache_utils.counts_lookup import increment_read_in_counts_lookup_cache
 from api.cache_utils.favorite_feed_entry_uuids import (
     delete_favorite_feed_entry_uuids_cache,
@@ -28,7 +27,6 @@ from api.cache_utils.read_feed_entry_uuids import (
 )
 from api.cache_utils.subscription_datas import get_subscription_datas_from_cache
 from api.django_extensions import bulk_create_iter
-from api.fields import FieldMap, generate_only_fields
 from api.models import FeedEntry, ReadFeedEntryUserMapping, User
 from api.serializers import (
     FeedEntriesMarkReadSerializer,
@@ -41,6 +39,7 @@ from api.serializers import (
     StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
 )
+from query_utils import fields as fieldutils
 
 _MAX_FEED_ENTRIES_STABLE_QUERY_COUNT: int
 _FEED_ENTRY_LANGUAGES_CACHE_TIMEOUT_SECONDS: float
@@ -84,7 +83,7 @@ class FeedEntryView(APIView):
         )
         serializer.is_valid(raise_exception=True)
 
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
 
         (
             subscription_datas,
@@ -111,7 +110,7 @@ class FeedEntryView(APIView):
                         favorite_feed_entry_uuids=favorite_feed_entry_uuids,
                     )
                 )
-                .only(*generate_only_fields(field_maps).union({"language"}))
+                .only(*fieldutils.generate_only_fields(field_maps).union({"language"}))
                 .select_related("language")
                 .get(uuid=uuid)
             )
@@ -156,7 +155,7 @@ class FeedEntriesQueryView(APIView):
         skip: int = serializer.validated_data["skip"]
         sort: list[OrderBy] = serializer.validated_data["sort"]
         search: list[Q] = serializer.validated_data["search"]
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
@@ -184,7 +183,7 @@ class FeedEntriesQueryView(APIView):
                 )
             )
             .filter(*search)
-            .only(*generate_only_fields(field_maps).union({"language"}))
+            .only(*fieldutils.generate_only_fields(field_maps).union({"language"}))
             .select_related("language")
         )
 
@@ -302,7 +301,7 @@ class FeedEntriesQueryStableView(APIView):
         token: str = serializer.validated_data["token"]
         count: int = serializer.validated_data["count"]
         skip: int = serializer.validated_data["skip"]
-        field_maps: list[FieldMap] = serializer.validated_data["fields"]
+        field_maps: list[fieldutils.FieldMap] = serializer.validated_data["fields"]
         return_objects: bool = serializer.validated_data["return_objects"]
         return_total_count: bool = serializer.validated_data["return_total_count"]
 
@@ -334,7 +333,11 @@ class FeedEntriesQueryStableView(APIView):
                 feed_entry.uuid: feed_entry
                 for feed_entry in FeedEntry.annotate_user_data(
                     FeedEntry.objects.filter(uuid__in=current_uuids)
-                    .only(*generate_only_fields(field_maps).union({"uuid", "language"}))
+                    .only(
+                        *fieldutils.generate_only_fields(field_maps).union(
+                            {"uuid", "language"}
+                        )
+                    )
                     .select_related("language"),
                     user,
                     subscription_datas=subscription_datas,

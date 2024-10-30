@@ -1,9 +1,11 @@
 [coverage:run]
 include =
     api/*
+    query_utils/*
 omit =
     api/tests/*
     api/migrations/*
+    query_utils/tests/*
 dynamic_context = test_function
 
 [coverage:report]
