@@ -371,6 +371,7 @@ CSP_WORKER_SRC = ("'self'", "blob:")
 CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
 
 # django-silk
+SILKY_INTERCEPT_PERCENT = int(os.getenv("APP_SILK_INTERCEPT_PERCENT", "50"))
 SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
 SILKY_MAX_RECORDED_REQUESTS = 10**4

@@ -259,9 +259,14 @@ class Feed(models.Model):
     @staticmethod
     def annotate_search_vectors(qs: models.QuerySet["Feed"]) -> models.QuerySet["Feed"]:
         if connection.vendor == "postgresql":  # pragma: no cover
-            from django.contrib.postgres.search import SearchVector
+            from django.contrib.postgres.search import SearchVectorField
+            from django.db.models.expressions import RawSQL
 
-            qs = qs.annotate(title_search_vector=SearchVector("title"))
+            qs = qs.annotate(
+                title_search_vector=RawSQL(
+                    "title_search_vector", [], output_field=SearchVectorField()
+                )
+            )
 
         return qs
 
@@ -578,11 +583,16 @@ class FeedEntry(models.Model):
         qs: models.QuerySet["FeedEntry"],
     ) -> models.QuerySet["FeedEntry"]:
         if connection.vendor == "postgresql":  # pragma: no cover
-            from django.contrib.postgres.search import SearchVector
+            from django.contrib.postgres.search import SearchVectorField
+            from django.db.models.expressions import RawSQL
 
             qs = qs.annotate(
-                title_search_vector=SearchVector("title"),
-                content_search_vector=SearchVector("content"),
+                title_search_vector=RawSQL(
+                    "title_search_vector", [], output_field=SearchVectorField()
+                ),
+                content_search_vector=RawSQL(
+                    "content_search_vector", [], output_field=SearchVectorField()
+                ),
             )
 
         return qs
