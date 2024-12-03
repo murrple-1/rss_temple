@@ -7,7 +7,6 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from lingua import Language as Language_
 
 from api.models import (
     Captcha,

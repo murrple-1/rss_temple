@@ -1,4 +1,3 @@
-import logging
 import uuid
 from typing import Any, Callable, ClassVar, TypedDict
 from unittest.mock import Mock
