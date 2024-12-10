@@ -115,8 +115,8 @@ jobs:
             - "~/.local/share/virtualenvs/"
             - "~/.pyenv/"
       - run:
-          name: black
-          command: pipenv run black --check .
+          name: ruff lint
+          command: pipenv run ruff check .
       - run:
-          name: isort
-          command: pipenv run isort --check **/*.py
+          name: ruff format
+          command: pipenv run ruff format --check .
