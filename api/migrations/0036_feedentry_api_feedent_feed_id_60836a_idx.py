@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0035_alter_feed_home_url_alter_feedentry_author_name_and_more"),
     ]

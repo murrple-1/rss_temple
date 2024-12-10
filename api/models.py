@@ -375,9 +375,7 @@ class Feed(models.Model):
                             feed_entries__uuid__in=ReadFeedEntryUserMapping.objects.filter(
                                 user=user,
                                 feed_entry__feed_id__in=feed_uuids,
-                            ).values(
-                                "feed_entry_id"
-                            )
+                            ).values("feed_entry_id")
                         )
                     ),
                 ),

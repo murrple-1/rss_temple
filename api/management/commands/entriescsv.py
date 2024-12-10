@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 {
                     "title": feed_entry_dict["title"],
                     "content": feed_entry_dict["content"],
-                    "labels": json.dumps([l[0] for l in labels]),
+                    "labels": json.dumps([label[0] for label in labels]),
                 }
             )
             output_count += 1

@@ -1046,7 +1046,7 @@ class FeedEntryTestCase(APITestCase):
         ]:
             with self.subTest(data=data, expected=expected):
                 response = self.client.get(
-                    f"/api/feedentry/languages",
+                    "/api/feedentry/languages",
                     data,
                 )
                 self.assertEqual(response.status_code, 200, response.content)
@@ -1096,7 +1096,7 @@ class FeedEntryTestCase(APITestCase):
         ]:
             with self.subTest(data=data, expected=expected):
                 response = self.client.get(
-                    f"/api/feedentry/languages",
+                    "/api/feedentry/languages",
                     data,
                 )
                 self.assertEqual(response.status_code, 200, response.content)
@@ -1146,7 +1146,7 @@ class FeedEntryTestCase(APITestCase):
         ]:
             with self.subTest(data=data, expected=expected):
                 response = self.client.get(
-                    f"/api/feedentry/languages",
+                    "/api/feedentry/languages",
                     data,
                 )
                 self.assertEqual(response.status_code, 200, response.content)
@@ -1196,7 +1196,7 @@ class FeedEntryTestCase(APITestCase):
         ]:
             with self.subTest(data=data, expected=expected):
                 response = self.client.get(
-                    f"/api/feedentry/languages",
+                    "/api/feedentry/languages",
                     data,
                 )
                 self.assertEqual(response.status_code, 200, response.content)

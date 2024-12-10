@@ -111,7 +111,7 @@ urlpatterns = [
     ),
     re_path(r"^feedentries/favorite/?$", views.FeedEntriesFavoriteView.as_view()),
     re_path(r"^feedentry/languages/?$", views.FeedEntryLanguagesView.as_view()),
-    re_path(rf"^usercategory/?$", views.UserCategoryCreateView.as_view()),
+    re_path(r"^usercategory/?$", views.UserCategoryCreateView.as_view()),
     re_path(rf"^usercategory/{_uuid_regex}/?$", views.UserCategoryView.as_view()),
     re_path(r"^usercategories/query/?$", views.UserCategoriesQueryView.as_view()),
     re_path(r"^usercategories/apply/?$", views.UserCategoriesApplyView.as_view()),
@@ -126,7 +126,7 @@ urlpatterns = [
         r"^classifierlabels/entries/?$", views.ClassifierLabelListByEntryView.as_view()
     ),
     re_path(
-        rf"^classifierlabels/votes/?$",
+        r"^classifierlabels/votes/?$",
         views.ClassifierLabelVotesListView.as_view(),
     ),
     re_path(

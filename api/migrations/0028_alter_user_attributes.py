@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0027_feedentry_api_feedent_created_6bb194_idx_and_more"),
     ]

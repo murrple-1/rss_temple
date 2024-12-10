@@ -28,4 +28,6 @@ def create_token(
     user: AnonymousUser | AbstractBaseUser,
     serializer: Serializer,
 ):
-    return token_model.objects.create(user=user, expires_at=(timezone.now() + _TOKEN_EXPIRY_INTERVAL))  # type: ignore
+    return token_model.objects.create(
+        user=user, expires_at=(timezone.now() + _TOKEN_EXPIRY_INTERVAL)
+    )  # type: ignore

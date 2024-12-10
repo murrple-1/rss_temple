@@ -68,7 +68,7 @@ class ClassifierLabelTestCase(APITestCase):
         ClassifierLabel.objects.create(text="Label 1")
 
         response = self.client.get(
-            f"/api/classifierlabels",
+            "/api/classifierlabels",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -96,7 +96,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         cache.clear()
         response = self.client.get(
-            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            "/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -112,7 +112,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         cache.clear()
         response = self.client.get(
-            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            "/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -135,7 +135,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         cache.clear()
         response = self.client.get(
-            f"/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
+            "/api/classifierlabels", {"feedEntryUuid": str(feed_entry.uuid)}
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -147,7 +147,7 @@ class ClassifierLabelTestCase(APITestCase):
 
     def test_ClassifierLabelListView_get_feed_entry_notfound(self):
         response = self.client.get(
-            f"/api/classifierlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
+            "/api/classifierlabels", {"feedEntryUuid": str(uuid.UUID(int=0))}
         )
         self.assertEqual(response.status_code, 404, response.content)
 
@@ -185,7 +185,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         # do it once to "warm" the `get_classifier_label_vote_counts_from_cache()` cache
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -202,7 +202,7 @@ class ClassifierLabelTestCase(APITestCase):
         # do it a second time with the "warmed" `get_classifier_label_vote_counts_from_cache()` cache,
         # so the code path is slightly different
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -224,7 +224,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         cache.clear()
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -255,7 +255,7 @@ class ClassifierLabelTestCase(APITestCase):
 
         cache.clear()
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": [str(feed_entry1.uuid), str(feed_entry2.uuid)]},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -275,7 +275,7 @@ class ClassifierLabelTestCase(APITestCase):
 
     def test_ClassifierLabelListByEntryView_post_feed_entry_notfound(self):
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": [str(uuid.UUID(int=0))]},
         )
         self.assertEqual(response.status_code, 404, response.content)
@@ -284,12 +284,13 @@ class ClassifierLabelTestCase(APITestCase):
         # this tests the `get_counts_lookup_from_cache()` code when the queryset is empty
         cache: BaseCache = caches["default"]
 
-        label1 = ClassifierLabel.objects.create(text="Label 1")
-        label2 = ClassifierLabel.objects.create(text="Label 2")
+        ClassifierLabel.objects.bulk_create(
+            [ClassifierLabel(text="Label 1"), ClassifierLabel(text="Label 2")]
+        )
 
         cache.clear()
         response = self.client.post(
-            f"/api/classifierlabels/entries",
+            "/api/classifierlabels/entries",
             {"feedEntryUuids": []},
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -450,7 +451,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classifierlabels/votes",
+            "/api/classifierlabels/votes",
         )
         self.assertEqual(response.status_code, 200, response.content)
 
@@ -467,7 +468,7 @@ class ClassifierLabelTestCase(APITestCase):
         )
 
         response = self.client.get(
-            f"/api/classifierlabels/votes",
+            "/api/classifierlabels/votes",
         )
         self.assertEqual(response.status_code, 200, response.content)
 

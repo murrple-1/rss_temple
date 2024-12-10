@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Callable, ClassVar, TypedDict
 from unittest.mock import Mock
 
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django.db.models.manager import BaseManager
 from django.http import HttpRequest
 from django.test import SimpleTestCase, TestCase

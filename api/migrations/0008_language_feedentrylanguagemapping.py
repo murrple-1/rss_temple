@@ -17,10 +17,10 @@ def _forwards_func(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
     )  # from https://en.wikipedia.org/wiki/ISO_639-3#Special_codes
     Language_.objects.bulk_create(
         Language_(
-            iso639_3=l.iso_code_639_3.name,
-            name=l.name,
+            iso639_3=lang.iso_code_639_3.name,
+            name=lang.name,
         )
-        for l in Language.all()
+        for lang in Language.all()
     )
 
 

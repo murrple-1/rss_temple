@@ -37,11 +37,11 @@ def db_migrations_state():
     Language_.objects.bulk_create(
         (
             Language_(
-                iso639_3=l.iso_code_639_3.name,
-                iso639_1=l.iso_code_639_1.name,
-                name=l.name,
+                iso639_3=lang.iso_code_639_3.name,
+                iso639_1=lang.iso_code_639_1.name,
+                name=lang.name,
             )
-            for l in Language.all()
+            for lang in Language.all()
         ),
         ignore_conflicts=True,
     )
@@ -80,7 +80,7 @@ def generate_top_image_pages(
 
     # via https://github.com/python-pillow/Pillow/blob/26fc975a6506983076627f4ff1ac2dfea39c3d19/Tests/test_file_jpeg.py#L864C16-L864C16
     with open("api/tests/test_files/site/images/generated/malformed.jpg", "wb") as f:
-        f.write(b"\xFF" * 4097)
+        f.write(b"\xff" * 4097)
 
     i = 1
     for og_tag_filename, img_tag_filename in itertools.product(

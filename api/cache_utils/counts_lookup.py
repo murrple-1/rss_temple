@@ -109,9 +109,9 @@ def get_counts_lookup_task(
     counts_lookup = Feed.generate_counts_lookup(user, [uuid_.UUID(feed_uuid_str)])
 
     return {
-        str(u): {
-            "unread_count": l.unread_count,
-            "read_count": l.read_count,
+        str(uuid_): {
+            "unread_count": count_descriptor.unread_count,
+            "read_count": count_descriptor.read_count,
         }
-        for u, l in counts_lookup.items()
+        for uuid_, count_descriptor in counts_lookup.items()
     }

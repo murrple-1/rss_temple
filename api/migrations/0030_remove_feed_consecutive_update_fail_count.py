@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0029_feed_consecutive_update_fail_count"),
     ]

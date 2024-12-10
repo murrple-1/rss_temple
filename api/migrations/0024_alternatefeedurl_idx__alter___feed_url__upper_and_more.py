@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0023_alter_alternatefeedurl_feed_url_alter_feed_feed_url_and_more"),
     ]

@@ -6,7 +6,6 @@ from django.core.cache import BaseCache, caches
 from django.db import transaction
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import HttpResponseBase
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
@@ -67,7 +66,7 @@ class ClassifierLabelListView(APIView):
                         for uuid, count in vote_counts.items()
                     ),
                     default=Value(-1),
-                    output_field=IntegerField()
+                    output_field=IntegerField(),
                 )
             ).order_by("-vote_count", "?")
         else:

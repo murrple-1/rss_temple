@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0021_remove_feedentry_api_feedent_id_6f9c14_idx_and_more"),
     ]

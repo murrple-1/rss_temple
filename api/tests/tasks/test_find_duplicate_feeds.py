@@ -34,13 +34,23 @@ class TaskTestCase(TestCase):
     def _generate_feeds(self) -> tuple[list[Feed], list[Feed]]:
         now = timezone.now()
 
-        feed_url_fn = lambda i: f"http://example.com/rss{i}.xml"
-        entry_content_fn = lambda i: f"Some Entry content for {i}"
+        def feed_url_fn(i: int) -> str:
+            return f"http://example.com/rss{i}.xml"
 
-        same_title_fn = lambda: "Sample Feed"
-        same_home_url_fn = lambda: "http://example.com"
-        same_entry_title_fn = lambda i: f"Feed Entry Title {i}"
-        same_entry_url_fn = lambda i: f"http://example.com/entry{i}.html"
+        def entry_content_fn(i: int) -> str:
+            return f"Some Entry content for {i}"
+
+        def same_title_fn() -> str:
+            return "Sample Feed"
+
+        def same_home_url_fn() -> str:
+            return "http://example.com"
+
+        def same_entry_title_fn(i: int) -> str:
+            return f"Feed Entry Title {i}"
+
+        def same_entry_url_fn(i: int) -> str:
+            return f"http://example.com/entry{i}.html"
 
         same_feed_count = 2
 
@@ -71,10 +81,17 @@ class TaskTestCase(TestCase):
 
             same_feeds.append(feed)
 
-        different_title_fn = lambda: "Different Sample Feed"
-        different_home_url_fn = lambda: "http://different.com"
-        different_entry_title_fn = lambda i: f"DifferentFeed Entry Title {i}"
-        different_entry_url_fn = lambda i: f"http://different.com/entry{i}.html"
+        def different_title_fn() -> str:
+            return "Different Sample Feed"
+
+        def different_home_url_fn() -> str:
+            return "http://different.com"
+
+        def different_entry_title_fn(i: int) -> str:
+            return f"DifferentFeed Entry Title {i}"
+
+        def different_entry_url_fn(i: int) -> str:
+            return f"http://different.com/entry{i}.html"
 
         different_feeds: list[Feed] = []
         for i, (title_fn, home_url_fn, entry_title_fn, entry_url_fn) in enumerate(

@@ -460,6 +460,6 @@ CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS: float | None = (
 )  # 30 minutes
 
 try:
-    from .local_settings import *
+    from .local_settings import *  # noqa: F403
 except ImportError:
     pass

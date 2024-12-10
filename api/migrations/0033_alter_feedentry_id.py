@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0032_alter_feed_db_updated_at_alter_feed_home_url_and_more"),
     ]

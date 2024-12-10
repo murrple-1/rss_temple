@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0026_remove_alternatefeedurl_alter___idx__feed_url__upper_and_more"),
     ]

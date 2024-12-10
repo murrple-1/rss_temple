@@ -128,8 +128,8 @@ class LanguageTestCase(TestCase):
     def test_str(self):
         self.assertGreater(Language.objects.count(), 0)
 
-        for l in Language.objects.all():
-            self.assertIsInstance(str(l), str)
+        for lang in Language.objects.all():
+            self.assertIsInstance(str(lang), str)
 
 
 class UserCategoryTestCase(TestCase):

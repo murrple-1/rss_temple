@@ -212,9 +212,9 @@ def _preprocess_get_request_from_cache__dramatiq(
                 missing_counts_lookup.update(
                     {
                         uuid.UUID(fus): Feed._CountsDescriptor(
-                            l["unread_count"], l["read_count"]
+                            count_dict["unread_count"], count_dict["read_count"]
                         )
-                        for fus, l in counts_results.items()
+                        for fus, count_dict in counts_results.items()
                     }
                 )
 
@@ -236,7 +236,10 @@ def _preprocess_get_request_from_cache__dramatiq(
                 archived_counts_results = cast(dict[str, int], archived_counts_results)
 
                 missing_archived_counts_lookup.update(
-                    {uuid.UUID(fus): l for fus, l in archived_counts_results.items()}
+                    {
+                        uuid.UUID(fus): count
+                        for fus, count in archived_counts_results.items()
+                    }
                 )
 
             save_archived_counts_lookup_to_cache(missing_archived_counts_lookup, cache)
@@ -286,9 +289,9 @@ def _preprocess_get_request_from_cache__sync(
                 missing_counts_lookup.update(
                     {
                         uuid.UUID(fus): Feed._CountsDescriptor(
-                            l["unread_count"], l["read_count"]
+                            count_dict["unread_count"], count_dict["read_count"]
                         )
-                        for fus, l in missing_counts_lookup_results.items()
+                        for fus, count_dict in missing_counts_lookup_results.items()
                     }
                 )
 
@@ -321,8 +324,8 @@ def _preprocess_get_request_from_cache__sync(
                 )
                 missing_archived_counts_lookup.update(
                     {
-                        uuid.UUID(fus): l
-                        for fus, l in missing_archived_counts_lookup_results.items()
+                        uuid.UUID(fus): count
+                        for fus, count in missing_archived_counts_lookup_results.items()
                     }
                 )
 

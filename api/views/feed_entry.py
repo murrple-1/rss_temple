@@ -725,9 +725,7 @@ class FeedEntryLanguagesView(APIView):
             else:  # pragma: no cover
                 raise NotFound("kind not found")
 
-            languages = [
-                l for l in FeedEntry.objects.values_list(field, flat=True).distinct()
-            ]
+            languages = list(FeedEntry.objects.values_list(field, flat=True).distinct())
             cache.set(
                 cache_key,
                 languages,

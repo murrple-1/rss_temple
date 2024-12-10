@@ -69,7 +69,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
 
         request = Mock(HttpRequest)
         request.META = {
-            "HTTP_AUTHORIZATION": f"Token badtoken",
+            "HTTP_AUTHORIZATION": "Token badtoken",
         }
 
         with self.assertRaises(exceptions.AuthenticationFailed):

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("api", "0024_alternatefeedurl_idx__alter___feed_url__upper_and_more"),
     ]

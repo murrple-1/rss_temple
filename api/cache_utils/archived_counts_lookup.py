@@ -36,7 +36,7 @@ def _generate_cached_entries(
 
     for key, archived_count in cache_entries.items():
         if archived_count is not None:
-            feed_uuid = uuid_.UUID(key.removeprefix(f"archived_counts_lookup_"))
+            feed_uuid = uuid_.UUID(key.removeprefix("archived_counts_lookup_"))
             yield feed_uuid, archived_count
 
 
@@ -61,7 +61,7 @@ class _GetArchivedCountsLookupFromCacheResult(NamedTuple):
 def get_archived_counts_lookup_from_cache(
     feed_uuids: Collection[uuid_.UUID], cache: BaseCache
 ) -> _GetArchivedCountsLookupFromCacheResult:
-    with lock_context(cache, f"archived_counts_lookup_lock"):
+    with lock_context(cache, "archived_counts_lookup_lock"):
         archived_counts_lookup: dict[uuid_.UUID, int] = {
             feed_uuid: archived_count
             for feed_uuid, archived_count in _generate_cached_entries(feed_uuids, cache)
@@ -81,4 +81,4 @@ def get_archived_counts_lookup_task(feed_uuid_str: str) -> dict[str, int]:
         [uuid_.UUID(feed_uuid_str)]
     )
 
-    return {str(u): l for u, l in archived_counts_lookup.items()}
+    return {str(uuid_): count for uuid_, count in archived_counts_lookup.items()}

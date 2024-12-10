@@ -45,7 +45,7 @@ class UserMetaTestCase(APITestCase):
 
     def test_UserCategoryView_get(self):
         response = self.client.get(
-            f"/api/user/meta/readcount",
+            "/api/user/meta/readcount",
         )
         self.assertEqual(response.status_code, 200, response.content)
 

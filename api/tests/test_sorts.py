@@ -1,6 +1,6 @@
 from typing import Callable, ClassVar, TypedDict
 
-from django.db.models import F, QuerySet
+from django.db.models import QuerySet
 from django.db.models.manager import BaseManager
 from django.test import TestCase
 

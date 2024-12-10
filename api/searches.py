@@ -1,4 +1,3 @@
-import logging
 from typing import AbstractSet, Callable, cast
 
 from django.db import connection
@@ -18,7 +17,7 @@ from query_utils.search.convertto import (
 )
 
 _iso_code_639_3_names: frozenset[str] = frozenset(
-    [l.iso_code_639_3.name for l in Language.all()] + ["UND"]
+    [lang.iso_code_639_3.name for lang in Language.all()] + ["UND"]
 )
 
 
@@ -26,17 +25,17 @@ class LanguageIso639_3Set(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
-        for l in search_obj.split(","):
-            l = l.upper()
-            if l in _iso_code_639_3_names:
-                langs.add(l)
+        for lang in search_obj.split(","):
+            lang = lang.upper()
+            if lang in _iso_code_639_3_names:
+                langs.add(lang)
             else:
                 raise ValueError("malformed")
         return langs
 
 
 _iso_code_639_1_names: frozenset[str] = frozenset(
-    [l.iso_code_639_1.name for l in Language.all()] + ["UN"]
+    [lang.iso_code_639_1.name for lang in Language.all()] + ["UN"]
 )
 
 
@@ -44,17 +43,17 @@ class LanguageIso639_1Set(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
-        for l in search_obj.split(","):
-            l = l.upper()
-            if l in _iso_code_639_1_names:
-                langs.add(l)
+        for lang in search_obj.split(","):
+            lang = lang.upper()
+            if lang in _iso_code_639_1_names:
+                langs.add(lang)
             else:
                 raise ValueError("malformed")
         return langs
 
 
 _language_names: frozenset[str] = frozenset(
-    [l.name for l in Language.all()] + ["UNDEFINED"]
+    [lang.name for lang in Language.all()] + ["UNDEFINED"]
 )
 
 
@@ -62,10 +61,10 @@ class LanguageNameSet(CustomConvertTo):
     @staticmethod
     def convertto(search_obj: str) -> AbstractSet[str]:
         langs: set[str] = set()
-        for l in search_obj.split(","):
-            l = l.upper()
-            if l in _language_names:
-                langs.add(l)
+        for lang in search_obj.split(","):
+            lang = lang.upper()
+            if lang in _language_names:
+                langs.add(lang)
             else:
                 raise ValueError("malformed")
         return langs

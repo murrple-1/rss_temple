@@ -3,7 +3,6 @@ from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
-from django.db.models import Q
 
 from api import feed_handler, rss_requests
 from api.requests_extensions import safe_response_text

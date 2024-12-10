@@ -46,8 +46,7 @@ uuid7 = "*"
 [dev-packages]
 coverage = "*"
 packaging = "*"
-black = "24.4.2"
-isort = "*"
+ruff = "0.8.2"
 django-stubs = { version = "*", extras = ["compatible-mypy"] }
 djangorestframework-stubs = { version = "*", extras = ["compatible-mypy"] }
 types-bleach = "*"

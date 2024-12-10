@@ -10,7 +10,7 @@ def _forwards_func(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
     Language_ = apps.get_model("api", "Language")
 
     iso639_3to1_mappings: dict[str, str] = {
-        l.iso_code_639_3.name: l.iso_code_639_1.name for l in Language.all()
+        lang.iso_code_639_3.name: lang.iso_code_639_1.name for lang in Language.all()
     }
 
     Language_.objects.filter(iso639_3="UND").update(iso639_1="UN")

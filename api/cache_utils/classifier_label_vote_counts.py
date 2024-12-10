@@ -121,9 +121,9 @@ def get_classifier_label_vote_counts_from_cache(
             if not isinstance(feed_entry_uuid, uuid_.UUID):
                 feed_entry_uuid = uuid_.UUID(feed_entry_uuid)
 
-            missing_classifier_label_vote_counts[feed_entry_uuid][
-                row.uuid
-            ] = row.vote_count
+            missing_classifier_label_vote_counts[feed_entry_uuid][row.uuid] = (
+                row.vote_count
+            )
 
         classifier_label_vote_counts.update(missing_classifier_label_vote_counts)
 
