@@ -6,6 +6,8 @@ if [ -z "$TEST_RUNNER_TYPE" ]; then
 	TEST_RUNNER_TYPE='standard'
 fi
 
+export TEST_RUNNER_TYPE
+
 cd "$INITIAL_DIR/../" || exit
 
 if [ "$1" = "" ]; then
