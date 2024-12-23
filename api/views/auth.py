@@ -19,6 +19,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.auth import logout as django_logout
 
 from api.models import User
 from api.serializers import UserDeleteSerializer
@@ -202,6 +203,8 @@ class UserDeleteView(APIView):
         )
         if not user_:
             raise AuthenticationFailed
+
+        django_logout(request)
 
         _logger.warn(f"DELETE USER: {user.uuid} ({user.email})")
         user.delete()
