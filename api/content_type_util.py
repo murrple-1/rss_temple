@@ -21,7 +21,9 @@ def is_feed(content_type: str) -> bool:
         )
         is not None
     ) or (
-        re.search(r"text/html", content_type, re.IGNORECASE)  # common mislabel
+        re.search(
+            r"(?:text/html|application/octet-stream)", content_type, re.IGNORECASE
+        )  # common mislabels
         is not None
     )
 
