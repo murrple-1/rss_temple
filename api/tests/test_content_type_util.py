@@ -26,8 +26,10 @@ class ContentTypeUtilTestCase(TestCase):
             with self.subTest(input=input_):
                 self.assertTrue(content_type_util.is_feed(input_))
 
-        # common mislabel
-        self.assertTrue(content_type_util.is_feed("text/html"))
+        # common mislabels
+        for input_ in ["text/html", "application/octet-stream"]:
+            with self.subTest(input=input_):
+                self.assertTrue(content_type_util.is_feed(input_))
 
     def test_is_image(self):
         self.assertFalse(content_type_util.is_image("text/html"))
