@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Any, Sequence
 import uuid
 
@@ -6,17 +5,13 @@ from django.contrib import admin
 from django.contrib.admin import helpers
 from django.contrib.auth.admin import UserAdmin as UserAdmin_
 from django.db.models import QuerySet
-from django.forms import BaseFormSet
-from django.http import HttpResponse, HttpResponseRedirect, QueryDict
+from django.http import HttpResponse, HttpResponseRedirect
 from django.http.request import HttpRequest
-from django.db import transaction
-from django.shortcuts import render
 
 from api.duplicate_feed_util import (
     DuplicateFeedTuple,
     convert_duplicate_feeds_to_alternate_feed_urls,
 )
-from api.forms import RemoveFeedsFormset
 from api.models import (
     AlternateFeedURL,
     DuplicateFeedSuggestion,
@@ -29,6 +24,7 @@ from api.models import (
     FeedReport,
     RemovedFeed,
 )
+from api.admin import remove_feeds_util
 
 
 class SubscribedFeedsInline(admin.TabularInline):
@@ -243,64 +239,6 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
         return obj.feed2.title
 
 
-def _remove_feeds_render(
-    request: HttpRequest, formset: BaseFormSet, selection_action_ids: list[str]
-) -> HttpResponse:
-    return render(
-        request,
-        "admin/remove_feeds.html",
-        {
-            "title": "Remove Feeds",
-            "formset": formset,
-            "selected_action_ids": selection_action_ids,
-        },
-    )
-
-
-def _remove_feeds(
-    request: HttpRequest, formset: BaseFormSet
-) -> tuple[bool, HttpResponse]:
-    if formset.is_valid():
-        feed_uuids = [uuid.UUID(form.cleaned_data["feed_id"]) for form in formset]
-
-        feeds = {f.uuid: f for f in Feed.objects.filter(uuid__in=feed_uuids)}
-
-        alternate_feed_urls: dict[str, list[AlternateFeedURL]] = defaultdict(list)
-        for afu in AlternateFeedURL.objects.filter(feed_id__in=feed_uuids):
-            alternate_feed_urls[afu.feed.feed_url].append(afu)
-
-        remove_urls_and_reasons: dict[str, tuple[str, str]] = {}
-        for form in formset:
-            feed = feeds[uuid.UUID(form.cleaned_data["feed_id"])]
-            reason = form.cleaned_data["reason"]
-            assert isinstance(reason, str)
-
-            remove_urls_and_reasons[feed.feed_url] = (feed.feed_url, reason)
-
-            for alternate_feed_url in alternate_feed_urls[feed.feed_url]:
-                remove_urls_and_reasons[alternate_feed_url.feed_url] = (
-                    alternate_feed_url.feed_url,
-                    f"duplicate of {feed.feed_url}\n---\n{reason}",
-                )
-
-        with transaction.atomic():
-            Feed.objects.filter(feed_url__in=remove_urls_and_reasons.keys()).delete()
-            RemovedFeed.objects.bulk_create(
-                (
-                    RemovedFeed(feed_url=url, reason=reason)
-                    for url, reason in remove_urls_and_reasons.values()
-                ),
-                batch_size=1024,
-                ignore_conflicts=True,
-            )
-
-        return True, HttpResponseRedirect(request.get_full_path())
-    else:
-        return False, _remove_feeds_render(
-            request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
-        )
-
-
 @admin.register(FeedReport)
 class FeedReportAdmin(admin.ModelAdmin):
     actions = ["remove_feeds"]
@@ -322,64 +260,42 @@ class FeedReportAdmin(admin.ModelAdmin):
         queryset: QuerySet[FeedReport],
     ):
         if "apply" in request.POST:
-            return self._remove_feeds__action_end(request, queryset)
+            return self._remove_feeds__action__end(request, queryset)
         else:
-            return self._remove_feeds__action_begin(request, queryset)
+            return self._remove_feeds__action__begin(request, queryset)
 
-    def _remove_feeds__action_formset(
-        self, queryset: QuerySet[FeedReport], query_post: QueryDict | None = None
-    ):
-        initial: list[dict[str, Any]] = []
-
-        for feed in Feed.objects.filter(uuid__in=queryset.values("feed_id")):
-            known_reasons: set[str] = set()
-
-            known_reasons.update(
-                FeedEntryReport.objects.filter(feed_entry__feed=feed)
-                .exclude(reason="")
-                .values_list("reason", flat=True)
-            )
-            known_reasons.update(
-                FeedReport.objects.filter(feed=feed)
-                .exclude(reason="")
-                .values_list("reason", flat=True)
-            )
-
-            initial.append(
-                {
-                    "feed_id": str(feed.uuid),
-                    "reason": "",
-                    "feed_title": feed.title,
-                    "feed_url": feed.feed_url,
-                    "known_reasons": list(known_reasons),
-                }
-            )
-
-        return RemoveFeedsFormset(query_post, initial=initial)
-
-    def _remove_feeds__action_begin(
+    def _remove_feeds__action__begin(
         self, request: HttpRequest, queryset: QuerySet[FeedReport]
     ) -> HttpResponse:
-        selected_action_uuids: set[uuid.UUID] = set()
-
-        for feed_report in queryset.select_related("feed"):
-            selected_action_uuids.add(feed_report.uuid)
-
-        return _remove_feeds_render(
+        return remove_feeds_util.render(
             request,
-            self._remove_feeds__action_formset(queryset),
-            [str(uuid_) for uuid_ in selected_action_uuids],
+            remove_feeds_util.generate_formset(
+                Feed.objects.filter(uuid__in=queryset.values("feed_id"))
+            ),
+            [
+                str(uuid_)
+                for uuid_ in frozenset(queryset.values_list("uuid", flat=True))
+            ],
         )
 
-    def _remove_feeds__action_end(
+    def _remove_feeds__action__end(
         self, request: HttpRequest, queryset: QuerySet[FeedReport]
     ) -> HttpResponse:
-        formset = self._remove_feeds__action_formset(queryset, request.POST)
-        success, response = _remove_feeds(request, formset)
-        if success:
+        formset = remove_feeds_util.generate_formset(
+            Feed.objects.filter(uuid__in=queryset.values("feed_id")), request.POST
+        )
+        if formset.is_valid():
+            feed_id_to_reason_mapping: dict[uuid.UUID, str] = {
+                uuid.UUID(form.cleaned_data["feed_id"]): form.cleaned_data["reason"]
+                for form in formset
+            }
+            remove_feeds_util.remove_feeds(feed_id_to_reason_mapping)
             self.message_user(request, f"You validated {len(formset)} feed reports")
-
-        return response
+            return HttpResponseRedirect(request.get_full_path())
+        else:
+            return remove_feeds_util.render(
+                request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
+            )
 
 
 @admin.register(FeedEntryReport)
@@ -409,66 +325,45 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
         queryset: QuerySet[FeedEntryReport],
     ):
         if "apply" in request.POST:
-            return self._remove_feeds__action_end(request, queryset)
+            return self._remove_feeds__action__end(request, queryset)
         else:
-            return self._remove_feeds__action_begin(request, queryset)
+            return self._remove_feeds__action__begin(request, queryset)
 
-    def _remove_feeds__action_formset(
-        self, queryset: QuerySet[FeedEntryReport], query_post: QueryDict | None = None
-    ):
-        initial: list[dict[str, Any]] = []
-
-        for feed in Feed.objects.filter(
-            uuid__in=queryset.values("feed_entry__feed_id")
-        ):
-            known_reasons: set[str] = set()
-
-            known_reasons.update(
-                FeedEntryReport.objects.filter(feed_entry__feed=feed)
-                .exclude(reason="")
-                .values_list("reason", flat=True)
-            )
-            known_reasons.update(
-                FeedReport.objects.filter(feed=feed)
-                .exclude(reason="")
-                .values_list("reason", flat=True)
-            )
-
-            initial.append(
-                {
-                    "feed_id": str(feed.uuid),
-                    "reason": "",
-                    "feed_title": feed.title,
-                    "feed_url": feed.feed_url,
-                    "known_reasons": list(known_reasons),
-                }
-            )
-
-        return RemoveFeedsFormset(query_post, initial=initial)
-
-    def _remove_feeds__action_begin(
+    def _remove_feeds__action__begin(
         self, request: HttpRequest, queryset: QuerySet[FeedEntryReport]
     ) -> HttpResponse:
-        selected_action_uuids: set[uuid.UUID] = set()
-
-        for feed_report in queryset.select_related("feed"):
-            selected_action_uuids.add(feed_report.uuid)
-
-        return _remove_feeds_render(
+        return remove_feeds_util.render(
             request,
-            self._remove_feeds__action_formset(queryset),
-            [str(uuid_) for uuid_ in selected_action_uuids],
+            remove_feeds_util.generate_formset(
+                Feed.objects.filter(uuid__in=queryset.values("feed_entry__feed_id"))
+            ),
+            [
+                str(uuid_)
+                for uuid_ in frozenset(queryset.values_list("uuid", flat=True))
+            ],
         )
 
-    def _remove_feeds__action_end(
+    def _remove_feeds__action__end(
         self, request: HttpRequest, queryset: QuerySet[FeedEntryReport]
     ) -> HttpResponse:
-        formset = self._remove_feeds__action_formset(queryset, request.POST)
-        success, response = _remove_feeds(request, formset)
-        if success:
-            self.message_user(request, f"You validated {len(formset)} feed reports")
-
-        return response
+        formset = remove_feeds_util.generate_formset(
+            Feed.objects.filter(uuid__in=queryset.values("feed_entry__feed_id")),
+            request.POST,
+        )
+        if formset.is_valid():
+            feed_id_to_reason_mapping: dict[uuid.UUID, str] = {
+                uuid.UUID(form.cleaned_data["feed_id"]): form.cleaned_data["reason"]
+                for form in formset
+            }
+            remove_feeds_util.remove_feeds(feed_id_to_reason_mapping)
+            self.message_user(
+                request, f"You validated {len(formset)} feed entry reports"
+            )
+            return HttpResponseRedirect(request.get_full_path())
+        else:
+            return remove_feeds_util.render(
+                request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
+            )
 
 
 @admin.register(RemovedFeed)
