@@ -1,6 +1,6 @@
 services:
-  redis:
-    image: redis:7-alpine
+  valkey:
+    image: valkey/valkey:8-alpine
     networks:
       - rss_temple_net
   postgresql:

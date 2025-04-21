@@ -82,7 +82,7 @@ WSGI_APPLICATION = "rss_temple.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
+REDIS_URL = os.getenv("APP_REDIS_URL", "redis://valkey:6379")
 
 if os.getenv("APP_IN_DOCKER", "false").lower() == "true":
     DATABASES = {

@@ -14,7 +14,7 @@ from dramatiq.middleware import (
 from dramatiq.results import Results
 from dramatiq.results.backends import RedisBackend
 
-_REDIS_URL = os.getenv("APP_REDIS_URL", "redis://redis:6379")
+_REDIS_URL = os.getenv("APP_REDIS_URL", "redis://valkey:6379")
 _BROKER_URL = f"{_REDIS_URL}/5"
 _RESULTS_URL = f"{_REDIS_URL}/6"
 
