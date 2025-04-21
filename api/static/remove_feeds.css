@@ -1,0 +1,30 @@
+.remove-feeds form input[type="submit"] {
+    background: var(--delete-button-bg);
+    border-radius: 4px;
+    padding: 10px 15px;
+    color: var(--button-fg);
+}
+
+.remove-feeds form input[type="submit"]:active,
+.remove-feeds form input[type="submit"]:focus,
+.remove-feeds form input[type="submit"]:hover {
+    background: var(--delete-button-hover-bg);
+}
+
+.remove-feeds form .cancel-link {
+    display: inline-block;
+    vertical-align: middle;
+    height: 0.9375rem;
+    line-height: 0.9375rem;
+    border-radius: 4px;
+    padding: 10px 15px;
+    color: var(--button-fg);
+    background: var(--close-button-bg);
+    margin: 0 0 0 10px;
+}
+
+.remove-feeds form .cancel-link:active,
+.remove-feeds form .cancel-link:focus,
+.remove-feeds form .cancel-link:hover {
+    background: var(--close-button-hover-bg);
+}

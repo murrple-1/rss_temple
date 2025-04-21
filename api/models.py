@@ -730,3 +730,38 @@ class Captcha(models.Model):
             self._setup()
         assert self._secret_phrase is not None
         return self._secret_phrase
+
+
+class FeedReport(models.Model):
+    class Meta:
+        indexes = (models.Index(fields=["is_ignored"]),)
+
+    uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
+    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    reason = models.CharField(max_length=2048)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_ignored = models.BooleanField(default=False)
+
+
+class FeedEntryReport(models.Model):
+    class Meta:
+        indexes = (models.Index(fields=["is_ignored"]),)
+
+    uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
+    feed_entry = models.ForeignKey(FeedEntry, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    reason = models.CharField(max_length=2048)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_ignored = models.BooleanField(default=False)
+
+
+class RemovedFeed(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
+    feed_url = models.URLField(max_length=2048, unique=True)
+    reason = models.TextField(blank=True)
+    removed_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,25 @@
+{% extends 'admin/base_site.html' %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ formset.media }}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} remove-feeds{% endblock %}
+
+{% block content %}
+<form method="POST">
+   {% csrf_token %}
+   <input type="hidden" name="action" value="remove_feeds" />
+   {% for selected_action_id in selected_action_ids %}
+   <input type="hidden" name="_selected_action" value="{{ selected_action_id }}" />
+   {% endfor %}
+
+   <input type="hidden" name="apply" value="" />
+
+   {{ formset }}
+
+   <input type="submit" value="Yes, Remove (Ban) These Feeds" />
+   <a href="" class="button cancel-link">No, take me back</a>
+</form>
+{% endblock %}

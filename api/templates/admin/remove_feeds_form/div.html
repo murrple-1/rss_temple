@@ -1,0 +1,25 @@
+<h1>Feed: {{feed_title }}</h1>
+<h2>({{ feed_url }})</h2>
+{{ errors }}
+{% if errors and not fields %}
+  <div>{% for field in hidden_fields %}{{ field }}{% endfor %}</div>
+{% endif %}
+{% for field, errors in fields %}
+  <div{% with classes=field.css_classes %}{% if classes %} class="{{ classes }}"{% endif %}{% endwith %}>
+    {{ field.as_field_group }}
+    {% if forloop.last %}
+      {% for field in hidden_fields %}{{ field }}{% endfor %}
+    {% endif %}
+</div>
+{% endfor %}
+{% if not fields and not errors %}
+  {% for field in hidden_fields %}{{ field }}{% endfor %}
+{% endif %}
+<div>
+    <div>Included Reasons</div>
+    <ul>
+        {% for known_reason in known_reasons %}
+        <li>{{ known_reason }}</li>
+        {% endfor %}
+    </ul>
+</div>
