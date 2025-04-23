@@ -15,6 +15,7 @@ from api.models import (
     FeedEntry,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
+    RemovedFeed,
     SubscribedFeedUserMapping,
     UserCategory,
 )
@@ -60,89 +61,96 @@ def setup_subscriptions(
     ):
         feed_url = feed_subscription_progress_entry_descriptor.feed_url
 
-        feed = feeds.get(feed_url)
-        if feed is None:
-            try:
-                feed = Feed.objects.get(
-                    Q(feed_url=feed_url)
-                    | Q(
-                        uuid__in=AlternateFeedURL.objects.filter(
-                            feed_url=feed_url
-                        ).values("feed_id")[:1]
-                    )
-                )
-            except Feed.DoesNotExist:
+        if not RemovedFeed.objects.filter(feed_url=feed_url).exists():
+            feed = feeds.get(feed_url)
+            if feed is None:
                 try:
-                    feed = _generate_feed(feed_url, response_max_byte_count)
-                except (
-                    RequestException,
-                    FeedHandlerError,
-                    ResponseTooBig,
-                    WrongContentTypeError,
-                ):
-                    _logger.exception("could not load feed for '%s'", feed_url)
-                    continue
+                    feed = Feed.objects.get(
+                        Q(feed_url=feed_url)
+                        | Q(
+                            uuid__in=AlternateFeedURL.objects.filter(
+                                feed_url=feed_url
+                            ).values("feed_id")[:1]
+                        )
+                    )
+                except Feed.DoesNotExist:
+                    try:
+                        feed = _generate_feed(feed_url, response_max_byte_count)
+                    except (
+                        RequestException,
+                        FeedHandlerError,
+                        ResponseTooBig,
+                        WrongContentTypeError,
+                    ):
+                        _logger.exception("could not load feed for '%s'", feed_url)
+                        continue
 
-            feeds[feed_url] = cast(Feed, feed)
+                feeds[feed_url] = cast(Feed, feed)
 
-        if feed is not None:
-            if feed_url not in subscriptions:
-                custom_title: str | None = (
-                    feed_subscription_progress_entry_descriptor.custom_feed_title
-                )
-
-                if custom_title is not None and custom_title in custom_titles:
-                    custom_title = None
-
-                if custom_title is not None and feed.title == custom_title:
-                    custom_title = None
-
-                SubscribedFeedUserMapping.objects.create(
-                    feed=feed,
-                    user_id=feed_subscription_progress_entry.user_id,
-                    custom_feed_title=custom_title,
-                )
-
-                subscriptions.add(feed_url)
-
-                if custom_title is not None:
-                    custom_titles.add(custom_title)
-
-            if (
-                feed_subscription_progress_entry_descriptor.user_category_text
-                is not None
-            ):
-                user_category_text = (
-                    feed_subscription_progress_entry_descriptor.user_category_text
-                )
-
-                user_category_ = user_categories.get(user_category_text)
-
-                if user_category_ is None:
-                    user_category_ = UserCategory.objects.create(
-                        user_id=feed_subscription_progress_entry.user_id,
-                        text=user_category_text,
+            if feed is not None:
+                if feed_url not in subscriptions:
+                    custom_title: str | None = (
+                        feed_subscription_progress_entry_descriptor.custom_feed_title
                     )
 
-                    user_categories[user_category_text] = user_category_
+                    if custom_title is not None and custom_title in custom_titles:
+                        custom_title = None
 
-                user_category_feeds = user_category_mapping_dict.get(user_category_text)
+                    if custom_title is not None and feed.title == custom_title:
+                        custom_title = None
 
-                if user_category_feeds is None:
-                    user_category_feeds = set()
+                    SubscribedFeedUserMapping.objects.create(
+                        feed=feed,
+                        user_id=feed_subscription_progress_entry.user_id,
+                        custom_feed_title=custom_title,
+                    )
 
-                    user_category_mapping_dict[user_category_text] = user_category_feeds
+                    subscriptions.add(feed_url)
 
-                if feed_url not in user_category_feeds:
-                    user_category_.feeds.add(feed)
+                    if custom_title is not None:
+                        custom_titles.add(custom_title)
 
-                    user_category_feeds.add(feed_url)
+                if (
+                    feed_subscription_progress_entry_descriptor.user_category_text
+                    is not None
+                ):
+                    user_category_text = (
+                        feed_subscription_progress_entry_descriptor.user_category_text
+                    )
+
+                    user_category_ = user_categories.get(user_category_text)
+
+                    if user_category_ is None:
+                        user_category_ = UserCategory.objects.create(
+                            user_id=feed_subscription_progress_entry.user_id,
+                            text=user_category_text,
+                        )
+
+                        user_categories[user_category_text] = user_category_
+
+                    user_category_feeds = user_category_mapping_dict.get(
+                        user_category_text
+                    )
+
+                    if user_category_feeds is None:
+                        user_category_feeds = set()
+
+                        user_category_mapping_dict[user_category_text] = (
+                            user_category_feeds
+                        )
+
+                    if feed_url not in user_category_feeds:
+                        user_category_.feeds.add(feed)
+
+                        user_category_feeds.add(feed_url)
+        else:
+            _logger.warning(f"feed ({feed_url}) is removed (banned)")
 
         feed_subscription_progress_entry_descriptor.is_finished = True
-        feed_subscription_progress_entry_descriptor.save()
+        feed_subscription_progress_entry_descriptor.save(update_fields=("is_finished",))
 
     feed_subscription_progress_entry.status = FeedSubscriptionProgressEntry.FINISHED
-    feed_subscription_progress_entry.save()
+    feed_subscription_progress_entry.save(update_fields=("status",))
 
 
 def _generate_feed(
@@ -201,6 +209,6 @@ def get_first_entry():
             feed_subscription_progress_entry.status = (
                 FeedSubscriptionProgressEntry.STARTED
             )
-            feed_subscription_progress_entry.save()
+            feed_subscription_progress_entry.save(update_fields=("status",))
 
         return feed_subscription_progress_entry

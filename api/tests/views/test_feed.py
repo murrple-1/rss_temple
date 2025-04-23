@@ -7,7 +7,7 @@ from django.test import override_settings, tag
 from django.utils import timezone
 
 from api.fields import field_configs
-from api.models import Feed, SubscribedFeedUserMapping, User
+from api.models import Feed, RemovedFeed, SubscribedFeedUserMapping, User
 from api.tests import TestFileServerTestCase
 from api.tests.utils import (
     assert_x_cache_hit_working,
@@ -97,6 +97,21 @@ class FeedTestCase(TestFileServerTestCase):
                     },
                 )
                 self.assertEqual(response.status_code, 404, response.content)
+
+    def test_FeedView_get_removed_feed(self):
+        self.generate_credentials()
+
+        feed_url = f"{FeedTestCase.live_server_url}/banned.xml"
+
+        RemovedFeed.objects.create(feed_url=feed_url)
+
+        response = self.client.get(
+            "/api/feed",
+            {
+                "url": feed_url,
+            },
+        )
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_FeedsQueryView_post(self):
         self.generate_credentials()
@@ -246,6 +261,21 @@ class FeedTestCase(TestFileServerTestCase):
                     },
                 )
                 self.assertEqual(response.status_code, 404, response.content)
+
+    def test_FeedSubscribeView_post_removed_feed(self):
+        self.generate_credentials()
+
+        feed_url = f"{FeedTestCase.live_server_url}/banned.xml"
+
+        RemovedFeed.objects.create(feed_url=feed_url)
+
+        response = self.client.post(
+            "/api/feed/subscribe",
+            {
+                "url": feed_url,
+            },
+        )
+        self.assertEqual(response.status_code, 404, response.content)
 
     def test_FeedSubscribeView_put(self):
         user = self.generate_credentials()

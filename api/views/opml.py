@@ -142,7 +142,7 @@ Request body should be [OPML](http://opml.org/spec2.opml) XML representing feeds
             user_categories,
             subscribed_feed_user_mappings,
             feed_url_user_categories,
-        ) = OPMLView._create_subscriptions_and_caregories(
+        ) = OPMLView._create_subscriptions_and_categories(
             user,
             grouped_entries,
             existing_user_categories,
@@ -194,9 +194,9 @@ Request body should be [OPML](http://opml.org/spec2.opml) XML representing feeds
         cls, user: User, grouped_entries: dict[str | None, frozenset[opml_util.Entry]]
     ) -> _GetFeedsOutput:
         feeds_dict: dict[str, Feed | None] = {}
-        for e in grouped_entries.values():
-            for t in e:
-                url = cast(str, url_normalize(t.url))
+        for entries in grouped_entries.values():
+            for entry in entries:
+                url = cast(str, url_normalize(entry.url))
                 feed = Feed.objects.filter(
                     Q(feed_url=url)
                     | Q(
@@ -245,7 +245,7 @@ Request body should be [OPML](http://opml.org/spec2.opml) XML representing feeds
         feed_url_user_categories: dict[str, list[UserCategory]]
 
     @classmethod
-    def _create_subscriptions_and_caregories(
+    def _create_subscriptions_and_categories(
         cls,
         user: User,
         grouped_entries: dict[str | None, frozenset[opml_util.Entry]],

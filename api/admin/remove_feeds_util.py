@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 import uuid
 from collections import defaultdict
 
@@ -11,16 +11,23 @@ from django.db import transaction
 from api.forms import RemoveFeedsFormset
 from api.models import Feed, AlternateFeedURL, FeedEntryReport, FeedReport, RemovedFeed
 
+if TYPE_CHECKING:  # pragma: no cover
+    from api.forms import RemoveFeedsForm
+
+    RemoveFeedsFormsetType = BaseFormSet[RemoveFeedsForm]
+else:
+    RemoveFeedsFormsetType = BaseFormSet
+
 
 def remove_feeds(feed_id_to_reason_mapping: dict[uuid.UUID, str]) -> None:
     feeds = {
         f.uuid: f
-        for f in Feed.objects.filter(uuid__in=feed_id_to_reason_mapping.values())
+        for f in Feed.objects.filter(uuid__in=feed_id_to_reason_mapping.keys())
     }
 
     alternate_feed_urls: dict[str, list[AlternateFeedURL]] = defaultdict(list)
     for alternate_feed_url in AlternateFeedURL.objects.filter(
-        feed_id__in=feed_id_to_reason_mapping.values()
+        feed_id__in=feed_id_to_reason_mapping.keys()
     ):
         alternate_feed_urls[alternate_feed_url.feed.feed_url].append(alternate_feed_url)
 
@@ -49,7 +56,9 @@ def remove_feeds(feed_id_to_reason_mapping: dict[uuid.UUID, str]) -> None:
 
 
 def render(
-    request: HttpRequest, formset: BaseFormSet, selection_action_ids: list[str]
+    request: HttpRequest,
+    formset: RemoveFeedsFormsetType,
+    selection_action_ids: list[str],
 ) -> HttpResponse:
     return render_(
         request,

@@ -12,7 +12,7 @@ from tabulate import tabulate
 from api import content_type_util, feed_handler, rss_requests
 from api.content_type_util import WrongContentTypeError
 from api.feed_handler import FeedHandlerError
-from api.models import AlternateFeedURL, Feed, FeedEntry
+from api.models import AlternateFeedURL, Feed, FeedEntry, RemovedFeed
 from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.tasks.feed_scrape import feed_scrape
 from api.text_classifier.lang_detector import detect_iso639_3
@@ -41,6 +41,12 @@ class BaseCommand(BaseCommand_):
 
         url_count = len(normalized_feed_urls)
         for i, feed_url in enumerate(normalized_feed_urls):
+            if RemovedFeed.objects.filter(feed_url=feed_url).exists():
+                self.stderr.write(
+                    self.style.ERROR(f"feed ({feed_url}) is removed (banned)")
+                )
+                continue
+
             if url_count > 1:
                 self.stderr.write(
                     self.style.NOTICE(

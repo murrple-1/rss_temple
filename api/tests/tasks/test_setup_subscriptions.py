@@ -8,6 +8,7 @@ from api.models import (
     Feed,
     FeedSubscriptionProgressEntry,
     FeedSubscriptionProgressEntryDescriptor,
+    RemovedFeed,
     SubscribedFeedUserMapping,
     User,
     UserCategory,
@@ -174,6 +175,35 @@ class TaskTestCase(TestFileServerTestCase):
         FeedSubscriptionProgressEntryDescriptor.objects.create(
             feed_subscription_progress_entry=feed_subscription_progress_entry,
             feed_url=f"{TaskTestCase.live_server_url}/site/16bytes.txt",
+        )
+
+        self.assertEqual(
+            feed_subscription_progress_entry.status,
+            FeedSubscriptionProgressEntry.NOT_STARTED,
+        )
+
+        setup_subscriptions(feed_subscription_progress_entry, -1)
+
+        self.assertEqual(
+            feed_subscription_progress_entry.status,
+            FeedSubscriptionProgressEntry.FINISHED,
+        )
+        self.assertEqual(Feed.objects.count(), 0)
+
+    def test_do_subscription_removedfeed(self):
+        user = self.generate_credentials()
+
+        feed_subscription_progress_entry = FeedSubscriptionProgressEntry.objects.create(
+            user=user
+        )
+
+        feed_url = f"{TaskTestCase.live_server_url}/banned.xml"
+
+        RemovedFeed.objects.create(feed_url=feed_url)
+
+        FeedSubscriptionProgressEntryDescriptor.objects.create(
+            feed_subscription_progress_entry=feed_subscription_progress_entry,
+            feed_url=feed_url,
         )
 
         self.assertEqual(

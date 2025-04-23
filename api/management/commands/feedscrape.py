@@ -8,7 +8,7 @@ from django.db.models import Q
 from url_normalize import url_normalize
 
 from api import content_type_util, rss_requests
-from api.models import AlternateFeedURL, Feed
+from api.models import AlternateFeedURL, Feed, RemovedFeed
 from api.requests_extensions import safe_response_text
 from api.tasks import feed_scrape
 
@@ -25,6 +25,10 @@ class Command(BaseCommand):
         feed: Feed
         if feed_url := options["feed_url"]:
             feed_url = cast(str, url_normalize(feed_url))
+
+            if RemovedFeed.objects.filter(feed_url=feed_url).exists():
+                raise CommandError("feed is removed (banned)")
+
             feed = Feed.objects.get(
                 Q(feed_url=feed_url)
                 | Q(

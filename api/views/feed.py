@@ -44,6 +44,7 @@ from api.models import (
     Feed,
     FeedEntry,
     ReadFeedEntryUserMapping,
+    RemovedFeed,
     SubscribedFeedUserMapping,
     User,
 )
@@ -702,6 +703,9 @@ class FeedSubscribeView(APIView):
 
 
 def _save_feed(url: str):
+    if RemovedFeed.objects.filter(feed_url=url).exists():
+        raise NotFound("feed not found")
+
     response_text: str
     try:
         with rss_requests.get(url, stream=True) as response:

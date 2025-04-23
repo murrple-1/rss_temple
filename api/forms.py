@@ -21,12 +21,17 @@ class RemoveFeedsForm(forms.Form):
         }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        initial = kwargs["initial"]
+        initial = kwargs.get("initial")
 
-        assert isinstance(initial, dict)
-        self.feed_title = initial.pop("feed_title")
-        self.feed_url = initial.pop("feed_url")
-        self.known_reasons = initial.pop("known_reasons", [])
+        if initial is not None:
+            assert isinstance(initial, dict)
+            self.feed_title = initial.pop("feed_title")
+            self.feed_url = initial.pop("feed_url")
+            self.known_reasons = initial.pop("known_reasons", [])
+        else:
+            self.feed_title = ""
+            self.feed_url = ""
+            self.known_reasons = []
 
         super().__init__(*args, **kwargs)
 

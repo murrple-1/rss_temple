@@ -258,7 +258,7 @@ class FeedReportAdmin(admin.ModelAdmin):
         self,
         request: HttpRequest,
         queryset: QuerySet[FeedReport],
-    ):
+    ):  # pragma: no cover
         if "apply" in request.POST:
             return self._remove_feeds__action__end(request, queryset)
         else:
@@ -266,7 +266,7 @@ class FeedReportAdmin(admin.ModelAdmin):
 
     def _remove_feeds__action__begin(
         self, request: HttpRequest, queryset: QuerySet[FeedReport]
-    ) -> HttpResponse:
+    ) -> HttpResponse:  # pragma: no cover
         return remove_feeds_util.render(
             request,
             remove_feeds_util.generate_formset(
@@ -280,7 +280,7 @@ class FeedReportAdmin(admin.ModelAdmin):
 
     def _remove_feeds__action__end(
         self, request: HttpRequest, queryset: QuerySet[FeedReport]
-    ) -> HttpResponse:
+    ) -> HttpResponse:  # pragma: no cover
         formset = remove_feeds_util.generate_formset(
             Feed.objects.filter(uuid__in=queryset.values("feed_id")), request.POST
         )
@@ -323,7 +323,7 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
         self,
         request: HttpRequest,
         queryset: QuerySet[FeedEntryReport],
-    ):
+    ):  # pragma: no cover
         if "apply" in request.POST:
             return self._remove_feeds__action__end(request, queryset)
         else:
@@ -331,7 +331,7 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
 
     def _remove_feeds__action__begin(
         self, request: HttpRequest, queryset: QuerySet[FeedEntryReport]
-    ) -> HttpResponse:
+    ) -> HttpResponse:  # pragma: no cover
         return remove_feeds_util.render(
             request,
             remove_feeds_util.generate_formset(
@@ -345,7 +345,7 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
 
     def _remove_feeds__action__end(
         self, request: HttpRequest, queryset: QuerySet[FeedEntryReport]
-    ) -> HttpResponse:
+    ) -> HttpResponse:  # pragma: no cover
         formset = remove_feeds_util.generate_formset(
             Feed.objects.filter(uuid__in=queryset.values("feed_entry__feed_id")),
             request.POST,
