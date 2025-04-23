@@ -754,3 +754,13 @@ class _ClassifierLabelVotesSerializer(serializers.Serializer):
 class ClassifierLabelVotesListSerializer(serializers.Serializer):
     objects = _ClassifierLabelVotesSerializer(many=True, read_only=True)
     totalCount = serializers.IntegerField(read_only=True)
+
+
+class FeedReportBodySerializer(serializers.Serializer):
+    feedUuid = serializers.UUIDField(required=True, source="feed_uuid")
+    reason = serializers.CharField(required=True)
+
+
+class FeedEntryReportBodySerializer(serializers.Serializer):
+    feedEntryUuid = serializers.UUIDField(required=True, source="feed_entry_uuid")
+    reason = serializers.CharField(required=True)

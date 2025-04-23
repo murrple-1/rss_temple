@@ -47,6 +47,7 @@ from .user_category import (
     UserCategoryView,
 )
 from .user_meta import ReadCountView
+from .report import FeedReportView, FeedEntryReportView
 
 __all__ = [
     "LoginView",
@@ -95,4 +96,6 @@ __all__ = [
     "ClassifierLabelListByEntryView",
     "ClassifierLabelVotesListView",
     "ClassifierLabelFeedEntryVotesView",
+    "FeedReportView",
+    "FeedEntryReportView",
 ]

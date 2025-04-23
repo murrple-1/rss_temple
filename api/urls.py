@@ -133,4 +133,6 @@ urlpatterns = [
         rf"^classifierlabels/votes/{_uuid_regex}/?$",
         views.ClassifierLabelFeedEntryVotesView.as_view(),
     ),
+    re_path(r"^report/feed/?$", views.FeedReportView.as_view()),
+    re_path(r"^report/feedentry?$", views.FeedEntryReportView.as_view()),
 ]
