@@ -202,7 +202,10 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
     autocomplete_fields = ["feed1", "feed2"]
     search_fields = ["feed1__feed_url", "feed2__feed_url"]
 
-    @admin.action(description="Convert to Alternate Feed URL (Feed 1 is the duplicate)")
+    @admin.action(
+        description="Convert to Alternate Feed URL (Feed 1 is the duplicate)",
+        permissions=["convert"],
+    )
     def convert_duplicate_feed1_to_alternate_feed_url(
         self,
         request: HttpRequest,
@@ -212,7 +215,10 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
             DuplicateFeedTuple(dfs.feed2, dfs.feed1) for dfs in queryset
         )
 
-    @admin.action(description="Convert to Alternate Feed URL (Feed 2 is the duplicate)")
+    @admin.action(
+        description="Convert to Alternate Feed URL (Feed 2 is the duplicate)",
+        permissions=["convert"],
+    )
     def convert_duplicate_feed2_to_alternate_feed_url(
         self,
         request: HttpRequest,
@@ -221,6 +227,9 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
         convert_duplicate_feeds_to_alternate_feed_urls(
             DuplicateFeedTuple(dfs.feed1, dfs.feed2) for dfs in queryset
         )
+
+    def has_convert_permissions(self, request: HttpRequest) -> bool:
+        return request.user.is_active and getattr(request.user, "is_staff", False)
 
     @admin.display(description="Feed 1 Feed URL")
     def feed1__feed_url(self, obj: DuplicateFeedSuggestion):  # pragma: no cover
@@ -253,7 +262,7 @@ class FeedReportAdmin(admin.ModelAdmin):
     list_editable = ["is_ignored"]
     search_fields = ["feed__feed_url", "feed__title"]
 
-    @admin.action(description="Remove (ban) Feed(s)")
+    @admin.action(description="Remove (ban) Feed(s)", permissions=["removefeeds"])
     def remove_feeds(
         self,
         request: HttpRequest,
@@ -297,6 +306,9 @@ class FeedReportAdmin(admin.ModelAdmin):
                 request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
             )
 
+    def has_removefeeds_permission(self, request: HttpRequest) -> bool:
+        return request.user.is_active and getattr(request.user, "is_staff", False)
+
 
 @admin.register(FeedEntryReport)
 class FeedEntryReportAdmin(admin.ModelAdmin):
@@ -306,19 +318,19 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
     list_display = [
         "uuid",
         "feed_entry__title",
-        "feed_entry__feed__feed_url",
         "feed_entry__feed__title",
+        "feed_entry__feed__feed_url",
         "is_ignored",
     ]
     list_editable = ["is_ignored"]
     search_fields = [
-        "title",
-        "url",
+        "feed_entry__title",
+        "feed_entry__url",
         "feed_entry__feed__feed_url",
         "feed_entry__feed__title",
     ]
 
-    @admin.action(description="Remove (ban) Feed(s)")
+    @admin.action(description="Remove (ban) Feed(s)", permissions=["removefeeds"])
     def remove_feeds(
         self,
         request: HttpRequest,
@@ -364,6 +376,9 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
             return remove_feeds_util.render(
                 request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
             )
+
+    def has_removefeeds_permission(self, request: HttpRequest) -> bool:
+        return request.user.is_active and getattr(request.user, "is_staff", False)
 
 
 @admin.register(RemovedFeed)
