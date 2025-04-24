@@ -228,7 +228,7 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
             DuplicateFeedTuple(dfs.feed1, dfs.feed2) for dfs in queryset
         )
 
-    def has_convert_permissions(self, request: HttpRequest) -> bool:
+    def has_convert_permission(self, request: HttpRequest) -> bool:
         return request.user.is_active and getattr(request.user, "is_staff", False)
 
     @admin.display(description="Feed 1 Feed URL")
