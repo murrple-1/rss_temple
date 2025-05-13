@@ -255,12 +255,13 @@ class FeedReportAdmin(admin.ModelAdmin):
     list_filter = ["is_ignored"]
     list_display = [
         "uuid",
+        "reason",
         "feed__feed_url",
         "feed__title",
         "is_ignored",
     ]
     list_editable = ["is_ignored"]
-    search_fields = ["feed__feed_url", "feed__title"]
+    search_fields = ["reason", "feed__feed_url", "feed__title"]
 
     @admin.action(description="Remove (ban) Feed(s)", permissions=["removefeeds"])
     def remove_feeds(
@@ -317,6 +318,7 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
     list_filter = ["is_ignored"]
     list_display = [
         "uuid",
+        "reason",
         "feed_entry__title",
         "feed_entry__feed__title",
         "feed_entry__feed__feed_url",
@@ -324,6 +326,7 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
     ]
     list_editable = ["is_ignored"]
     search_fields = [
+        "reason",
         "feed_entry__title",
         "feed_entry__url",
         "feed_entry__feed__feed_url",
