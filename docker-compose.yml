@@ -4,8 +4,7 @@ services:
     networks:
       - rss_temple_net
   postgresql:
-    # TODO this can be updated
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     shm_size: '256m'
     env_file:
       - .env
