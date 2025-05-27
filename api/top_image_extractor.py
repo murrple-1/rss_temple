@@ -3,7 +3,6 @@ import logging
 from typing import NamedTuple
 from urllib.parse import urljoin, urlparse
 import re
-import json
 
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from PIL import Image, UnidentifiedImageError
@@ -226,41 +225,72 @@ def _get_img_container_score(img_tag: Tag) -> int:
     return 1  # Default: neutral
 
 
-def _has_schema_image(soup: BeautifulSoup, url: str) -> frozenset[str]:
-    """Look for images in schema.org/JSON-LD structured data."""
-    images: set[str] = set()
-
-    script: PageElement | Tag | NavigableString
-    for script in soup.find_all("script", type="application/ld+json"):
-        try:
-            assert isinstance(script, Tag)
-            assert script.string is not None
-            data = json.loads(script.string)
-            if isinstance(data, dict):
-                img = data.get("image")
-                if isinstance(img, str):
-                    images.add(urljoin(url, img))
-                elif isinstance(img, list):
-                    for i in img:
-                        if isinstance(i, str):
-                            images.add(urljoin(url, i))
-            elif isinstance(data, list):
-                for entry in data:
-                    img = entry.get("image") if isinstance(entry, dict) else None
-                    if isinstance(img, str):
-                        images.add(urljoin(url, img))
-        except Exception:
-            _logger.exception("something went wrong")
-            continue
-
-    return frozenset(images)
-
-
 def _aspect_ratio(width: int | float, height: int | float) -> float:
     width, height = float(width), float(height)
     if height == 0.0:
         return 0.0
     return width / height
+
+
+def _usable_image_dimensions(
+    img_src: str,
+    response_max_byte_count: int,
+    min_image_byte_count: int,
+    min_image_width: int,
+    min_image_height: int,
+    min_image_aspect: float,
+    max_image_aspect: float,
+) -> tuple[int, int] | None:
+    image_content: bytes
+    try:
+        with rss_requests.get(img_src, stream=True) as image_response:
+            try:
+                image_response.raise_for_status()
+            except HTTPError as e:
+                if image_response.status_code in (404,):
+                    return None
+                else:  # pragma: no cover
+                    raise TryAgain from e
+
+            content_type = image_response.headers.get("Content-Type")
+            if content_type is None or not content_type_util.is_image(content_type):
+                return None
+
+            content_length_str = image_response.headers.get("Content-Length")
+            if content_length_str is not None:
+                try:
+                    if int(content_length_str) < min_image_byte_count:
+                        return None
+                except ValueError:  # pragma: no cover
+                    pass
+
+            try:
+                image_content = safe_response_content(
+                    image_response, response_max_byte_count
+                )
+            except ResponseTooBig as e:  # pragma: no cover
+                raise TryAgain from e
+    except RequestException as e:  # pragma: no cover
+        raise TryAgain from e
+
+    try:
+        with io.BytesIO(image_content) as f:
+            with Image.open(f) as image:
+                print(f"{image.format=}")
+                if image.format in ("GIF", "SVG"):
+                    return None
+
+                width, height = image.size
+                if width < min_image_width or height < min_image_height:
+                    return None
+
+                img_aspect = _aspect_ratio(width, height)
+                if img_aspect < min_image_aspect or img_aspect > max_image_aspect:
+                    return None
+    except UnidentifiedImageError:
+        return None
+
+    return width, height
 
 
 class _ImageCandidate(NamedTuple):
@@ -279,7 +309,7 @@ def extract_top_image_src__experimental(
     min_image_height=256,
     min_image_aspect=0.3,
     max_image_aspect=5.0,
-    max_image_frequency=3,
+    max_image_frequency=1,
     max_candidate_images=5,
 ):
     """
@@ -320,14 +350,30 @@ def extract_top_image_src__experimental(
         (soup.title.string.lower() if soup.title and soup.title.string else "").split()
     )
 
+    meta_images: set[str] = set()
+
     # Collect images from OpenGraph (likely main/banner images)
-    og_images: set[str] = set()
     og: PageElement | Tag | NavigableString
     for og in soup.find_all("meta", property="og:image"):
         assert isinstance(og, Tag)
         if og_content := og.get("content"):
             assert isinstance(og_content, str)
-            og_images.add(urljoin(url, og_content))
+            abs_url = urljoin(url, og_content)
+
+            dim = _usable_image_dimensions(
+                abs_url,
+                response_max_byte_count,
+                min_image_byte_count,
+                min_image_width,
+                min_image_height,
+                min_image_aspect,
+                max_image_aspect,
+            )
+
+            if dim is None:
+                continue
+
+            meta_images.add(abs_url)
 
     # Collect images from Twitter Cards (optional, similar to OpenGraph)
     tw: PageElement | Tag | NavigableString
@@ -335,108 +381,62 @@ def extract_top_image_src__experimental(
         assert isinstance(tw, Tag)
         if tw_content := tw.get("content"):
             assert isinstance(tw_content, str)
-            og_images.add(urljoin(url, tw_content))
+            abs_url = urljoin(url, tw_content)
 
-    # Collect images from schema.org/LD+JSON structured data
-    schema_images = _has_schema_image(soup, url)
+            dim = _usable_image_dimensions(
+                abs_url,
+                response_max_byte_count,
+                min_image_byte_count,
+                min_image_width,
+                min_image_height,
+                min_image_aspect,
+                max_image_aspect,
+            )
+
+            if dim is None:
+                continue
+
+            meta_images.add(abs_url)
 
     image_candidates: list[_ImageCandidate] = []
 
     # Collect all <img> tags and score/filter them
     img_seen: set[str] = set()
-    img: PageElement | Tag | NavigableString
-    for img in soup.find_all("img"):
-        assert isinstance(img, Tag)
-        src = img.get("src")
+    img_tag: PageElement | Tag | NavigableString
+    for img_tag in soup.find_all("img"):
+        assert isinstance(img_tag, Tag)
+        src = img_tag.get("src")
         if not src:
             continue
 
         assert isinstance(src, str)
+
         abs_url = urljoin(url, src)
+
         if abs_url in img_seen:
             continue
         img_seen.add(abs_url)
 
-        if _is_probably_decorative(img, abs_url, page_title_keywords):
+        if _is_probably_decorative(img_tag, abs_url, page_title_keywords):
             continue
 
-        if abs_url.endswith(".svg") or abs_url.endswith(".gif"):
+        dim = _usable_image_dimensions(
+            abs_url,
+            response_max_byte_count,
+            min_image_byte_count,
+            min_image_width,
+            min_image_height,
+            min_image_aspect,
+            max_image_aspect,
+        )
+
+        if dim is None:
             continue
 
-        width_str = img.get("width")
-        assert width_str is None or isinstance(width_str, str)
-        height_str = img.get("height")
-        assert height_str is None or isinstance(height_str, str)
-        width: int | None
-        height: int | None
-        try:
-            width = int(width_str) if width_str else None
-            height = int(height_str) if height_str else None
-        except ValueError:
-            width = None
-            height = None
-
-        img_aspect: float | None = None
-        # Use HTML size attributes if available
-        if width and height:
-            img_aspect = _aspect_ratio(width, height)
-            if width < min_image_width or height < min_image_height:
-                continue  # Too small
-            if img_aspect < min_image_aspect or img_aspect > max_image_aspect:
-                continue  # Unusual aspect ratio
-        else:
-            # TODO this needs to be safer
-            image_content: bytes
-            try:
-                with rss_requests.get(abs_url, stream=True) as image_response:
-                    try:
-                        image_response.raise_for_status()
-                    except HTTPError as e:
-                        if image_response.status_code in (404,):
-                            continue
-                        else:  # pragma: no cover
-                            raise TryAgain from e
-
-                    content_type = image_response.headers.get("Content-Type")
-                    if content_type is None or not content_type_util.is_image(
-                        content_type
-                    ):
-                        continue
-
-                    content_length_str = image_response.headers.get("Content-Length")
-                    if content_length_str is not None:
-                        try:
-                            if int(content_length_str) < min_image_byte_count:
-                                continue
-                        except ValueError:  # pragma: no cover
-                            pass
-
-                    try:
-                        image_content = safe_response_content(
-                            image_response, response_max_byte_count
-                        )
-                    except ResponseTooBig as e:  # pragma: no cover
-                        raise TryAgain from e
-            except RequestException as e:  # pragma: no cover
-                raise TryAgain from e
-
-            try:
-                with io.BytesIO(image_content) as f:
-                    with Image.open(f) as image:
-                        width, height = image.size
-                        if width < min_image_width or height < min_image_height:
-                            continue
-                        img_aspect = _aspect_ratio(width, height)
-                        if (
-                            img_aspect < min_image_aspect
-                            or img_aspect > max_image_aspect
-                        ):
-                            continue
-            except UnidentifiedImageError:
-                continue
+        width, height = dim
 
         # Score container relevance (main/article > nav/header/aside)
-        container_score = _get_img_container_score(img)
+        container_score = _get_img_container_score(img_tag)
 
         # Count occurrences (images used many times are likely decorative)
         freq = len(soup.find_all("img", {"src": src}))
@@ -451,12 +451,7 @@ def extract_top_image_src__experimental(
             )
         )
 
-    # Combine all high-confidence images (OpenGraph, schema, best img candidates)
-    result_urls: set[str] = set()
-    result_urls.update(og_images)
-    result_urls.update(schema_images)
-
-    # Heuristic: Sort image candidates by container score, frequency (prefer unique), size
+    # Sort image candidates by container score, frequency (prefer unique), size
     image_candidates.sort(
         key=lambda x: (
             -x.container_score,  # Prefer main/article containers
@@ -465,10 +460,13 @@ def extract_top_image_src__experimental(
         )
     )
 
-    result_urls.update(
+    # Combine all high-confidence images (OpenGraph, schema, best img candidates)
+    result_urls: list[str] = []
+    result_urls.extend(meta_images)
+    result_urls.extend(
         [img.url for img in image_candidates if img.freq > max_image_frequency][
             :max_candidate_images
         ]
     )
 
-    return list(result_urls)
+    return result_urls
