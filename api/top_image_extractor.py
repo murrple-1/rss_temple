@@ -276,7 +276,6 @@ def _usable_image_dimensions(
     try:
         with io.BytesIO(image_content) as f:
             with Image.open(f) as image:
-                print(f"{image.format=}")
                 if image.format in ("GIF", "SVG"):
                     return None
 
