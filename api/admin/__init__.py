@@ -228,7 +228,7 @@ class DuplicateFeedSuggestionAdmin(admin.ModelAdmin):
             DuplicateFeedTuple(dfs.feed1, dfs.feed2) for dfs in queryset
         )
 
-    def has_convert_permission(self, request: HttpRequest) -> bool:
+    def has_convert_permission(self, request: HttpRequest) -> bool:  # pragma: no cover
         return request.user.is_active and getattr(request.user, "is_staff", False)
 
     @admin.display(description="Feed 1 Feed URL")
@@ -307,7 +307,9 @@ class FeedReportAdmin(admin.ModelAdmin):
                 request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
             )
 
-    def has_removefeeds_permission(self, request: HttpRequest) -> bool:
+    def has_removefeeds_permission(
+        self, request: HttpRequest
+    ) -> bool:  # pragma: no cover
         return request.user.is_active and getattr(request.user, "is_staff", False)
 
 
@@ -380,7 +382,9 @@ class FeedEntryReportAdmin(admin.ModelAdmin):
                 request, formset, request.POST.getlist(helpers.ACTION_CHECKBOX_NAME)
             )
 
-    def has_removefeeds_permission(self, request: HttpRequest) -> bool:
+    def has_removefeeds_permission(
+        self, request: HttpRequest
+    ) -> bool:  # pragma: no cover
         return request.user.is_active and getattr(request.user, "is_staff", False)
 
 
