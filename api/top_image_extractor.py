@@ -34,96 +34,18 @@ def extract_top_image_src(
     min_image_width=256,
     min_image_height=256,
 ) -> str | None:
-    # TODO Currently, the top image is just the OpenGraph image (if it exists).
-    # However, in the future, this might be expanded to do some `goose3`-like
-    # smart-parsing of the webpage
-    response_text: str
-    try:
-        with rss_requests.get(url, stream=True) as response:
-            try:
-                response.raise_for_status()
-            except HTTPError as e:
-                if response.status_code in (404,):
-                    return None
-                else:  # pragma: no cover
-                    raise TryAgain from e
-
-            content_type = response.headers.get("Content-Type")
-            if content_type is None or not content_type_util.is_html(content_type):
-                return None
-
-            try:
-                response_text = safe_response_text(response, response_max_byte_count)
-            except ResponseTooBig as e:  # pragma: no cover
-                raise TryAgain from e
-    except RequestException as e:  # pragma: no cover
-        raise TryAgain from e
-
-    soup: BeautifulSoup
-    try:
-        soup = BeautifulSoup(response_text, "lxml")
-    except Exception as e:  # pragma: no cover
-        _logger.exception("unknown BeautifulSoup error")
-        raise TryAgain from e
-
-    og_image = soup.find("meta", property="og:image")
-
-    if not isinstance(og_image, Tag):
+    imgs = find_top_image_src_candidates(
+        url,
+        response_max_byte_count,
+        min_image_byte_count=min_image_byte_count,
+        min_image_width=min_image_width,
+        min_image_height=min_image_height,
+    )
+    if imgs:
+        return imgs[0]
+    else:
         return None
 
-    og_image_src = og_image.get("content")
-    if not isinstance(og_image_src, str):
-        return None
-
-    og_image_src = urljoin(url, og_image_src)
-
-    image_content: bytes
-    try:
-        with rss_requests.get(og_image_src, stream=True) as image_response:
-            try:
-                image_response.raise_for_status()
-            except HTTPError as e:
-                if image_response.status_code in (404,):
-                    return None
-                else:  # pragma: no cover
-                    raise TryAgain from e
-
-            content_type = image_response.headers.get("Content-Type")
-            if content_type is None or not content_type_util.is_image(content_type):
-                return None
-
-            content_length_str = image_response.headers.get("Content-Length")
-            if content_length_str is not None:
-                try:
-                    if int(content_length_str) < min_image_byte_count:
-                        return None
-                except ValueError:  # pragma: no cover
-                    pass
-
-            try:
-                image_content = safe_response_content(
-                    image_response, response_max_byte_count
-                )
-            except ResponseTooBig as e:  # pragma: no cover
-                raise TryAgain from e
-    except RequestException as e:  # pragma: no cover
-        raise TryAgain from e
-
-    if len(image_content) < min_image_byte_count:
-        return None  # pragma: no cover
-
-    try:
-        with io.BytesIO(image_content) as f:
-            with Image.open(f) as image:
-                if image.width < min_image_width or image.height < min_image_height:
-                    return None
-    except UnidentifiedImageError:
-        return None
-
-    return og_image_src
-
-
-# TODO experimental code below
 
 _BAD_PATTERN = re.compile(
     r"(?:ad|ads|advert|sponsor|banner|logo|icon|sprite|avatar|promo|header|footer|nav|tracking|pixel|placeholder|spacer|blank|doubleclick|googlesyndication)",
@@ -300,7 +222,7 @@ class _ImageCandidate(NamedTuple):
     freq: int
 
 
-def extract_top_image_src__experimental(
+def find_top_image_src_candidates(
     url: str,
     response_max_byte_count: int,
     min_image_byte_count=4500,
@@ -463,7 +385,7 @@ def extract_top_image_src__experimental(
     result_urls: list[str] = []
     result_urls.extend(meta_images)
     result_urls.extend(
-        [img.url for img in image_candidates if img.freq > max_image_frequency][
+        [img.url for img in image_candidates if img.freq <= max_image_frequency][
             :max_candidate_images
         ]
     )
