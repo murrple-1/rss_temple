@@ -47,13 +47,21 @@ def db_migrations_state():
     )
 
 
-def throttling_monkey_patch():
-    from rest_framework.throttling import SimpleRateThrottle
+class disable_throttling(TestContextDecorator):
+    def enable(self):
+        from rest_framework.throttling import SimpleRateThrottle
 
-    def _allow_request(self, request, view):
-        return True
+        self.old_allow_request = getattr(SimpleRateThrottle, "allow_request")
 
-    setattr(SimpleRateThrottle, "allow_request", _allow_request)
+        def _allow_request(self, request, view):
+            return True
+
+        setattr(SimpleRateThrottle, "allow_request", _allow_request)
+
+    def disable(self):
+        from rest_framework.throttling import SimpleRateThrottle
+
+        setattr(SimpleRateThrottle, "allow_request", self.old_allow_request)
 
 
 class disable_silk(TestContextDecorator):

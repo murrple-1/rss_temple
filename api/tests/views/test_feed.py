@@ -13,12 +13,13 @@ from api.tests.utils import (
     assert_x_cache_hit_working,
     db_migrations_state,
     disable_silk,
-    throttling_monkey_patch,
+    disable_throttling,
 )
 from query_utils import fields as fieldutils
 
 
 @disable_silk()
+@disable_throttling()
 @override_settings(
     FEED_GET_REQUESTS_DRAMATIQ=False,
 )
@@ -35,8 +36,6 @@ class FeedTestCase(TestFileServerTestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

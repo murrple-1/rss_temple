@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 
 from api.models import User
 from api.serializers import SocialLoginSerializer
-from api.tests.utils import disable_silk, throttling_monkey_patch
+from api.tests.utils import disable_silk, disable_throttling
 
 
 class _TestSocialLoginSerializer(SocialLoginSerializer):
@@ -32,6 +32,7 @@ class _TestSocialConnectSerializer(SocialConnectSerializer):
 
 
 @disable_silk()
+@disable_throttling()
 @override_settings(
     TEST_SOCIAL_LOGIN_SERIALIZER_CLASS=_TestSocialLoginSerializer,
     TEST_SOCIAL_CONNECT_SERIALIZER_CLASS=_TestSocialConnectSerializer,
@@ -46,8 +47,6 @@ class SocialTestCase(APITestCase):
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
 
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):
