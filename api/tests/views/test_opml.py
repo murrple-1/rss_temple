@@ -5,10 +5,11 @@ from django.core.management import call_command
 from rest_framework.test import APITestCase
 
 from api.models import SubscribedFeedUserMapping, User
-from api.tests.utils import disable_silk, throttling_monkey_patch
+from api.tests.utils import disable_silk, disable_throttling
 
 
 @disable_silk()
+@disable_throttling()
 class OPMLTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
@@ -22,8 +23,6 @@ class OPMLTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

@@ -12,11 +12,12 @@ from api.models import Token, User
 from api.tests.utils import (
     debug_print_last_email,
     disable_silk,
-    throttling_monkey_patch,
+    disable_throttling,
 )
 
 
 @disable_silk()
+@disable_throttling()
 class AuthTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
@@ -30,8 +31,6 @@ class AuthTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

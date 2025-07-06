@@ -8,11 +8,12 @@ from rest_framework.test import APITestCase
 from api.models import Feed, FeedEntry, FeedEntryReport, FeedReport, User
 from api.tests.utils import (
     disable_silk,
-    throttling_monkey_patch,
+    disable_throttling,
 )
 
 
 @disable_silk()
+@disable_throttling()
 class ReportTestCase(APITestCase):
     old_django_logger_level: ClassVar[int]
     user: ClassVar[User]
@@ -26,8 +27,6 @@ class ReportTestCase(APITestCase):
         cls.old_django_logger_level = logging.getLogger("django").getEffectiveLevel()
 
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

@@ -11,11 +11,12 @@ from api.tests.utils import (
     disable_silk,
     reusable_captcha_key,
     reusable_captcha_seed,
-    throttling_monkey_patch,
+    disable_throttling,
 )
 
 
 @disable_silk()
+@disable_throttling()
 class CaptchaTestCase(TestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
@@ -29,8 +30,6 @@ class CaptchaTestCase(TestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):

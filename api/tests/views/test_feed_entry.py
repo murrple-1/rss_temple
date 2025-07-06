@@ -8,10 +8,11 @@ from rest_framework.test import APITestCase
 
 from api.cache_utils.counts_lookup import save_counts_lookup_to_cache
 from api.models import Feed, FeedEntry, ReadFeedEntryUserMapping, User
-from api.tests.utils import disable_silk, throttling_monkey_patch
+from api.tests.utils import disable_silk, disable_throttling
 
 
 @disable_silk()
+@disable_throttling()
 class FeedEntryTestCase(APITestCase):
     old_app_logger_level: ClassVar[int]
     old_django_logger_level: ClassVar[int]
@@ -27,8 +28,6 @@ class FeedEntryTestCase(APITestCase):
 
         logging.getLogger("rss_temple").setLevel(logging.CRITICAL)
         logging.getLogger("django").setLevel(logging.CRITICAL)
-
-        throttling_monkey_patch()
 
     @classmethod
     def tearDownClass(cls):
