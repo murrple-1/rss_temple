@@ -248,3 +248,38 @@ class TopImageExtractorTestCase(TestFileServerTestCase):
         self.assertIsNotNone(result)
         assert result is not None
         self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_img_containers(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/img_containers.html",
+            -1,
+            max_candidate_images=1000,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 13)
+        self.assertCountEqual(
+            result[:6],
+            [
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=3",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=4",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=7",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=8",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=9",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=10",
+            ],
+        )
+        self.assertCountEqual(
+            result[6:13],
+            [
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=1",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=2",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=5",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=6",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=11",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=12",
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/256x256.jpg?_=13",
+            ],
+        )
