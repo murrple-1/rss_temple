@@ -47,10 +47,6 @@ def extract_top_image_src(
         return None
 
 
-_BAD_PATTERN = re.compile(
-    r"(?:ad|ads|advert|sponsor|banner|logo|icon|sprite|avatar|promo|header|footer|nav|tracking|pixel|placeholder|spacer|blank|doubleclick|googlesyndication)",
-    re.IGNORECASE,
-)
 # Common ad/tracker domains
 _BAD_DOMAINS: list[str] = [
     "doubleclick.net",
@@ -64,59 +60,84 @@ _BAD_DOMAINS: list[str] = [
 
 def _is_bad_url(url: str) -> bool:
     parse_result = urlparse(url)
-    return any(bad in parse_result.netloc for bad in _BAD_DOMAINS)
+    if any(bad in parse_result.netloc for bad in _BAD_DOMAINS):
+        return True
+
+    if url.startswith("data:"):
+        return True
+
+    return False
+
+
+_BAD_GENERAL_PATTERN = re.compile(
+    r"(?:ad|ads|advert|sponsor|banner|logo|icon|sprite|avatar|promo|header|footer|nav|tracking|pixel|placeholder|spacer|blank|doubleclick|googlesyndication)",
+    re.IGNORECASE,
+)
 
 
 def _is_bad_filename(filename: str) -> bool:
-    return _BAD_PATTERN.search(filename) is not None
+    return _BAD_GENERAL_PATTERN.search(filename) is not None
 
 
-def _is_bad_class_id(img_tag: Tag) -> bool:
+def _has_bad_class_or_id(img_tag: Tag) -> bool:
     for attr in ["class", "id"]:
         vals = img_tag.get(attr, [])
         if isinstance(vals, str):
             vals = [vals]
 
-        if any(_BAD_PATTERN.search(str(v)) for v in vals):
+        if any(_BAD_GENERAL_PATTERN.search(str(v)) for v in vals):
             return True
 
     return False
 
 
-_BAD_ALT_TERMS = re.compile(
+_BAD_ALT_PATTERN = re.compile(
     r"(?:logo|icon|avatar|banner|decorative|advertisement|promo|spacer|placeholder)",
     re.IGNORECASE,
 )
 
 
-def _is_probably_decorative(
-    img_tag: Tag, src_url: str, page_title_keywords: frozenset[str]
-) -> bool:
-    """Combined heuristics for decorative/ad images."""
-    filename = src_url.split("/")[-1].lower()
-
-    if _is_bad_class_id(img_tag) or _is_bad_url(src_url) or _is_bad_filename(filename):
-        return True
-
+def _has_bad_alt_text(img_tag: Tag, page_title_keywords: frozenset[str]) -> bool:
     alt = img_tag.get("alt", "")
     assert isinstance(alt, str)
     alt = alt.strip()
     if alt:
-        if _BAD_ALT_TERMS.search(alt):
+        if _BAD_ALT_PATTERN.search(alt):
             return True
 
-        if page_title_keywords and not any(kw in alt for kw in page_title_keywords):
-            return True
+        if page_title_keywords:
+            alt_parts = alt.lower().split()
+            if not any(kw in alt_parts for kw in page_title_keywords):
+                return True
 
-    # Check for data URIs or blank src
-    if src_url.startswith("data:") or not src_url:
+    return False
+
+
+def _is_img_tag_probably_bad(
+    img_tag: Tag, src_url: str, page_title_keywords: frozenset[str]
+) -> bool:
+    # In this context, 'bad' just means decorative, advertisement, or tracker, not 'content'
+
+    if _has_bad_class_or_id(img_tag):
+        return True
+
+    if _is_bad_url(src_url):
+        return True
+
+    filename = src_url.split("/")[-1].lower()
+    if _is_bad_filename(filename):
+        return True
+
+    if _has_bad_alt_text(img_tag, page_title_keywords):
         return True
 
     return False
 
 
-_GOOD_CLASS = re.compile(r"(?:content|article|post|entry)", re.IGNORECASE)
-_BAD_CLASS = re.compile(r"(?:sidebar|footer|nav)", re.IGNORECASE)
+_GOOD_CONTAINER_CLASS_PATTERN = re.compile(
+    r"(?:content|article|post|entry)", re.IGNORECASE
+)
+_BAD_CONTAINER_CLASS_PATTERN = re.compile(r"(?:sidebar|footer|nav)", re.IGNORECASE)
 
 
 def _get_img_container_score(img_tag: Tag) -> int:
@@ -134,27 +155,20 @@ def _get_img_container_score(img_tag: Tag) -> int:
 
         class_attr = container.get("class", [])
         if class_attr:
-            if _GOOD_CLASS.search(
+            if _GOOD_CONTAINER_CLASS_PATTERN.search(
                 class_str := " ".join(class_attr)
                 if isinstance(class_attr, list)
                 else class_attr
             ):
                 return 2
-            elif _BAD_CLASS.search(class_str):
+            elif _BAD_CONTAINER_CLASS_PATTERN.search(class_str):
                 return 0
 
         container = getattr(container, "parent", None)
     return 1  # Default: neutral
 
 
-def _aspect_ratio(width: int | float, height: int | float) -> float:
-    width, height = float(width), float(height)
-    if height == 0.0:
-        return 0.0
-    return width / height
-
-
-def _usable_image_dimensions(
+def _image_has_usable_image_dimensions(
     img_src: str,
     response_max_byte_count: int,
     min_image_byte_count: int,
@@ -205,7 +219,11 @@ def _usable_image_dimensions(
                 if width < min_image_width or height < min_image_height:
                     return None
 
-                img_aspect = _aspect_ratio(width, height)
+                if height == 0:
+                    # avoid a divide-by-zero, just in case
+                    return None  # pragma: no cover
+
+                img_aspect = float(width) / float(height)
                 if img_aspect < min_image_aspect or img_aspect > max_image_aspect:
                     return None
     except UnidentifiedImageError:
@@ -228,8 +246,8 @@ def find_top_image_src_candidates(
     min_image_byte_count=4500,
     min_image_width=256,
     min_image_height=256,
-    min_image_aspect=0.3,
-    max_image_aspect=5.0,
+    min_image_aspect=3.0 / 10.0,
+    max_image_aspect=5.0 / 1.0,
     max_image_frequency=1,
     max_candidate_images=5,
 ):
@@ -267,6 +285,7 @@ def find_top_image_src_candidates(
         raise TryAgain from e
 
     # Extract keywords from page title for relevance
+    # TODO should probably remove 'stop-words'
     page_title_keywords = frozenset(
         (soup.title.string.lower() if soup.title and soup.title.string else "").split()
     )
@@ -281,7 +300,7 @@ def find_top_image_src_candidates(
             assert isinstance(og_content, str)
             abs_url = urljoin(url, og_content)
 
-            dim = _usable_image_dimensions(
+            dim = _image_has_usable_image_dimensions(
                 abs_url,
                 response_max_byte_count,
                 min_image_byte_count,
@@ -304,7 +323,7 @@ def find_top_image_src_candidates(
             assert isinstance(tw_content, str)
             abs_url = urljoin(url, tw_content)
 
-            dim = _usable_image_dimensions(
+            dim = _image_has_usable_image_dimensions(
                 abs_url,
                 response_max_byte_count,
                 min_image_byte_count,
@@ -338,10 +357,10 @@ def find_top_image_src_candidates(
             continue
         img_seen.add(abs_url)
 
-        if _is_probably_decorative(img_tag, abs_url, page_title_keywords):
+        if _is_img_tag_probably_bad(img_tag, abs_url, page_title_keywords):
             continue
 
-        dim = _usable_image_dimensions(
+        dim = _image_has_usable_image_dimensions(
             abs_url,
             response_max_byte_count,
             min_image_byte_count,

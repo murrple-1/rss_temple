@@ -177,3 +177,74 @@ class TopImageExtractorTestCase(TestFileServerTestCase):
         self.assertIsNotNone(result)
         assert result is not None
         self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_img_without_src(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/img_without_src.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_bad_image_formats(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/bad_image_formats.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_bad_classes(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/bad_classes.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_bad_ids(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/bad_ids.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 0)
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_bad_alt_texts(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/bad_alt_texts.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertCountEqual(
+            result,
+            [
+                f"{TopImageExtractorTestCase.live_server_url}/site/images/512x512.jpg",
+            ],
+        )
+
+    @tag("slow")
+    def test_find_top_image_src_candidates_bad_img_srcs(self):
+        result = find_top_image_src_candidates(
+            f"{TopImageExtractorTestCase.live_server_url}/site/top_image_extractor/bad_img_srcs.html",
+            -1,
+        )
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(len(result), 0)
