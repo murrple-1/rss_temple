@@ -10,7 +10,6 @@ from url_normalize import url_normalize
 
 from api.lock_context import lock_context
 from api.models import (
-    AlternateFeedURL,
     Feed,
     FeedEntry,
     SubscribedFeedUserMapping,
@@ -136,32 +135,19 @@ TODO: for the time being, this will just be static data (based on my personal OP
                     for sf in s["feeds"]
                 )
 
-                feeds: dict[str, Feed] = {}
-
                 most_recent_entries_qs = FeedEntry.objects.filter(
                     is_archived=False
                 ).order_by("-published_at")[:5]
-                for afu in (
-                    AlternateFeedURL.objects.select_related("feed")
-                    .prefetch_related(
+                feeds: dict[str, Feed] = {
+                    f.feed_url: f
+                    for f in Feed.objects.prefetch_related(
                         Prefetch(
-                            "feed__feed_entries",
+                            "feed_entries",
                             most_recent_entries_qs,
-                            to_attr="feed__most_recent_entries",
+                            to_attr="most_recent_entries",
                         )
-                    )
-                    .filter(feed_url__in=feed_urls)
-                ):
-                    feeds[afu.feed_url] = afu.feed
-
-                for f in Feed.objects.prefetch_related(
-                    Prefetch(
-                        "feed_entries",
-                        most_recent_entries_qs,
-                        to_attr="most_recent_entries",
-                    )
-                ).filter(feed_url__in=feed_urls):
-                    feeds[f.feed_url] = f
+                    ).filter(feed_url__in=feed_urls)
+                }
 
                 for section_lookup in _section_lookups:
                     feed_objs: list[dict[str, Any]] = []
