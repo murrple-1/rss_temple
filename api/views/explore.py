@@ -1,7 +1,7 @@
 from typing import Any, TypedDict, cast
 
 from django.core.cache import BaseCache, caches
-from django.db.models import Q
+from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -9,7 +9,13 @@ from rest_framework.views import APIView
 from url_normalize import url_normalize
 
 from api.lock_context import lock_context
-from api.models import AlternateFeedURL, Feed, SubscribedFeedUserMapping, User
+from api.models import (
+    AlternateFeedURL,
+    Feed,
+    FeedEntry,
+    SubscribedFeedUserMapping,
+    User,
+)
 from api.serializers import ExploreSerializer
 
 
@@ -124,32 +130,50 @@ TODO: for the time being, this will just be static data (based on my personal OP
             if ret_obj is None:
                 ret_obj = []
 
+                feed_urls = frozenset(
+                    cast(str, url_normalize(sf["feed_url"]))
+                    for s in _section_lookups
+                    for sf in s["feeds"]
+                )
+
                 feeds: dict[str, Feed] = {}
-                for s in _section_lookups:
-                    for sf in s["feeds"]:
-                        url = cast(str, url_normalize(sf["feed_url"]))
-                        feed = Feed.objects.filter(
-                            Q(feed_url=url)
-                            | Q(
-                                uuid__in=AlternateFeedURL.objects.filter(
-                                    feed_url=url
-                                ).values("feed_id")[:1]
-                            )
-                        ).first()
-                        if feed is not None:
-                            feeds[url] = feed
+
+                most_recent_entries_qs = FeedEntry.objects.filter(
+                    is_archived=False
+                ).order_by("-published_at")[:5]
+                for afu in (
+                    AlternateFeedURL.objects.select_related("feed")
+                    .prefetch_related(
+                        Prefetch(
+                            "feed__feed_entries",
+                            most_recent_entries_qs,
+                            to_attr="feed__most_recent_entries",
+                        )
+                    )
+                    .filter(feed_url__in=feed_urls)
+                ):
+                    feeds[afu.feed_url] = afu.feed
+
+                for f in Feed.objects.prefetch_related(
+                    Prefetch(
+                        "feed_entries",
+                        most_recent_entries_qs,
+                        to_attr="most_recent_entries",
+                    )
+                ).filter(feed_url__in=feed_urls):
+                    feeds[f.feed_url] = f
 
                 for section_lookup in _section_lookups:
                     feed_objs: list[dict[str, Any]] = []
                     for feed_lookup in section_lookup["feeds"]:
-                        feed = feeds.get(feed_lookup["feed_url"])
+                        feed = feeds.get(
+                            cast(str, url_normalize(feed_lookup["feed_url"]))
+                        )
                         if not feed:
                             continue
 
                         some_feed_entry_titles = list(
-                            feed.feed_entries.filter(is_archived=False)
-                            .order_by("-published_at")
-                            .values_list("title", flat=True)[:5]
+                            e.title for e in feed.most_recent_entries
                         )
 
                         if not some_feed_entry_titles:
