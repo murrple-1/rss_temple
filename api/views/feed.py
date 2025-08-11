@@ -476,6 +476,7 @@ class FeedsQueryView(APIView):
             .only(*fieldutils.generate_only_fields(field_maps))
         )
 
+        # TODO maybe improve performance https://archive.li/rxzuU ?
         feeds_qs = feeds.order_by(*sort)[skip : skip + count]
 
         feed_uuids = frozenset(f.uuid for f in feeds_qs)

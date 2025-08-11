@@ -166,6 +166,7 @@ class UserCategoriesQueryView(APIView):
 
         if return_objects:
             objs: list[dict[str, Any]] = []
+            # TODO maybe improve performance https://archive.li/rxzuU ?
             for user_category in user_categories.order_by(*sort)[skip : skip + count]:
                 obj = fieldutils.generate_return_object(
                     field_maps, user_category, request, user_categories

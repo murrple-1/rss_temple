@@ -232,6 +232,7 @@ class ClassifierLabelVotesListView(APIView):
             "totalCount": feed_entries.count(),
         }
 
+        # TODO maybe improve performance https://archive.li/rxzuU ?
         feed_entry_vote_mappings: dict[uuid_.UUID, list[uuid_.UUID]] = {
             uuid: []
             for uuid in feed_entries.order_by("uuid")

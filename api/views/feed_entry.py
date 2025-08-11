@@ -191,6 +191,7 @@ class FeedEntriesQueryView(APIView):
 
         if return_objects:
             objs: list[dict[str, Any]] = []
+            # TODO maybe improve performance https://archive.li/rxzuU ?
             for feed_entry in feed_entries.order_by(*sort)[skip : skip + count]:
                 obj = fieldutils.generate_return_object(
                     field_maps, feed_entry, request, feed_entries
@@ -314,6 +315,7 @@ class FeedEntriesQueryStableView(APIView):
         read_feed_entry_uuids_cache_hit: bool | None = None
         favorite_feed_entry_uuids_cache_hit: bool | None = None
         if return_objects:
+            # TODO maybe improve performance https://archive.li/rxzuU ?
             current_uuids = uuids[skip : skip + count]
 
             (
