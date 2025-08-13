@@ -45,7 +45,7 @@ class TaskTestCase(TestFileServerTestCase):
             db_updated_at=None,
         )
 
-        for i, url, title, content in generate_top_image_pages(
+        for i, url, lang, title, content in generate_top_image_pages(
             TaskTestCase.live_server_url
         ):
             FeedEntry.objects.create(
@@ -57,6 +57,7 @@ class TaskTestCase(TestFileServerTestCase):
                 author_name="John Doe",
                 db_updated_at=None,
                 is_archived=False,
+                language_id=lang,
             )
 
         FeedEntry.objects.create(
@@ -70,7 +71,9 @@ class TaskTestCase(TestFileServerTestCase):
             is_archived=False,
         )
 
-        count = extract_top_images(FeedEntry.objects.all(), 3, 2000, 256, 256, -1)
+        count = extract_top_images(
+            FeedEntry.objects.select_related("language").all(), 3, 2000, 256, 256, -1
+        )
 
         self.assertEqual(
             FeedEntry.objects.filter(has_top_image_been_processed=False).count(), 0

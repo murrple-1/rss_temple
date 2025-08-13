@@ -36,6 +36,7 @@ class Command(BaseCommand):
             FeedEntry.objects.filter(has_top_image_been_processed=False)
             .filter(published_at__gte=since)
             .order_by("-published_at")
+            .select_related("language")
             .iterator(),
             options["max_processing_attempts"],
             options["min_image_byte_count"],

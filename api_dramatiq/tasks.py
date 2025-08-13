@@ -113,7 +113,8 @@ def extract_top_images(
     count = extract_top_images_(
         FeedEntry.objects.filter(has_top_image_been_processed=False)
         .filter(published_at__gte=since_)
-        .order_by("-published_at")[:db_limit],
+        .order_by("-published_at")
+        .select_related("language")[:db_limit],
         max_processing_attempts,
         min_image_byte_count,
         min_image_width,

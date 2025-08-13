@@ -7,6 +7,7 @@ import re
 from bs4 import BeautifulSoup, NavigableString, PageElement, Tag
 from PIL import Image, UnidentifiedImageError
 from requests.exceptions import HTTPError, RequestException
+from stop_words import get_stop_words
 
 from api import content_type_util, rss_requests
 from api.requests_extensions import (
@@ -33,6 +34,7 @@ def extract_top_image_src(
     min_image_byte_count=4500,
     min_image_width=256,
     min_image_height=256,
+    stop_words_language="english",
 ) -> str | None:
     imgs = find_top_image_src_candidates(
         url,
@@ -40,6 +42,7 @@ def extract_top_image_src(
         min_image_byte_count=min_image_byte_count,
         min_image_width=min_image_width,
         min_image_height=min_image_height,
+        stop_words_language=stop_words_language,
     )
     if imgs:
         return imgs[0]
@@ -250,6 +253,7 @@ def find_top_image_src_candidates(
     max_image_aspect=5.0 / 1.0,
     max_image_frequency=1,
     max_candidate_images=5,
+    stop_words_language="english",
 ):
     """
     Download the URL, parse HTML, and return a list of high-confidence banner/content image URLs,
@@ -285,9 +289,20 @@ def find_top_image_src_candidates(
         raise TryAgain from e
 
     # Extract keywords from page title for relevance
-    # TODO should probably remove 'stop-words'
+    stop_words: frozenset
+    if stop_words_language:
+        stop_words_ = get_stop_words(stop_words_language)
+        assert isinstance(stop_words_, list)
+        stop_words = frozenset(stop_words_)
+    else:
+        stop_words = frozenset()
+
     page_title_keywords = frozenset(
-        (soup.title.string.lower() if soup.title and soup.title.string else "").split()
+        w
+        for w in (
+            soup.title.string.lower() if soup.title and soup.title.string else ""
+        ).split()
+        if w not in stop_words
     )
 
     meta_images: set[str] = set()

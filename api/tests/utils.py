@@ -77,8 +77,9 @@ class disable_silk(TestContextDecorator):
 class TopImagePage(NamedTuple):
     i: int
     url: str
+    lang: str | None
     title: str
-    content_curry: str
+    content: str
 
 
 def generate_top_image_pages(
@@ -131,12 +132,18 @@ def generate_top_image_pages(
         assert isinstance(p_tag, Tag)
         content = str(p_tag)
 
-        yield TopImagePage(
-            i,
-            f"{live_server_url}/site/generated/{html_filename}",
-            title,
-            content,
-        )
+        for iso639_1 in (
+            None,  # no language
+            "ENG",  # common language
+            "ISL",  # language known by `lingua-language-detector`, but not by `stop-words`
+        ):
+            yield TopImagePage(
+                i,
+                f"{live_server_url}/site/generated/{html_filename}?lang={iso639_1 if iso639_1 is not None else ''}",
+                iso639_1,
+                title,
+                content,
+            )
 
         i += 1
 
@@ -156,6 +163,7 @@ def generate_top_image_pages(
         yield TopImagePage(
             i,
             f"{live_server_url}/site/{html_filename}",
+            None,
             title,
             content,
         )

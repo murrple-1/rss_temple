@@ -43,6 +43,7 @@ python-redis-lock = {version = "*", extras = ["django"]}
 django-csp = "*"
 django-silk = "*"
 uuid7 = "*"
+stop-words = "*"
 
 [dev-packages]
 coverage = "*"

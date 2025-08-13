@@ -3,11 +3,16 @@ import traceback
 from typing import Iterable
 
 from django.db.models import F
+from stop_words import LANGUAGE_MAPPING as _STOP_WORDS_LANGUAGE_MAPPING
 
 from api.models import FeedEntry
 from api.top_image_extractor import TryAgain, extract_top_image_src, is_top_image_needed
 
 _logger = logging.getLogger("rss_temple")
+
+STOP_WORDS_AVAILABLE_LANGUAGES: frozenset[str] = frozenset(
+    _STOP_WORDS_LANGUAGE_MAPPING.keys()
+)
 
 
 def extract_top_images(
@@ -22,6 +27,18 @@ def extract_top_images(
     for feed_entry in feed_entry_queryset:
         try:
             if is_top_image_needed(feed_entry.content):
+                stop_words_language: str
+                if feed_entry.language_id is not None:
+                    if (
+                        stop_words_language_ := feed_entry.language.iso639_1.lower()
+                    ) in STOP_WORDS_AVAILABLE_LANGUAGES:
+                        assert isinstance(stop_words_language_, str)
+                        stop_words_language = stop_words_language_
+                    else:
+                        stop_words_language = ""
+                else:
+                    stop_words_language = ""
+
                 feed_entry.top_image_src = (
                     extract_top_image_src(
                         feed_entry.url,
@@ -29,6 +46,7 @@ def extract_top_images(
                         min_image_byte_count=min_image_byte_count,
                         min_image_width=min_image_width,
                         min_image_height=min_image_height,
+                        stop_words_language=stop_words_language,
                     )
                     or ""
                 )
