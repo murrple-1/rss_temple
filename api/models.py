@@ -16,6 +16,8 @@ from rest_framework.authtoken.models import Token as _Token
 from api.captcha import ALPHABET as CAPTCHA_ALPHABET
 
 if TYPE_CHECKING:  # pragma: no cover
+    from django.db.models.fields.related_descriptors import RelatedManager
+
     from api.cache_utils.subscription_datas import SubscriptionData
 
 
@@ -43,6 +45,10 @@ class UserManager(BaseUserManager["User"]):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    if TYPE_CHECKING:
+        auth_tokens: RelatedManager["Token"]
+        user_categories: RelatedManager["UserCategory"]
+
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)
@@ -142,6 +148,12 @@ class UserCategory(models.Model):
 
 
 class ClassifierLabel(models.Model):
+    if TYPE_CHECKING:
+        calculated_user_set: RelatedManager[User]
+        calculated_feed_set: RelatedManager["Feed"]
+        voted_feed_entry_set: RelatedManager["FeedEntry"]
+        calculated_feed_entry_set: RelatedManager["FeedEntry"]
+
     class Meta:
         constraints = (
             models.UniqueConstraint(
@@ -218,6 +230,9 @@ class ClassifierLabelUserCalculated(models.Model):
 
 
 class Language(models.Model):
+    if TYPE_CHECKING:
+        feed_entries: RelatedManager["FeedEntry"]
+
     iso639_3 = models.CharField(primary_key=True, max_length=3)
     iso639_1 = models.CharField(max_length=2)
     name = models.CharField(max_length=64)
@@ -227,6 +242,13 @@ class Language(models.Model):
 
 
 class Feed(models.Model):
+    if TYPE_CHECKING:
+        feed_entries: RelatedManager["FeedEntry"]
+        user_categories: RelatedManager[UserCategory]
+        subscribed_user_set: RelatedManager[User]
+        duplicate_feed_suggestions_1: RelatedManager["DuplicateFeedSuggestion"]
+        duplicate_feed_suggestions_2: RelatedManager["DuplicateFeedSuggestion"]
+
     class Meta:
         indexes = [
             models.Index(fields=["update_backoff_until"]),
@@ -493,6 +515,10 @@ class SubscribedFeedUserMapping(models.Model):
 
 
 class FeedEntry(models.Model):
+    if TYPE_CHECKING:
+        read_user_set: RelatedManager[User]
+        favorite_user_set: RelatedManager[User]
+
     class Meta:
         indexes = (
             models.Index(fields=("-published_at",)),
