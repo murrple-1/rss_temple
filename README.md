@@ -5,7 +5,7 @@
 ## Installation
 
 <div align="center">
-  <img src=".github/resources/isotipo.png" height="180px" width="auto" alt="rss temple logo">
+  <img src=".github/resources/logo.png" height="180px" width="auto" alt="rss temple logo">
   <br />
   <h2 style="font-size: 32px;">
     RSS Temple
