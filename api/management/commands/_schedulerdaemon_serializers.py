@@ -51,9 +51,7 @@ class _ArchiveFeedEntriesSerializer(serializers.Serializer):
 
 
 class _ExtractTopImagesSerializer(serializers.Serializer):
-    crontab = serializers.CharField(
-        default="0 * * * *"
-    )  # every hour, on the first minute
+    intervalSeconds = serializers.IntegerField(source="interval_seconds", default=30)
     maxProcessingAttempts = serializers.IntegerField(
         source="max_processing_attempts", default=3
     )
@@ -72,7 +70,7 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
         scheduler: BaseScheduler = self.context["scheduler"]
         job = scheduler.add_job(
             jobs.extract_top_images,
-            trigger=CronTrigger.from_crontab(validated_data["crontab"]),
+            trigger=IntervalTrigger(seconds=validated_data["interval_seconds"]),
             id="extract_top_images",
             max_instances=1,
             replace_existing=True,
