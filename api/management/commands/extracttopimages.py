@@ -32,6 +32,10 @@ class Command(BaseCommand):
             has_top_image_been_processed=False
         ).count()
 
+        self.stderr.write(
+            self.style.NOTICE(f"{total_remaining} feed entries need processing")
+        )
+
         count = extract_top_images(
             FeedEntry.objects.filter(has_top_image_been_processed=False)
             .filter(published_at__gte=since)

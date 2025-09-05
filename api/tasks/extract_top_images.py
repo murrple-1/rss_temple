@@ -59,6 +59,8 @@ def extract_top_images(
             )
 
             count += 1
+
+            _logger.info("processed top image for %s", feed_entry.url)
         except TryAgain:  # pragma: no cover
             if feed_entry.top_image_processing_attempt_count < max_processing_attempts:
                 FeedEntry.objects.filter(uuid=feed_entry.uuid).update(
