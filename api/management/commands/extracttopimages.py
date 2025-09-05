@@ -36,12 +36,14 @@ class Command(BaseCommand):
             self.style.NOTICE(f"{total_remaining} feed entries need processing")
         )
 
+        qs = FeedEntry.objects.filter(has_top_image_been_processed=False).filter(
+            published_at__gte=since
+        )
+
+        self.stderr.write(self.style.NOTICE(f"handling {qs.count()} feed entries..."))
+
         count = extract_top_images(
-            FeedEntry.objects.filter(has_top_image_been_processed=False)
-            .filter(published_at__gte=since)
-            .order_by("-published_at")
-            .select_related("language")
-            .iterator(),
+            qs.order_by("-published_at").select_related("language").iterator(),
             options["max_processing_attempts"],
             options["min_image_byte_count"],
             options["min_image_width"],
