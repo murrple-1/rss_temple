@@ -35,7 +35,7 @@
 
 # Overview
 
-RSS Temple is a hostable, RSS/Atom reader, with a light, clean interface, and powerful subscription and search features.
+RSS Temple is a fast, powerful, and self-hostable RSS/Atom reader, with a light, clean UI, and powerful subscription and search features.
 
 ## Features
 
@@ -62,7 +62,9 @@ If you have any issues with RSS Temple, please [open an issue](https://github.co
 
 Consider supporting the development of this project on Ko-Fi. All funds will be used to cover the costs of hosting, development, and maintenance of RSS Temple.
 
-[![Ko-Fi][kofi-donate-img]][kofi-donate]
+<a href="https://ko-fi.com/murraychristopherson">
+  <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_badge_red.png" width="150" height="auto" alt="Ko-Fi">
+</a>
 
 
 [circleci-badge-img]: https://dl.circleci.com/status-badge/img/gh/murrple-1/rss_temple/tree/master.svg?style=svg
@@ -76,6 +78,3 @@ Consider supporting the development of this project on Ko-Fi. All funds will be 
 [release-badge]: https://github.com/murrple-1/rss_temple/releases
 [docker-pulls-badge-img]: https://img.shields.io/docker/pulls/murraychristopherson/rss_temple?style=for-the-badge&label=pulls
 [docker-pulls-badge]: https://hub.docker.com/r/murraychristopherson/rss_temple
-
-[kofi-donate-img]: https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_badge_red.png
-[kofi-donate]: https://ko-fi.com/murraychristopherson
