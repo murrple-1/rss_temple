@@ -526,6 +526,7 @@ class FeedEntry(models.Model):
             models.Index(fields=("-updated_at",)),
             models.Index(fields=("is_archived",)),
             models.Index(fields=("has_top_image_been_processed",)),
+            models.Index(fields=("url",)),
             # When feeds get large enough, client calls to "get *all* entries" (read: unread, read, AND archived)
             # were becoming too unresponsive.
             # This index addresses the exact relevant fields of the client to keep it bearable.

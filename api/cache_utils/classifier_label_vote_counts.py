@@ -109,7 +109,7 @@ def get_classifier_label_vote_counts_from_cache(
             GROUP BY
                 t1."uuid",
                 t2."uuid"
-        """,
+            """,
             params,
         )
 
