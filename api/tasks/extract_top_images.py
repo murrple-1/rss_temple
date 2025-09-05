@@ -8,7 +8,7 @@ from stop_words import LANGUAGE_MAPPING as _STOP_WORDS_LANGUAGE_MAPPING
 from api.models import FeedEntry
 from api.top_image_extractor import TryAgain, extract_top_image_src, is_top_image_needed
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.tasks.extract_top_images")
 
 STOP_WORDS_AVAILABLE_LANGUAGES: frozenset[str] = frozenset(
     _STOP_WORDS_LANGUAGE_MAPPING.keys()

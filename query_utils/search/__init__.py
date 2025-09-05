@@ -7,7 +7,7 @@ from pyparsing import ParseException, ParseResults
 
 from query_utils.search.parser import parser
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("rss_temple.query_utils.search")
 
 
 def to_filter_args(

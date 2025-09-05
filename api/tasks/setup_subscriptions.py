@@ -23,7 +23,7 @@ from api.requests_extensions import ResponseTooBig, safe_response_text
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.tasks.setup_subscriptions")
 
 
 def setup_subscriptions(

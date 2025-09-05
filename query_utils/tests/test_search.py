@@ -25,15 +25,17 @@ class SearchesTestCase(SimpleTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        cls.old_logger_level = logging.getLogger("query_utils").getEffectiveLevel()
+        cls.old_logger_level = logging.getLogger(
+            "rss_temple.query_utils"
+        ).getEffectiveLevel()
 
-        logging.getLogger("query_utils").setLevel(logging.CRITICAL)
+        logging.getLogger("rss_temple.query_utils").setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logging.getLogger("query_utils").setLevel(cls.old_logger_level)
+        logging.getLogger("rss_temple.query_utils").setLevel(cls.old_logger_level)
 
     def test_standard(self):
         q_list = searchutils.to_filter_args(

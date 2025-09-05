@@ -24,7 +24,7 @@ from django.contrib.auth import logout as django_logout
 from api.models import User
 from api.serializers import UserDeleteSerializer
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.views.auth")
 
 sensitive_post_parameters_m = method_decorator(
     sensitive_post_parameters(

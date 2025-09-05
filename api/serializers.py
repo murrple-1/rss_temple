@@ -47,7 +47,7 @@ from query_utils import fields as fieldutils
 from query_utils import search as searchutils
 from query_utils import sort as sortutils
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.serializers")
 
 
 class LoginSerializer(_LoginSerializer):  # pragma: no cover

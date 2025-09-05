@@ -42,12 +42,15 @@ class Command(BaseCommand):
 
         self.stderr.write(self.style.NOTICE(f"handling {qs.count()} feed entries..."))
 
-        count = extract_top_images(
-            qs.order_by("-published_at").select_related("language").iterator(),
-            options["max_processing_attempts"],
-            options["min_image_byte_count"],
-            options["min_image_width"],
-            options["min_image_height"],
-            options["response_max_byte_count"],
-        )
-        self.stderr.write(self.style.NOTICE(f"updated {count}/{total_remaining}"))
+        try:
+            count = extract_top_images(
+                qs.order_by("-published_at").select_related("language").iterator(),
+                options["max_processing_attempts"],
+                options["min_image_byte_count"],
+                options["min_image_width"],
+                options["min_image_height"],
+                options["response_max_byte_count"],
+            )
+            self.stderr.write(self.style.NOTICE(f"updated {count}/{total_remaining}"))
+        except KeyboardInterrupt:
+            pass

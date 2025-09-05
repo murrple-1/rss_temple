@@ -47,7 +47,7 @@ def _load_global_settings(*args: Any, **kwargs: Any):
 
 _load_global_settings()
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.views.social")
 
 
 class _SocialHandleExceptionMixin(APIView):  # pragma: no cover

@@ -2,7 +2,7 @@ import logging
 
 from api.models import AlternateFeedURL, Feed
 
-_logger = logging.getLogger("rss_temple")
+_logger = logging.getLogger("rss_temple.tasks.purge_duplicate_feed_urls")
 
 
 def purge_duplicate_feed_urls() -> None:
