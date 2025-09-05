@@ -1,3 +1,81 @@
 # RSS Temple
 
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/murrple-1/rss_temple/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/murrple-1/rss_temple/tree/master) [![codecov](https://codecov.io/gh/murrple-1/rss_temple/branch/master/graph/badge.svg)](https://codecov.io/gh/murrple-1/rss_temple)
+[![CircleCI][circleci-badge-img]][circleci-badge] [![codecov][codecov-badge-img]][codecov-badge]
+
+## Installation
+
+<div align="center">
+  <img src=".github/resources/isotipo.png" height="180px" width="auto" alt="rss temple logo">
+  <br />
+  <h2 style="font-size: 32px;">
+    RSS Temple
+  </h2>
+
+  <h3 style="font-size: 25px;">
+    A fast, powerful, self-hostable RSS reader.
+  </h3>
+  <br/>
+
+[![license-badge-img]][license-badge]
+[![release-badge-img]][release-badge]
+[![docker-pulls-badge-img]][docker-pulls-badge]
+
+  </div>
+</div>
+
+# Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Overview](#overview)
+  - [Features](#features)
+  - [Preview](#preview)
+- [Installation](#installation)
+- [Technical Support](#technical-support)
+- [Project Support](#project-support)
+
+# Overview
+
+RSS Temple is a hostable, RSS/Atom reader, with a light, clean interface, and powerful subscription and search features.
+
+## Features
+
+- Subscribe to any RSS or Atom feed
+- Can't find the feed URL? No problem, RSS Temple will find it for you
+- Fast, full-text search
+- Keyboard shortcuts
+
+## Preview
+
+|                                       🖥 Desktop                                       |                                                           📱 Mobile                                                            |
+| :------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------: |
+| <img src=".github/resources/screenshots/preview-desktop.png" alt="desktop preview" /> | <img style="width: 325px; aspect-ratio: auto;" src=".github/resources/screenshots/preview-mobile.png" alt="mobile preview" /> |
+
+# Installation
+
+// TODO
+
+# Technical Support
+
+If you have any issues with RSS Temple, please [open an issue](https://github.com/murrple-1/rss_temple/issues/new) in this repository.
+
+# Project Support
+
+Consider supporting the development of this project on Ko-Fi. All funds will be used to cover the costs of hosting, development, and maintenance of RSS Temple.
+
+[![Ko-Fi][kofi-donate-img]][kofi-donate]
+
+
+[circleci-badge-img]: https://dl.circleci.com/status-badge/img/gh/murrple-1/rss_temple/tree/master.svg?style=svg
+[circleci-badge]: https://dl.circleci.com/status-badge/redirect/gh/murrple-1/rss_temple/tree/master
+[codecov-badge-img]: https://codecov.io/gh/murrple-1/rss_temple/branch/master/graph/badge.svg
+[codecov-badge]: https://codecov.io/gh/murrple-1/rss_temple
+
+[license-badge-img]: https://img.shields.io/github/license/murrple-1/rss_temple?style=for-the-badge&color=a32d2a
+[license-badge]: LICENSE
+[release-badge-img]: https://img.shields.io/github/v/release/murrple-1/rss_temple?style=for-the-badge
+[release-badge]: https://github.com/murrple-1/rss_temple/releases
+[docker-pulls-badge-img]: https://img.shields.io/docker/pulls/murraychristopherson/rss_temple?style=for-the-badge&label=pulls
+[docker-pulls-badge]: https://hub.docker.com/r/murraychristopherson/rss_temple
+
+[kofi-donate-img]: https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_badge_red.png
+[kofi-donate]: https://ko-fi.com/murraychristopherson
