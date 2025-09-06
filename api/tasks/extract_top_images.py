@@ -25,6 +25,19 @@ def extract_top_images(
 ) -> int:
     count = 0
     for feed_entry in feed_entry_queryset:
+        # just in case this is being run in parallel and another process has already handled it
+        feed_entry.refresh_from_db(
+            fields=(
+                "has_top_image_been_processed",
+                "top_image_processing_attempt_count",
+                "top_image_src",
+            )
+        )
+
+        if feed_entry.has_top_image_been_processed:
+            count += 1
+            continue
+
         if (
             similar_feed_entry := FeedEntry.objects.exclude(uuid=feed_entry.uuid)
             .filter(url=feed_entry.url)
