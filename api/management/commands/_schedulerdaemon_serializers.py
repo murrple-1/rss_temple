@@ -65,6 +65,9 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
     )
     dbLimit = serializers.IntegerField(source="db_limit", default=50)
     since = serializers.CharField(allow_null=True, default=None)
+    largeBacklogThreshold = serializers.IntegerField(
+        source="large_backlog_threshold", default=200
+    )
 
     def create(self, validated_data: Any) -> Any:
         scheduler: BaseScheduler = self.context["scheduler"]
@@ -83,6 +86,7 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
                 "min_image_height": validated_data["min_image_height"],
                 "db_limit": validated_data["db_limit"],
                 "since": validated_data["since"],
+                "large_backlog_threshold": validated_data["large_backlog_threshold"],
             },
         )
         return job

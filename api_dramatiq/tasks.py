@@ -101,6 +101,7 @@ def extract_top_images(
     min_image_height=250,
     db_limit=50,
     since: str | None = None,
+    large_backlog_threshold=200,
     **kwargs: Any,
 ) -> None:
     since_ = (
@@ -110,6 +111,17 @@ def extract_top_images(
     )
     if timezone.is_naive(since_):
         since_ = timezone.make_aware(since_)
+
+    total_remaining = FeedEntry.objects.filter(
+        has_top_image_been_processed=False
+    ).count()
+    if total_remaining > large_backlog_threshold:
+        extract_top_images.logger.warning(
+            "large backlog alert: %d is larger than threshold %d",
+            total_remaining,
+            large_backlog_threshold,
+        )
+
     count = extract_top_images_(
         FeedEntry.objects.filter(has_top_image_been_processed=False)
         .filter(published_at__gte=since_)

@@ -18,6 +18,7 @@ class Command(BaseCommand):
         parser.add_argument("--min-image-width", type=int, default=256)
         parser.add_argument("--min-image-height", type=int, default=256)
         parser.add_argument("--response-max-byte-count", type=int, default=-1)
+        parser.add_argument("--large-backlog-threshold", type=int, default=200)
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         since = (
@@ -35,6 +36,14 @@ class Command(BaseCommand):
         self.stderr.write(
             self.style.NOTICE(f"{total_remaining} feed entries need processing")
         )
+
+        large_backlog_threshold = options["large_backlog_threshold"]
+        if total_remaining > large_backlog_threshold:
+            self.stderr.write(
+                self.style.WARNING(
+                    f"large backlog alert: {total_remaining} is larger than threshold {large_backlog_threshold}"
+                )
+            )
 
         qs = FeedEntry.objects.filter(has_top_image_been_processed=False).filter(
             published_at__gte=since
