@@ -41,7 +41,7 @@ class Command(BaseCommand):
         if total_remaining > large_backlog_threshold:
             self.stderr.write(
                 self.style.WARNING(
-                    f"large backlog alert: {total_remaining} is larger than threshold {large_backlog_threshold}"
+                    f"large extract-top-images backlog alert: {total_remaining} is larger than threshold {large_backlog_threshold}"
                 )
             )
 

@@ -117,7 +117,7 @@ def extract_top_images(
     ).count()
     if total_remaining > large_backlog_threshold:
         extract_top_images.logger.warning(
-            "large backlog alert: %d is larger than threshold %d",
+            "large extract-top-images backlog alert: %d is larger than threshold %d",
             total_remaining,
             large_backlog_threshold,
         )
