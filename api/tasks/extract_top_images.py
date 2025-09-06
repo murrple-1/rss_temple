@@ -125,7 +125,12 @@ def extract_top_images(
                 )
             else:
                 FeedEntry.objects.filter(uuid=feed_entry.uuid).update(
-                    top_image_src="", has_top_image_been_processed=True
+                    top_image_src="",
+                    has_top_image_been_processed=True,
+                    top_image_processing_attempt_count=F(
+                        "top_image_processing_attempt_count"
+                    )
+                    + 1,
                 )
                 count += 1
 
