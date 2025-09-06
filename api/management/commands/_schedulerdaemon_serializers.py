@@ -65,6 +65,9 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
     )
     dbLimit = serializers.IntegerField(source="db_limit", default=50)
     since = serializers.CharField(allow_null=True, default=None)
+    timeoutPerRequest = serializers.IntegerField(
+        source="timeout_per_request", default=5
+    )
     largeBacklogThreshold = serializers.IntegerField(
         source="large_backlog_threshold", default=200
     )
@@ -86,6 +89,7 @@ class _ExtractTopImagesSerializer(serializers.Serializer):
                 "min_image_height": validated_data["min_image_height"],
                 "db_limit": validated_data["db_limit"],
                 "since": validated_data["since"],
+                "timeout_per_request": validated_data["timeout_per_request"],
                 "large_backlog_threshold": validated_data["large_backlog_threshold"],
             },
         )

@@ -35,6 +35,7 @@ def extract_top_image_src(
     min_image_width=256,
     min_image_height=256,
     stop_words_language="english",
+    timeout_per_request=5,
 ) -> str | None:
     imgs = find_top_image_src_candidates(
         url,
@@ -43,6 +44,7 @@ def extract_top_image_src(
         min_image_width=min_image_width,
         min_image_height=min_image_height,
         stop_words_language=stop_words_language,
+        timeout_per_request=timeout_per_request,
     )
     if imgs:
         return imgs[0]
@@ -179,10 +181,11 @@ def _image_has_usable_image_dimensions(
     min_image_height: int,
     min_image_aspect: float,
     max_image_aspect: float,
+    timeout: int,
 ) -> tuple[int, int] | None:
     image_content: bytes
     try:
-        with rss_requests.get(img_src, stream=True) as image_response:
+        with rss_requests.get(img_src, stream=True, timeout=timeout) as image_response:
             try:
                 image_response.raise_for_status()
             except HTTPError as e:
@@ -254,6 +257,7 @@ def find_top_image_src_candidates(
     max_image_frequency=1,
     max_candidate_images=5,
     stop_words_language="english",
+    timeout_per_request=5,
 ):
     """
     Download the URL, parse HTML, and return a list of high-confidence banner/content image URLs,
@@ -323,6 +327,7 @@ def find_top_image_src_candidates(
                 min_image_height,
                 min_image_aspect,
                 max_image_aspect,
+                timeout_per_request,
             )
 
             if dim is None:
@@ -346,6 +351,7 @@ def find_top_image_src_candidates(
                 min_image_height,
                 min_image_aspect,
                 max_image_aspect,
+                timeout_per_request,
             )
 
             if dim is None:
@@ -383,6 +389,7 @@ def find_top_image_src_candidates(
             min_image_height,
             min_image_aspect,
             max_image_aspect,
+            timeout_per_request,
         )
 
         if dim is None:

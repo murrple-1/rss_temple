@@ -19,6 +19,7 @@ class Command(BaseCommand):
         parser.add_argument("--min-image-height", type=int, default=256)
         parser.add_argument("--response-max-byte-count", type=int, default=-1)
         parser.add_argument("--large-backlog-threshold", type=int, default=200)
+        parser.add_argument("--timeout-per-request", type=int, default=5)
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         since = (
@@ -59,6 +60,7 @@ class Command(BaseCommand):
                 options["min_image_width"],
                 options["min_image_height"],
                 options["response_max_byte_count"],
+                options["timeout_per_request"],
             )
             self.stderr.write(self.style.NOTICE(f"updated {count}/{total_remaining}"))
         except KeyboardInterrupt:

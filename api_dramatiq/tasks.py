@@ -101,6 +101,7 @@ def extract_top_images(
     min_image_height=250,
     db_limit=50,
     since: str | None = None,
+    timeout_per_request=5,
     large_backlog_threshold=200,
     **kwargs: Any,
 ) -> None:
@@ -132,6 +133,7 @@ def extract_top_images(
         min_image_width,
         min_image_height,
         response_max_byte_count,
+        timeout_per_request,
     )
     extract_top_images.logger.info("updated %d feed entry(s)", count)
 
