@@ -72,7 +72,7 @@ class TaskTestCase(TestFileServerTestCase):
         )
 
         count = extract_top_images(
-            FeedEntry.objects.select_related("language").all(), 3, 2000, 256, 256, -1
+            FeedEntry.objects.select_related("language").all(), 3, 2000, 256, 256, -1, 5
         )
 
         self.assertEqual(
