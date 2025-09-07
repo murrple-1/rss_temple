@@ -38,6 +38,7 @@ from api.tasks import label_users as label_users_
 from api.tasks import purge_duplicate_feed_urls as purge_duplicate_feed_urls_
 from api.tasks import purge_expired_data as purge_expired_data_
 from api.tasks import setup_subscriptions as setup_subscriptions_
+from api.tasks import ignore_missed_top_images as ignore_missed_top_images_
 from api.tasks.feed_scrape import (
     error_update_backoff_until as feed_scrape__error_update_backoff_until,
 )
@@ -300,3 +301,11 @@ def flag_duplicate_feeds(
 def purge_duplicate_feed_urls(*args: Any, **kwargs: Any) -> None:
     purge_duplicate_feed_urls_()
     purge_duplicate_feed_urls.logger.info("purged duplicate feed URLs")
+
+
+@dramatiq.actor(queue_name="rss_temple")
+def ignore_missed_top_images(*args: Any, since_interval_days=14, **kwargs: Any) -> None:
+    epoch = timezone.now() - datetime.timedelta(days=since_interval_days)
+
+    ignore_missed_top_images_(epoch)
+    ignore_missed_top_images.logger.info("ignored missed top images")

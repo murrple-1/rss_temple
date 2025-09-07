@@ -7,6 +7,7 @@ from .label_users import label_users
 from .purge_duplicate_feed_urls import purge_duplicate_feed_urls
 from .purge_expired_data import purge_expired_data
 from .setup_subscriptions import setup_subscriptions
+from .ignore_missed_top_images import ignore_missed_top_images
 
 __all__ = [
     "archive_feed_entries",
@@ -18,4 +19,5 @@ __all__ = [
     "feed_scrape",
     "setup_subscriptions",
     "find_duplicate_feeds",
+    "ignore_missed_top_images",
 ]

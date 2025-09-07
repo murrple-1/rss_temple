@@ -159,3 +159,20 @@ def purge_duplicate_feed_urls(
             options=options,
         )
     )
+
+
+def ignore_missed_top_images(
+    *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
+):
+    from dramatiq import Message
+
+    options = options or {}
+    broker.enqueue(
+        Message(
+            queue_name="rss_temple",
+            actor_name="ignore_missed_top_images",
+            args=args,
+            kwargs=kwargs,
+            options=options,
+        )
+    )

@@ -277,6 +277,30 @@ class _PurgeDuplicateFeedUrlsSerializer(serializers.Serializer):
         return job
 
 
+class _IgnoreMissedTopImagesSerializer(serializers.Serializer):
+    crontab = serializers.CharField(
+        default="0 0 * * *"
+    )  # every 1st and 15th, at midnight
+    sinceIntervalDays = serializers.IntegerField(
+        source="since_interval_days", default=14
+    )
+
+    def create(self, validated_data: Any) -> Any:
+        scheduler: BaseScheduler = self.context["scheduler"]
+        job = scheduler.add_job(
+            jobs.ignore_missed_top_images,
+            trigger=CronTrigger.from_crontab(validated_data["crontab"]),
+            id="ignore_missed_top_images",
+            max_instances=1,
+            replace_existing=True,
+            coalesce=True,
+            kwargs={
+                "since_interval_days": validated_data["since_interval_days"],
+            },
+        )
+        return job
+
+
 class SetupSerializer(serializers.Serializer):
     delete_old_job_executions = _DeleteOldJobExecutionsSerializer()
     archive_feed_entries = _ArchiveFeedEntriesSerializer()
@@ -288,6 +312,7 @@ class SetupSerializer(serializers.Serializer):
     purge_expired_data = _PurgeExpiredDataSerializer()
     flag_duplicate_feeds = _FlagDuplicateFeedsSerializer()
     purge_duplicate_feed_urls = _PurgeDuplicateFeedUrlsSerializer()
+    ignore_missed_top_images = _IgnoreMissedTopImagesSerializer()
 
     def create(self, validated_data: Any) -> Any:
         jobs: list[Any] = []
