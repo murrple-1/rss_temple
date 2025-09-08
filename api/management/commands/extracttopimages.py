@@ -46,22 +46,29 @@ class Command(BaseCommand):
                 )
             )
 
-        qs = FeedEntry.objects.filter(has_top_image_been_processed=False).filter(
-            published_at__gte=since
-        )
-
-        self.stderr.write(self.style.NOTICE(f"handling {qs.count()} feed entries..."))
-
-        try:
-            count = extract_top_images(
-                qs.order_by("-published_at").select_related("language").iterator(),
-                options["max_processing_attempts"],
-                options["min_image_byte_count"],
-                options["min_image_width"],
-                options["min_image_height"],
-                options["response_max_byte_count"],
-                options["timeout_per_request"],
+        if total_remaining > 0:
+            qs = FeedEntry.objects.filter(
+                has_top_image_been_processed=False, published_at__gte=since
             )
-            self.stderr.write(self.style.NOTICE(f"updated {count}/{total_remaining}"))
-        except KeyboardInterrupt:
-            pass
+
+            self.stderr.write(
+                self.style.NOTICE(f"handling {qs.count()} feed entries...")
+            )
+
+            try:
+                count = extract_top_images(
+                    qs.order_by("-published_at").select_related("language").iterator(),
+                    options["max_processing_attempts"],
+                    options["min_image_byte_count"],
+                    options["min_image_width"],
+                    options["min_image_height"],
+                    options["response_max_byte_count"],
+                    options["timeout_per_request"],
+                )
+                self.stderr.write(
+                    self.style.NOTICE(f"updated {count}/{total_remaining}")
+                )
+            except KeyboardInterrupt:
+                pass
+        else:
+            self.stderr.write(self.style.NOTICE("no entries need top images"))

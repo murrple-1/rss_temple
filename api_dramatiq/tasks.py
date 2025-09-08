@@ -124,19 +124,23 @@ def extract_top_images(
             large_backlog_threshold,
         )
 
-    count = extract_top_images_(
-        FeedEntry.objects.filter(has_top_image_been_processed=False)
-        .filter(published_at__gte=since_)
-        .order_by("-published_at")
-        .select_related("language")[:db_limit],
-        max_processing_attempts,
-        min_image_byte_count,
-        min_image_width,
-        min_image_height,
-        response_max_byte_count,
-        timeout_per_request,
-    )
-    extract_top_images.logger.info("updated %d feed entry(s)", count)
+    if total_remaining > 0:
+        count = extract_top_images_(
+            FeedEntry.objects.filter(
+                has_top_image_been_processed=False, published_at__gte=since_
+            )
+            .order_by("-published_at")
+            .select_related("language")[:db_limit],
+            max_processing_attempts,
+            min_image_byte_count,
+            min_image_width,
+            min_image_height,
+            response_max_byte_count,
+            timeout_per_request,
+        )
+        extract_top_images.logger.info("updated %d feed entry(s)", count)
+    else:
+        extract_top_images.logger.info("no entries need top images")
 
 
 @dramatiq.actor(queue_name="rss_temple")
