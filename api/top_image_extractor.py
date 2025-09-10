@@ -111,7 +111,7 @@ def _has_bad_alt_text(img_tag: Tag, page_title_keywords: frozenset[str]) -> bool
             return True
 
         if page_title_keywords:
-            alt_parts = alt.lower().split()
+            alt_parts = alt.casefold().split()
             if not any(kw in alt_parts for kw in page_title_keywords):
                 return True
 
@@ -129,7 +129,7 @@ def _is_img_tag_probably_bad(
     if _is_bad_url(src_url):
         return True
 
-    filename = src_url.split("/")[-1].lower()
+    filename = src_url.split("/")[-1]
     if _is_bad_filename(filename):
         return True
 
@@ -304,7 +304,7 @@ def find_top_image_src_candidates(
     page_title_keywords = frozenset(
         w
         for w in (
-            soup.title.string.lower() if soup.title and soup.title.string else ""
+            soup.title.string.casefold() if soup.title and soup.title.string else ""
         ).split()
         if w not in stop_words
     )
