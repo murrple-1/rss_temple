@@ -119,16 +119,18 @@ class GetManySerializerTestCase(SimpleTestCase):
         super().setUpClass()
 
         cls.old_query_utils_logger_level = logging.getLogger(
-            "query_utils"
+            "rss_temple.query_utils"
         ).getEffectiveLevel()
 
-        logging.getLogger("query_utils").setLevel(logging.CRITICAL)
+        logging.getLogger("rss_temple.query_utils").setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
 
-        logging.getLogger("query_utils").setLevel(cls.old_query_utils_logger_level)
+        logging.getLogger("rss_temple.query_utils").setLevel(
+            cls.old_query_utils_logger_level
+        )
 
     @staticmethod
     def _to_order_by_args(object_name: str, sort: str, default_sort_enabled: bool):
