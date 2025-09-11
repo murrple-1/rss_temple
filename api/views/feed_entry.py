@@ -38,6 +38,7 @@ from api.serializers import (
     QuerySerializer,
     StableQueryCreateSerializer,
     StableQueryMultipleSerializer,
+    TSConfigSerializer,
 )
 from query_utils import fields as fieldutils
 
@@ -77,6 +78,11 @@ class FeedEntryView(APIView):
 
         user = cast(User, request.user)
 
+        ts_config_serializer = TSConfigSerializer(data=request.data)
+        ts_config_serializer.is_valid(raise_exception=True)
+
+        setattr(request, "_ts_config", ts_config_serializer.validated_data["ts_config"])
+
         serializer = GetSingleSerializer(
             data=request.query_params,
             context={"object_name": _OBJECT_NAME, "request": request},
@@ -108,7 +114,8 @@ class FeedEntryView(APIView):
                         subscription_datas=subscription_datas,
                         read_feed_entry_uuids=read_feed_entry_uuids,
                         favorite_feed_entry_uuids=favorite_feed_entry_uuids,
-                    )
+                    ),
+                    ts_config_serializer.validated_data["ts_config"],
                 )
                 .only(*fieldutils.generate_only_fields(field_maps).union({"language"}))
                 .select_related("language")
@@ -146,6 +153,11 @@ class FeedEntriesQueryView(APIView):
 
         user = cast(User, request.user)
 
+        ts_config_serializer = TSConfigSerializer(data=request.data)
+        ts_config_serializer.is_valid(raise_exception=True)
+
+        setattr(request, "_ts_config", ts_config_serializer.validated_data["ts_config"])
+
         serializer = GetManySerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
@@ -180,7 +192,8 @@ class FeedEntriesQueryView(APIView):
                     subscription_datas=subscription_datas,
                     read_feed_entry_uuids=read_feed_entry_uuids,
                     favorite_feed_entry_uuids=favorite_feed_entry_uuids,
-                )
+                ),
+                ts_config_serializer.validated_data["ts_config"],
             )
             .filter(*search)
             .only(*fieldutils.generate_only_fields(field_maps).union({"language"}))
@@ -228,6 +241,11 @@ class FeedEntriesQueryStableCreateView(APIView):
 
         stable_query_cache: BaseCache = caches["stable_query"]
 
+        ts_config_serializer = TSConfigSerializer(data=request.data)
+        ts_config_serializer.is_valid(raise_exception=True)
+
+        setattr(request, "_ts_config", ts_config_serializer.validated_data["ts_config"])
+
         serializer = StableQueryCreateSerializer(
             data=request.data, context={"object_name": _OBJECT_NAME, "request": request}
         )
@@ -261,7 +279,8 @@ class FeedEntriesQueryStableCreateView(APIView):
                         subscription_datas=subscription_datas,
                         read_feed_entry_uuids=read_feed_entry_uuids,
                         favorite_feed_entry_uuids=favorite_feed_entry_uuids,
-                    )
+                    ),
+                    ts_config_serializer.validated_data["ts_config"],
                 )
                 .filter(*search)
                 .order_by(*sort)

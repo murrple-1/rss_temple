@@ -31,7 +31,8 @@ class AllSearchesTestCase(TestCase):
             "get_queryset": lambda: Feed.annotate_search_vectors(
                 Feed.annotate_subscription_data(
                     Feed.objects.all(), AllSearchesTestCase.user
-                )
+                ),
+                "english",
             ),
             "searches": {
                 "uuid": [str(uuid.uuid4())],
@@ -57,7 +58,8 @@ class AllSearchesTestCase(TestCase):
             "get_queryset": lambda: FeedEntry.annotate_search_vectors(
                 FeedEntry.annotate_user_data(
                     FeedEntry.objects.all(), AllSearchesTestCase.user
-                )
+                ),
+                "english",
             ),
             "searches": {
                 "uuid": [str(uuid.uuid4())],

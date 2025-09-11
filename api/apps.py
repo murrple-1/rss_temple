@@ -1,6 +1,7 @@
 import dramatiq
 from django.apps import AppConfig
 
+
 from api_dramatiq.broker import broker
 from api_dramatiq.encoder import UJSONEncoder
 
@@ -17,3 +18,7 @@ class ApiConfig(AppConfig):
 
         dramatiq.set_broker(broker)
         dramatiq.set_encoder(UJSONEncoder())
+
+        from api.pg_ts_config import load_pg_ts_configs
+
+        load_pg_ts_configs()

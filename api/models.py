@@ -279,16 +279,23 @@ class Feed(models.Model):
     is_subscribed: bool
 
     @staticmethod
-    def annotate_search_vectors(qs: models.QuerySet["Feed"]) -> models.QuerySet["Feed"]:
+    def annotate_search_vectors(
+        qs: models.QuerySet["Feed"], ts_config: str
+    ) -> models.QuerySet["Feed"]:
         if connection.vendor == "postgresql":  # pragma: no cover
-            from django.contrib.postgres.search import SearchVectorField
+            from django.contrib.postgres.search import SearchVectorField, SearchVector
             from django.db.models.expressions import RawSQL
 
-            qs = qs.annotate(
-                title_search_vector=RawSQL(
-                    "title_search_vector", [], output_field=SearchVectorField()
+            if ts_config in ("english",):
+                qs = qs.annotate(
+                    title_search_vector=RawSQL(
+                        "title_search_vector", [], output_field=SearchVectorField()
+                    )
                 )
-            )
+            else:
+                qs = qs.annotate(
+                    title_search_vector=SearchVector("title", config=ts_config)
+                )
 
         return qs
 
@@ -606,19 +613,26 @@ class FeedEntry(models.Model):
     @staticmethod
     def annotate_search_vectors(
         qs: models.QuerySet["FeedEntry"],
+        ts_config: str,
     ) -> models.QuerySet["FeedEntry"]:
         if connection.vendor == "postgresql":  # pragma: no cover
-            from django.contrib.postgres.search import SearchVectorField
+            from django.contrib.postgres.search import SearchVectorField, SearchVector
             from django.db.models.expressions import RawSQL
 
-            qs = qs.annotate(
-                title_search_vector=RawSQL(
-                    "title_search_vector", [], output_field=SearchVectorField()
-                ),
-                content_search_vector=RawSQL(
-                    "content_search_vector", [], output_field=SearchVectorField()
-                ),
-            )
+            if ts_config in ("english",):
+                qs = qs.annotate(
+                    title_search_vector=RawSQL(
+                        "title_search_vector", [], output_field=SearchVectorField()
+                    ),
+                    content_search_vector=RawSQL(
+                        "content_search_vector", [], output_field=SearchVectorField()
+                    ),
+                )
+            else:
+                qs = qs.annotate(
+                    title_search_vector=SearchVector("title", config=ts_config),
+                    content_search_vector=SearchVector("content", config=ts_config),
+                )
 
         return qs
 

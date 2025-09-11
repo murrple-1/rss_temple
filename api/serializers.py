@@ -29,6 +29,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.request import Request
 
+from api.pg_ts_config import get_known_pg_ts_configs
+
 try:
     from allauth.account import app_settings as allauth_account_settings
     from allauth.account.adapter import get_adapter
@@ -535,6 +537,18 @@ class _SearchField(serializers.Field):
 
     def to_representation(self, value: list[Q]):  # pragma: no cover
         return value
+
+
+class TSConfigSerializer(serializers.Serializer):
+    tsConfig = serializers.CharField(source="ts_config", default="english")
+
+    def validate_tsConfig(self, ts_config: str):
+        known_ts_configs = get_known_pg_ts_configs()
+        if known_ts_configs is not None:
+            if ts_config not in known_ts_configs:
+                raise serializers.ValidationError("ts_config not available")
+
+        return ts_config
 
 
 class GetSingleSerializer(serializers.Serializer):

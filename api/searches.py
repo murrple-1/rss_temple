@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.http import HttpRequest
 from lingua import Language
 from url_normalize import url_normalize
+from django.contrib.postgres.search import SearchQuery
 
 from api.models import AlternateFeedURL, ReadFeedEntryUserMapping, User
 from query_utils.search.convertto import (
@@ -224,13 +225,25 @@ search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]] = {
 
 if connection.vendor == "postgresql":  # pragma: no cover
     search_fns["feed"]["title"] = lambda request, search_obj: Q(
-        title_search_vector=search_obj
+        title_search_vector=SearchQuery(
+            search_obj,
+            search_type="websearch",
+            config=getattr(request, "_ts_config", "english"),
+        )
     )
     search_fns["feedentry"]["title"] = lambda request, search_obj: Q(
-        title_search_vector=search_obj
+        title_search_vector=SearchQuery(
+            search_obj,
+            search_type="websearch",
+            config=getattr(request, "_ts_config", "english"),
+        )
     )
     search_fns["feedentry"]["content"] = lambda request, search_obj: Q(
-        content_search_vector=search_obj
+        content_search_vector=SearchQuery(
+            search_obj,
+            search_type="websearch",
+            config=getattr(request, "_ts_config", "english"),
+        )
     )
 else:
     search_fns["feed"]["title"] = lambda request, search_obj: Q(
