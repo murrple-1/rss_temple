@@ -286,6 +286,7 @@ class Feed(models.Model):
             from django.contrib.postgres.search import SearchVectorField, SearchVector
             from django.db.models.expressions import RawSQL
 
+            # TODO can I do this better?
             if ts_config in ("english",):
                 qs = qs.annotate(
                     title_search_vector=RawSQL(
@@ -619,6 +620,7 @@ class FeedEntry(models.Model):
             from django.contrib.postgres.search import SearchVectorField, SearchVector
             from django.db.models.expressions import RawSQL
 
+            # TODO can I do this better?
             if ts_config in ("english",):
                 qs = qs.annotate(
                     title_search_vector=RawSQL(
