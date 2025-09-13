@@ -1,7 +1,6 @@
 import dramatiq
 from django.apps import AppConfig
 
-
 from api_dramatiq.broker import broker
 from api_dramatiq.encoder import UJSONEncoder
 
