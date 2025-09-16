@@ -13,7 +13,6 @@
 [![license-badge-img]][license-badge]
 [![release-badge-img]][release-badge]
 [![Docker][docker-pulls-badge-img]][docker-pulls-badge]
-
 [![CircleCI][circleci-badge-img]][circleci-badge]
 [![codecov][codecov-badge-img]][codecov-badge]
 
@@ -64,9 +63,9 @@ Consider supporting the development of this project on Ko-Fi. All funds will be 
 </a>
 
 
-[circleci-badge-img]: https://dl.circleci.com/status-badge/img/gh/murrple-1/rss_temple/tree/master.svg?style=svg
+[circleci-badge-img]: https://img.shields.io/circleci/build/github/murrple-1/rss_temple?style=for-the-badge
 [circleci-badge]: https://dl.circleci.com/status-badge/redirect/gh/murrple-1/rss_temple/tree/master
-[codecov-badge-img]: https://codecov.io/gh/murrple-1/rss_temple/branch/master/graph/badge.svg
+[codecov-badge-img]: https://img.shields.io/codecov/c/github/murrple-1/rss_temple?style=for-the-badge
 [codecov-badge]: https://codecov.io/gh/murrple-1/rss_temple
 
 [license-badge-img]: https://img.shields.io/github/license/murrple-1/rss_temple?style=for-the-badge&color=a32d2a
