@@ -12,7 +12,8 @@
 
 [![license-badge-img]][license-badge]
 [![release-badge-img]][release-badge]
-[![docker-pulls-badge-img]][docker-pulls-badge]
+[![Docker][docker-pulls-badge-img]][docker-pulls-badge]
+
 [![CircleCI][circleci-badge-img]][circleci-badge]
 [![codecov][codecov-badge-img]][codecov-badge]
 
