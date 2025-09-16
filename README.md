@@ -44,7 +44,8 @@ RSS Temple is a fast, powerful, and self-hostable RSS/Atom reader, with a light,
 
 |                                       🖥 Desktop                                       |                                                           📱 Mobile                                                            |
 | :------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------: |
-| <img src=".github/resources/screenshots/preview-desktop.png" alt="desktop preview" /> | <img style="width: 325px; aspect-ratio: auto;" src=".github/resources/screenshots/preview-mobile.png" alt="mobile preview" /> |
+| <img src=".github/resources/screenshots/preview-desktop.png" alt="desktop preview" /> | <img style="width: 500px; aspect-ratio: auto;" src=".github/resources/screenshots/preview-mobile.png" alt="mobile preview" /> |
+| <img src=".github/resources/screenshots/preview-desktop-dark.png" alt="desktop preview dark" /> | <img style="width: 500px; aspect-ratio: auto;" src=".github/resources/screenshots/preview-mobile-dark.png" alt="mobile preview dark" /> |
 
 # Installation
 
