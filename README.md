@@ -62,15 +62,13 @@ Consider supporting the development of this project on Ko-Fi. All funds will be 
   <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_badge_red.png" width="150" height="auto" alt="Ko-Fi">
 </a>
 
-
-[circleci-badge-img]: https://img.shields.io/circleci/build/github/murrple-1/rss_temple?style=for-the-badge
-[circleci-badge]: https://dl.circleci.com/status-badge/redirect/gh/murrple-1/rss_temple/tree/master
-[codecov-badge-img]: https://img.shields.io/codecov/c/github/murrple-1/rss_temple?style=for-the-badge
-[codecov-badge]: https://codecov.io/gh/murrple-1/rss_temple
-
 [license-badge-img]: https://img.shields.io/github/license/murrple-1/rss_temple?style=for-the-badge&color=a32d2a
 [license-badge]: LICENSE
 [release-badge-img]: https://img.shields.io/github/v/release/murrple-1/rss_temple?style=for-the-badge
 [release-badge]: https://github.com/murrple-1/rss_temple/releases
 [docker-pulls-badge-img]: https://img.shields.io/docker/pulls/murraychristopherson/rss_temple?style=for-the-badge&label=pulls
 [docker-pulls-badge]: https://hub.docker.com/r/murraychristopherson/rss_temple
+[circleci-badge-img]: https://img.shields.io/circleci/build/github/murrple-1/rss_temple?style=for-the-badge
+[circleci-badge]: https://dl.circleci.com/status-badge/redirect/gh/murrple-1/rss_temple/tree/master
+[codecov-badge-img]: https://img.shields.io/codecov/c/github/murrple-1/rss_temple?style=for-the-badge
+[codecov-badge]: https://codecov.io/gh/murrple-1/rss_temple
