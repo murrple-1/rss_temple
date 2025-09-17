@@ -49,7 +49,21 @@ RSS Temple is a fast, powerful, and self-hostable RSS/Atom reader, with a light,
 
 # Installation
 
-// TODO
+## Ansible (recommended)
+
+Assuming you want to install everything on your current (local) machine:
+
+```bash
+ansible-galaxy collection install murrple_1.rss_temple
+ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.pre_rss_temple
+ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple
+ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_home
+ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_web_app
+```
+
+## Manual
+
+*TODO write this part*
 
 # Technical Support
 
