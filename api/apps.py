@@ -17,7 +17,3 @@ class ApiConfig(AppConfig):
 
         dramatiq.set_broker(broker)
         dramatiq.set_encoder(UJSONEncoder())
-
-        from api.pg_ts_config import load_pg_ts_configs
-
-        load_pg_ts_configs()

@@ -56,7 +56,7 @@ from api.serializers import (
     FeedSubscribeSerializer,
     GetManySerializer,
     QuerySerializer,
-    TSConfigSerializer,
+    LocaleSerializer,
 )
 from api.text_classifier.lang_detector import detect_iso639_3
 from api.text_classifier.prep_content import prep_for_lang_detection
@@ -446,10 +446,10 @@ class FeedsQueryView(APIView):
 
         user = cast(User, request.user)
 
-        ts_config_serializer = TSConfigSerializer(data=request.data)
-        ts_config_serializer.is_valid(raise_exception=True)
+        locale_serializer = LocaleSerializer(data=request.data)
+        locale_serializer.is_valid(raise_exception=True)
 
-        setattr(request, "_ts_config", ts_config_serializer.validated_data["ts_config"])
+        setattr(request, "_ts_config", locale_serializer.get_ts_config())
 
         serializer = GetManySerializer(
             data=request.data,
@@ -477,7 +477,7 @@ class FeedsQueryView(APIView):
                     user,
                     subscription_datas=subscription_datas,
                 ),
-                ts_config_serializer.validated_data["ts_config"],
+                getattr(request, "_ts_config"),
             )
             .filter(*search)
             .only(*fieldutils.generate_only_fields(field_maps))

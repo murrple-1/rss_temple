@@ -29,7 +29,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.request import Request
 
-from api.pg_ts_config import get_known_pg_ts_configs
+from api.pg_ts_config import locale_to_ts_config
 
 try:
     from allauth.account import app_settings as allauth_account_settings
@@ -539,16 +539,14 @@ class _SearchField(serializers.Field):
         return value
 
 
-class TSConfigSerializer(serializers.Serializer):
-    tsConfig = serializers.CharField(source="ts_config", default="english")
+class LocaleSerializer(serializers.Serializer):
+    locale = serializers.CharField(default="en")
 
-    def validate_tsConfig(self, ts_config: str):
-        known_ts_configs = get_known_pg_ts_configs()
-        if known_ts_configs is not None:
-            if ts_config not in known_ts_configs:
-                raise serializers.ValidationError("ts_config not available")
-
-        return ts_config
+    def get_ts_config(self):
+        try:
+            return locale_to_ts_config(self.validated_data["locale"])
+        except KeyError:
+            raise serializers.ValidationError("locale not available")
 
 
 class GetSingleSerializer(serializers.Serializer):
