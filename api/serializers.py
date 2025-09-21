@@ -540,7 +540,7 @@ class _SearchField(serializers.Field):
 
 
 class LocaleSerializer(serializers.Serializer):
-    locale = serializers.CharField(default="en")
+    locale = serializers.CharField(default="en-US")
 
     def get_ts_config(self):
         try:
