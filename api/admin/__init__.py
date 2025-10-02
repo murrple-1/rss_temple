@@ -53,6 +53,7 @@ class UserAdmin(UserAdmin_):
     exclude = ["read_feed_entries", "favorite_feed_entries"]
     inlines = [SubscribedFeedsInline]
     ordering = ["email"]
+    readonly_fields = ["created_at"]
     fieldsets = (
         (None, {"fields": ("email", "password", "last_login")}),
         (
@@ -62,9 +63,19 @@ class UserAdmin(UserAdmin_):
                     "is_active",
                     "is_staff",
                     "is_superuser",
-                    "groups",
-                    "user_permissions",
+                    # not used right now
+                    # "groups",
+                    # "user_permissions",
                 ),
+            },
+        ),
+        (
+            "Additional",
+            {
+                "fields": (
+                    "created_at",
+                    "attributes",
+                )
             },
         ),
     )
