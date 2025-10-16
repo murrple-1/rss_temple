@@ -1,4 +1,4 @@
-FROM python:3.13-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 ARG BUILD_ENV
 ENV BUILD_ENV=${BUILD_ENV} \
@@ -13,7 +13,7 @@ WORKDIR /venv
 RUN pipenv requirements $(test "$BUILD_ENV" != "production" && echo "--dev") > requirements.txt && \
     /venv/bin/pip install -r requirements.txt
 
-FROM python:3.13-alpine AS production
+FROM python:3.14-alpine AS production
 
 RUN apk add ffmpeg espeak jemalloc postgresql-libs && \
     rm -rf /var/cache/apk/*
