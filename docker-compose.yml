@@ -4,12 +4,12 @@ services:
     networks:
       - rss_temple_net
   postgresql:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     shm_size: '256m'
     env_file:
       - .env
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/
     networks:
       - rss_temple_net
   caddy:
