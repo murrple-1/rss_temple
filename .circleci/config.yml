@@ -24,7 +24,8 @@ jobs:
     docker:
       - image: docker:20
     steps:
-      - checkout
+      - checkout:
+          method: blobless
       - setup_remote_docker
       - run:
           name: Docker Build
@@ -68,7 +69,8 @@ jobs:
         environment:
           PIPENV_VERBOSITY: -1
     steps:
-      - checkout
+      - checkout:
+          method: blobless
       - restore_cache:
           key: dependency-cache-{{ checksum "Pipfile.lock" }}
       - run:
@@ -98,7 +100,8 @@ jobs:
         environment:
           PIPENV_VERBOSITY: -1
     steps:
-      - checkout
+      - checkout:
+          method: blobless
       - restore_cache:
           key: dependency-cache-{{ checksum "Pipfile.lock" }}
       - run:
