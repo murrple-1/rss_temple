@@ -34,7 +34,9 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="duplicatefeedsuggestion",
             constraint=models.CheckConstraint(
-                check=models.Q(("feed1_id__lt", models.F("feed2_id")), _negated=True),
+                condition=models.Q(
+                    ("feed1_id__lt", models.F("feed2_id")), _negated=True
+                ),
                 name="duplicatefeedsuggestion__check__feed1_id__feed2_id__lessthan",
             ),
         ),

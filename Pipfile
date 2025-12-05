@@ -40,7 +40,6 @@ dramatiq = {version = "*", extras = ["redis", "watch"]}
 apscheduler = "*"
 django-apscheduler = "*"
 python-redis-lock = {version = "*", extras = ["django"]}
-django-csp = "*"
 django-silk = "*"
 uuid7 = "*"
 stop-words = "*"

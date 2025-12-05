@@ -2,6 +2,8 @@ import datetime
 import os
 from pathlib import Path
 
+from django.utils.csp import CSP
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -55,7 +57,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "csp.middleware.CSPMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "silk.middleware.SilkyMiddleware",
 ]
 
@@ -269,6 +271,20 @@ CSRF_COOKIE_SECURE = os.getenv("APP_CSRF_COOKIE_SECURE", "true") == "true"
 CSRF_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_DOMAIN = os.getenv("APP_CSRF_COOKIE_DOMAIN", "localhost")
 
+SECURE_CSP = {
+    "img-src": (CSP.SELF, "data:", "cdn.redoc.ly", "cdn.jsdelivr.net"),
+    "style-src-elem": (
+        CSP.SELF,
+        CSP.UNSAFE_INLINE,
+        "fonts.googleapis.com",
+        "cdn.jsdelivr.net",
+    ),
+    "script-src-elem": (CSP.SELF, CSP.UNSAFE_INLINE, "cdn.jsdelivr.net"),
+    "script-src-attr": (CSP.SELF, CSP.UNSAFE_INLINE),
+    "worker-src": (CSP.SELF, "blob:"),
+    "font-src": (CSP.SELF, "fonts.gstatic.com"),
+}
+
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
@@ -356,19 +372,6 @@ SPECTACULAR_SETTINGS = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
-
-# django-csp
-CSP_IMG_SRC = ("'self'", "data:", "cdn.redoc.ly", "cdn.jsdelivr.net")
-CSP_STYLE_SRC_ELEM = (
-    "'self'",
-    "'unsafe-inline'",
-    "fonts.googleapis.com",
-    "cdn.jsdelivr.net",
-)
-CSP_SCRIPT_SRC_ELEM = ("'self'", "'unsafe-inline'", "cdn.jsdelivr.net")
-CSP_SCRIPT_SRC_ATTR = ("'self'", "'unsafe-inline'")
-CSP_WORKER_SRC = ("'self'", "blob:")
-CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
 
 # django-silk
 SILKY_INTERCEPT_PERCENT = int(os.getenv("APP_SILK_INTERCEPT_PERCENT", "50"))

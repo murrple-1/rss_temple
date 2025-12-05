@@ -484,7 +484,7 @@ class DuplicateFeedSuggestion(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(feed1_id__lt=models.F("feed2_id")),
+                condition=~models.Q(feed1_id__lt=models.F("feed2_id")),
                 name="duplicatefeedsuggestion__check__feed1_id__feed2_id__lessthan",
             ),
             models.UniqueConstraint(
