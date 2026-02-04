@@ -30,7 +30,7 @@ drf-spectacular = {version = "*", extras = ["sidecar"]}
 # pinned until integration with django-allauth fixed (last checked at 5.0.1)
 # issue https://github.com/iMerica/dj-rest-auth/issues/503
 dj-rest-auth = ">=4.0.1,<5.0.0"
-django-allauth = ">=0.40.0,<0.55.0"
+django-allauth = ">=0.40.0,<65.14.0"
 # end pinning
 drf_ujson2 = "*"
 captcha = "*"
