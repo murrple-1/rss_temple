@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "858dfbf5537c30c1385d4f0102ad710a9b99166d4b35b624d83f691fb1abf5c1"
+            "sha256": "37a3860158d46e8910d8740760a3d2325e4b57f8e834835a0ff786535a063429"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -445,11 +445,12 @@
         },
         "django-allauth": {
             "hashes": [
-                "sha256:120e265f802b65738899c6cb627b827fde46a4d03067034c633f516c2adf3e3e"
+                "sha256:204d8a07f217c41769a62aa4c7ae7afeb2886c841bebda6964e613e5be72e8b3",
+                "sha256:2467656d0adc835607e407847054979ab5a943778f6eb8980ed2a29eee6c5790"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.7'",
-            "version": "==0.54.0"
+            "markers": "python_version >= '3.8'",
+            "version": "==65.14.1"
         },
         "django-apscheduler": {
             "hashes": [
