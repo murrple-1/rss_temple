@@ -35,7 +35,11 @@ RSS Temple is a fast, powerful, and self-hostable RSS/Atom reader, with a light,
 
 It was original written as a personal attempt to reproduce the feeling of [Google Reader](https://en.wikipedia.org/wiki/Google_Reader), but with some of the features that I liked from [Feedly](https://feedly.com), without needing to pay the subscription cost.
 
-The official deployment of this project is at [rsstemple.com](https://rsstemple.com), but I have no issue with this project being forked or redeployed. My hope is that one day, this project be fully home-lab ready - so please, open a PR to help make this a reality.
+The official deployment of this project is at [rsstemple.com](https://rsstemple.com), but I have no issue with this project being forked or redeployed.
+
+My hope is that one day, this project be fully home-lab ready - so please, open a PR to help make this a reality.
+
+---
 
 It is made up of 3 projects - a landing page, an app frontend, and an app backend.
 
