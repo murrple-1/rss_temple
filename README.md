@@ -97,8 +97,8 @@ Create a directory `/opt/rss_temple/rss_temple_infra/`.
 
 In the new directory, create the following files:
 
-`docker-compose.yml`
-```yml
+`/opt/rss_temple/rss_temple_infra/docker-compose.yml`
+```yaml
 services:
   caddy:
     image: caddy:latest
@@ -119,7 +119,7 @@ networks:
     external: true
 ```
 
-`Caddyfile`
+`/opt/rss_temple/rss_temple_infra/Caddyfile`
 ```
 https://api.rsstemple.com {
   log
@@ -158,7 +158,135 @@ Start the containers with `docker compose up -d`.
 
 ### RSS Temple Backend
 
-*TODO write this*
+Create a directory `/opt/rss_temple/rss_temple/`, and also `/opt/rss_temple/rss_temple/overrides/` and `/opt/rss_temple/rss_temple/mount/`.
+
+Create the following files:
+
+`/opt/rss_temple/rss_temple/docker-compose.yml`
+```yaml
+x-rss-temple-image: &rss-temple-image
+  image: 'murraychristopherson/rss_temple:latest'
+
+services:
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: valkey-server /usr/local/etc/valkey/valkey.conf
+    restart: always
+    volumes:
+      - ./overrides/valkey.conf:/usr/local/etc/valkey/valkey.conf
+    networks:
+      - rss_temple_net
+  postgresql:
+    image: postgres:18-alpine
+    restart: always
+    shm_size: '256m'
+    expose:
+      - '5432'
+    env_file:
+      - .env
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    networks:
+      - rss_temple_net
+  caddy-rss_temple:
+    image: caddy:2-alpine
+    restart: always
+    expose:
+      - '8000'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data/
+      - django_static:/srv/
+    networks:
+      - rss_temple_net
+      - global_rss_temple_net
+  rss_temple:
+    <<: *rss-temple-image
+    command: >
+      sh -c "
+        while ! python ./manage.py checkready; do
+          sleep 0.1
+        done
+
+        python ./manage.py collectstatic --noinput &
+
+        python ./manage.py migrate
+
+        exec gunicorn \\
+          -b 0.0.0.0:8000 \\
+          rss_temple.wsgi:application
+      "
+    restart: always
+    environment:
+      APP_IN_DOCKER: 'true'
+      MALLOC_CONF: background_thread:true,max_background_threads:1,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
+      #APP_DEBUG: 'true'
+      #APP_DJANGO_DB_BACKEND_LOG_LEVEL: DEBUG
+    env_file:
+      - .env
+    volumes:
+      - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
+      - ./overrides/gunicorn.conf.py:/code/gunicorn.conf.py
+      - ./mount/:/code/mount/
+      - django_static:/code/_static/
+    networks:
+      - default  # necessary, because functionality requires making calls to the external internet
+      - rss_temple_net
+  rss_temple_dramatiq:
+    <<: *rss-temple-image
+    command: dramatiq api_dramatiq.main -Q rss_temple
+    restart: always
+    environment:
+      APP_IN_DOCKER: 'true'
+      MALLOC_CONF: background_thread:true,max_background_threads:1,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
+    env_file:
+      - .env
+    volumes:
+      - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
+      - ./mount/:/code/mount/
+    networks:
+      - default  # necessary, because functionality requires making calls to the external internet
+      - rss_temple_net
+  rss_temple_schedulerdaemon:
+    <<: *rss-temple-image
+    command: >
+      sh -c "
+        while ! python ./manage.py checkready; do
+          sleep 0.1
+        done
+
+        while ! python ./manage.py migrate --check; do
+          sleep 5
+        done
+
+        python ./manage.py checkclassifierlabels
+
+        exec python ./manage.py schedulerdaemon /schedulerdaemon.json
+      "
+    restart: always
+    environment:
+      APP_IN_DOCKER: 'true'
+      MALLOC_CONF: background_thread:true,max_background_threads:1,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
+    env_file:
+      - .env
+    volumes:
+      - ./schedulerdaemon.json:/schedulerdaemon.json
+      - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
+      - ./mount/:/code/mount/
+    networks:
+      - rss_temple_net
+volumes:
+  db_data:
+  caddy_data:
+  django_static:
+networks:
+  global_rss_temple_net:
+    external: true
+  rss_temple_net:
+    internal: true
+```
+
+*TODO finish this*
 
 ### RSS Temple Frontend
 
