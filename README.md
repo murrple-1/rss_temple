@@ -66,16 +66,99 @@ Additionally, there is an Ansible collection (code available [here](https://gith
 Assuming you want to install everything on your current (local) machine:
 
 ```bash
+# install the Ansible collection
 ansible-galaxy collection install murrple_1.rss_temple
+# sets up the shared infrastructure for the 3 projects
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.pre_rss_temple
+# deploy the app backend
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple
+# deploy the landing page
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_home
+# deploy the app frontent
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_web_app
 ```
 
 ## Manual
 
-*TODO write this part*
+### RSS Temple Infrastructure
+
+Ensure [Docker](https://docs.docker.com/engine/install/) is installed.
+
+```bash
+# create the shared Docker network
+docker network create global_rss_temple_net
+```
+
+Create a directory `/opt/rss_temple/rss_temple_infra/`.
+
+In the new directory, create the following files:
+
+`docker-compose.yml`
+```yml
+services:
+  caddy:
+    image: caddy:latest
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy_data:/data/
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - default
+      - global_rss_temple_net
+volumes:
+  caddy_data:
+networks:
+  global_rss_temple_net:
+    external: true
+```
+
+`Caddyfile`
+```
+https://api.rsstemple.com {
+  log
+
+  encode gzip
+
+  reverse_proxy caddy-rss_temple:8000
+}
+
+http://api.rsstemple.com {
+  respond "The API is only accessible over HTTPS" 403 {
+    close
+  }
+}
+
+app.rsstemple.com {
+  log
+
+  encode gzip
+
+  reverse_proxy caddy-rss_temple_web_app:4200
+}
+
+rsstemple.com {
+  log
+
+  encode gzip
+
+  reverse_proxy caddy-rss_temple_home:3000
+}
+```
+
+Replace `rsstemple.com` with your top-level domain.
+
+Start the containers with `docker compose up -d`.
+
+### RSS Temple Backend
+
+*TODO write this*
+
+### RSS Temple Frontend
+
+*TODO write this*
 
 # Technical Support
 
