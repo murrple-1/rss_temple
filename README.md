@@ -76,10 +76,10 @@ ansible-galaxy collection install murrple_1.rss_temple
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.pre_rss_temple
 # deploy the app backend
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple
+# deploy the app frontend
+ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_web_app
 # deploy the landing page
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_home
-# deploy the app frontent
-ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_web_app
 ```
 
 ## Manual
@@ -289,6 +289,10 @@ networks:
 *TODO finish this*
 
 ### RSS Temple Frontend
+
+*TODO write this*
+
+### RSS Temple Landing Page
 
 *TODO write this*
 
