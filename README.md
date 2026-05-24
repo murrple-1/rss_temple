@@ -39,11 +39,9 @@ The official deployment of this project is at [rsstemple.com](https://rsstemple.
 
 It is made up of 3 projects - a landing page, an app frontend, and an app backend.
 
-The landing page code can be found [here](https://github.com/murrple-1/rss_temple_ui/tree/master/rss-temple-home).
-
-The app frontend code can be found [here](https://github.com/murrple-1/rss_temple_ui/tree/master/rss-temple-web-app).
-
-The backend code can be found [here](https://github.com/murrple-1/rss_temple).
+* The landing page code can be found [here](https://github.com/murrple-1/rss_temple_ui/tree/master/rss-temple-home).
+* The app frontend code can be found [here](https://github.com/murrple-1/rss_temple_ui/tree/master/rss-temple-web-app).
+* The backend code can be found [here](https://github.com/murrple-1/rss_temple).
 
 Additionally, there is an Ansible collection (code available [here](https://github.com/murrple-1/ansible-collection-rss-temple), Ansible Galaxy deployment [here](https://galaxy.ansible.com/ui/repo/published/murrple_1/rss_temple/)) and a Terraform project (available [here](https://github.com/murrple-1/terraform-rss-temple)) which are intended to make deployment as easy as possible.
 
