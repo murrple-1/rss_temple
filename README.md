@@ -95,13 +95,13 @@ docker network create global_rss_temple_net
 
 Create a directory `/opt/rss_temple/rss_temple_infra/`.
 
-In the new directory, create the following files:
+In the new directory, create the following files - editing them as needed:
 
 `/opt/rss_temple/rss_temple_infra/docker-compose.yml`
 ```yaml
 services:
   caddy:
-    image: caddy:latest
+    image: caddy:2-alpine
     restart: always
     ports:
       - '80:80'
@@ -160,7 +160,7 @@ Start the containers with `docker compose up -d`.
 
 Create a directory `/opt/rss_temple/rss_temple/`, and also `/opt/rss_temple/rss_temple/overrides/` and `/opt/rss_temple/rss_temple/mount/`.
 
-Create the following files:
+Create the following files - editing them as needed:
 
 `/opt/rss_temple/rss_temple/docker-compose.yml`
 ```yaml
@@ -286,11 +286,227 @@ networks:
     internal: true
 ```
 
-*TODO finish this*
+`/opt/rss_temple/rss_temple/.env`
+```sh
+TZ=UTC
+DJANGO_SETTINGS_MODULE=rss_temple.settings
+
+POSTGRES_PASSWORD='CHANGE_ME_POSTGRES_PASSWORD'
+
+APP_DEBUG=False
+
+APP_DB_HOST=postgresql
+APP_DB_USER=postgres
+APP_DB_PASSWORD='CHANGE_ME_POSTGRES_PASSWORD'
+
+APP_REDIS_URL=redis://valkey:6379
+
+APP_SECRET_KEY='CHANGE_ME_SECRET_KEY'
+
+APP_SESSION_COOKIE_DOMAIN=.rsstemple.com
+APP_CSRF_TRUSTED_ORIGINS=https://api.rsstemple.com,https://app.rsstemple.com
+APP_CSRF_COOKIE_DOMAIN=.rsstemple.com
+
+APP_EMAIL_HOST=
+APP_EMAIL_PORT=587
+APP_EMAIL_HOST_USER=
+APP_EMAIL_HOST_PASSWORD=
+APP_EMAIL_USE_TLS=True
+APP_EMAIL_USE_SSL=False
+APP_EMAIL_TIMEOUT=10.0
+APP_DEFAULT_FROM_EMAIL=
+
+APP_ACCOUNT_CONFIRM_EMAIL_URL='https://app.rsstemple.com/verify?token=%(key)s'
+APP_ACCOUNT_EMAIL_VERIFICATION_SENT_URL=https://app.rsstemple.com/emailsent
+APP_PASSWORD_RESET_CONFIRM_URL_FORMAT='https://app.rsstemple.com/resetpassword?token=%(token)s&userId=%(userId)s'
+APP_SOCIAL_CONNECTIONS_URL=https://app.rsstemple.com/main/profile
+APP_SOCIAL_SIGNUP_URL=https://app.rsstemple.com/register
+```
+
+Replace `rsstemple.com` with your top-level domain.
+
+Generate, or otherwise replace, the passwords/secret keys (values start with `'CHANGE_ME_'`) with secure alternatives.
+
+> *TODO*: I should integrate some secret management.
+
+You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
+
+`/opt/rss_temple/rss_temple/schedulerdaemon.json`
+```json
+{
+    "archive_feed_entries": {},
+    "delete_old_job_executions": {},
+    "extract_top_images": {},
+    "feed_scrape": {},
+    "flag_duplicate_feeds": {},
+    "label_feeds": {},
+    "label_users": {},
+    "purge_duplicate_feed_urls": {},
+    "purge_expired_data": {},
+    "setup_subscriptions": {},
+    "ignore_missed_top_images": {}
+}
+```
+
+`/opt/rss_temple/rss_temple/Caddyfile`
+```
+:8000 {
+        encode gzip
+
+        @nocache {
+                path *.manifest *.appcache *.html *.xml *.json
+        }
+        header @nocache {
+                ?Cache-Control "no-cache"
+        }
+
+        @yearcache {
+                path *.css *.js
+        }
+        header @yearcache {
+                ?Cache-Control "max-age=31536000"
+        }
+
+        handle_path /static* {
+                root * /srv
+                file_server
+        }
+
+        @web {
+                path *
+        }
+        reverse_proxy @web rss_temple:8000
+}
+```
+
+`/opt/rss_temple/rss_temple/overrides/local_settings.py`
+```python
+import warnings
+
+from html5lib.constants import DataLossWarning
+
+warnings.simplefilter("ignore", category=DataLossWarning)
+```
+
+`/opt/rss_temple/rss_temple/overrides/gunicorn.conf.py`
+```python
+worker_class = "gthread"
+capture_output = True
+accesslog = "-"
+```
+
+`/opt/rss_temple/rss_temple/overrides/valkey.conf`
+```
+maxmemory 0
+maxmemory-policy noeviction
+```
+
+Start the containers with `docker compose up -d`.
 
 ### RSS Temple Frontend
 
-*TODO write this*
+Create a directory `/opt/rss_temple/rss_temple_web_app/`, and also `/opt/rss_temple/rss_temple_web_app/custom_html/`.
+
+In the new directory, create the following files - editing them as needed:
+
+`/opt/rss_temple/rss_temple_web_app/docker-compose.yml`
+```yaml
+x-rss-temple-web-app-image: &rss-temple-web-app-image
+  image: 'murraychristopherson/rss_temple_web_app:latest'
+
+services:
+  caddy-rss_temple_web_app:
+    <<: *rss-temple-web-app-image
+    command: >
+      ash -c "
+        if [ -e /custom_html/index.head.html ]; then
+          echo 'customizing /srv/index.html...'
+          sed -i -e \"/<!-- DEPLOYMENT HEAD START -->/,/<!-- DEPLOYMENT HEAD END -->/{/<!-- DEPLOYMENT HEAD START -->/{r /custom_html/index.head.html
+      p};/<!-- DEPLOYMENT HEAD END -->/!d}\" /srv/index.html
+          echo 'done'
+        fi
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+      "
+    restart: always
+    expose:
+      - '4200'
+    volumes:
+      - caddy_data:/data/
+      - caddy_config:/config/
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./config.json:/srv/assets/config.json
+      - ./custom_html/:/custom_html/
+    networks:
+      - rss_temple_web_app_net
+      - global_rss_temple_net
+volumes:
+  caddy_data:
+  caddy_config:
+networks:
+  global_rss_temple_net:
+    external: true
+  rss_temple_web_app_net:
+    internal: true
+```
+
+`/opt/rss_temple/rss_temple_web_app/Caddyfile`
+```
+:4200 {
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Content-Security-Policy "default-src 'none'; script-src 'self' apis.google.com connect.facebook.net; connect-src 'self' *.rsstemple.com www.facebook.com; img-src * data: blob:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; font-src 'self' data:; frame-src *; media-src blob:"
+    X-XSS-Protection "1"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  }
+
+  root * /srv/
+  file_server
+  try_files {path} /index.html
+}
+```
+
+`/opt/rss_temple/rss_temple_web_app/config.json`
+```json
+{
+  "apiHost": "https://api.rsstemple.com",
+  "clientRepoUrl": "https://github.com/murrple-1/rss_temple_ui",
+  "facebookAppId": "CHANGE_ME_FACEBOOK_APP_ID",
+  "googleClientId": "CHANGE_ME_GOOGLE_CLIENT_ID",
+  "issueTrackerUrl": "https://github.com/murrple-1/rss_temple/issues",
+  "onboardingYoutubeEmbededUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+  "serverRepoUrl": "https://github.com/murrple-1/rss_temple",
+  "privacyPolicyUrl": "https://rsstemple.com/privacy",
+  "tosUrl": "https://rsstemple.com/tos",
+  "forceLabelThreshold": 0.5,
+  "extraNavLinks": [],
+  "donationBadges": [],
+  "lemmyInstanceSuggestions": [
+    "lemmy.world",
+    "lemmy.ml",
+    "lemm.ee",
+    "lemmy.zip"
+  ],
+  "mastodonInstanceSuggestions": ["mastodon.social", "mastodon.online"]
+}
+```
+
+Replace `rsstemple.com` with your top-level domain.
+
+Replace the app IDs (values start with `'CHANGE_ME_'`) with your own IDs (this allows for SSO login).
+
+`/opt/rss_temple/rss_temple_web_app/custom_html/index.head.html`
+```html
+<meta property="og:title" content="RSS Temple App" />
+<meta property="og:image" content="https://app.rsstemple.com/assets/images/og_image.jpg" />
+<meta property="og:url" content="https://app.rsstemple.com" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Zen of Syndication" />
+```
+
+Replace `rsstemple.com` with your top-level domain.
+
+Start the containers with `docker compose up -d`.
 
 ### RSS Temple Landing Page
 
