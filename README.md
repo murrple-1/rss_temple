@@ -510,7 +510,154 @@ Start the containers with `docker compose up -d`.
 
 ### RSS Temple Landing Page
 
-*TODO write this*
+Create a directory `/opt/rss_temple/rss_temple_home/`, and also `/opt/rss_temple/rss_temple_home/custom_html/`.
+
+In the new directory, create the following files - editing them as needed:
+
+`/opt/rss_temple/rss_temple_home/docker-compose.yml`
+```yaml
+x-rss-temple-home-image: &rss-temple-home-image
+  image: 'murraychristopherson/rss_temple_home:latest'
+
+services:
+  caddy-rss_temple_home:
+    image: caddy:2-alpine
+    restart: always
+    expose:
+      - '3000'
+    volumes:
+      - caddy_data:/data/
+      - caddy_config:/config/
+      - caddy_srv:/srv/
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - rss_temple_home_net
+      - global_rss_temple_net
+  rss_temple_home:
+    <<: *rss-temple-home-image
+    command: >
+      ash -c "
+        [ \"$$(ls -A /srv/)\" ] || echo '<html><body><h1>Building Site...</h1></body></html>' > /srv/index.html
+        yarn build
+
+        rm -rf /srv/* && cp -R /build/_site/* /srv/
+
+        while :; do
+          sleep 3600
+        done
+      "
+    restart: always
+    env_file:
+      - .env
+    environment:
+      CUSTOM_HTML_DIR: '/custom_html/'
+    volumes:
+      - caddy_srv:/srv/
+      - ./custom_html/:/custom_html/
+    networks:
+      - rss_temple_home_net
+volumes:
+  caddy_data:
+  caddy_config:
+  caddy_srv:
+networks:
+  global_rss_temple_net:
+    external: true
+  rss_temple_home_net:
+    internal: true
+```
+
+`/opt/rss_temple/rss_temple_home/.env`
+```sh
+WEB_APP_URL=http://app.rsstemple.com
+TWITTER_X_URL=https://x.com/rsstemple
+FB_URL=https://www.facebook.com/RSSTemple/
+INSTA_URL=https://www.instagram.com/rsstempleapp/
+```
+
+Point these at your own socials, if you'd like.
+
+`/opt/rss_temple/rss_temple_home/Caddyfile`
+```
+:3000 {
+  header {
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Content-Security-Policy "default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; base-uri 'self'; form-action 'self'; font-src 'self' fonts.gstatic.com"
+    X-XSS-Protection "1"
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  }
+
+  root * /srv/
+  file_server
+}
+```
+
+The following files are custom HTML injected into each page. You can arguably put any HTML you want, but the examples below are a good start. Switch out `rsstemple.com` for whatever your top-level domain is.
+
+`/opt/rss_temple/rss_temple_home/custom_html/index.head.html`
+```html
+<meta property="og:title" content="RSS Temple" />
+<meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
+<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Zen of Syndication" />
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/contact.html`
+```html
+<section class="app--legal">
+  <h2>Email</h2>
+  <p>
+    <a href="mailto:test@test.com">test@test.com</a>
+  </p>
+</section>
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/contact.head.html`
+```html
+<meta property="og:title" content="RSS Temple" />
+<meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
+<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Zen of Syndication" />
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/privacy.html`
+```html
+<section class="app--legal">
+  <p>Last Revised: <strong>[ DATE ]</strong></p>
+  <h2>Your Privacy Policy</h2>
+  <!-- fill this out however you like -->
+</section>
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/privacy.head.html`
+```html
+<meta property="og:title" content="RSS Temple" />
+<meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
+<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Zen of Syndication" />
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/tos.html`
+```html
+<section class="app--legal">
+  <p>Last Revised: <strong>[ DATE ]</strong></p>
+  <h2>Your Terms of Service</h2>
+  <!-- fill this out however you like -->
+</section>
+```
+
+`/opt/rss_temple/rss_temple_home/custom_html/tos.head.html`
+```html
+<meta property="og:title" content="RSS Temple" />
+<meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
+<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="The Zen of Syndication" />
+```
 
 # Technical Support
 
