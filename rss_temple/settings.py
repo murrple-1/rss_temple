@@ -405,6 +405,15 @@ DOWNLOAD_MAX_BYTE_COUNT = int(
     os.getenv("APP_DOWNLOAD_MAX_BYTE_COUNT", "-1")
 )  # set to -1 for unlimited
 
+# Block server-side requests (feed/image fetches) to non-public IP ranges to
+# mitigate SSRF (cloud metadata endpoints, loopback, private/link-local nets).
+# Defaults on in real (dockerized) deployments; off for local dev + the live-
+# server test suite, which fetch from loopback. Override with the env var.
+RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES = os.getenv(
+    "APP_RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES",
+    "true" if os.getenv("APP_IN_DOCKER", "false").lower() == "true" else "false",
+).lower() == "true"
+
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 
 CAPTCHA_EXPIRY_INTERVAL = datetime.timedelta(minutes=5)
