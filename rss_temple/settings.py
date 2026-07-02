@@ -369,7 +369,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 # corsheaders
-CORS_ALLOW_ALL_ORIGINS = True
+# NOTE: reflecting *any* origin (`CORS_ALLOW_ALL_ORIGINS`) together with
+# `CORS_ALLOW_CREDENTIALS` would let any website issue credentialed
+# cross-origin requests as a logged-in user and read the responses. Use an
+# explicit allowlist instead, mirroring `CSRF_TRUSTED_ORIGINS` above.
+CORS_ALLOWED_ORIGINS = (
+    cors_allowed_origins.split(",")
+    if (cors_allowed_origins := os.getenv("APP_CORS_ALLOWED_ORIGINS"))
+    else ["http://localhost:4200"]
+)
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
 
