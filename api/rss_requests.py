@@ -1,17 +1,19 @@
 import ipaddress
 import socket
 from typing import Any, Mapping
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
 from django.core.signals import setting_changed
 from django.dispatch import receiver
-from requests.exceptions import RequestException, TooManyRedirects
+from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
+from urllib3.connection import HTTPConnection, HTTPSConnection
+from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
+from urllib3.poolmanager import PoolManager
 
 _BLOCK_PRIVATE_ADDRESSES: bool
-
-_MAX_REDIRECTS = 10
 
 
 @receiver(setting_changed)
@@ -25,10 +27,12 @@ _load_global_settings()
 
 
 class UnsafeURLError(RequestException):
-    """Raised when a request target resolves to a non-public (SSRF-prone) address.
+    """Raised when a request target resolves/connects to a non-public address.
 
-    Subclasses `RequestException` so existing callers that already treat network
-    failures as "feed not found" / skip handle unsafe URLs gracefully.
+    Subclasses `RequestException` (itself an `OSError`) so existing callers that
+    already treat network failures as "feed not found" / skip handle unsafe URLs
+    gracefully. When raised at connect time it surfaces wrapped in a
+    `requests.exceptions.ConnectionError`, which is likewise a `RequestException`.
     """
 
 
@@ -48,6 +52,15 @@ def _is_public_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 
 
 def _validate_url_is_public(url: str | bytes) -> None:
+    """Fast pre-flight rejection: disallow non-HTTP(S) schemes and hosts whose
+    DNS records point (even partly) at non-public space, before a connection is
+    attempted.
+
+    This is a convenience short-circuit for clean early errors. The
+    authoritative guard is `_PeerValidationMixin`, which inspects the *actual*
+    connected peer and so — unlike this lookup — is not subject to a
+    DNS-rebinding race between resolution and the real connection.
+    """
     if isinstance(url, bytes):
         url = url.decode("utf-8", errors="replace")
 
@@ -65,8 +78,6 @@ def _validate_url_is_public(url: str | bytes) -> None:
     except socket.gaierror as e:
         raise UnsafeURLError(f"unable to resolve host: {hostname!r}") from e
 
-    # reject if *any* resolved address is non-public; do not fetch from a host
-    # that (partly) points at internal infrastructure.
     for *_, sockaddr in addrinfos:
         try:
             ip = ipaddress.ip_address(sockaddr[0])
@@ -77,6 +88,79 @@ def _validate_url_is_public(url: str | bytes) -> None:
             raise UnsafeURLError(
                 f"host {hostname!r} resolves to non-public address {ip}"
             )
+
+
+class _PeerValidationMixin:
+    """Validates the *actual* connected peer, closing the DNS-rebinding gap: the
+    address we check is exactly the address the socket connected to, so a rebind
+    between a pre-flight lookup and the real connection cannot slip through. No
+    application data is sent until the peer is confirmed public."""
+
+    def _new_conn(self) -> socket.socket:
+        sock = super()._new_conn()  # type: ignore[misc]
+
+        try:
+            peer_ip = ipaddress.ip_address(sock.getpeername()[0])
+        except (OSError, ValueError) as e:
+            sock.close()
+            raise UnsafeURLError("unable to determine peer address") from e
+
+        if not _is_public_ip(peer_ip):
+            sock.close()
+            raise UnsafeURLError(
+                f"connection established to non-public address {peer_ip}"
+            )
+
+        return sock
+
+
+class _ValidatingHTTPConnection(_PeerValidationMixin, HTTPConnection):
+    pass
+
+
+class _ValidatingHTTPSConnection(_PeerValidationMixin, HTTPSConnection):
+    pass
+
+
+class _ValidatingHTTPConnectionPool(HTTPConnectionPool):
+    ConnectionCls = _ValidatingHTTPConnection
+
+
+class _ValidatingHTTPSConnectionPool(HTTPSConnectionPool):
+    ConnectionCls = _ValidatingHTTPSConnection
+
+
+class _ValidatingPoolManager(PoolManager):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.pool_classes_by_scheme = {
+            "http": _ValidatingHTTPConnectionPool,
+            "https": _ValidatingHTTPSConnectionPool,
+        }
+
+
+class _SSRFValidatingAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False, **pool_kwargs):
+        self.poolmanager = _ValidatingPoolManager(
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            **pool_kwargs,
+        )
+
+
+_ssrf_safe_session: requests.Session | None = None
+
+
+def _get_ssrf_safe_session() -> requests.Session:
+    global _ssrf_safe_session
+    if _ssrf_safe_session is None:
+        session = requests.Session()
+        adapter = _SSRFValidatingAdapter()
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        _ssrf_safe_session = session
+    return _ssrf_safe_session
 
 
 def get(
@@ -94,38 +178,11 @@ def get(
     if not _BLOCK_PRIVATE_ADDRESSES:
         return requests.get(url, timeout=timeout, headers=headers, *args, **kwargs)
 
-    # When guarding against SSRF we must validate every hop: `requests` would
-    # otherwise follow a redirect to an internal address after our check on the
-    # initial URL passed. So follow redirects manually, revalidating each time.
-    allow_redirects = kwargs.pop("allow_redirects", True)
+    # Fast pre-flight rejection (clean errors, blocks non-HTTP schemes). Every
+    # actual connection — including each redirect hop — is then independently
+    # validated against its real peer address by `_SSRFValidatingAdapter`, so
+    # there is no DNS-rebinding window.
+    _validate_url_is_public(url)
 
-    current_url: str | bytes = url
-    for _ in range(_MAX_REDIRECTS + 1):
-        _validate_url_is_public(current_url)
-
-        response = requests.get(
-            current_url,
-            timeout=timeout,
-            headers=headers,
-            allow_redirects=False,
-            *args,
-            **kwargs,
-        )
-
-        if not (allow_redirects and response.is_redirect):
-            return response
-
-        location = response.headers.get("Location")
-        if not location:  # pragma: no cover
-            return response
-
-        next_url = urljoin(
-            current_url.decode() if isinstance(current_url, bytes) else current_url,
-            location,
-        )
-        # release the intermediate (possibly streamed) connection before the
-        # next hop
-        response.close()
-        current_url = next_url
-
-    raise TooManyRedirects(f"exceeded {_MAX_REDIRECTS} redirects")
+    session = _get_ssrf_safe_session()
+    return session.get(url, timeout=timeout, headers=headers, *args, **kwargs)
