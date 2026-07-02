@@ -21,7 +21,7 @@ html5lib = "*"
 validators = "*"
 tabulate = "*"
 django-cors-headers = "*"
-gunicorn = {verson = "*", extras = ["gthread"]}
+gunicorn = {version = "*", extras = ["gthread"]}
 psycopg = {version = "*", extras = ["binary"]}
 django-redis = "*"
 drf-spectacular = {version = "*", extras = ["sidecar"]}
