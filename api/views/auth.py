@@ -206,7 +206,7 @@ class UserDeleteView(APIView):
 
         django_logout(request)
 
-        _logger.warn(f"DELETE USER: {user.uuid} ({user.email})")
+        _logger.warning(f"DELETE USER: {user.uuid} ({user.email})")
         user.delete()
 
         return Response(status=204)
