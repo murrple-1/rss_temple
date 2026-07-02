@@ -20,6 +20,8 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("APP_DEBUG", "false").lower() == "true"
 
+_IN_DOCKER = os.getenv("APP_IN_DOCKER", "false").lower() == "true"
+
 # django-silk records request/response bodies and profiles; allow disabling it
 # entirely in production. Defaults on to preserve existing behavior + tests.
 SILK_ENABLED = os.getenv("APP_ENABLE_SILK", "true").lower() == "true"
@@ -426,7 +428,7 @@ DOWNLOAD_MAX_BYTE_COUNT = int(
 # server test suite, which fetch from loopback. Override with the env var.
 RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES = os.getenv(
     "APP_RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES",
-    "true" if os.getenv("APP_IN_DOCKER", "false").lower() == "true" else "false",
+    "true" if _IN_DOCKER else "false",
 ).lower() == "true"
 
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
@@ -490,3 +492,14 @@ try:
     from .local_settings import *  # noqa: F403
 except ImportError:
     pass
+
+# Fail fast rather than silently running a real deployment with the placeholder
+# secret key. Checked after `local_settings` so a key set there is respected;
+# only enforced in the dockerized deployment so tests/local dev (which don't
+# set APP_SECRET_KEY) are unaffected.
+if _IN_DOCKER and not DEBUG and SECRET_KEY == "PLEASE_OVERRIDE_ME":
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        "APP_SECRET_KEY must be set to a unique, secret value in production"
+    )
