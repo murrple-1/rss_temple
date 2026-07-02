@@ -654,11 +654,13 @@ class FeedFindSerializer(serializers.Serializer):
 
 class FeedSubscribeSerializer(serializers.Serializer):
     url = serializers.URLField(required=True)
-    customTitle = serializers.CharField(required=False, source="custom_title")
+    customTitle = serializers.CharField(
+        required=False, max_length=1024, source="custom_title"
+    )
 
 
 class UserCategoryCreateSerializer(serializers.Serializer):
-    text = serializers.CharField(required=True)
+    text = serializers.CharField(required=True, max_length=1024)
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -783,9 +785,9 @@ class ClassifierLabelVotesListSerializer(serializers.Serializer):
 
 class FeedReportBodySerializer(serializers.Serializer):
     feedUuid = serializers.UUIDField(required=True, source="feed_uuid")
-    reason = serializers.CharField(required=True)
+    reason = serializers.CharField(required=True, max_length=2048)
 
 
 class FeedEntryReportBodySerializer(serializers.Serializer):
     feedEntryUuid = serializers.UUIDField(required=True, source="feed_entry_uuid")
-    reason = serializers.CharField(required=True)
+    reason = serializers.CharField(required=True, max_length=2048)
