@@ -207,6 +207,9 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
     password = serializers.CharField(write_only=True)
     captcha = serializers.CharField(write_only=True)
 
+    # the solved captcha, stashed by `validate_captcha` and consumed in `save`
+    _captcha: Captcha | None = None
+
     def validate_username(self, username):
         username = get_adapter().clean_username(username)
         return username
@@ -242,6 +245,10 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
             captcha.delete()
             raise UnprocessableContent({"captchaSecretPhrase": "incorrect"})
 
+        # hold onto the solved captcha so it can be consumed in `save()`; a
+        # correct answer must not remain reusable for the rest of its lifetime
+        self._captcha = captcha
+
         return captcha_str
 
     def get_cleaned_data(self):
@@ -267,6 +274,12 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
                 )
         user.save()
         setup_user_email(request, user, [])
+
+        # registration succeeded: consume the captcha so it cannot be reused to
+        # register further accounts within its expiry window
+        if self._captcha is not None:
+            self._captcha.delete()
+
         return user
 
 
