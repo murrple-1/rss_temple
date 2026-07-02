@@ -426,10 +426,13 @@ DOWNLOAD_MAX_BYTE_COUNT = int(
 # mitigate SSRF (cloud metadata endpoints, loopback, private/link-local nets).
 # Defaults on in real (dockerized) deployments; off for local dev + the live-
 # server test suite, which fetch from loopback. Override with the env var.
-RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES = os.getenv(
-    "APP_RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES",
-    "true" if _IN_DOCKER else "false",
-).lower() == "true"
+RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES = (
+    os.getenv(
+        "APP_RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES",
+        "true" if _IN_DOCKER else "false",
+    ).lower()
+    == "true"
+)
 
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 

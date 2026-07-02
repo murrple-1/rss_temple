@@ -61,9 +61,7 @@ def _validate_url_is_public(url: str | bytes) -> None:
         raise UnsafeURLError("URL has no host")
 
     try:
-        addrinfos = socket.getaddrinfo(
-            hostname, parsed.port, proto=socket.IPPROTO_TCP
-        )
+        addrinfos = socket.getaddrinfo(hostname, parsed.port, proto=socket.IPPROTO_TCP)
     except socket.gaierror as e:
         raise UnsafeURLError(f"unable to resolve host: {hostname!r}") from e
 
