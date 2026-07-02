@@ -16,16 +16,20 @@ def to_filter_args(
     search: str,
     search_fns: dict[str, dict[str, Callable[[HttpRequest, str], Q]]],
 ) -> list[Q]:
-    parse_results: ParseResults
+    object_search_fns = search_fns[object_name]
+
     try:
         parse_results = parser().parseString(search, True)
+        return [_handle_parse_result(request, parse_results, object_search_fns)]
     except ParseException as e:
         _logger.warning("Parsing of '%s' failed: %s", search, e)
         raise ValueError("search malformed")
-
-    object_search_fns = search_fns[object_name]
-
-    return [_handle_parse_result(request, parse_results, object_search_fns)]
+    except RecursionError:
+        # deeply-nested parentheses or a very long and/or chain can blow the
+        # recursion limit in the parser or in this tree walker; treat it as a
+        # malformed search rather than letting it surface as an unhandled 500
+        _logger.warning("Parsing of '%s' failed: recursion limit exceeded", search)
+        raise ValueError("search malformed")
 
 
 def _handle_parse_result(

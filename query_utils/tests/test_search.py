@@ -93,6 +93,22 @@ class SearchesTestCase(SimpleTestCase):
                 "object", Mock(HttpRequest), '((text:"test")', search_fns
             )
 
+    def test_deeply_nested_does_not_crash(self):
+        # deeply-nested parentheses would exhaust the recursion limit in the
+        # parser / tree walker; it must surface as a malformed-search ValueError
+        # rather than an unhandled RecursionError
+        depth = 5000
+        search = ("(" * depth) + 'text:"test"' + (")" * depth)
+        with self.assertRaises(ValueError):
+            searchutils.to_filter_args("object", Mock(HttpRequest), search, search_fns)
+
+    def test_long_or_chain_does_not_crash(self):
+        # a very long flat and/or chain recurses right-associatively in the tree
+        # walker; likewise must not raise RecursionError
+        search = " or ".join('text:"test"' for _ in range(5000))
+        with self.assertRaises(ValueError):
+            searchutils.to_filter_args("object", Mock(HttpRequest), search, search_fns)
+
     def test_unknown_field(self):
         with self.assertRaises(AttributeError):
             searchutils.to_filter_args(

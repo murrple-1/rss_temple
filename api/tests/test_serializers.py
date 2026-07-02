@@ -275,6 +275,16 @@ class GetManySerializerTestCase(SimpleTestCase):
         with self.assertRaises(serializers.ValidationError):
             serializer.is_valid(raise_exception=True)
 
+    def test_search_toolong(self):
+        serializer = GetManySerializer(
+            data={
+                "search": 'title:"{}"'.format("x" * 2000),
+            },
+            context={"object_name": "feed", "request": Mock(HttpRequest)},
+        )
+        with self.assertRaises(serializers.ValidationError):
+            serializer.is_valid(raise_exception=True)
+
         serializer = GetManySerializer(
             data={
                 "search": "title:BAD",

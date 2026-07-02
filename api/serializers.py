@@ -51,6 +51,10 @@ from query_utils import sort as sortutils
 
 _logger = logging.getLogger("rss_temple.serializers")
 
+# bound the search string so a single request can't produce a pathologically
+# deep parse tree or an enormous OR'd full-text query
+_SEARCH_MAX_LENGTH = 1024
+
 
 class LoginSerializer(_LoginSerializer):  # pragma: no cover
     stayLoggedIn = serializers.BooleanField(source="stay_logged_in")
@@ -537,6 +541,9 @@ class _SearchField(serializers.Field):
         ):
             raise serializers.ValidationError("Not a valid string.")
         data = str(data).strip()
+
+        if len(data) > _SEARCH_MAX_LENGTH:
+            raise serializers.ValidationError("search too long")
 
         request: Request | None = self.context.get("request")
         object_name: str | None = self.context.get("object_name")
