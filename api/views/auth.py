@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, cast
 
@@ -7,6 +8,7 @@ from dj_rest_auth.views import PasswordChangeView as _PasswordChangeView
 from dj_rest_auth.views import PasswordResetConfirmView as _PasswordResetConfirmView
 from dj_rest_auth.views import PasswordResetView as _PasswordResetView
 from dj_rest_auth.views import UserDetailsView as _UserDetailsView
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.http.response import HttpResponseBase
 from django.utils import timezone
@@ -15,7 +17,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import throttling
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -163,16 +165,22 @@ Otherwise, that value will be added to the attribute unchanged.""",
     def put(self, request: Request):
         user = cast(User, request.user)
 
-        user.attributes.update(request.data)
+        if not isinstance(request.data, dict):
+            raise ValidationError("body must be a JSON object")
 
-        del_keys = set()
-        for key, value in user.attributes.items():
-            if value is None:
-                del_keys.add(key)
+        # compute the new attributes on a copy so nothing is persisted if the
+        # result is rejected below
+        attributes = dict(user.attributes)
+        attributes.update(request.data)
 
-        for key in del_keys:
-            del user.attributes[key]
+        for key in [key for key, value in attributes.items() if value is None]:
+            del attributes[key]
 
+        max_byte_count = settings.USER_ATTRIBUTES_MAX_BYTE_COUNT
+        if len(json.dumps(attributes).encode("utf-8")) > max_byte_count:
+            raise ValidationError(f"attributes too large (max {max_byte_count} bytes)")
+
+        user.attributes = attributes
         user.save(update_fields=["attributes"])
 
         return Response(status=204)

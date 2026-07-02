@@ -434,6 +434,12 @@ RSS_REQUESTS_BLOCK_PRIVATE_ADDRESSES = (
     == "true"
 )
 
+# Cap on the JSON-serialized size of a user's freeform `attributes` blob, to
+# stop it being abused as unbounded server-side storage.
+USER_ATTRIBUTES_MAX_BYTE_COUNT = int(
+    os.getenv("APP_USER_ATTRIBUTES_MAX_BYTE_COUNT", str(8 * 1024))
+)  # 8KB
+
 _captcha_data_path = Path(__file__).parent / "../api/captcha/"
 
 CAPTCHA_EXPIRY_INTERVAL = datetime.timedelta(minutes=5)

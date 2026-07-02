@@ -329,6 +329,35 @@ class AuthTestCase(APITestCase):
         user.refresh_from_db()
         self.assertNotIn("test", user.attributes)
 
+    def test_UserAttributesView_put_toolarge(self):
+        user = User.objects.create_user("test@test.com", None)
+
+        self.client.force_authenticate(user=user)
+
+        body = {
+            "test": "x" * (settings.USER_ATTRIBUTES_MAX_BYTE_COUNT + 1),
+        }
+        response = self.client.put(
+            "/api/auth/user/attributes",
+            body,
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+        user.refresh_from_db()
+        self.assertNotIn("test", user.attributes)
+
+    def test_UserAttributesView_put_notobject(self):
+        user = User.objects.create_user("test@test.com", None)
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.put(
+            "/api/auth/user/attributes",
+            ["not", "an", "object"],
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
     def test_UserDeleteView_post(self):
         user = User.objects.create_user("test@test.com", "password")
 
