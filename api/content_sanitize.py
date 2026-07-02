@@ -1,6 +1,6 @@
 import re
-from typing import Any, Callable
-from urllib.parse import ParseResult, urlparse
+from typing import Any
+from urllib.parse import urlparse
 
 import bleach
 import bleach.css_sanitizer
@@ -28,12 +28,12 @@ class TagRemovalFilter(HTML5LibFilter):
                     yield token
 
 
-class ScriptRemovalFiler(TagRemovalFilter):
+class ScriptRemovalFilter(TagRemovalFilter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, tag="script", **kwargs)
 
 
-class StyleRemovalFiler(TagRemovalFilter):
+class StyleRemovalFilter(TagRemovalFilter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, tag="style", **kwargs)
 
@@ -83,40 +83,56 @@ class EmptyAnchorFilter(HTML5LibFilter):
                     yield token
 
 
-_bad_iframe_url_fns: list[Callable[[ParseResult], bool]] = [
-    lambda url: url.netloc == "slashdot.org",
-]
+# iframes are only preserved when their `src` points at a known, trusted embed
+# host over HTTPS. This is an allowlist (safe by default): anything not matched
+# — including src-less and malformed-src iframes — is dropped entirely.
+_ALLOWED_IFRAME_HOSTS: frozenset[str] = frozenset(
+    {
+        "youtube.com",
+        "youtube-nocookie.com",
+        "vimeo.com",
+        "player.vimeo.com",
+        "dailymotion.com",
+        "w.soundcloud.com",
+        "open.spotify.com",
+        "player.twitch.tv",
+        "bandcamp.com",
+    }
+)
 
 
-class BadIFrameFilter(HTML5LibFilter):
+def _is_allowed_iframe_src(src: str) -> bool:
+    try:
+        url = urlparse(src)
+        if url.scheme != "https":
+            return False
+        hostname = url.hostname
+    except ValueError:
+        return False
+
+    if not hostname:
+        return False
+
+    hostname = hostname.lower()
+    return any(
+        hostname == allowed or hostname.endswith(f".{allowed}")
+        for allowed in _ALLOWED_IFRAME_HOSTS
+    )
+
+
+class AllowlistIFrameFilter(HTML5LibFilter):
     def __iter__(self):
-        is_in_bad_iframe = False
+        is_in_disallowed_iframe = False
         for token in super().__iter__():
-            if is_in_bad_iframe:
+            if is_in_disallowed_iframe:
                 if token["type"] == "EndTag" and token["name"] == "iframe":
-                    is_in_bad_iframe = False
+                    is_in_disallowed_iframe = False
             else:
                 if token["type"] == "StartTag" and token["name"] == "iframe":
                     data = token["data"]
-                    if (None, "src") in data:
-                        src_url: ParseResult
-                        try:
-                            src_url = urlparse(data[(None, "src")])
-                        except ValueError:
-                            is_in_bad_iframe = True
-                            continue
-
-                        found_bad_iframe = False
-                        for bad_iframe_url_fn in _bad_iframe_url_fns:
-                            if bad_iframe_url_fn(src_url):
-                                found_bad_iframe = True
-                                break
-
-                        if found_bad_iframe:
-                            is_in_bad_iframe = True
-                            continue
-                    else:
-                        is_in_bad_iframe = True
+                    src = data[(None, "src")] if (None, "src") in data else None
+                    if not src or not _is_allowed_iframe_src(src):
+                        is_in_disallowed_iframe = True
                         continue
 
                 yield token
@@ -174,11 +190,11 @@ def _html_sanitizer_stream(source: TreeWalker):
             "css_sanitizer": css_sanitizer,
         }
 
-    filtered: HTML5LibFilter | HTML5ShimFilter = ScriptRemovalFiler(source=source)
-    filtered = StyleRemovalFiler(source=filtered)
+    filtered: HTML5LibFilter | HTML5ShimFilter = ScriptRemovalFilter(source=source)
+    filtered = StyleRemovalFilter(source=filtered)
     filtered = HTTPSOnlyImgFilter(source=filtered)
     filtered = EmptyAnchorFilter(source=filtered)
-    filtered = BadIFrameFilter(source=filtered)
+    filtered = AllowlistIFrameFilter(source=filtered)
     filtered = AnchorsOpenNewTabFilter(source=filtered)
     filtered = bleach.sanitizer.BleachSanitizerFilter(
         source=filtered, **_my_bleach_filter_kwargs_
