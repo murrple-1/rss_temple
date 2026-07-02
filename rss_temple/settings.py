@@ -20,6 +20,10 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("APP_DEBUG", "false").lower() == "true"
 
+# django-silk records request/response bodies and profiles; allow disabling it
+# entirely in production. Defaults on to preserve existing behavior + tests.
+SILK_ENABLED = os.getenv("APP_ENABLE_SILK", "true").lower() == "true"
+
 ALLOWED_HOSTS = ["*"]
 
 # Application definition
@@ -44,7 +48,6 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "corsheaders",
     "django_apscheduler",
-    "silk",
     "api.apps.ApiConfig",
 ]
 
@@ -58,8 +61,12 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.csp.ContentSecurityPolicyMiddleware",
-    "silk.middleware.SilkyMiddleware",
 ]
+
+if SILK_ENABLED:
+    INSTALLED_APPS.append("silk")
+    # SilkyMiddleware wraps the full request/response, so it belongs last
+    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "rss_temple.urls"
 
