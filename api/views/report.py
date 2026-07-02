@@ -29,9 +29,11 @@ class FeedReportView(APIView):
         except Feed.DoesNotExist:
             raise NotFound("feed not found")
 
-        FeedReport.objects.create(
-            feed=feed, user=user, reason=serializer.validated_data["reason"]
-        )
+        # idempotent per (feed, user): don't let a user pile up duplicate reports
+        if not FeedReport.objects.filter(feed=feed, user=user).exists():
+            FeedReport.objects.create(
+                feed=feed, user=user, reason=serializer.validated_data["reason"]
+            )
 
         return Response(status=204)
 
@@ -57,8 +59,14 @@ class FeedEntryReportView(APIView):
         except FeedEntry.DoesNotExist:
             raise NotFound("feed entry not found")
 
-        FeedEntryReport.objects.create(
-            feed_entry=feed_entry, user=user, reason=serializer.validated_data["reason"]
-        )
+        # idempotent per (feed_entry, user): don't let a user pile up duplicates
+        if not FeedEntryReport.objects.filter(
+            feed_entry=feed_entry, user=user
+        ).exists():
+            FeedEntryReport.objects.create(
+                feed_entry=feed_entry,
+                user=user,
+                reason=serializer.validated_data["reason"],
+            )
 
         return Response(status=204)
