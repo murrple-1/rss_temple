@@ -577,18 +577,19 @@ class FeedEntriesReadView(APIView):
         increment_counter: Counter[uuid_.UUID] = Counter()
 
         with transaction.atomic():
-            total_deleted_count = 0
-            for uuid, feed_uuid in (
-                ReadFeedEntryUserMapping.objects.select_related("feed_entry")
-                .filter(user=user, feed_entry_id__in=feed_entry_uuids)
-                .values_list("uuid", "feed_entry__feed_id")
-                .iterator()
-            ):
-                _, deletes = ReadFeedEntryUserMapping.objects.filter(uuid=uuid).delete()
-                deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
-                if deleted_count > 0:
-                    total_deleted_count += deleted_count
-                    increment_counter.update([feed_uuid])
+            mappings = ReadFeedEntryUserMapping.objects.filter(
+                user=user, feed_entry_id__in=feed_entry_uuids
+            )
+
+            # tally the per-feed counts in a single query before deleting, rather
+            # than issuing one DELETE per mapping
+            for feed_uuid in mappings.values_list(
+                "feed_entry__feed_id", flat=True
+            ).iterator():
+                increment_counter.update([feed_uuid])
+
+            _, deletes = mappings.delete()
+            total_deleted_count = deletes.get("api.ReadFeedEntryUserMapping", 0)
 
             if total_deleted_count > 0:
                 User.objects.filter(uuid=user.uuid).update(

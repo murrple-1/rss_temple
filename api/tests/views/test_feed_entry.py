@@ -709,6 +709,20 @@ class FeedEntryTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 400, response.content)
 
+    def test_FeedEntriesReadView_delete_toomany(self):
+        response = self.client.delete(
+            "/api/feedentries/read",
+            {"feedEntryUuids": [str(uuid.uuid4()) for _ in range(1001)]},
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_FeedEntriesReadView_post_toomany(self):
+        response = self.client.post(
+            "/api/feedentries/read",
+            {"feedEntryUuids": [str(uuid.uuid4()) for _ in range(1001)]},
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+
     def test_FeedEntryFavoriteView_post(self):
         feed_entry = FeedEntry.objects.create(
             id=None,

@@ -669,16 +669,25 @@ class UserCategoryCreateSerializer(serializers.Serializer):
 
 class FeedEntriesMarkSerializer(serializers.Serializer):
     feedEntryUuids = serializers.ListField(
-        child=serializers.UUIDField(), required=True, source="feed_entry_uuids"
+        child=serializers.UUIDField(),
+        required=True,
+        max_length=1000,
+        source="feed_entry_uuids",
     )
 
 
 class FeedEntriesMarkReadSerializer(serializers.Serializer):
     feedUuids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, source="feed_uuids"
+        child=serializers.UUIDField(),
+        required=False,
+        max_length=1000,
+        source="feed_uuids",
     )
     feedEntryUuids = serializers.ListField(
-        child=serializers.UUIDField(), required=False, source="feed_entry_uuids"
+        child=serializers.UUIDField(),
+        required=False,
+        max_length=1000,
+        source="feed_entry_uuids",
     )
 
 
