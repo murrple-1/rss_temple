@@ -53,7 +53,7 @@ _logger = logging.getLogger("rss_temple.serializers")
 
 # bound the search string so a single request can't produce a pathologically
 # deep parse tree or an enormous OR'd full-text query
-_SEARCH_MAX_LENGTH = 10240
+_SEARCH_MAX_LENGTH = 1024 * 10
 
 
 class LoginSerializer(_LoginSerializer):  # pragma: no cover

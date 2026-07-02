@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 from api.fields import field_configs
 from api.searches import search_fns
-from api.serializers import GetManySerializer, GetSingleSerializer
+from api.serializers import GetManySerializer, GetSingleSerializer, _SEARCH_MAX_LENGTH
 from api.sorts import sort_configs
 from query_utils import fields as fieldutils
 from query_utils import search as searchutils
@@ -278,7 +278,7 @@ class GetManySerializerTestCase(SimpleTestCase):
     def test_search_toolong(self):
         serializer = GetManySerializer(
             data={
-                "search": 'title:"{}"'.format("x" * 2000),
+                "search": 'title:"{}"'.format("x" * _SEARCH_MAX_LENGTH),
             },
             context={"object_name": "feed", "request": Mock(HttpRequest)},
         )
