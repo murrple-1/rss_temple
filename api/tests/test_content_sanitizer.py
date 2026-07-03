@@ -36,11 +36,11 @@ class ContentSanitizerTestCase(TestCase):
             ('<a href="https://test.com/entry"></a>', ""),
             (
                 '<a href="https://test.com/entry">Link</a>',
-                '<a href="https://test.com/entry" target="_blank">Link</a>',
+                '<a href="https://test.com/entry" rel="noopener noreferrer" target="_blank">Link</a>',
             ),
             (
                 '<a href="https://test.com/entry" target="_self">Link</a>',
-                '<a href="https://test.com/entry" target="_blank">Link</a>',
+                '<a href="https://test.com/entry" rel="noopener noreferrer" target="_blank">Link</a>',
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry"></a></a>',
@@ -48,7 +48,7 @@ class ContentSanitizerTestCase(TestCase):
             ),
             (
                 '<a href="https://test.com/entry"><a href="https://test.com/entry">Link</a></a>',
-                '<a href="https://test.com/entry" target="_blank">Link</a>',
+                '<a href="https://test.com/entry" rel="noopener noreferrer" target="_blank">Link</a>',
             ),
             ("<p>Ben &amp; Jerry's</p>", "<p>Ben &amp; Jerry's</p>"),
             ("<p>Ben & Jerry's</p>", "<p>Ben &amp; Jerry's</p>"),

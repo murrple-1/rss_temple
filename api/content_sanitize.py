@@ -142,6 +142,9 @@ class AnchorsOpenNewTabFilter(HTML5LibFilter):
         for token in super().__iter__():
             if token["type"] == "StartTag" and token["name"] == "a":
                 token["data"][(None, "target")] = "_blank"
+                # Prevent reverse tabnabbing: the opened page must not be able
+                # to reach back to this tab via `window.opener`.
+                token["data"][(None, "rel")] = "noopener noreferrer"
 
             yield token
 
@@ -167,7 +170,7 @@ def _html_sanitizer_stream(source: TreeWalker):
             "height",
             "allowfullscreen",
         ]
-        allowed_attributes["a"] = ["href", "title", "target"]
+        allowed_attributes["a"] = ["href", "title", "target", "rel"]
 
         allowed_protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
 
