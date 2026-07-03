@@ -3,7 +3,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import bleach
-import bleach.css_sanitizer
 import bleach.sanitizer
 import html5lib
 from bleach.html5lib_shim import SanitizerFilter as HTML5ShimFilter
@@ -172,22 +171,12 @@ def _html_sanitizer_stream(source: TreeWalker):
 
         allowed_protocols = set(bleach.sanitizer.ALLOWED_PROTOCOLS)
 
-        allowed_css_properties = set(bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES)
-
-        allowed_svg_properties = set(bleach.css_sanitizer.ALLOWED_SVG_PROPERTIES)
-
-        css_sanitizer = bleach.css_sanitizer.CSSSanitizer(
-            allowed_css_properties=allowed_css_properties,
-            allowed_svg_properties=allowed_svg_properties,
-        )
-
         _my_bleach_filter_kwargs_ = {
             "attributes": allowed_attributes,
             "strip_disallowed_tags": True,
             "strip_html_comments": True,
             "allowed_tags": allowed_tags,
             "allowed_protocols": allowed_protocols,
-            "css_sanitizer": css_sanitizer,
         }
 
     filtered: HTML5LibFilter | HTML5ShimFilter = ScriptRemovalFilter(source=source)
