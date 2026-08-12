@@ -194,6 +194,42 @@ bare python                     44MB
 A worker that never calls `detect_iso639_3` pays approximately nothing. Making the import lazy
 would be tidying with no measurable benefit, so it is deliberately excluded.
 
+### Task 7: warming `ROOT_URLCONF` before the fork
+
+Added after task 6's measurement, above. `preload_app` alone shares only `django.setup()` and
+middleware imports; Django resolves `ROOT_URLCONF` lazily on the first request per worker, so
+the larger view/serializer/`allauth`/`drf_spectacular`/`silk` import tree (~975 modules,
+confirmed by `len(sys.modules)` before/after) was still imported independently by every worker,
+after the fork, sharing none of it — exactly what the follow-up below originally proposed.
+
+Delivered as `rss_temple.preload.warm_url_resolver()`, called from a new `on_starting` hook in
+`gunicorn.conf.py`. `on_starting` runs in the arbiter after `preload_app` has already loaded the
+application (`Arbiter.__init__` → `setup()` → `self.app.wsgi()`, which happens before `.run()`
+is ever called) and before any worker is forked (`Arbiter.run()` calls `start()` — which fires
+`on_starting` — before `manage_workers()` → `spawn_workers()` forks); verified directly against
+gunicorn's `arbiter.py` rather than assumed.
+
+The extended fork-safety audit this required (Task 6's audit only covered what `django.setup()`
+reaches, not the newly-preloaded view/serializer tree) found no module in the additional ~975
+that opens a database or cache connection at import time — checked empirically: `connection.connection`
+stayed `None` across the resolution, and (with `APP_IN_DOCKER=true` to exercise the real
+`django-redis`-backed cache config rather than the local `LocMemCache` fallback) all four cache
+aliases' `DefaultClient._clients` lists stayed all-`None` across it too.
+
+**Measured (task 7, local gunicorn, `preload_app = True` + `--workers 4` in both configurations,
+the hook the only variable, two independent runs, every worker PID confirmed to have handled
+traffic before measuring):**
+
+| | Before (task 6 state) | After (task 7) |
+|---|---|---|
+| Run 1 total / avg per worker | 539,464 KB / 134,866 KB | 458,748 KB / 114,687 KB |
+| Run 2 total / avg per worker | 536,224 KB / 134,056 KB | 458,256 KB / 114,564 KB |
+
+~78–81 MB saved across 4 workers (~14.5–15%, ~20 MB/worker), reproducible across both runs — a
+real, meaningful reduction against the ~137–139 MB/worker warmed baseline task 6 established (and
+against this checkout's own ~134–135 MB/worker warmed baseline for the "before" configuration).
+Shipped.
+
 ## 5. Purge the bulk-import votes
 
 A management command, **never an automatic data migration**:
@@ -257,9 +293,7 @@ account alone was judged sufficient.
 - Exposing label confidence through `ClassifierLabelSerializer`. Note that
   `forceLabelThreshold: 0.5` exists in the frontend config (README:481) with no backend
   counterpart; whether it wants a real score is a question for the frontend repo.
-- Warming `ROOT_URLCONF` before the gunicorn fork (e.g. forcing
-  `django.urls.get_resolver().url_patterns` to resolve in a `post_fork`/startup hook), so that the
-  view/serializer/`dj-rest-auth`/`allauth`/`drf_spectacular`/`silk` import tree — measured as the
-  larger share of the per-worker memory floor — becomes shared copy-on-write too, the way the
-  original `preload_app` premise assumed. Judged safe and legitimate but out of scope for task 6,
-  which was deliberately a single-line config change.
+
+Warming `ROOT_URLCONF` before the gunicorn fork, listed here as a follow-up when this section was
+first written, was delivered in task 7 — see "Task 7: warming `ROOT_URLCONF` before the fork"
+above for the implementation and measured numbers.
