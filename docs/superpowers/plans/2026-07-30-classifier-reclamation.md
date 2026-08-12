@@ -1152,6 +1152,11 @@ does not hold on this app's current lazy-URLConf-resolution pattern; warming
 the URLConf pre-fork would be needed for that, and is recorded as a follow-up
 rather than done here.
 
+**Superseded by Task 7 below**, which closes that gap by warming the URLConf
+pre-fork too. `gunicorn.conf.py`'s comment on `preload_app` was updated
+accordingly in that task; the code block above is the state as committed by
+this task and is left unmodified here for history.
+
 - [ ] **Step 4: Verify the app still serves requests**
 
 ```bash
@@ -1183,6 +1188,161 @@ git commit -m "enable gunicorn preload_app to share worker memory"
 ```
 
 Include the before/after RSS numbers and the Step 1 audit findings in the commit body or PR description.
+
+---
+
+### Task 7: Warm `ROOT_URLCONF` before the gunicorn fork
+
+**Origin:** not in the original plan. Added after Task 6's measurement showed
+`preload_app` alone recovers far less than the plan assumed (see Task 6's
+warmed-RSS finding above). Approved by the project owner.
+
+**Files:**
+- Create: `rss_temple/preload.py`
+- Modify: `gunicorn.conf.py`
+- Test: `api/tests/test_preload.py`
+
+**Interfaces:**
+- Consumes: `preload_app = True` in `gunicorn.conf.py` (Task 6).
+- Produces: `rss_temple.preload.warm_url_resolver() -> int` — forces Django's
+  root URL resolver to populate, returning the number of top-level URL
+  patterns resolved. Called from gunicorn's `on_starting` hook.
+
+- [x] **Step 1: Write and pass `api/tests/test_preload.py`**
+
+Three tests: warming populates the resolver's cached `url_patterns`, warming
+is idempotent, and warming does not open a database connection.
+
+**Deviation from the brief:** the brief's third test called
+`connection.close()` then asserted `connection.connection is None`. That does
+not hold in this project's default (SQLite, in-memory) test configuration:
+`django.test.TestCase` opens a connection in `setUpClass` inside an outer
+`atomic()` block, and `django.db.backends.sqlite3.base.DatabaseWrapper.close()`
+is a deliberate no-op for in-memory databases ("closing the connection
+destroys the database... ignore close requests"). Verified empirically that
+`connection.connection` is already non-`None` at the top of the test method
+and stays that way after `.close()`, independent of `warm_url_resolver`'s
+behaviour. Rewrote the test to check the actual invariant — that
+`warm_url_resolver()` does not open a *new* connection (identity check against
+the pre-existing connection) and executes zero queries
+(`django.test.utils.CaptureQueriesContext`) — which exercises the same risk
+without depending on close/None semantics this backend doesn't provide.
+
+- [x] **Step 2: Create `rss_temple/preload.py`**
+
+```python
+"""Pre-fork warmup for the gunicorn arbiter.
+
+Paired with `preload_app = True` in `gunicorn.conf.py`. See the comment there.
+"""
+
+from django.urls import get_resolver
+
+
+def warm_url_resolver() -> int:
+    """Force Django's root URL resolver to populate.
+
+    ...
+
+    Returns the number of top-level URL patterns, so callers can log that the
+    warmup actually did something.
+    """
+    return len(get_resolver().url_patterns)
+```
+
+Importable with no side effects; the work happens only when the function is called.
+
+- [x] **Step 3: Verify the gunicorn hook timing empirically**
+
+The brief claimed `on_starting` fires after `preload_app` has imported the
+app and before workers are forked. Verified by reading the installed
+gunicorn's `arbiter.py` rather than trusting the claim:
+
+- `Arbiter.__init__(app)` calls `self.setup(app)`, which runs `self.app.wsgi()`
+  when `self.cfg.preload_app` is true (`arbiter.py:138-139`) — this happens
+  during **construction**, before `.run()` is ever called.
+- `gunicorn/app/base.py:71` constructs and runs it as `Arbiter(self).run()` —
+  so `preload_app`'s import already happened before `.run()` starts.
+- `Arbiter.run()` calls `self.start()` first; `start()` calls
+  `self.cfg.on_starting(self)` at `arbiter.py:162`.
+- Only after `start()` returns does `run()` call `self.manage_workers()`
+  (`arbiter.py:223`), which calls `spawn_workers()` (`arbiter.py:657,734`),
+  which forks.
+
+So the order is: preload import (construction) → `on_starting` → fork. The
+brief's timing claim holds; `on_starting` is the correct hook. No alternative
+hook was needed.
+
+- [x] **Step 4: Wire the hook in `gunicorn.conf.py`**
+
+Added `on_starting(server)` below `preload_app = True`, deferring the
+`rss_temple.preload` import into the function body (this file is read before
+Django is configured). The hook carries a comment explaining why it is not
+dead code, why the import is deferred, and the exact fork-timing guarantee it
+relies on (see the committed file).
+
+- [x] **Step 5: Extended fork-safety audit over the newly-preloaded set**
+
+Task 6's audit covered only what `django.setup()` reaches. Warming the URL
+resolver additionally imports ~975 modules (`api.views`, `api.serializers`,
+all of `allauth`, `drf_spectacular`, `silk`) that were previously imported
+*after* the fork, per-worker — so a module-level DB/cache connection among
+them, harmless before, becomes a dead socket inherited by every worker now.
+
+Empirical method (not grepping), run from a fresh process:
+
+**Database** — snapshotted `connection.connection` before and after forcing
+`get_resolver().url_patterns`: stayed `None` both times. Also measured the
+import cost precisely via `len(sys.modules)` before/after: **975 modules**,
+matching the brief's estimate exactly.
+
+**Cache** — ran with `APP_IN_DOCKER=true` so `CACHES` uses the real
+`redis_lock.django_cache.RedisCache` → `django_redis.client.DefaultClient`
+backend (not the local `LocMemCache` fallback), and inspected
+`cache.client._clients` (a `list[Optional[Redis]]`, one slot per configured
+server, populated only by `get_client()` on first actual `.get()`/`.set()`)
+for all four cache aliases (`default`, `stable_query`, `captcha`, `throttle`)
+before and after resolution: every slot stayed `[None]` in both snapshots — no
+live Redis client was ever constructed, with no Redis/Valkey server even
+running. No module in the newly-preloaded set opens a live database or cache
+connection at import time. Full commands and raw output are in the task
+report.
+
+- [x] **Step 6: Measure warmed RSS — before vs. after this task's change**
+
+Both runs used `preload_app = True` and `--workers 4` (Task 6's baseline
+already in place for both), so the `on_starting` hook was the only variable.
+Local gunicorn against `rss_temple.wsgi:application` (docker not viable here
+either, same reasons as Task 6). Verified via a PID-tagged access log format
+that every one of the 4 worker PIDs actually received requests before
+measuring, then let RSS settle with extra request bursts and re-measured to
+confirm it had stabilized.
+
+Two independent runs:
+
+| | Before (Task 6 state) | After (this task) |
+|---|---|---|
+| Run 1 total / avg | 539,464 KB / 134,866 KB | 458,748 KB / 114,687 KB |
+| Run 2 total / avg | 536,224 KB / 134,056 KB | 458,256 KB / 114,564 KB |
+
+**~78–81 MB saved across 4 workers (~14.5–15%, ~20 MB/worker), reproducible
+across both runs.** This is a real, meaningful reduction against Task 6's
+~137–139 MB/worker warmed baseline (this checkout's own warmed baseline
+measured at ~134–135 MB/worker, in the same range). **Ships.**
+
+- [x] **Step 7: Full suite**
+
+```
+/home/mchristo/.local/share/virtualenvs/rss_temple-pQQQnncW/bin/python manage.py test
+```
+353 tests (350 + 3 new), 0 failures.
+
+- [x] **Step 8: Commit**
+
+Gunicorn processes and scratch files cleaned up; `.prof` files created by the
+load test attributed by name+timestamp and deleted (193 files, all
+`api_classifierlabels_*`, all inside the load-test's time window); `db.sqlite3`
+restored to its pre-existing 0-byte state; no `.env` left behind.
 
 ---
 
