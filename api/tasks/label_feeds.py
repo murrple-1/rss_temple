@@ -1,64 +1,81 @@
 import datetime
-from collections import Counter
+import uuid as uuid_
+from collections import defaultdict
+from itertools import batched
 
-from django.db.models import Count, OuterRef, Subquery
-from django.db.models.functions import Coalesce, Now
+from django.db.models import Count, Sum
+from django.db.models.functions import Now
 from django.utils import timezone
 
 from api.models import (
-    ClassifierLabel,
     ClassifierLabelFeedCalculated,
     ClassifierLabelFeedEntryCalculated,
     ClassifierLabelFeedEntryVote,
-    Feed,
 )
 
 
-def label_feeds(top_x: int, expiry_interval: datetime.timedelta):
+def label_feeds(
+    top_x: int, expiry_interval: datetime.timedelta, chunk_size: int = 500
+) -> None:
     ClassifierLabelFeedCalculated.objects.filter(expires_at__lte=Now()).delete()
 
     expires_at = timezone.now() + expiry_interval
 
-    for feed_uuid in Feed.objects.exclude(
-        uuid__in=ClassifierLabelFeedCalculated.objects.values("feed_id")
-    ).values_list("uuid", flat=True):
-        counter = Counter(
-            {
-                cl_dict["uuid"]: cl_dict["overall_vote_count"]
-                for cl_dict in ClassifierLabel.objects.annotate(
-                    overall_vote_count=Coalesce(
-                        Subquery(
-                            ClassifierLabelFeedEntryVote.objects.filter(
-                                feed_entry__feed_id=feed_uuid,
-                                classifier_label_id=OuterRef("uuid"),
-                            )
-                            .values("feed_entry__feed")
-                            .annotate(c1=Count("uuid"))
-                            .values("c1")
-                        ),
-                        0,
-                    )
-                    + Coalesce(
-                        Subquery(
-                            ClassifierLabelFeedEntryCalculated.objects.filter(
-                                feed_entry__feed_id=feed_uuid,
-                                classifier_label_id=OuterRef("uuid"),
-                            )
-                            .values("feed_entry__feed")
-                            .annotate(c2=Count("uuid"))
-                            .values("c2")
-                        ),
-                        0,
-                    )
-                ).values("uuid", "overall_vote_count")
-            }
+    already_labelled = set(
+        ClassifierLabelFeedCalculated.objects.values_list("feed_id", flat=True)
+    )
+
+    candidate_feed_ids = (
+        set(
+            ClassifierLabelFeedEntryVote.objects.values_list(
+                "feed_entry__feed_id", flat=True
+            ).distinct()
         )
+        | set(
+            ClassifierLabelFeedEntryCalculated.objects.values_list(
+                "feed_entry__feed_id", flat=True
+            ).distinct()
+        )
+    ) - already_labelled
+
+    for feed_id_chunk in batched(sorted(candidate_feed_ids), chunk_size):
+        scores: defaultdict[uuid_.UUID, defaultdict[uuid_.UUID, float]] = defaultdict(
+            lambda: defaultdict(float)
+        )
+
+        for row in (
+            ClassifierLabelFeedEntryVote.objects.filter(
+                feed_entry__feed_id__in=feed_id_chunk
+            )
+            .values("feed_entry__feed_id", "classifier_label_id")
+            .annotate(score=Count("uuid"))
+            .iterator()
+        ):
+            scores[row["feed_entry__feed_id"]][row["classifier_label_id"]] += float(
+                row["score"]
+            )
+
+        for row in (
+            ClassifierLabelFeedEntryCalculated.objects.filter(
+                feed_entry__feed_id__in=feed_id_chunk
+            )
+            .values("feed_entry__feed_id", "classifier_label_id")
+            .annotate(score=Sum("weight"))
+            .iterator()
+        ):
+            scores[row["feed_entry__feed_id"]][row["classifier_label_id"]] += float(
+                row["score"] or 0.0
+            )
 
         ClassifierLabelFeedCalculated.objects.bulk_create(
             ClassifierLabelFeedCalculated(
-                classifier_label_id=classifier_label_uuid,
-                feed_id=feed_uuid,
+                classifier_label_id=classifier_label_id,
+                feed_id=feed_id,
                 expires_at=expires_at,
+                weight=score,
             )
-            for classifier_label_uuid, _ in counter.most_common(top_x)
+            for feed_id, label_scores in scores.items()
+            for classifier_label_id, score in sorted(
+                label_scores.items(), key=lambda t: t[1], reverse=True
+            )[:top_x]
         )

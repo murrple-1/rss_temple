@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from api.models import (
     ClassifierLabel,
+    ClassifierLabelFeedCalculated,
     ClassifierLabelFeedEntryCalculated,
     ClassifierLabelFeedEntryVote,
     Feed,
@@ -100,3 +101,140 @@ class TaskTestCase(TestCase):
         label_feeds(3, datetime.timedelta(days=7))
 
         self.assertGreaterEqual(feed.calculated_classifier_labels.count(), 1)
+
+    def test_label_feeds_populates_weight(self):
+        now = timezone.now()
+        user = User.objects.create_user("weight-feeds@test.com", None)
+        label1 = ClassifierLabel.objects.create(text="Label 1")
+        label2 = ClassifierLabel.objects.create(text="Label 2")
+
+        feed = Feed.objects.create(
+            feed_url="http://example.com/weight.xml",
+            title="Weight Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entries = FeedEntry.objects.bulk_create(
+            FeedEntry(
+                feed=feed,
+                published_at=now + datetime.timedelta(days=-i),
+                title=f"Entry {i}",
+                url=f"http://example.com/w{i}.html",
+                content=f"content {i}",
+                author_name="John Doe",
+                db_updated_at=None,
+                is_archived=False,
+            )
+            for i in range(4)
+        )
+
+        # label1: 2 human votes -> 2.0
+        ClassifierLabelFeedEntryVote.objects.bulk_create(
+            ClassifierLabelFeedEntryVote(
+                feed_entry=fe, classifier_label=label1, user=user
+            )
+            for fe in feed_entries[0:2]
+        )
+        # label2: 2 calculated at 0.25 -> 0.5
+        ClassifierLabelFeedEntryCalculated.objects.bulk_create(
+            ClassifierLabelFeedEntryCalculated(
+                feed_entry=fe,
+                classifier_label=label2,
+                expires_at=now + datetime.timedelta(days=7),
+                weight=0.25,
+            )
+            for fe in feed_entries[2:4]
+        )
+
+        label_feeds(3, datetime.timedelta(days=7))
+
+        rows = {
+            r.classifier_label_id: r.weight
+            for r in ClassifierLabelFeedCalculated.objects.filter(feed=feed)
+        }
+        self.assertAlmostEqual(rows[label1.uuid], 2.0)
+        self.assertAlmostEqual(rows[label2.uuid], 0.5)
+
+    def test_label_feeds_skips_feeds_without_signal(self):
+        now = timezone.now()
+        Feed.objects.create(
+            feed_url="http://example.com/silent.xml",
+            title="Silent Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        label_feeds(3, datetime.timedelta(days=7))
+
+        self.assertEqual(ClassifierLabelFeedCalculated.objects.count(), 0)
+
+    def test_label_feeds_respects_top_x(self):
+        now = timezone.now()
+        user = User.objects.create_user("topx@test.com", None)
+        labels = [
+            ClassifierLabel.objects.create(text=f"Top Label {i}") for i in range(5)
+        ]
+        feed = Feed.objects.create(
+            feed_url="http://example.com/topx.xml",
+            title="TopX Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/topx-entry.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        for label in labels:
+            ClassifierLabelFeedEntryVote.objects.create(
+                feed_entry=feed_entry, classifier_label=label, user=user
+            )
+
+        label_feeds(2, datetime.timedelta(days=7))
+
+        self.assertEqual(
+            ClassifierLabelFeedCalculated.objects.filter(feed=feed).count(), 2
+        )
+
+    def test_label_feeds_chunk_boundaries(self):
+        now = timezone.now()
+        user = User.objects.create_user("chunks@test.com", None)
+        label = ClassifierLabel.objects.create(text="Chunk Label")
+
+        for i in range(3):
+            feed = Feed.objects.create(
+                feed_url=f"http://example.com/chunk{i}.xml",
+                title=f"Chunk Feed {i}",
+                home_url="http://example.com",
+                published_at=now,
+                updated_at=None,
+                db_updated_at=None,
+            )
+            feed_entry = FeedEntry.objects.create(
+                feed=feed,
+                published_at=now,
+                title=f"Entry {i}",
+                url=f"http://example.com/chunk-entry{i}.html",
+                content="content",
+                author_name="John Doe",
+                db_updated_at=None,
+                is_archived=False,
+            )
+            ClassifierLabelFeedEntryVote.objects.create(
+                feed_entry=feed_entry, classifier_label=label, user=user
+            )
+
+        label_feeds(3, datetime.timedelta(days=7), chunk_size=2)
+
+        self.assertEqual(ClassifierLabelFeedCalculated.objects.count(), 3)
