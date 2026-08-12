@@ -8,6 +8,7 @@ from django.utils import timezone
 from api.models import (
     ClassifierLabel,
     ClassifierLabelFeedCalculated,
+    ClassifierLabelUserCalculated,
     Feed,
     SubscribedFeedUserMapping,
     User,
@@ -83,3 +84,80 @@ class TaskTestCase(TestCase):
         label_users(3, datetime.timedelta(days=7))
 
         self.assertGreaterEqual(user.calculated_classifier_labels.count(), 1)
+
+    def test_label_users_sums_feed_weights(self):
+        now = timezone.now()
+        user = User.objects.create_user("weight-users@test.com", None)
+        label1 = ClassifierLabel.objects.create(text="User Label 1")
+        label2 = ClassifierLabel.objects.create(text="User Label 2")
+
+        feed_a = Feed.objects.create(
+            feed_url="http://example.com/a.xml",
+            title="Feed A",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_b = Feed.objects.create(
+            feed_url="http://example.com/b.xml",
+            title="Feed B",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        SubscribedFeedUserMapping.objects.create(feed=feed_a, user=user)
+        SubscribedFeedUserMapping.objects.create(feed=feed_b, user=user)
+
+        expires = now + datetime.timedelta(days=7)
+        ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label1, feed=feed_a, expires_at=expires, weight=2.0
+        )
+        ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label1, feed=feed_b, expires_at=expires, weight=0.5
+        )
+        ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label2, feed=feed_b, expires_at=expires, weight=1.25
+        )
+
+        label_users(10, datetime.timedelta(days=7))
+
+        rows = {
+            r.classifier_label_id: r.weight
+            for r in ClassifierLabelUserCalculated.objects.filter(user=user)
+        }
+        self.assertAlmostEqual(rows[label1.uuid], 2.5)
+        self.assertAlmostEqual(rows[label2.uuid], 1.25)
+
+    def test_label_users_skips_users_without_subscriptions(self):
+        User.objects.create_user("nosubs@test.com", None)
+
+        label_users(10, datetime.timedelta(days=7))
+
+        self.assertEqual(ClassifierLabelUserCalculated.objects.count(), 0)
+
+    def test_label_users_chunk_boundaries(self):
+        now = timezone.now()
+        label = ClassifierLabel.objects.create(text="Chunk User Label")
+        feed = Feed.objects.create(
+            feed_url="http://example.com/shared.xml",
+            title="Shared Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label,
+            feed=feed,
+            expires_at=now + datetime.timedelta(days=7),
+            weight=1.0,
+        )
+        for i in range(3):
+            user = User.objects.create_user(f"chunkuser{i}@test.com", None)
+            SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+
+        label_users(10, datetime.timedelta(days=7), chunk_size=2)
+
+        self.assertEqual(ClassifierLabelUserCalculated.objects.count(), 3)

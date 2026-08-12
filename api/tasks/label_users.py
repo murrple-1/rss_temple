@@ -1,54 +1,71 @@
 import datetime
-from collections import Counter
+import uuid as uuid_
+from collections import defaultdict
+from itertools import batched
 
-from django.db.models import Count, OuterRef, Subquery
-from django.db.models.functions import Coalesce, Now
+from django.db.models.functions import Now
 from django.utils import timezone
 
 from api.models import (
-    ClassifierLabel,
     ClassifierLabelFeedCalculated,
     ClassifierLabelUserCalculated,
     SubscribedFeedUserMapping,
-    User,
 )
 
 
-def label_users(top_x: int, expiry_interval: datetime.timedelta):
+def label_users(
+    top_x: int, expiry_interval: datetime.timedelta, chunk_size: int = 500
+) -> None:
     ClassifierLabelUserCalculated.objects.filter(expires_at__lte=Now()).delete()
 
     expires_at = timezone.now() + expiry_interval
 
-    for user_uuid in User.objects.exclude(
-        uuid__in=ClassifierLabelUserCalculated.objects.values("user_id")
-    ).values_list("uuid", flat=True):
-        counter = Counter(
-            {
-                cl_dict["uuid"]: cl_dict["vote_count"]
-                for cl_dict in ClassifierLabel.objects.annotate(
-                    vote_count=Coalesce(
-                        Subquery(
-                            ClassifierLabelFeedCalculated.objects.filter(
-                                feed_id__in=SubscribedFeedUserMapping.objects.filter(
-                                    user_id=user_uuid
-                                ).values("feed_id"),
-                                classifier_label_id=OuterRef("uuid"),
-                            )
-                            .values("classifier_label_id")
-                            .annotate(c=Count("uuid"))
-                            .values("c")
-                        ),
-                        0,
-                    )
-                ).values("uuid", "vote_count")
-            }
+    already_labelled = set(
+        ClassifierLabelUserCalculated.objects.values_list("user_id", flat=True)
+    )
+
+    candidate_user_ids = (
+        set(
+            SubscribedFeedUserMapping.objects.filter(
+                feed_id__in=ClassifierLabelFeedCalculated.objects.values("feed_id")
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
         )
+        - already_labelled
+    )
+
+    for user_id_chunk in batched(sorted(candidate_user_ids), chunk_size):
+        # feed -> users, for this chunk only
+        feed_users: defaultdict[uuid_.UUID, list[uuid_.UUID]] = defaultdict(list)
+        for mapping in (
+            SubscribedFeedUserMapping.objects.filter(user_id__in=user_id_chunk)
+            .values("user_id", "feed_id")
+            .iterator()
+        ):
+            feed_users[mapping["feed_id"]].append(mapping["user_id"])
+
+        scores: defaultdict[uuid_.UUID, defaultdict[uuid_.UUID, float]] = defaultdict(
+            lambda: defaultdict(float)
+        )
+
+        for row in (
+            ClassifierLabelFeedCalculated.objects.filter(feed_id__in=feed_users.keys())
+            .values("feed_id", "classifier_label_id", "weight")
+            .iterator()
+        ):
+            for user_id in feed_users[row["feed_id"]]:
+                scores[user_id][row["classifier_label_id"]] += float(row["weight"])
 
         ClassifierLabelUserCalculated.objects.bulk_create(
             ClassifierLabelUserCalculated(
-                classifier_label_id=classifier_label_uuid,
-                user_id=user_uuid,
+                classifier_label_id=classifier_label_id,
+                user_id=user_id,
                 expires_at=expires_at,
+                weight=score,
             )
-            for classifier_label_uuid, _ in counter.most_common(top_x)
+            for user_id, label_scores in scores.items()
+            for classifier_label_id, score in sorted(
+                label_scores.items(), key=lambda t: t[1], reverse=True
+            )[:top_x]
         )
