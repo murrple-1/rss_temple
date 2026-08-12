@@ -301,8 +301,7 @@ docker compose exec rss_temple python ./manage.py purgebulkvotes \
   --user-email you@example.com
 ```
 
-Pass `--no-dry-run` to actually delete, and `--before <iso8601>` to bound the
-deletion to votes created before a given instant:
+Pass `--no-dry-run` to actually delete:
 
 ```sh
 docker compose exec rss_temple python ./manage.py purgebulkvotes \
