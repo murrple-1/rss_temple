@@ -822,9 +822,11 @@ git commit -m "rewrite label_users as chunked aggregate, persist weights"
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: `manage.py purgebulkvotes --user-email <email> [--before <iso8601>] [--dry-run | --no-dry-run] [--batch-size N]`. Dry-run is the **default**.
+- Produces: `manage.py purgebulkvotes --user-email <email> [--dry-run | --no-dry-run] [--batch-size N]`. Dry-run is the **default**.
 
 Note the deliberate divergence from `redetectlanguages.py`, which uses opt-in `--dry-run`. This command deletes a quarter-million rows, so it defaults to safe and requires `--no-dry-run` to act.
+
+**Fix round 1 note:** the `--before` flag described in an earlier draft of this task was removed during implementation, because `uuid_extensions.uuid7` does not use the RFC 9562 48-bit-millisecond layout the removed `_uuid7_upper_bound` helper assumed, making any time bound built on it compare incorrectly.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -948,13 +950,11 @@ Create `api/management/commands/purgebulkvotes.py`:
 
 ```python
 import argparse
-import datetime
 from collections import Counter
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
-from django.utils import timezone
 
 from api.models import ClassifierLabelFeedEntryVote, User
 
@@ -969,17 +969,12 @@ class Command(BaseCommand):
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--user-email", required=True)
         parser.add_argument(
-            "--before",
-            help="ISO 8601 datetime; only delete votes created before this instant",
-        )
-        parser.add_argument(
             "--dry-run", action=argparse.BooleanOptionalAction, default=True
         )
         parser.add_argument("--batch-size", type=int, default=5000)
 
     def handle(self, *args: Any, **options: Any) -> None:
         user_email: str = options["user_email"]
-        before_raw: str | None = options["before"]
         dry_run: bool = options["dry_run"]
         batch_size: int = options["batch_size"]
 
@@ -989,12 +984,6 @@ class Command(BaseCommand):
             raise CommandError(f"no user with email '{user_email}'")
 
         qs = ClassifierLabelFeedEntryVote.objects.filter(user=user)
-
-        if before_raw is not None:
-            before = datetime.datetime.fromisoformat(before_raw)
-            if timezone.is_naive(before):
-                before = timezone.make_aware(before)
-            qs = qs.filter(uuid__lt=_uuid7_upper_bound(before))
 
         breakdown = Counter(
             qs.values_list("classifier_label__text", flat=True).iterator()
@@ -1031,21 +1020,7 @@ class Command(BaseCommand):
                 "CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS"
             )
         )
-
-
-def _uuid7_upper_bound(before: datetime.datetime) -> uuid_.UUID:
-    """Smallest uuid7 value for the given instant.
-
-    uuid7 encodes a big-endian millisecond timestamp in its first 48 bits, so
-    ordering by uuid matches chronological order. Returns a UUID object rather
-    than a string so Django adapts it correctly on both PostgreSQL (native uuid
-    column) and SQLite (char(32) hex).
-    """
-    millis = int(before.timestamp() * 1000)
-    return uuid_.UUID(f"{millis:012x}-0000-7000-8000-000000000000")
 ```
-
-Add `import uuid as uuid_` to the command's imports.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -1072,8 +1047,7 @@ docker compose exec rss_temple python ./manage.py purgebulkvotes \
   --user-email you@example.com
 ```
 
-Pass `--no-dry-run` to actually delete, and `--before <iso8601>` to bound the
-deletion to votes created before a given instant:
+Pass `--no-dry-run` to actually delete:
 
 ```sh
 docker compose exec rss_temple python ./manage.py purgebulkvotes \

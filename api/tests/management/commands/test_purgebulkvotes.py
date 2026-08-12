@@ -88,6 +88,21 @@ class PurgeBulkVotesTestCase(TestCase):
                 stderr=StringIO(),
             )
 
+    def test_invalid_batch_size_raises(self):
+        for batch_size in ("0", "-1"):
+            with self.assertRaises(CommandError):
+                call_command(
+                    "purgebulkvotes",
+                    "--user-email",
+                    "bulk@test.com",
+                    "--no-dry-run",
+                    "--batch-size",
+                    batch_size,
+                    stderr=StringIO(),
+                )
+
+        self.assertEqual(ClassifierLabelFeedEntryVote.objects.count(), 4)
+
     def test_batching_deletes_everything(self):
         call_command(
             "purgebulkvotes",
