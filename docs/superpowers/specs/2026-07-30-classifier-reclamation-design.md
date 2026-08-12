@@ -155,8 +155,8 @@ the Python merge dominating.
 ## 4. `preload_app = True` in `gunicorn.conf.py`
 
 One line. Gunicorn currently loads the application independently in each of
-`cpu_count() * 2 + 1` workers; with `preload_app` it loads once and forks, so most of the
-measured 126MB becomes shared copy-on-write.
+`cpu_count() * 2 + 1` workers; with `preload_app` it loads once (running `django.setup()` and
+`load_middleware()`) and forks, so that portion of the import cost becomes shared copy-on-write.
 
 **Verification required before merge:** confirm nothing opens a database or Redis connection at
 import time, since connections do not survive `fork()`. Django's lazy connection handling makes
@@ -164,6 +164,20 @@ this very likely fine, but it must be checked rather than assumed — including 
 `django-apscheduler`, and the `dj-rest-auth`/`allauth` import chain.
 
 Measure worker RSS before and after and record both numbers in the PR.
+
+**Measured (task 6, local gunicorn, 4 workers):** cold RSS (immediately post-fork, before any
+request) dropped from ~239,300–239,360 KB to ~212,436–212,496 KB total — a ~27MB reduction
+(~11%), reproducible across repeated runs. However, once every worker has served at least one
+real request, the two configurations converge to within ~1% of each other (~137–139 MB/worker
+either way). The reason: Django resolves `ROOT_URLCONF` lazily — `get_resolver().url_patterns`
+is uncached after `django.setup()` and pulls in ~975 modules (views, serializers,
+`dj-rest-auth`/`allauth`, `drf_spectacular`, `django-silk`'s profiler) on each worker's first
+request, independently, after the fork. Only `django.setup()` and middleware-class imports run
+before the fork under `preload_app`; the URLConf/view/serializer tree — evidently the larger
+share of the per-worker floor — is not shared by this change alone. `preload_app` is still
+correct, safe, and worth keeping (it removes real, reproducible duplication with no measured
+downside), but it does not make "most of the measured 126MB" shared, only the
+`django.setup()`/middleware slice of it. See follow-ups for how to extend the win.
 
 ### Explicitly dropped from scope: the lingua import
 
@@ -243,3 +257,9 @@ account alone was judged sufficient.
 - Exposing label confidence through `ClassifierLabelSerializer`. Note that
   `forceLabelThreshold: 0.5` exists in the frontend config (README:481) with no backend
   counterpart; whether it wants a real score is a question for the frontend repo.
+- Warming `ROOT_URLCONF` before the gunicorn fork (e.g. forcing
+  `django.urls.get_resolver().url_patterns` to resolve in a `post_fork`/startup hook), so that the
+  view/serializer/`dj-rest-auth`/`allauth`/`drf_spectacular`/`silk` import tree — measured as the
+  larger share of the per-worker memory floor — becomes shared copy-on-write too, the way the
+  original `preload_app` premise assumed. Judged safe and legitimate but out of scope for task 6,
+  which was deliberately a single-line config change.
