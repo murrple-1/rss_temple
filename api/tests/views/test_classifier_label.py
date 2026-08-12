@@ -7,6 +7,10 @@ from django.core.cache import BaseCache, caches
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
+from api.cache_utils.classifier_label_vote_counts import (
+    _CACHE_KEY_PREFIX,
+    get_classifier_label_vote_counts_from_cache,
+)
 from api.models import (
     ClassifierLabel,
     ClassifierLabelFeedEntryCalculated,
@@ -482,4 +486,56 @@ class ClassifierLabelTestCase(APITestCase):
                 "feedEntryUuid": str(feed_entry.uuid),
                 "classifierLabelUuids": [str(label1.uuid)],
             },
+        )
+
+    def test_calculated_weight_contributes_fractionally(self):
+        now = timezone.now()
+        label1 = ClassifierLabel.objects.create(text="Weighted Label 1")
+        label2 = ClassifierLabel.objects.create(text="Weighted Label 2")
+
+        feed = Feed.objects.create(
+            feed_url="http://example.com/weighted.xml",
+            title="Weighted Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/weighted-entry.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+
+        # label1: one human vote  -> 1.0
+        ClassifierLabelFeedEntryVote.objects.create(
+            classifier_label=label1, feed_entry=feed_entry, user=self.user
+        )
+        # label2: two calculated labels at 0.25 -> 0.5, so label1 must rank higher
+        ClassifierLabelFeedEntryCalculated.objects.create(
+            classifier_label=label2,
+            feed_entry=feed_entry,
+            expires_at=now + datetime.timedelta(days=7),
+            weight=0.25,
+        )
+
+        cache = caches["default"]
+        cache.clear()
+
+        counts, _ = get_classifier_label_vote_counts_from_cache(
+            (feed_entry.uuid,), cache
+        )
+        vote_counts = counts[feed_entry.uuid]
+
+        self.assertAlmostEqual(vote_counts[label1.uuid], 1.0)
+        self.assertAlmostEqual(vote_counts[label2.uuid], 0.25)
+
+    def test_cache_key_is_versioned(self):
+        self.assertTrue(
+            _CACHE_KEY_PREFIX.startswith("classifier_label_vote_counts_v2__")
         )

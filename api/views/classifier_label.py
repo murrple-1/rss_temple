@@ -4,7 +4,7 @@ from typing import Any, Iterable, cast
 
 from django.core.cache import BaseCache, caches
 from django.db import transaction
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import Case, FloatField, Q, Value, When
 from django.http.response import HttpResponseBase
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
@@ -65,8 +65,8 @@ class ClassifierLabelListView(APIView):
                         When(condition=Q(uuid=uuid), then=Value(count))
                         for uuid, count in vote_counts.items()
                     ),
-                    default=Value(-1),
-                    output_field=IntegerField(),
+                    default=Value(-1.0),
+                    output_field=FloatField(),
                 )
             ).order_by("-vote_count", "?")
         else:

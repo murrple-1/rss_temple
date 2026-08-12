@@ -15,6 +15,10 @@ from api.models import (
     FeedEntry,
 )
 
+# Bumped to _v2 when calculated labels gained a `weight` column and vote counts
+# became floats. Old int-valued entries under the _v1 key expire untouched.
+_CACHE_KEY_PREFIX = "classifier_label_vote_counts_v2__"
+
 _CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS: float | None
 
 
@@ -32,24 +36,22 @@ _load_global_settings()
 
 def _generate_cached_entries(
     feed_entry_uuids: Collection[uuid_.UUID], cache: BaseCache
-) -> Generator[tuple[uuid_.UUID, dict[uuid_.UUID, int]], None, None]:
+) -> Generator[tuple[uuid_.UUID, dict[uuid_.UUID, float]], None, None]:
     if not feed_entry_uuids:
         return
 
-    cache_entries: dict[str, dict[uuid_.UUID, int] | None] = cache.get_many(
-        f"classifier_label_vote_counts__{fe_uuid}" for fe_uuid in feed_entry_uuids
+    cache_entries: dict[str, dict[uuid_.UUID, float] | None] = cache.get_many(
+        f"{_CACHE_KEY_PREFIX}{fe_uuid}" for fe_uuid in feed_entry_uuids
     )
 
     for key, entry in cache_entries.items():
         if entry is not None:
-            feed_entry_uuid = uuid_.UUID(
-                key.removeprefix("classifier_label_vote_counts__")
-            )
+            feed_entry_uuid = uuid_.UUID(key.removeprefix(_CACHE_KEY_PREFIX))
             yield feed_entry_uuid, entry
 
 
 class _GetClassifierLabelVoteCountsFromCacheResults(NamedTuple):
-    classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, int]]
+    classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, float]]
     cache_hit: bool
 
 
@@ -58,7 +60,7 @@ def get_classifier_label_vote_counts_from_cache(
 ) -> _GetClassifierLabelVoteCountsFromCacheResults:
     feed_entry_uuids = frozenset(feed_entry_uuids)
 
-    classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, int]] = {
+    classifier_label_vote_counts: dict[uuid_.UUID, dict[uuid_.UUID, float]] = {
         feed_entry_uuid: entry
         for feed_entry_uuid, entry in _generate_cached_entries(feed_entry_uuids, cache)
     }
@@ -93,7 +95,7 @@ def get_classifier_label_vote_counts_from_cache(
                         AND u1."feed_entry_id" = t2."uuid"
                 ) + (
                     SELECT
-                        COUNT(*)
+                        COALESCE(SUM(u2."weight"), 0)
                     FROM
                         {ClassifierLabelFeedEntryCalculated._meta.db_table} AS u2
                     WHERE
@@ -114,7 +116,7 @@ def get_classifier_label_vote_counts_from_cache(
         )
 
         missing_classifier_label_vote_counts: dict[
-            uuid_.UUID, dict[uuid_.UUID, int]
+            uuid_.UUID, dict[uuid_.UUID, float]
         ] = defaultdict(dict)
         for row in rows:
             feed_entry_uuid = row.feed_entry_uuid
@@ -129,7 +131,7 @@ def get_classifier_label_vote_counts_from_cache(
 
         cache.set_many(
             {
-                f"classifier_label_vote_counts__{feed_entry_uuid}": vote_counts
+                f"{_CACHE_KEY_PREFIX}{feed_entry_uuid}": vote_counts
                 for feed_entry_uuid, vote_counts in missing_classifier_label_vote_counts.items()
             },
             _CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS,
