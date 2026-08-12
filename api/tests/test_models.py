@@ -3,6 +3,7 @@ import logging
 import random
 from typing import ClassVar
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
@@ -10,6 +11,10 @@ from django.utils import timezone
 
 from api.models import (
     Captcha,
+    ClassifierLabel,
+    ClassifierLabelFeedCalculated,
+    ClassifierLabelFeedEntryCalculated,
+    ClassifierLabelUserCalculated,
     Feed,
     FeedEntry,
     Language,
@@ -509,3 +514,68 @@ class CaptchaTestCase(TestCase):
     def test_secret_phrase(self):
         captcha = self._generate_captcha()
         self.assertEqual(captcha.secret_phrase, "Keraxs")
+
+
+class ClassifierLabelWeightTestCase(TestCase):
+    def test_calculated_weight_defaults_to_one(self):
+        now = timezone.now()
+        label = ClassifierLabel.objects.create(text="Label 1")
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/entry.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        user = User.objects.create_user("weight@test.com", None)
+
+        entry_calc = ClassifierLabelFeedEntryCalculated.objects.create(
+            classifier_label=label,
+            feed_entry=feed_entry,
+            expires_at=now + datetime.timedelta(days=7),
+        )
+        feed_calc = ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label,
+            feed=feed,
+            expires_at=now + datetime.timedelta(days=7),
+        )
+        user_calc = ClassifierLabelUserCalculated.objects.create(
+            classifier_label=label,
+            user=user,
+            expires_at=now + datetime.timedelta(days=7),
+        )
+
+        self.assertEqual(entry_calc.weight, 1.0)
+        self.assertEqual(feed_calc.weight, 1.0)
+        self.assertEqual(user_calc.weight, 1.0)
+
+    def test_calculated_weight_rejects_negative(self):
+        now = timezone.now()
+        label = ClassifierLabel.objects.create(text="Label 2")
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss2.xml",
+            title="Sample Feed 2",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        obj = ClassifierLabelFeedCalculated(
+            classifier_label=label,
+            feed=feed,
+            expires_at=now + datetime.timedelta(days=7),
+            weight=-0.5,
+        )
+        with self.assertRaises(ValidationError):
+            obj.full_clean()

@@ -492,6 +492,11 @@ LINGUA_MINIMUM_RELATIVE_DISTANCE = 0.45
 
 LABELING_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 
+# Multiplier applied to a classifier's predicted probability when it is written
+# to ClassifierLabelFeedEntryCalculated.weight. Caps a maximally-confident
+# machine label at half a human vote. Consumed by the classifier (spec 2).
+CLASSIFIER_LABEL_CALCULATED_WEIGHT = 0.5
+
 EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None = 60.0 * 60.0 * 12.0  # 12 hours
 CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS: float | None = (
     60.0 * 30.0

@@ -9,6 +9,7 @@ import uuid_extensions
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.validators import MinValueValidator
 from django.db import connection, models
 from django.utils import timezone, tree
 from rest_framework.authtoken.models import Token as _Token
@@ -195,6 +196,7 @@ class ClassifierLabelFeedEntryCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 
 class ClassifierLabelFeedCalculated(models.Model):
@@ -211,6 +213,7 @@ class ClassifierLabelFeedCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 
 class ClassifierLabelUserCalculated(models.Model):
@@ -227,6 +230,7 @@ class ClassifierLabelUserCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 
 class Language(models.Model):
