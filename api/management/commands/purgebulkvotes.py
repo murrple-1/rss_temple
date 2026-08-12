@@ -1,10 +1,11 @@
 import argparse
-from collections import Counter
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.db.models import Count
 
+from api.cache_utils.classifier_label_vote_counts import _CACHE_KEY_PREFIX
 from api.models import ClassifierLabelFeedEntryVote, User
 
 
@@ -37,13 +38,21 @@ class Command(BaseCommand):
 
         qs = ClassifierLabelFeedEntryVote.objects.filter(user=user)
 
-        breakdown = Counter(
-            qs.values_list("classifier_label__text", flat=True).iterator()
+        # Aggregate in the database rather than streaming every matching row
+        # (up to ~253k in production) into a Python Counter.
+        breakdown = (
+            qs.values("classifier_label__text")
+            .annotate(count=Count("uuid"))
+            .order_by("-count")
         )
-        total = sum(breakdown.values())
 
-        for label_text, count in breakdown.most_common():
-            self.stderr.write(self.style.NOTICE(f"{label_text}: {count}"))
+        total = 0
+        for row in breakdown:
+            count = row["count"]
+            total += count
+            self.stderr.write(
+                self.style.NOTICE(f"{row['classifier_label__text']}: {count}")
+            )
         self.stderr.write(self.style.NOTICE(f"total: {total}"))
 
         if dry_run:
@@ -66,7 +75,7 @@ class Command(BaseCommand):
         self.stderr.write(self.style.SUCCESS(f"deleted {deleted} vote(s)"))
         self.stderr.write(
             self.style.NOTICE(
-                "classifier_label_vote_counts_v2__* cache entries will expire within "
+                f"{_CACHE_KEY_PREFIX}* cache entries will expire within "
                 "CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS"
             )
         )

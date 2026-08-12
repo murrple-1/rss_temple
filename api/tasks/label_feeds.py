@@ -22,7 +22,9 @@ def label_feeds(
     expires_at = timezone.now() + expiry_interval
 
     already_labelled = set(
-        ClassifierLabelFeedCalculated.objects.values_list("feed_id", flat=True)
+        ClassifierLabelFeedCalculated.objects.values_list(
+            "feed_id", flat=True
+        ).distinct()
     )
 
     candidate_feed_ids = (

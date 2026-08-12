@@ -27,6 +27,11 @@ class WarmUrlResolverTestCase(TestCase):
         first = warm_url_resolver()
         second = warm_url_resolver()
         self.assertEqual(first, second)
+        # Pin both calls to the actual number of root URL patterns, not just to
+        # each other -- otherwise a neutered `warm_url_resolver()` (e.g. one
+        # hardcoded to `return 1`) would still pass this test as long as it
+        # returned the same constant twice.
+        self.assertEqual(first, len(get_resolver().url_patterns))
 
 
 # These two scripts are run in a *fresh subprocess*, not in-process, and that is

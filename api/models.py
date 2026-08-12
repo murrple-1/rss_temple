@@ -196,6 +196,11 @@ class ClassifierLabelFeedEntryCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed_entry = models.ForeignKey("FeedEntry", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    # Entry tier: a classifier confidence, probability-scale (<= 0.5 in
+    # practice). Not directly comparable to the feed/user tiers below, which
+    # are count-scale sums that can grow arbitrarily large (a bulk-vote import
+    # produced 165,005 for one label). `MinValueValidator(0.0)` is the only
+    # invariant shared across all three `weight` columns.
     weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 
@@ -213,6 +218,10 @@ class ClassifierLabelFeedCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    # Feed tier: a sum of per-entry vote counts and calculated weights
+    # (`label_feeds`), count-scale and potentially very large -- not on the
+    # same scale as the probability-valued entry tier above or comparable to
+    # the user tier below without normalising first.
     weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 
@@ -230,6 +239,10 @@ class ClassifierLabelUserCalculated(models.Model):
     classifier_label = models.ForeignKey(ClassifierLabel, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     expires_at = models.DateTimeField()
+    # User tier: a sum of subscribed feeds' `weight` values (`label_users`),
+    # count-scale and potentially very large -- do not compare directly
+    # against a feed fingerprint or an entry's probability-scale weight
+    # without normalising first; a recommender combining tiers must normalise.
     weight = models.FloatField(default=1.0, validators=[MinValueValidator(0.0)])
 
 

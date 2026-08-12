@@ -161,3 +161,50 @@ class TaskTestCase(TestCase):
         label_users(10, datetime.timedelta(days=7), chunk_size=2)
 
         self.assertEqual(ClassifierLabelUserCalculated.objects.count(), 3)
+
+    def test_label_users_rerun_skips_already_labelled_unexpired_users(self):
+        # Mirrors test_label_feeds_rerun_skips_already_labelled_unexpired_feeds:
+        # `label_users` runs nightly against a 7-day expiry interval, so it
+        # re-runs on 6 of every 7 nights while a user's row from a previous run
+        # is still unexpired. `bulk_create` is called without
+        # `ignore_conflicts`, and `ClassifierLabelUserCalculated` has a unique
+        # constraint on (classifier_label, user) -- so if the
+        # `already_labelled` exclusion is ever dropped, a second run over the
+        # same unexpired user raises `IntegrityError` instead of leaving the
+        # existing row untouched.
+        now = timezone.now()
+        user = User.objects.create_user("rerun-users@test.com", None)
+        label = ClassifierLabel.objects.create(text="Rerun User Label")
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rerun-users.xml",
+            title="Rerun Users Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+        ClassifierLabelFeedCalculated.objects.create(
+            classifier_label=label,
+            feed=feed,
+            expires_at=now + datetime.timedelta(days=7),
+            weight=1.0,
+        )
+
+        label_users(10, datetime.timedelta(days=7))
+
+        self.assertEqual(
+            ClassifierLabelUserCalculated.objects.filter(user=user).count(), 1
+        )
+        row = ClassifierLabelUserCalculated.objects.get(user=user)
+        original_expires_at = row.expires_at
+
+        # Second run: the row above is still unexpired. This must not attempt
+        # to re-create it.
+        label_users(10, datetime.timedelta(days=7))
+
+        self.assertEqual(
+            ClassifierLabelUserCalculated.objects.filter(user=user).count(), 1
+        )
+        row.refresh_from_db()
+        self.assertEqual(row.expires_at, original_expires_at)

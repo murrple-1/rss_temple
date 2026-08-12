@@ -49,6 +49,14 @@ def label_users(
             lambda: defaultdict(float)
         )
 
+        # NOTE: `feed_users.keys()` is the set of distinct feeds subscribed-to by
+        # this chunk of up to `chunk_size` users, and is *not* itself bounded by
+        # `chunk_size` -- a user with many subscriptions can push it arbitrarily
+        # high. SQLite caps bound parameters at 32766 per statement, so this would
+        # need restructuring (e.g. sub-chunking `feed_users.keys()` too) once any
+        # user in a chunk has roughly 65+ subscriptions (chunk_size=500 users x
+        # ~65 unique feeds each). Not reachable at this deployment's size; left
+        # as-is rather than restructured pre-emptively.
         for row in (
             ClassifierLabelFeedCalculated.objects.filter(feed_id__in=feed_users.keys())
             .values("feed_id", "classifier_label_id", "weight")
