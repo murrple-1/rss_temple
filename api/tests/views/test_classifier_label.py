@@ -516,7 +516,7 @@ class ClassifierLabelTestCase(APITestCase):
         ClassifierLabelFeedEntryVote.objects.create(
             classifier_label=label1, feed_entry=feed_entry, user=self.user
         )
-        # label2: two calculated labels at 0.25 -> 0.5, so label1 must rank higher
+        # label2: one calculated label at weight 0.25, so label1 must rank higher
         ClassifierLabelFeedEntryCalculated.objects.create(
             classifier_label=label2,
             feed_entry=feed_entry,
