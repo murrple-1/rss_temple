@@ -115,11 +115,11 @@ class ClassifierLabelListByEntryView(APIView):
 
         for feed_entry_uuid, vote_counts in classifier_label_vote_counts.items():
             classifier_labels_with_order_keys: list[
-                tuple[ClassifierLabel, tuple[int, float]]
+                tuple[ClassifierLabel, tuple[float, float]]
             ] = [
                 (
                     classifier_label,
-                    (vote_counts.get(classifier_label.uuid, -1), random.random()),
+                    (vote_counts.get(classifier_label.uuid, -1.0), random.random()),
                 )
                 for classifier_label in classifier_labels
             ]
