@@ -6,7 +6,7 @@
 
 **Architecture:** Add a `weight` FloatField to the three `ClassifierLabel*Calculated` tables. Change the vote-count aggregation from `COUNT(*)` to `COALESCE(SUM(weight), 0)` and bump the cache key. Rewrite `label_feeds`/`label_users` from one-query-per-entity to chunked two-query aggregates. Add an operator-run purge command. Enable `preload_app` in gunicorn.
 
-**Tech Stack:** Django 5 + DRF, PostgreSQL 18 (SQLite for tests), Valkey/Redis via `django-redis`, dramatiq + APScheduler, `manage.py test` with `coverage`.
+**Tech Stack:** Django 6 + DRF, PostgreSQL 18 (SQLite for tests), Valkey/Redis via `django-redis`, dramatiq + APScheduler, `manage.py test` with `coverage`.
 
 **Spec:** `docs/superpowers/specs/2026-07-30-classifier-reclamation-design.md`
 
@@ -14,7 +14,17 @@
 
 - Python 3.14. `itertools.batched` is available and preferred over hand-rolled chunking.
 - Tests run against **SQLite**, production runs **PostgreSQL 18**. Any raw SQL must work on both — `api/cache_utils/classifier_label_vote_counts.py` already has a `connection.vendor == "sqlite"` branch for UUID parameter binding. Do not add PostgreSQL-only migration operations (e.g. `AddIndexConcurrently`).
-- Run tests with `./scripts/run_tests.sh [dotted.test.path]`. Full suite: `./scripts/run_tests.sh`.
+- **Test command.** The project's canonical runner is `./scripts/run_tests.sh [dotted.test.path]`,
+  which wraps `pipenv run coverage run manage.py test`. On this machine `pipenv` is a pyenv shim
+  resolving to a Python version that does not have it installed, so that script silently runs
+  nothing and still exits 0. Use the project venv directly instead:
+
+  ```sh
+  /home/mchristo/.local/share/virtualenvs/rss_temple-pQQQnncW/bin/python manage.py test [dotted.test.path]
+  ```
+
+  Baseline on a clean tree: **334 tests, 0 failures, ~11s**. Wherever a step below says
+  `./scripts/run_tests.sh X`, run the venv-python form with the same argument.
 - `pre-commit` runs `ruff --fix` and `ruff-format` on commit. Let it reformat; re-stage if it does.
 - After `makemigrations`, run `./scripts/post_makemigrations.sh` to fix file ownership/permissions.
 - Type annotations are checked by pyright. Do not use `collections.Counter` for float scores — `Counter[T]` is typed for int values. Use `defaultdict[K, float]`.

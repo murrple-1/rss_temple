@@ -6,7 +6,7 @@
 
 **Architecture:** Seed terms label a corpus off-box; scikit-learn trains a TF-IDF + one-vs-rest logistic regression from those weak labels; the fitted parameters are exported as a stdlib-loadable JSON artifact committed to the repo; a pure-Python inference module scores entries inside the dramatiq worker only, writing `ClassifierLabelFeedEntryCalculated` with a confidence weight.
 
-**Tech Stack:** Django 5 + DRF, PostgreSQL 18 (SQLite for tests), dramatiq + APScheduler, scikit-learn (training box only, never in the production image), Python stdlib `json`/`base64`/`array`/`math`/`re` for inference.
+**Tech Stack:** Django 6 + DRF, PostgreSQL 18 (SQLite for tests), dramatiq + APScheduler, scikit-learn (training box only, never in the production image), Python stdlib `json`/`base64`/`array`/`math`/`re` for inference.
 
 **Spec:** `docs/superpowers/specs/2026-07-30-text-classifier-design.md`
 **Depends on:** `docs/superpowers/plans/2026-07-30-classifier-reclamation.md` must be complete — this plan assumes `ClassifierLabelFeedEntryCalculated.weight` and `settings.CLASSIFIER_LABEL_CALCULATED_WEIGHT` exist.
@@ -18,7 +18,17 @@
 - **`api/text_classifier/taxonomy.py`, `seed_labeler.py`, and `artifact.py` must be Django-free** — `scripts/train_classifier.py` imports them off-box without a Django settings module. Do not `from django.conf import settings` in those three files.
 - **`api/text_classifier/classifier.py` must never be imported from `api/views/`.** Enforced by a test in Task 8. Violating it loads the model into every one of `cpu_count() * 2 + 1` gunicorn workers.
 - Tests run against **SQLite**, production runs **PostgreSQL 18**. No PostgreSQL-only migration operations.
-- Run tests with `./scripts/run_tests.sh [dotted.test.path]`.
+- **Test command.** The project's canonical runner is `./scripts/run_tests.sh [dotted.test.path]`,
+  which wraps `pipenv run coverage run manage.py test`. On this machine `pipenv` is a pyenv shim
+  resolving to a Python version that does not have it installed, so that script silently runs
+  nothing and still exits 0. Use the project venv directly instead:
+
+  ```sh
+  /home/mchristo/.local/share/virtualenvs/rss_temple-pQQQnncW/bin/python manage.py test [dotted.test.path]
+  ```
+
+  Wherever a step below says `./scripts/run_tests.sh X`, run the venv-python form with the same
+  argument. Likewise `pipenv run python manage.py ...` becomes the venv-python form.
 - `pre-commit` runs `ruff --fix` and `ruff-format`. Let it reformat; re-stage if it does.
 - After `makemigrations`, run `./scripts/post_makemigrations.sh`.
 - Type annotations are checked by pyright. Prefer `defaultdict[K, float]` over `Counter` for float scores.
