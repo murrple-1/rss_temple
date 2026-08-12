@@ -1125,12 +1125,32 @@ Record total RSS across the gunicorn worker processes.
 In `gunicorn.conf.py`, add below the existing `workers` line:
 
 ```python
-# Load the application once in the master process and fork, so the ~126MB
-# per-worker Django import cost is shared copy-on-write rather than duplicated
-# across `cpu_count() * 2 + 1` workers. Requires that nothing opens a database
-# or cache connection at import time, since connections do not survive fork().
+# Load the application once in the master process and fork, so
+# django.setup() + middleware imports are shared copy-on-write instead of
+# duplicated across `cpu_count() * 2 + 1` workers (measured ~27MB across 4
+# workers, ~11% of cold RSS). Django resolves ROOT_URLCONF lazily on first
+# request, so the larger view/serializer import cost is still paid per-worker
+# after fork; sharing that too would require warming the URLConf pre-fork.
+# Requires that nothing opens a database or cache connection at import time,
+# since connections do not survive fork().
 preload_app = True
 ```
+
+**Measured result (task 6, local gunicorn — docker compose wasn't viable in
+that checkout, see the task's report):** cold RSS across 4 workers dropped
+from ~239,300–239,360 KB to ~212,436–212,496 KB (~27MB, ~11%), reproducible
+across repeated runs. Once every worker has served a real request, the two
+configurations converge to within ~1% of each other, because Django resolves
+`ROOT_URLCONF` lazily on first request per worker — `get_resolver().url_patterns`
+is uncached after `django.setup()` and imports ~975 modules (views,
+serializers, `dj-rest-auth`/`allauth`, `drf_spectacular`, `django-silk`'s
+profiler) independently in each worker, after the fork, regardless of
+`preload_app`. Only `django.setup()` and middleware-class imports run
+pre-fork. `preload_app` is still correct and worth keeping, but "most of the
+measured 126MB becomes shared copy-on-write" (the original premise in spec 1)
+does not hold on this app's current lazy-URLConf-resolution pattern; warming
+the URLConf pre-fork would be needed for that, and is recorded as a follow-up
+rather than done here.
 
 - [ ] **Step 4: Verify the app still serves requests**
 
