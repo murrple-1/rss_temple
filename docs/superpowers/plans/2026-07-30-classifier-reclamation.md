@@ -923,6 +923,21 @@ class PurgeBulkVotesTestCase(TestCase):
                 stderr=StringIO(),
             )
 
+    def test_invalid_batch_size_raises(self):
+        for batch_size in ("0", "-1"):
+            with self.assertRaises(CommandError):
+                call_command(
+                    "purgebulkvotes",
+                    "--user-email",
+                    "bulk@test.com",
+                    "--no-dry-run",
+                    "--batch-size",
+                    batch_size,
+                    stderr=StringIO(),
+                )
+
+        self.assertEqual(ClassifierLabelFeedEntryVote.objects.count(), 4)
+
     def test_batching_deletes_everything(self):
         call_command(
             "purgebulkvotes",
@@ -978,6 +993,9 @@ class Command(BaseCommand):
         dry_run: bool = options["dry_run"]
         batch_size: int = options["batch_size"]
 
+        if batch_size < 1:
+            raise CommandError(f"--batch-size must be at least 1, got {batch_size}")
+
         try:
             user = User.objects.get(email=user_email)
         except User.DoesNotExist:
@@ -1025,7 +1043,7 @@ class Command(BaseCommand):
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `./scripts/run_tests.sh api.tests.management.commands.test_purgebulkvotes`
-Expected: PASS, 4 tests.
+Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Document the command in the README**
 

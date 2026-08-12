@@ -185,15 +185,15 @@ would be tidying with no measurable benefit, so it is deliberately excluded.
 A management command, **never an automatic data migration**:
 
 ```
-python manage.py purgebulkvotes --user-email <email> [--before <iso8601>] [--dry-run]
+python manage.py purgebulkvotes --user-email <email> [--dry-run] [--batch-size N]
 ```
 
-- Deletes `ClassifierLabelFeedEntryVote` rows belonging to the named account, optionally bounded
-  by a creation cutoff. `uuid` is `uuid7`, so creation time is recoverable from the primary key
-  if a time bound is wanted.
+- Deletes `ClassifierLabelFeedEntryVote` rows belonging to the named account. Scoping is by
+  account only; there is no time-bounded cutoff (see implementation note below).
 - `--dry-run` is the default; deletion requires an explicit `--no-dry-run`.
 - Prints a per-label breakdown of what will be or was deleted.
-- Deletes in batches to avoid a single 253k-row statement.
+- Deletes in batches (`--batch-size`, default 5000) to avoid a single 253k-row statement.
+  `--batch-size` must be at least 1; the command raises `CommandError` otherwise.
 - Invalidates the `classifier_label_vote_counts_v2__*` cache entries for affected entries, or
   documents that they expire naturally within
   `CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS`.
@@ -203,6 +203,15 @@ dominate the label ordering the voting UI presents, and once spec 2 writes weigh
 labels the ordering would become a three-way muddle of real votes, script output, and
 predictions. The feed-level signal they encode can be regenerated from the original script if
 ever wanted.
+
+**Implementation note (fix round, 2026-07-30):** a `--before <iso8601>` cutoff was specified
+here but removed during implementation. It relied on `uuid7` ordering matching chronological
+order, which assumes RFC 9562's 48-bit-millisecond prefix. The installed `uuid_extensions`
+package implements an older 2021 draft layout (36-bit whole seconds in 16-second ticks plus
+24-bit fractional seconds), so any bound built on that assumption compares incorrectly. Since
+`ClassifierLabelFeedEntryVote` has no timestamp column, a working cutoff would mean hard-coding
+a third-party package's internal bit layout into an irreversible delete command. Scoping by
+account alone was judged sufficient.
 
 ## Testing
 
