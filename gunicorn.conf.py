@@ -12,7 +12,12 @@ accesslog = "-"
 # after fork, and shared none of it -- see `on_starting` below, which closes
 # that gap by warming the URLConf pre-fork too.
 # Requires that nothing opens a database or cache connection at import time,
-# since connections do not survive fork().
+# since connections do not survive fork(). Checked for the modules `preload_app`
+# alone reaches in task 6's audit, and re-checked for the larger set `on_starting`
+# below additionally pulls in, in task 7's audit. Both are enforced by
+# `api/tests/test_preload.py`'s `WarmUrlResolverForkSafetyTestCase`, which runs in
+# a fresh subprocess -- see that test module and `rss_temple/preload.py`'s
+# docstring for why it must be a subprocess and not an in-process check.
 preload_app = True
 
 
