@@ -286,6 +286,31 @@ networks:
     internal: true
 ```
 
+### Purging bulk-applied classifier votes
+
+`ClassifierLabelFeedEntryVote` is meant to record human votes. If labels were
+ever applied in bulk by a script, those rows outweigh real votes in the label
+ordering the voting UI presents. `purgebulkvotes` removes every vote belonging
+to one account.
+
+It is **dry-run by default** — it prints a per-label breakdown and deletes
+nothing:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgebulkvotes \
+  --user-email you@example.com
+```
+
+Pass `--no-dry-run` to actually delete, and `--before <iso8601>` to bound the
+deletion to votes created before a given instant:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgebulkvotes \
+  --user-email you@example.com --no-dry-run
+```
+
+**Take a backup first** — see `DB.md`. This is not reversible.
+
 `/opt/rss_temple/rss_temple/.env`
 ```sh
 TZ=UTC
