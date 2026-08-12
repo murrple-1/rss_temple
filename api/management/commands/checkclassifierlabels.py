@@ -5,32 +5,9 @@ from typing import Any
 from django.core.management.base import BaseCommand
 
 from api.models import ClassifierLabel
+from api.text_classifier.taxonomy import LABEL_NAMES
 
-_EXPECTED_LABELS = [
-    "Anime & Manga",
-    "Arts & Craft",
-    "Automobile & Vehicles",
-    "Books",
-    "Business, Finance & Banking",
-    "Celebrities & Culture",
-    "Computer Hardware & Software",
-    "Education",
-    "Fashion & Beauty",
-    "Food & Drink",
-    "Gaming",
-    "Health",
-    "Movies & TV",
-    "Music",
-    "News & Weather",
-    "Pets & Animals",
-    "Photography",
-    "Politics",
-    "Programming",
-    "Religion",
-    "Science & Technology",
-    "Sport",
-    "Travel",
-]
+_EXPECTED_LABELS = list(LABEL_NAMES)
 
 
 class Command(BaseCommand):
