@@ -286,30 +286,6 @@ networks:
     internal: true
 ```
 
-### Purging bulk-applied classifier votes
-
-`ClassifierLabelFeedEntryVote` is meant to record human votes. If labels were
-ever applied in bulk by a script, those rows outweigh real votes in the label
-ordering the voting UI presents. `purgebulkvotes` removes every vote belonging
-to one account.
-
-It is **dry-run by default** — it prints a per-label breakdown and deletes
-nothing:
-
-```sh
-docker compose exec rss_temple python ./manage.py purgebulkvotes \
-  --user-email you@example.com
-```
-
-Pass `--no-dry-run` to actually delete:
-
-```sh
-docker compose exec rss_temple python ./manage.py purgebulkvotes \
-  --user-email you@example.com --no-dry-run
-```
-
-**Take a backup first** — see `DB.md`. This is not reversible.
-
 `/opt/rss_temple/rss_temple/.env`
 ```sh
 TZ=UTC
@@ -426,6 +402,44 @@ maxmemory-policy noeviction
 ```
 
 Start the containers with `docker compose up -d`.
+
+Note: the backend's `gunicorn.conf.py` sets `preload_app = True`, which means
+`kill -HUP` no longer reloads new application code into running workers — a
+deploy that changes code requires restarting the `rss_temple` container (or
+running `docker compose up -d` again to pick up a new image), not signalling
+the existing one.
+
+### Purging bulk-applied classifier votes
+
+`ClassifierLabelFeedEntryVote` is meant to record human votes. If labels were
+ever applied in bulk by a script, those rows outweigh real votes in the label
+ordering the voting UI presents. `purgebulkvotes` removes every vote belonging
+to one account.
+
+It is **dry-run by default** — it prints a per-label breakdown and deletes
+nothing:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgebulkvotes \
+  --user-email you@example.com
+```
+
+Pass `--no-dry-run` to actually delete:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgebulkvotes \
+  --user-email you@example.com --no-dry-run
+```
+
+Deletion is batched; pass `--batch-size` to change how many rows are deleted
+per transaction (default `5000`):
+
+```sh
+docker compose exec rss_temple python ./manage.py purgebulkvotes \
+  --user-email you@example.com --no-dry-run --batch-size 1000
+```
+
+**Take a backup first** — see `DB.md`. This is not reversible.
 
 ### RSS Temple Frontend
 

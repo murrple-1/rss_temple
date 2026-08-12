@@ -132,8 +132,13 @@ has `shm_size: 256m`.
 
 ### New behaviour
 
-Preserve the existing semantics — delete expired, then fill only entities that lack rows — and
-change the query strategy:
+Delete expired, then fill only entities that lack rows *and have signal* — and change the query
+strategy. This deliberately changes semantics as well as performance: the current implementation
+iterates every entity lacking a row and creates one regardless of signal, so a zero-signal entity
+still gets a row picking `top_x` labels arbitrarily (all tied at a count of 0). The rewrite only
+creates a row for an entity that has at least one vote or calculated label; zero-signal entities
+are simply skipped and get no row at all. See `test_label_feeds_skips_feeds_without_signal` and
+`test_label_users_skips_users_without_subscriptions`.
 
 1. Chunk the entity list (default 500 per chunk).
 2. Per chunk, issue **two** aggregate queries, not one per entity:
@@ -270,8 +275,11 @@ account alone was judged sufficient.
 - Aggregation with mixed weights: an entry with one human vote and one calculated label at
   `weight=0.5` scores 1.5, and label ordering reflects it.
 - Float vote counts sort correctly in both `classifierlabels` endpoints.
-- `label_feeds` / `label_users` rewrite produces identical `(entity, label)` membership to the
-  current implementation on the existing fixtures, and additionally populates `weight`.
+- `label_feeds` / `label_users` rewrite populates `weight`, and — as described in section 3 above —
+  deliberately does *not* produce identical `(entity, label)` membership to the current
+  implementation: zero-signal entities no longer get a row at all. Covered by
+  `test_label_feeds_skips_feeds_without_signal` and
+  `test_label_users_skips_users_without_subscriptions`.
 - Chunking boundary: entity counts of 0, 1, `chunk_size`, and `chunk_size + 1`.
 - `purgebulkvotes` dry-run deletes nothing; `--no-dry-run` deletes only the named account's rows
   and leaves other accounts' votes intact.
@@ -282,7 +290,7 @@ account alone was judged sufficient.
 | --- | --- |
 | `preload_app` breaks on a fork-unsafe import | Verify before merge; trivially revertible (one line) |
 | Stale int-valued cache entries mixed with float ones | `_v2` cache key |
-| Rewritten aggregation silently changes results | Equivalence test against current implementation on existing fixtures |
+| Rewritten aggregation silently changes results | The membership change (zero-signal entities get no row) is intentional, not silent: it is disclosed above and covered by `test_label_feeds_skips_feeds_without_signal` / `test_label_users_skips_users_without_subscriptions`. No equivalence test against the old implementation exists, or should — the two are not supposed to agree on that case. |
 | Bulk-vote deletion is irreversible | `--dry-run` default, per-label preview, operator-run command; a DB backup procedure already exists in `DB.md` |
 
 ## Follow-ups (not in this spec)

@@ -117,7 +117,16 @@ class _LabelFeedsSerializer(serializers.Serializer):
 
 
 class _LabelUsersSerializer(serializers.Serializer):
-    crontab = serializers.CharField(default="0 0 * * *")  # every midnight
+    # Offset 30 minutes after `label_feeds`' default (`0 0 * * *`) on purpose:
+    # `label_users` aggregates `ClassifierLabelFeedCalculated`, the table
+    # `label_feeds` deletes-then-repopulates each run. Under
+    # `BlockingScheduler`'s default 10-thread executor these two jobs run
+    # concurrently if left on the same crontab, and `label_users` can read
+    # that table while `label_feeds` is between its delete and its
+    # `bulk_create`, producing an empty cycle for `label_users`. It
+    # self-heals the next night, but staggering the defaults avoids it for
+    # free.
+    crontab = serializers.CharField(default="30 0 * * *")  # 30 minutes after midnight
     topX = serializers.IntegerField(source="top_x", default=3)
 
     def create(self, validated_data: Any) -> Any:

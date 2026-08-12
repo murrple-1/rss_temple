@@ -18,6 +18,13 @@ accesslog = "-"
 # `api/tests/test_preload.py`'s `WarmUrlResolverForkSafetyTestCase`, which runs in
 # a fresh subprocess -- see that test module and `rss_temple/preload.py`'s
 # docstring for why it must be a subprocess and not an in-process check.
+#
+# Operational consequence: with `preload_app` on, the master process holds the
+# loaded application code, so `kill -HUP <master pid>` (gunicorn's usual
+# "reload workers with new code" signal) no longer picks up a new deploy --
+# workers restart but re-inherit the master's already-loaded (old) code.
+# Deploying a code change now requires restarting the master/container, not
+# signalling it.
 preload_app = True
 
 

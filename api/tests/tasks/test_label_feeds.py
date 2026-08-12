@@ -238,3 +238,54 @@ class TaskTestCase(TestCase):
         label_feeds(3, datetime.timedelta(days=7), chunk_size=2)
 
         self.assertEqual(ClassifierLabelFeedCalculated.objects.count(), 3)
+
+    def test_label_feeds_rerun_skips_already_labelled_unexpired_feeds(self):
+        # `label_feeds` runs nightly against a 7-day expiry interval, so on 6 of
+        # every 7 nights it re-runs while a feed's row from a previous run is
+        # still unexpired. `bulk_create` is called without `ignore_conflicts`,
+        # and `ClassifierLabelFeedCalculated` has a unique constraint on
+        # (classifier_label, feed) -- so if the `already_labelled` exclusion is
+        # ever dropped, a second run over the same unexpired feed raises
+        # `IntegrityError` instead of leaving the existing row untouched.
+        now = timezone.now()
+        user = User.objects.create_user("rerun-feeds@test.com", None)
+        label = ClassifierLabel.objects.create(text="Rerun Label")
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rerun.xml",
+            title="Rerun Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Rerun Entry",
+            url="http://example.com/rerun-entry.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        ClassifierLabelFeedEntryVote.objects.create(
+            feed_entry=feed_entry, classifier_label=label, user=user
+        )
+
+        label_feeds(3, datetime.timedelta(days=7))
+
+        self.assertEqual(
+            ClassifierLabelFeedCalculated.objects.filter(feed=feed).count(), 1
+        )
+        row = ClassifierLabelFeedCalculated.objects.get(feed=feed)
+        original_expires_at = row.expires_at
+
+        # Second run: the row above is still unexpired. This must not attempt
+        # to re-create it.
+        label_feeds(3, datetime.timedelta(days=7))
+
+        self.assertEqual(
+            ClassifierLabelFeedCalculated.objects.filter(feed=feed).count(), 1
+        )
+        row.refresh_from_db()
+        self.assertEqual(row.expires_at, original_expires_at)
