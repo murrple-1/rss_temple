@@ -22,7 +22,17 @@ class Command(BaseCommand):
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--count", type=int, default=300)
         parser.add_argument("--language", default="ENG")
-        parser.add_argument("--excerpt-chars", type=int, default=500)
+        # 50,000 to match `exportcorpus --max-raw-content-chars`'s default:
+        # both are raw-HTML export-payload safety valves, not the
+        # classification-length cap (that lives in
+        # `api.text_classifier.prep_content.MAX_CLASSIFICATION_CHARS`,
+        # applied once to prepared text). A smaller raw slice here would
+        # give the gold set (and `eval_classifier.py`, which scores against
+        # it) less text than production ever sees for the same entry --
+        # silently mismeasuring the model against a task easier than the
+        # real one. See that module's docstring for the full 12.5:1
+        # raw-to-prepared headroom rationale this default preserves.
+        parser.add_argument("--excerpt-chars", type=int, default=50_000)
 
     def handle(self, *args: Any, **options: Any) -> None:
         count: int = options["count"]

@@ -129,15 +129,30 @@ def build_predictions(
     """Model and seed-labeler predictions for every gold row, keyed by uuid.
 
     Both sides score identically prepared text.
-    `prep_for_classification` is the *only* truncation point in the whole
-    pipeline (see its docstring in `api/text_classifier/prep_content.py`);
-    feeding it raw `title`/`content_excerpt` untouched, exactly as
-    `api/tasks/label_feed_entries.py` does in production, keeps this
-    comparison honest -- concatenating the raw fields instead would let
-    un-stripped HTML in `content_excerpt` change which n-grams form
-    (e.g. an entity like "&nbsp;" tokenizing to a spurious "nbsp" word that
-    breaks bigram adjacency) and silently diverge from what production
-    actually scores.
+    `prep_for_classification` is the *only* truncation point production
+    ever applies (see its docstring in `api/text_classifier/prep_content.py`);
+    feeding it `title`/`content_excerpt` untouched -- rather than
+    re-slicing or otherwise altering them here -- keeps this function from
+    adding a SECOND, different truncation on top of whatever
+    `exportgoldcandidates --excerpt-chars` already applied when the gold
+    set was exported.
+
+    This does NOT make the comparison identical to production, because
+    `content_excerpt` is itself a raw-HTML slice taken at export time
+    (`exportgoldcandidates --excerpt-chars`, default 50,000 raw chars) --
+    the same kind of pre-slice `prep_content.py`'s docstring warns every
+    caller against, made unavoidable here because the gold set is a fixed
+    file re-scored on every eval run, not a live query against `FeedEntry`.
+    As long as `--excerpt-chars` stays at or above `exportcorpus
+    --max-raw-content-chars` (50,000, matching the 12.5:1 headroom over
+    `MAX_CLASSIFICATION_CHARS` described there), the export-time slice
+    should rarely be what actually bites; a smaller `--excerpt-chars`
+    reintroduces the same divergence class this comment warns about.
+    Concatenating the raw fields instead of calling `prep_for_classification`
+    would add yet another divergence on top -- un-stripped HTML in
+    `content_excerpt` would change which n-grams form (e.g. an entity like
+    "&nbsp;" tokenizing to a spurious "nbsp" word that breaks bigram
+    adjacency).
     """
     model_predictions: dict[str, set[str]] = {}
     seed_predictions: dict[str, frozenset[str]] = {}
