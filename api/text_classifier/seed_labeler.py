@@ -23,8 +23,17 @@ _WEAK_SCORE = 1
 def _compile(terms: frozenset[str]) -> re.Pattern[str] | None:
     if not terms:
         return None
-    # Longest first so that "video games" wins over "video game" when both are
-    # present; findall returns non-overlapping matches in scan order.
+    # Longest first. This matters when one term is a prefix of another and
+    # both end on a word boundary from the current position, e.g. "game" and
+    # "game console" against "game console and game": alternation tries
+    # branches left-to-right at each position, so with shortest-first
+    # ("game" before "game console"), "game" wins the match at the position
+    # where "game console" also starts, and re.findall only ever sees "game"
+    # -- one distinct term for both occurrences, instead of "game" once and
+    # "game console" once. Longest-first makes the more specific term win
+    # where both could match, which is what distinct-match counting assumes.
+    # (`\b...\b` alone does not solve this: it decides whether a *given*
+    # branch matches at a position, not which branch is tried first.)
     alternation = "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True))
     return re.compile(rf"\b(?:{alternation})\b", re.IGNORECASE)
 
@@ -39,6 +48,19 @@ def _patterns() -> dict[str, tuple[re.Pattern[str] | None, ...]]:
         )
         for name, terms in TAXONOMY.items()
     }
+
+
+def reset_pattern_cache() -> None:
+    """Clear the memoised compiled patterns.
+
+    Not needed in production -- `TAXONOMY` is never mutated at runtime, so
+    the cache is populated once and stays valid for the life of the process.
+    This exists for tests that monkeypatch `TAXONOMY` to exercise different
+    terms: without calling this afterwards, `score_text`/`label_text` would
+    silently keep using the patterns compiled from the *previous* `TAXONOMY`,
+    passing (or failing) for the wrong reason.
+    """
+    _patterns.cache_clear()
 
 
 def _distinct_match_count(pattern: re.Pattern[str] | None, text: str) -> int:

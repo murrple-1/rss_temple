@@ -166,6 +166,93 @@ class SeedLabelerTestCase(TestCase):
         padding = "x " * SEED_LABEL_MAX_CHARS
         self.assertNotIn("Gaming", label_text(padding + " nintendo"))
 
+    def test_module_does_not_import_django(self):
+        import subprocess
+        import sys
+
+        # Same rationale as taxonomy.py's equivalent test: this module is
+        # imported by an off-box training script with no Django settings
+        # configured, so no `django*` module may land in `sys.modules` as a
+        # side effect of importing it. Assert on sys.modules directly rather
+        # than the subprocess return code, since merely importing
+        # `django.conf.settings` (a lazy object) raises nothing on its own.
+        script = (
+            "import sys; import api.text_classifier.seed_labeler; "
+            "leaked = sorted(m for m in sys.modules "
+            "if m == 'django' or m.startswith('django.')); "
+            "assert not leaked, leaked"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            env={"PATH": "/usr/bin:/bin"},
+            cwd=".",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+    def test_reset_pattern_cache_picks_up_mutated_taxonomy(self):
+        from api.text_classifier import taxonomy
+        from api.text_classifier.seed_labeler import (
+            label_text,
+            reset_pattern_cache,
+        )
+
+        original_taxonomy = dict(taxonomy.TAXONOMY)
+
+        def restore():
+            taxonomy.TAXONOMY.clear()
+            taxonomy.TAXONOMY.update(original_taxonomy)
+            reset_pattern_cache()
+
+        self.addCleanup(restore)
+
+        # Warm the cache with the real taxonomy first, so the test actually
+        # exercises invalidation rather than a cold first call.
+        self.assertNotIn("Gaming", label_text("It smelled like petrichor."))
+
+        taxonomy.TAXONOMY["Gaming"] = taxonomy.SeedTerms(
+            strong=frozenset({"petrichor"})
+        )
+        reset_pattern_cache()
+
+        self.assertIn("Gaming", label_text("It smelled like petrichor."))
+
+    def test_longest_first_alternation_counts_distinct_terms_correctly(self):
+        # Synthetic taxonomy entry, not the real one: today's taxonomy has no
+        # strong-term pair where one is a prefix of the other, and it might
+        # gain or lose one later, which would make this test either
+        # vacuous or dependent on taxonomy content it shouldn't care about.
+        #
+        # "game" is a prefix of "game console"; both end on a word boundary
+        # at the position where "game console" starts. Longest-first makes
+        # the alternation try "game console" before "game" there, so
+        # findall reports two distinct terms ("game", "game console") for
+        # the two occurrences below, worth 2 strong matches (score 4).
+        # Shortest-first would report only "game" for both occurrences (one
+        # distinct term, score 2) because "game" wins the earlier branch.
+        from api.text_classifier import taxonomy
+        from api.text_classifier.seed_labeler import (
+            reset_pattern_cache,
+            score_text,
+        )
+
+        original_taxonomy = dict(taxonomy.TAXONOMY)
+
+        def restore():
+            taxonomy.TAXONOMY.clear()
+            taxonomy.TAXONOMY.update(original_taxonomy)
+            reset_pattern_cache()
+
+        self.addCleanup(restore)
+
+        taxonomy.TAXONOMY.clear()
+        taxonomy.TAXONOMY["Synthetic"] = taxonomy.SeedTerms(
+            strong=frozenset({"game", "game console"})
+        )
+        reset_pattern_cache()
+
+        self.assertEqual(score_text("game console and game").get("Synthetic", 0), 4)
+
 
 class SeedLabelerRegressionCorpusTestCase(TestCase):
     """False positives/negatives previously found by hand-building a matcher.
