@@ -386,9 +386,16 @@ def build_parity_documents(vectorizer, train_texts, idf):
 
     Returns (documents, report) where `report` is a dict describing which
     category each engineered fixture satisfies, for the training run's
-    stderr log. Raises AssertionError if any required category can't be
+    stderr log. Raises RuntimeError if any required category can't be
     satisfied against this vocabulary -- fail the run, don't ship a fixture
     set that silently can't catch what it claims to catch.
+
+    These guards use `raise RuntimeError`, never `assert`: `assert` is
+    compiled out entirely under `python -O` / `PYTHONOPTIMIZE=1`, which
+    would silently turn every one of these checks into a no-op -- the exact
+    failure mode ("ship a fixture set that can't catch what it claims to")
+    this function exists to prevent, just re-entered through the
+    interpreter flag instead of a fixture-selection bug.
     """
     vocabulary = vectorizer.vocabulary_
     report: dict[str, str] = {}
@@ -411,38 +418,42 @@ def build_parity_documents(vectorizer, train_texts, idf):
         add(single_feature, "edge_case_single_active_feature")
 
     stopword_skip = _find_stopword_skip_fixture(vocabulary)
-    assert stopword_skip is not None, (
-        "could not find any document in the fitted vocabulary whose "
-        "correct bigram spans a removed stop word; the "
-        "bigrams-before-stopword-removal mutant would go undetected"
-    )
+    if stopword_skip is None:
+        raise RuntimeError(
+            "could not find any document in the fitted vocabulary whose "
+            "correct bigram spans a removed stop word; the "
+            "bigrams-before-stopword-removal mutant would go undetected"
+        )
     add(stopword_skip, "stopword_skip_bigram")
 
     single_char = _find_single_char_fixture(vocabulary)
-    assert single_char is not None, (
-        "could not find any document with a single-character token wedged "
-        "between two vocabulary words; the token-pattern "
-        "accepts-single-char-tokens mutant would go undetected"
-    )
+    if single_char is None:
+        raise RuntimeError(
+            "could not find any document with a single-character token "
+            "wedged between two vocabulary words; the token-pattern "
+            "accepts-single-char-tokens mutant would go undetected"
+        )
     add(single_char, "single_char_token_adjacency")
 
     accent = _find_accent_fixture(vocabulary)
-    assert accent is not None, (
-        "could not find any accented term in the fitted vocabulary to "
-        "build an accent-stripping fixture from; the corpus needs at "
-        "least one real training document containing an in-vocabulary "
-        "accented word, or the NFKD-accent-strip mutant would go "
-        "undetected"
-    )
+    if accent is None:
+        raise RuntimeError(
+            "could not find any accented term in the fitted vocabulary to "
+            "build an accent-stripping fixture from; the corpus needs at "
+            "least one real training document containing an in-vocabulary "
+            "accented word, or the NFKD-accent-strip mutant would go "
+            "undetected"
+        )
     add(accent, "accent_preservation")
 
     sublinear_fixtures = _find_sublinear_fixtures(vocabulary, idf, count=2)
-    assert len(sublinear_fixtures) >= 2, (
-        f"found only {len(sublinear_fixtures)} document(s) whose "
-        "L2-normalised direction measurably depends on the sublinear_tf "
-        "log base (need >= 2); the math.log-vs-math.log10 mutant could "
-        "go undetected if the vocabulary shifts on a future retrain"
-    )
+    if len(sublinear_fixtures) < 2:
+        raise RuntimeError(
+            f"found only {len(sublinear_fixtures)} document(s) whose "
+            "L2-normalised direction measurably depends on the sublinear_tf "
+            "log base (need >= 2); the math.log-vs-math.log10 mutant could "
+            "go undetected if the vocabulary shifts on a future retrain"
+        )
     for i, text in enumerate(sublinear_fixtures):
         add(text, f"sublinear_tf_{i}")
 
@@ -451,18 +462,27 @@ def build_parity_documents(vectorizer, train_texts, idf):
     real_docs = sorted(
         {t for t in train_texts if _n_active_features(t, vocabulary) >= 3}
     )
-    for i, text in enumerate(real_docs[:4]):
+    min_real_docs = 4
+    if len(real_docs) < min_real_docs:
+        raise RuntimeError(
+            f"found only {len(real_docs)} real training document(s) with "
+            f">= 3 active vocabulary features (need >= {min_real_docs}); "
+            "without this floor the fixture set could silently drop below "
+            "the parity test's own minimum of 10 fixtures"
+        )
+    for i, text in enumerate(real_docs[:min_real_docs]):
         add(text, f"real_training_document_{i}")
 
     for category, text in report.items():
         if category.startswith("edge_case"):
             continue
         n_active = _n_active_features(text, vocabulary)
-        assert n_active >= 2, (
-            f"fixture for {category!r} activates only {n_active} "
-            "in-vocabulary feature(s); every discriminating fixture must "
-            f"activate at least 2 (text={text!r})"
-        )
+        if n_active < 2:
+            raise RuntimeError(
+                f"fixture for {category!r} activates only {n_active} "
+                "in-vocabulary feature(s); every discriminating fixture "
+                f"must activate at least 2 (text={text!r})"
+            )
 
     return documents, report
 
@@ -494,6 +514,17 @@ def main():
         "model so classifier.json + parity_fixtures.json stay small.",
     )
     args = parser.parse_args()
+
+    if args.fixtures is not None and not args.emit_parity:
+        # Silently ignoring --fixtures here (honouring --out but not it)
+        # would make `train_classifier.py corpus.jsonl.gz --out X --fixtures
+        # Y` write X and do nothing to Y with no warning -- exactly the
+        # shape of mistake that clobbers the committed parity pair (--out
+        # pointed at parity_artifact.json without --emit-parity would
+        # overwrite it while leaving the fixtures stale). Fail loudly
+        # instead of accepting a flag combination that can't do what it
+        # looks like it does.
+        parser.error("--fixtures requires --emit-parity")
 
     rows = build_dataset(args.corpus, args.per_label_cap, args.per_feed_per_label_cap)
     train_rows, dev_rows = feed_wise_split(rows)

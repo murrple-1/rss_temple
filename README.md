@@ -514,11 +514,14 @@ model that labelled them.
 
 **Regenerating the parity fixtures** (only needed if `classifier.py`'s
 pure-Python analyzer changes, or if `taxonomy.py`'s seed terms change enough
-that `parity_artifact.json`'s taxonomy fingerprint goes stale) is a separate
-command, using `--emit-parity` and explicit output paths so it can never be
-run by accident in place of a normal retrain:
+that `parity_artifact.json`'s taxonomy fingerprint goes stale) does not use
+a real exported corpus at all — `parity_artifact.json`/`parity_fixtures.json`
+are trained on a small synthetic corpus (there is no real corpus available
+today; see `scripts/make_synthetic_corpus.py`'s docstring), reproducible
+from a clean checkout with no external data:
 
 ```sh
+python scripts/make_synthetic_corpus.py corpus.jsonl.gz
 python scripts/train_classifier.py corpus.jsonl.gz \
   --out api/text_classifier/model/parity_artifact.json \
   --fixtures api/text_classifier/model/parity_fixtures.json \
@@ -526,11 +529,15 @@ python scripts/train_classifier.py corpus.jsonl.gz \
   --per-label-cap 15 --per-feed-per-label-cap 5 --max-features 2000
 ```
 
-Fixture generation validates itself against the actual fitted vocabulary
-(it searches for documents that provably activate the right vocabulary
-features for each known divergence class, and raises rather than writing a
-fixture set that can't catch what it claims to) and prints which document
-satisfied each category. Commit both files together.
+`--emit-parity` and explicit output paths mean this can never be run by
+accident in place of a normal retrain (which uses a real corpus from
+`exportcorpus`, not this synthetic one). Fixture generation validates
+itself against the actual fitted vocabulary (it searches for documents
+that provably activate the right vocabulary features for each known
+divergence class, and raises rather than writing a fixture set that can't
+catch what it claims to — even under `python -O`) and prints which document
+satisfied each category. Commit both files together; don't commit the
+generated `corpus.jsonl.gz`.
 
 ### RSS Temple Frontend
 
