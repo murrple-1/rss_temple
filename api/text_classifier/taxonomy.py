@@ -6,6 +6,16 @@ this module on a machine with no Django settings configured.
 This module is the single source of truth for the label set.
 `api/management/commands/checkclassifierlabels.py` imports LABEL_NAMES from
 here and warns when the database drifts from it.
+
+Seed term rule of thumb: a *weak* term must look out of place in an article
+about a different topic. If you can write a natural sentence in another
+domain that contains it, it is not a weak term -- it is noise. Two weak
+matches are enough to fire a label, so two generic words that happen to
+co-occur in an unrelated article are enough to mislabel it. Prefer a longer,
+more specific phrase (e.g. "film director" instead of bare "director") over
+a bare common word, and prefer removing/replacing an offending term over
+bolting on an `exclude` entry for every phrasing you can think of --
+excludes only catch phrasings you predicted.
 """
 
 import hashlib
@@ -55,7 +65,9 @@ TAXONOMY: dict[str, SeedTerms] = {
             "myanimelist",
             "waifu",
         ],
-        weak=["subtitled", "dubbed", "adaptation", "cosplay"],
+        # "dubbed" ("the plan, dubbed Project X") and "adaptation" (any book
+        # or film adaptation) are generic English, not anime-specific.
+        weak=["cosplay", "fansub", "anime convention"],
     ),
     "Arts & Craft": _terms(
         strong=[
@@ -75,7 +87,19 @@ TAXONOMY: dict[str, SeedTerms] = {
             "printmaking",
             "sculpture",
         ],
-        weak=["handmade", "pattern", "craft", "watercolour", "watercolor"],
+        # "handmade" and "craft" alone are generic (craft beer, statecraft,
+        # handmade jewellery/furniture/soap) and co-occur in unrelated
+        # articles, e.g. "a small-batch brewery, true to the craft of
+        # brewing, makes everything handmade." "pattern" alone is likewise
+        # generic (design pattern, weather pattern, sleep pattern).
+        weak=[
+            "watercolour",
+            "watercolor",
+            "craft project",
+            "diy tutorial",
+            "sewing pattern",
+            "papercraft",
+        ],
     ),
     "Automobile & Vehicles": _terms(
         strong=[
@@ -94,14 +118,15 @@ TAXONOMY: dict[str, SeedTerms] = {
             "car review",
             "torque",
         ],
-        weak=["vehicle", "mileage", "driver", "engine"],
-        # "engine" is weak and heavily overloaded; veto the common non-automotive senses
-        exclude=[
-            "search engine",
-            "game engine",
-            "engine of growth",
-            "rendering engine",
-        ],
+        # "driver" and "engine" co-occur naturally in tech/gaming writing
+        # ("the updated graphics driver boosts frame rates in Unreal Engine
+        # titles"). "vehicle" and "mileage" are also generic metaphors
+        # ("vehicle for change", "got a lot of mileage out of the story").
+        # Dropped all four rather than trying to enumerate every non-
+        # automotive sense; the strong list is already specific enough to
+        # carry the label on its own. "driver" (device driver) now lives on
+        # Computer Hardware & Software instead, where it belongs.
+        weak=["roadworthy", "fuel economy", "vehicle recall", "used car"],
     ),
     "Books": _terms(
         strong=[
@@ -119,7 +144,12 @@ TAXONOMY: dict[str, SeedTerms] = {
             "bookstore",
             "memoir",
         ],
-        weak=["novel", "publisher", "chapter", "reading"],
+        # "novel" is routinely an adjective ("a novel approach", "novel
+        # coronavirus"); "chapter" means a local branch of an organization
+        # or a bankruptcy filing as often as a book section; "reading" is a
+        # generic verb in every domain; "publisher" also means a video game
+        # publisher.
+        weak=["book club", "debut novel", "self-published", "protagonist"],
     ),
     "Business, Finance & Banking": _terms(
         strong=[
@@ -139,7 +169,11 @@ TAXONOMY: dict[str, SeedTerms] = {
             "central bank",
             "valuation",
         ],
-        weak=["market", "investor", "profit", "funding", "stock", "revenue"],
+        # "market", "stock", and "funding" are extremely generic (job
+        # market, art market, stock photo, stock car, chicken stock, school
+        # funding, research funding); "profit" shows up as a plain verb in
+        # unrelated writing ("the team profited from a strong start").
+        weak=["investor", "revenue", "profit margin", "funding round", "stock buyback"],
     ),
     "Celebrities & Culture": _terms(
         strong=[
@@ -156,7 +190,10 @@ TAXONOMY: dict[str, SeedTerms] = {
             "engagement ring",
             "publicist",
         ],
-        weak=["rumour", "rumor", "spotted", "gossip"],
+        # Bare "rumour"/"rumor" collide with trade rumours (Sport), product
+        # rumours (Gaming/Tech), and political rumours; bare "spotted" is a
+        # generic verb ("spotted a pattern", "spotted owl").
+        weak=["celebrity gossip", "dating rumour", "dating rumor", "spotted together"],
     ),
     "Computer Hardware & Software": _terms(
         strong=[
@@ -175,7 +212,14 @@ TAXONOMY: dict[str, SeedTerms] = {
             "laptop review",
             "graphics card",
         ],
-        weak=["hardware", "upgrade", "install", "peripheral"],
+        # "upgrade" and "install" are generic verbs used for anything
+        # mechanical ("upgrade your suspension yourself -- easy to install
+        # in an afternoon"); bare "hardware" collides with hardware
+        # stores, and bare "peripheral" is a common adjective meaning
+        # "tangential". "driver" (device/graphics driver) belongs here --
+        # moved from Automobile & Vehicles -- which is also why the
+        # driver's-licence exclude below now has a term to guard.
+        weak=["computer hardware", "software update", "driver", "usb peripheral"],
         exclude=["driver's licence", "driver's license"],
     ),
     "Education": _terms(
@@ -194,7 +238,19 @@ TAXONOMY: dict[str, SeedTerms] = {
             "phd programme",
             "phd program",
         ],
-        weak=["student", "teacher", "learning", "course", "degree"],
+        # "course" matches "of course" ("it has, of course, been a learning
+        # experience for the team this season" -- a sports blurb -- scores
+        # both "course" and "learning"). "learning" alone is likewise
+        # generic ("machine learning", "a learning experience", "learning
+        # curve"). "degree" overwhelmingly means temperature or angle
+        # ("the temperature dropped ten degrees overnight").
+        weak=[
+            "teacher",
+            "online course",
+            "lesson plan",
+            "college student",
+            "bachelor's degree",
+        ],
     ),
     "Fashion & Beauty": _terms(
         strong=[
@@ -212,7 +268,11 @@ TAXONOMY: dict[str, SeedTerms] = {
             "moisturizer",
             "sneakerhead",
         ],
-        weak=["outfit", "boutique", "cosmetics", "styling"],
+        # Bare "boutique" is a common business idiom ("boutique investment
+        # firm", "boutique law firm"); bare "outfit" also means a business
+        # or organization ("a small trading outfit"); bare "styling" is
+        # also CSS styling (Programming).
+        weak=["cosmetics", "fashion boutique", "hair styling", "outfit inspiration"],
     ),
     "Food & Drink": _terms(
         strong=[
@@ -231,7 +291,18 @@ TAXONOMY: dict[str, SeedTerms] = {
             "restaurant review",
             "ingredients",
         ],
-        weak=["kitchen", "cooking", "flavour", "flavor", "dish", "menu"],
+        # "cooking the books" is a finance-fraud idiom; "kitchen cabinet" is
+        # a politics idiom; "flavour of the month" and "dish the dirt" are
+        # general idioms; "menu" is now overwhelmingly software UI
+        # vocabulary (settings menu, dropdown menu).
+        weak=[
+            "home cooking",
+            "flavor profile",
+            "flavour profile",
+            "signature dish",
+            "restaurant menu",
+            "home kitchen",
+        ],
     ),
     "Gaming": _terms(
         strong=[
@@ -249,7 +320,9 @@ TAXONOMY: dict[str, SeedTerms] = {
             "game studio",
             "dlc",
         ],
-        weak=["gameplay", "console", "multiplayer", "patch notes"],
+        # Bare "console" is also the verb "to console" (comfort) and a
+        # console table; the bigram is unambiguous.
+        weak=["gameplay", "gaming console", "multiplayer", "patch notes"],
         exclude=["board game", "the gaming commission"],
     ),
     "Health": _terms(
@@ -268,7 +341,12 @@ TAXONOMY: dict[str, SeedTerms] = {
             "epidemiology",
             "nutrition",
         ],
-        weak=["patient", "treatment", "doctor", "disease", "wellness"],
+        # "wellness" and "treatment" collide in spa/retreat marketing copy
+        # ("the retreat blends wellness with traditional spa treatment
+        # rituals"); bare "patient" is also the common adjective ("she was
+        # patient during the delay"); bare "doctor" is also a verb
+        # ("accused of doctoring the documents").
+        weak=["disease", "medical treatment", "hospital patient"],
     ),
     "Movies & TV": _terms(
         strong=[
@@ -285,7 +363,18 @@ TAXONOMY: dict[str, SeedTerms] = {
             "streaming series",
             "oscar",
         ],
-        weak=["episode", "cast", "trailer", "director", "film"],
+        # "cast" is also a generic verb ("cast a vote", "cast doubt"), and
+        # "director" is generic across every organization ("the board cast
+        # the deciding vote to appoint a new director"); "trailer" also
+        # means a vehicle/mobile home; bare "film" also means photographic
+        # film.
+        weak=[
+            "film cast",
+            "film director",
+            "movie trailer",
+            "tv episode",
+            "feature film",
+        ],
     ),
     "Music": _terms(
         strong=[
@@ -303,7 +392,10 @@ TAXONOMY: dict[str, SeedTerms] = {
             "record label",
             "discography",
         ],
-        weak=["album", "band", "song", "single"],
+        # "single" and "band" collide directly in tech writing ("router
+        # review: single-band 2.4GHz Wi-Fi..."); "band" is also a rubber
+        # band, wedding band, or frequency band.
+        weak=["studio album", "music band", "hit song", "chart single"],
     ),
     "News & Weather": _terms(
         # Deliberately narrow. This label dominated the historical vote data;
@@ -322,7 +414,18 @@ TAXONOMY: dict[str, SeedTerms] = {
             "weather forecast",
             "tropical storm",
         ],
-        weak=["forecast", "temperature", "officials said", "emergency services"],
+        # "officials said" is generic wire-copy phrasing that appears in
+        # sports, politics, and business reporting just as often as weather
+        # reporting -- exactly the generic newsroom vocabulary this label is
+        # supposed to avoid. Bare "forecast" is routinely a sales/earnings
+        # forecast, and bare "temperature" is routinely a body temperature
+        # (Health).
+        weak=[
+            "storm forecast",
+            "temperature drop",
+            "emergency officials",
+            "emergency services",
+        ],
     ),
     "Pets & Animals": _terms(
         strong=[
@@ -339,7 +442,11 @@ TAXONOMY: dict[str, SeedTerms] = {
             "leash",
             "adoption centre",
         ],
-        weak=["pet", "breed", "owner", "paws"],
+        # Bare "pet" is a common idiom ("pet project", "pet peeve"); bare
+        # "breed" is a common verb ("familiarity breeds contempt",
+        # "competition breeds innovation"); bare "owner" is extremely
+        # generic (business owner, homeowner, team owner).
+        weak=["pet owner", "purebred", "paws", "family pet"],
     ),
     "Photography": _terms(
         strong=[
@@ -356,7 +463,13 @@ TAXONOMY: dict[str, SeedTerms] = {
             "raw file",
             "telephoto",
         ],
-        weak=["lens", "exposure", "camera", "photo"],
+        # "lens" is a generic metaphor ("viewed through the lens of recent
+        # Fed moves"); "exposure" is routinely financial or sun exposure;
+        # bare "camera" is also a security camera; bare "photo" is a photo
+        # finish (Sport) or photo op (Politics). "iso" is added as a weak
+        # term (the exposure-triangle setting) specifically so the
+        # standards-body excludes below have something to guard.
+        weak=["camera lens", "exposure settings", "camera gear", "photo essay", "iso"],
         exclude=["iso 27001", "iso standard", "iso 8601", "iso 9001"],
     ),
     "Politics": _terms(
@@ -375,7 +488,11 @@ TAXONOMY: dict[str, SeedTerms] = {
             "campaign trail",
             "congress",
         ],
-        weak=["policy", "election", "government", "vote"],
+        # Bare "policy" is overwhelmingly an insurance/company policy;
+        # bare "vote" is a generic idiom of confidence/approval used in
+        # sport and business ("the coach got a vote of confidence") and in
+        # reality-TV eliminations.
+        weak=["public policy", "election", "government", "voter turnout"],
     ),
     "Programming": _terms(
         strong=[
@@ -393,7 +510,18 @@ TAXONOMY: dict[str, SeedTerms] = {
             "open source",
             "docker",
         ],
-        weak=["code", "function", "library", "developer", "repository"],
+        # "code" collides with dress code/zip code/building code (verified:
+        # "the property developer must follow the local building code");
+        # "developer" also means a property developer; "function" is also
+        # a social event ("a corporate function"); "library" is also a
+        # public library.
+        weak=[
+            "source code",
+            "software function",
+            "code library",
+            "software developer",
+            "git repository",
+        ],
     ),
     "Religion": _terms(
         strong=[
@@ -412,7 +540,11 @@ TAXONOMY: dict[str, SeedTerms] = {
             "torah",
             "monastery",
         ],
-        weak=["faith", "church", "prayer", "spiritual"],
+        # Bare "faith" is a common business/legal idiom ("acted in good
+        # faith"); bare "prayer" means a long-shot play in American
+        # football ("a prayer", "Hail Mary"); bare "spiritual" is common in
+        # "spiritual successor" (Gaming) and "spiritual home" (Sport).
+        weak=["church", "religious faith", "prayer service", "spiritual guidance"],
     ),
     "Science & Technology": _terms(
         strong=[
@@ -430,7 +562,17 @@ TAXONOMY: dict[str, SeedTerms] = {
             "arxiv",
             "hypothesis",
         ],
-        weak=["research", "scientists", "discovery", "experiment", "laboratory"],
+        # Bare "research" is generic in every domain (market research,
+        # "the team did their research before the match"); bare
+        # "discovery" is also legal discovery (a lawsuit phase); bare
+        # "experiment" is a culinary/fashion/social experiment.
+        weak=[
+            "scientists",
+            "laboratory",
+            "scientific research",
+            "scientific discovery",
+            "controlled experiment",
+        ],
     ),
     "Sport": _terms(
         strong=[
@@ -448,7 +590,17 @@ TAXONOMY: dict[str, SeedTerms] = {
             "wicket",
             "striker",
         ],
-        weak=["team", "match", "tournament", "coach", "season"],
+        # "team" and "season" collide directly (verified: "the hit sitcom
+        # is returning with the same team for another season"); bare
+        # "match" is also a matchstick or a perfect match; bare "coach" is
+        # also a life/business coach or a bus/train carriage (Travel).
+        weak=[
+            "sports team",
+            "match report",
+            "tournament",
+            "coaching staff",
+            "regular season",
+        ],
     ),
     "Travel": _terms(
         strong=[
@@ -465,7 +617,10 @@ TAXONOMY: dict[str, SeedTerms] = {
             "airbnb",
             "all-inclusive resort",
         ],
-        weak=["hotel", "flight", "destination", "tourist"],
+        # Bare "flight" is also "capital flight" (Business/Finance) or
+        # "flight risk" (Legal); bare "destination" is a common business
+        # metaphor ("a top destination for tech investment").
+        weak=["hotel", "flight itinerary", "vacation destination", "tourist"],
     ),
 }
 

@@ -11,7 +11,7 @@ _EXPECTED_LABELS = list(LABEL_NAMES)
 
 
 class Command(BaseCommand):
-    help = "Check to make sure the classifier labels are correct, via comparison with a hardcoded list"
+    help = "Check to make sure the classifier labels are correct, via comparison with api.text_classifier.taxonomy.LABEL_NAMES"
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         expected_labels = frozenset(_EXPECTED_LABELS)

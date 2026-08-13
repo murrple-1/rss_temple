@@ -73,8 +73,22 @@ class TaxonomyTestCase(TestCase):
         import subprocess
         import sys
 
+        # `django.conf.settings` is a lazy object: merely importing it (or
+        # any module that does `from django.conf import settings`) raises
+        # nothing on its own, only attribute access does. So asserting on
+        # the subprocess's return code does not actually catch a Django
+        # import -- it only catches imports that trigger the ORM/app
+        # registry. Assert directly on sys.modules instead: after importing
+        # the taxonomy module, no `django` module of any kind must be
+        # loaded.
+        script = (
+            "import sys; import api.text_classifier.taxonomy; "
+            "leaked = sorted(m for m in sys.modules "
+            "if m == 'django' or m.startswith('django.')); "
+            "assert not leaked, leaked"
+        )
         result = subprocess.run(
-            [sys.executable, "-c", "import api.text_classifier.taxonomy"],
+            [sys.executable, "-c", script],
             capture_output=True,
             env={"PATH": "/usr/bin:/bin"},
             cwd=".",
