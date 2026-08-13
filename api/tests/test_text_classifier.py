@@ -94,3 +94,207 @@ class TaxonomyTestCase(TestCase):
             cwd=".",
         )
         self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+
+class SeedLabelerTestCase(TestCase):
+    def test_single_strong_term_fires(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        self.assertIn("Gaming", label_text("A review of the new Nintendo handheld."))
+
+    def test_single_weak_term_does_not_fire(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        self.assertNotIn("Gaming", label_text("The gameplay was fine."))
+
+    def test_two_weak_terms_fire(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        # NOTE: the brief's illustrative text used "console" as a second weak
+        # term, but the taxonomy's fix rounds (Task 1) narrowed the Gaming
+        # weak list to the bigram "gaming console" specifically because bare
+        # "console" collides with the verb "to console" and console tables.
+        # Adapted to two weak terms that are actually in the current
+        # taxonomy: "gameplay" and "patch notes".
+        self.assertIn(
+            "Gaming",
+            label_text("The gameplay improved a lot after the latest patch notes."),
+        )
+
+    def test_exclusion_vetoes_the_label(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        self.assertNotIn(
+            "Gaming", label_text("Nintendo made a board game once, apparently.")
+        )
+
+    def test_matching_is_word_bounded(self):
+        from api.text_classifier.seed_labeler import score_text
+
+        # "ai" is not a term, but this guards the general principle: a term must
+        # not match inside a longer word. "nba" must not match "unbalanced".
+        self.assertEqual(score_text("The load was unbalanced.").get("Sport", 0), 0)
+
+    def test_multi_word_phrases_match(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        self.assertIn("Movies & TV", label_text("It topped the box office again."))
+
+    def test_multi_label(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        labels = label_text("The soundtrack guitarist also scored the box office hit.")
+        self.assertIn("Music", labels)
+        self.assertIn("Movies & TV", labels)
+
+    def test_empty_input_fires_nothing(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        self.assertEqual(label_text(""), frozenset())
+        self.assertEqual(label_text("   "), frozenset())
+
+    def test_distinct_terms_not_repeats(self):
+        from api.text_classifier.seed_labeler import score_text
+
+        # The same weak term ten times is still one distinct weak match.
+        repeated = " ".join(["gameplay"] * 10)
+        self.assertEqual(score_text(repeated).get("Gaming", 0), 1)
+
+    def test_truncates_long_input(self):
+        from api.text_classifier.seed_labeler import SEED_LABEL_MAX_CHARS, label_text
+
+        padding = "x " * SEED_LABEL_MAX_CHARS
+        self.assertNotIn("Gaming", label_text(padding + " nintendo"))
+
+
+class SeedLabelerRegressionCorpusTestCase(TestCase):
+    """False positives/negatives previously found by hand-building a matcher.
+
+    Each case here was demonstrated against a real matcher during the two
+    taxonomy fix rounds; this test suite is the first point at which they are
+    asserted automatically. See api/text_classifier/taxonomy.py for the
+    per-term commentary explaining why each of these is a collision.
+    """
+
+    def test_must_not_fire(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        # (label that must NOT fire, text). Some of these texts legitimately
+        # fire a *different* label -- that is correct and is not asserted
+        # against here, only the absence of the named label is.
+        cases = [
+            (
+                "Education",
+                "It has, of course, been a learning experience for the "
+                "whole team this season",
+            ),
+            (
+                "Automobile & Vehicles",
+                "The updated graphics driver boosts frame rates in "
+                "Unreal Engine titles",
+            ),
+            (
+                "Music",
+                "Router review: single-band 2.4GHz Wi-Fi coverage for "
+                "the whole house",
+            ),
+            (
+                "Movies & TV",
+                "The board cast the deciding vote to appoint a new director",
+            ),
+            (
+                "Programming",
+                "The property developer must follow the local building code",
+            ),
+            (
+                "Sport",
+                # Movies & TV firing here (via "sitcom") is correct.
+                "The hit sitcom is returning with the same team for " "another season",
+            ),
+            (
+                "Photography",
+                "Investors have significant exposure to rate risk, viewed "
+                "through the lens of recent Fed moves",
+            ),
+            (
+                "Health",
+                "The retreat blends wellness with traditional spa " "treatment rituals",
+            ),
+            (
+                "Arts & Craft",
+                # Food & Drink firing here (via "brewery") is correct.
+                "This small-batch brewery makes everything handmade, true "
+                "to the craft of brewing",
+            ),
+            (
+                "Computer Hardware & Software",
+                "Upgrade your suspension yourself — easy to install " "in an afternoon",
+            ),
+            (
+                "Computer Hardware & Software",
+                # Sport firing here (via "formula 1") is correct.
+                "The Formula 1 driver praised the team's software update "
+                "to the car's telemetry system",
+            ),
+            (
+                "Photography",
+                "The tech blog covered camera gear news, then explained "
+                "how to download the ISO and flash it to a USB stick",
+            ),
+        ]
+        for label, text in cases:
+            with self.subTest(label=label, text=text):
+                fired = label_text(text)
+                self.assertNotIn(
+                    label,
+                    fired,
+                    f"{label!r} incorrectly fired for {text!r}; "
+                    f"labels fired: {sorted(fired)}",
+                )
+
+    def test_must_fire(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        # Recall guard: confirms the fixes above did not overcorrect and
+        # silence labels that should still fire on clearly on-topic text.
+        cases = [
+            (
+                "Computer Hardware & Software",
+                "We benchmarked the new graphics card against the previous "
+                "generation using a synthetic gpu stress test.",
+            ),
+            (
+                "Photography",
+                "This lens review covers the new 85mm telephoto for "
+                "mirrorless cameras, tested with a tripod.",
+            ),
+        ]
+        for label, text in cases:
+            with self.subTest(label=label, text=text):
+                fired = label_text(text)
+                self.assertIn(
+                    label,
+                    fired,
+                    f"{label!r} failed to fire for {text!r}; "
+                    f"labels fired: {sorted(fired)}",
+                )
+
+    def test_exclusion_vetoes_gaming(self):
+        from api.text_classifier.seed_labeler import label_text
+
+        cases = [
+            "Fans debated the new board game expansion, praising its "
+            "gameplay and multiplayer modes.",
+            "The gaming commission opened an investigation into odds "
+            "manipulation tied to several popular video games and esports "
+            "betting platforms.",
+        ]
+        for text in cases:
+            with self.subTest(text=text):
+                fired = label_text(text)
+                self.assertNotIn(
+                    "Gaming",
+                    fired,
+                    f"Gaming incorrectly fired for {text!r}; "
+                    f"labels fired: {sorted(fired)}",
+                )

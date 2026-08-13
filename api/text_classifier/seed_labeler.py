@@ -1,0 +1,73 @@
+"""Weak supervision: assign classifier labels from seed terms.
+
+This module is *the seam*. It exists so that the training pipeline has a
+pluggable source of labels. Replacing it with LLM-produced labels (approach A
+in the spec) changes nothing else in the pipeline.
+
+Deliberately free of any Django import -- `scripts/train_classifier.py`
+imports this on a machine with no Django settings configured.
+"""
+
+import re
+from functools import lru_cache
+
+from api.text_classifier.taxonomy import TAXONOMY
+
+SEED_LABEL_THRESHOLD = 2
+SEED_LABEL_MAX_CHARS = 4000
+
+_STRONG_SCORE = 2
+_WEAK_SCORE = 1
+
+
+def _compile(terms: frozenset[str]) -> re.Pattern[str] | None:
+    if not terms:
+        return None
+    # Longest first so that "video games" wins over "video game" when both are
+    # present; findall returns non-overlapping matches in scan order.
+    alternation = "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True))
+    return re.compile(rf"\b(?:{alternation})\b", re.IGNORECASE)
+
+
+@lru_cache(maxsize=1)
+def _patterns() -> dict[str, tuple[re.Pattern[str] | None, ...]]:
+    return {
+        name: (
+            _compile(terms.strong),
+            _compile(terms.weak),
+            _compile(terms.exclude),
+        )
+        for name, terms in TAXONOMY.items()
+    }
+
+
+def _distinct_match_count(pattern: re.Pattern[str] | None, text: str) -> int:
+    if pattern is None:
+        return 0
+    return len({m.lower() for m in pattern.findall(text)})
+
+
+def score_text(text: str) -> dict[str, int]:
+    """Per-label seed score. Excluded labels score 0."""
+    text = text[:SEED_LABEL_MAX_CHARS]
+
+    scores: dict[str, int] = {}
+    for name, (strong, weak, exclude) in _patterns().items():
+        if exclude is not None and exclude.search(text):
+            scores[name] = 0
+            continue
+
+        scores[name] = _STRONG_SCORE * _distinct_match_count(
+            strong, text
+        ) + _WEAK_SCORE * _distinct_match_count(weak, text)
+
+    return scores
+
+
+def label_text(text: str) -> frozenset[str]:
+    """Label names whose seed score meets the threshold."""
+    return frozenset(
+        name
+        for name, score in score_text(text).items()
+        if score >= SEED_LABEL_THRESHOLD
+    )
