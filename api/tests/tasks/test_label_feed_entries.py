@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import os
 import tempfile
@@ -238,5 +239,43 @@ class LabelFeedEntriesTestCase(TestCase):
             ClassifierLabelFeedEntryCalculated.objects.count(),
             0,
         )
+        self.matching.refresh_from_db()
+        self.assertEqual(self.matching.classifier_model_fingerprint, "")
+
+    def test_corrupt_artifact_returns_zero_without_raising(self):
+        """A disk-full write or interrupted rsync can leave `classifier.json`
+        as non-JSON garbage. Regression for fix round 2: `load_artifact`
+        used to let `json.JSONDecodeError` escape past `_get_artifact()`'s
+        `(OSError, ArtifactError)` catch, so this would previously raise on
+        every scheduled run instead of no-op-ing.
+        """
+        corrupt_path = os.path.join(self.tmpdir.name, "corrupt.json")
+        with open(corrupt_path, "w") as f:
+            f.write("{not valid json at all")
+
+        with self._settings(CLASSIFIER_MODEL_PATH=corrupt_path):
+            processed = label_feed_entries()
+
+        self.assertEqual(processed, 0)
+        self.assertEqual(ClassifierLabelFeedEntryCalculated.objects.count(), 0)
+        self.matching.refresh_from_db()
+        self.assertEqual(self.matching.classifier_model_fingerprint, "")
+
+    def test_wrong_shape_artifact_returns_zero_without_raising(self):
+        """Valid JSON but missing required keys (e.g. a write truncated
+        partway through) must also no-op rather than raise. Regression for
+        fix round 2: `load_artifact` used to let a raw `KeyError` (e.g.
+        `KeyError: 'vectorizer'`) escape past `_get_artifact()`'s
+        `(OSError, ArtifactError)` catch.
+        """
+        wrong_shape_path = os.path.join(self.tmpdir.name, "wrong_shape.json")
+        with open(wrong_shape_path, "w") as f:
+            json.dump({"format_version": 1}, f)
+
+        with self._settings(CLASSIFIER_MODEL_PATH=wrong_shape_path):
+            processed = label_feed_entries()
+
+        self.assertEqual(processed, 0)
+        self.assertEqual(ClassifierLabelFeedEntryCalculated.objects.count(), 0)
         self.matching.refresh_from_db()
         self.assertEqual(self.matching.classifier_model_fingerprint, "")

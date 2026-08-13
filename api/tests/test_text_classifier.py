@@ -521,6 +521,99 @@ class ArtifactTestCase(TestCase):
             with self.assertRaises(ArtifactError):
                 self._write(tmpdir, vocabulary_terms=["cat", "dog\nbad", "cat dog"])
 
+    def test_rejects_corrupt_non_json_content(self):
+        """A disk-full write, an interrupted rsync, or a bad deploy can leave
+        a `classifier.json` that is not valid JSON at all. `load_artifact`
+        must turn that into `ArtifactError`, not let `json.JSONDecodeError`
+        (a `ValueError`) escape -- callers that only catch `ArtifactError`
+        (see `api/tasks/label_feed_entries.py`) would otherwise raise on
+        every scheduled run.
+        """
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "artifact.json")
+            with open(path, "w") as f:
+                f.write("{this is not valid json")
+
+            with self.assertRaises(ArtifactError) as cm:
+                load_artifact(path)
+            self.assertIn(path, str(cm.exception))
+            self.assertIn("not valid JSON", str(cm.exception))
+
+    def test_rejects_non_object_top_level_json(self):
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "artifact.json")
+            with open(path, "w") as f:
+                json.dump([1, 2, 3], f)
+
+            with self.assertRaises(ArtifactError) as cm:
+                load_artifact(path)
+            self.assertIn(path, str(cm.exception))
+
+    def test_rejects_missing_top_level_keys(self):
+        """Valid JSON, wrong shape -- e.g. a write truncated partway through
+        -- must also become `ArtifactError` naming the missing key, not a
+        raw `KeyError` from dict indexing.
+        """
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        required_keys = [
+            "vectorizer",
+            "labels",
+            "vocabulary",
+            "idf_b64",
+            "coef_b64",
+            "intercept_b64",
+            "thresholds_b64",
+            "taxonomy_fingerprint",
+            "model_fingerprint",
+            "training",
+        ]
+        for missing_key in required_keys:
+            with self.subTest(missing_key=missing_key):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path, _ = self._write(tmpdir)
+                    with open(path, "r") as f:
+                        raw = json.load(f)
+                    del raw[missing_key]
+                    with open(path, "w") as f:
+                        json.dump(raw, f)
+
+                    with self.assertRaises(ArtifactError) as cm:
+                        load_artifact(path)
+                    self.assertIn(repr(missing_key), str(cm.exception))
+
+    def test_rejects_missing_vectorizer_sub_keys(self):
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        vectorizer_keys = [
+            "token_pattern",
+            "ngram_range",
+            "lowercase",
+            "sublinear_tf",
+            "norm",
+            "stop_words",
+            "binary",
+            "strip_accents",
+            "analyzer",
+        ]
+        for missing_key in vectorizer_keys:
+            with self.subTest(missing_key=missing_key):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path, _ = self._write(tmpdir)
+                    with open(path, "r") as f:
+                        raw = json.load(f)
+                    del raw["vectorizer"][missing_key]
+                    with open(path, "w") as f:
+                        json.dump(raw, f)
+
+                    with self.assertRaises(ArtifactError) as cm:
+                        load_artifact(path)
+                    self.assertIn(repr(missing_key), str(cm.exception))
+
     def test_module_does_not_import_django(self):
         import subprocess
         import sys

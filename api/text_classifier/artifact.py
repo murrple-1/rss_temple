@@ -177,9 +177,38 @@ def dump_artifact(
     return fingerprint
 
 
+def _require(mapping: Any, key: str, where: str, path: str) -> Any:
+    """Fetch `key` from `mapping`, raising `ArtifactError` (naming the path,
+    the location, and the missing key) instead of letting a raw `KeyError`
+    (missing key) or `TypeError` (e.g. `where` isn't even a dict -- a
+    truncated write can leave `"vectorizer"` as `null` or a partial string)
+    escape to the caller.
+
+    `load_artifact`'s whole stated purpose is to fail loudly and
+    informatively on malformed input; a bare dict-indexing KeyError/TypeError
+    does neither -- it isn't even the right exception type for callers that
+    (correctly) only catch `ArtifactError`.
+    """
+    try:
+        return mapping[key]
+    except (KeyError, TypeError) as e:
+        raise ArtifactError(
+            f"artifact at {path!r} is missing required key {key!r} in {where}"
+        ) from e
+
+
 def load_artifact(path: str) -> Artifact:
     with open(path, "r") as f:
-        body = json.load(f)
+        try:
+            body = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ArtifactError(f"artifact at {path!r} is not valid JSON: {e}") from e
+
+    if not isinstance(body, dict):
+        raise ArtifactError(
+            f"artifact at {path!r} does not contain a JSON object at the "
+            f"top level (got {type(body).__name__})"
+        )
 
     version = body.get("format_version")
     if version != ARTIFACT_FORMAT_VERSION:
@@ -188,17 +217,19 @@ def load_artifact(path: str) -> Artifact:
             f"(this build reads format_version {ARTIFACT_FORMAT_VERSION})"
         )
 
-    raw_vectorizer = body["vectorizer"]
+    raw_vectorizer = _require(body, "vectorizer", "top-level body", path)
     vectorizer = VectorizerConfig(
-        token_pattern=raw_vectorizer["token_pattern"],
-        ngram_range=tuple(raw_vectorizer["ngram_range"]),  # type: ignore[arg-type]
-        lowercase=raw_vectorizer["lowercase"],
-        sublinear_tf=raw_vectorizer["sublinear_tf"],
-        norm=raw_vectorizer["norm"],
-        stop_words=tuple(raw_vectorizer["stop_words"]),
-        binary=raw_vectorizer["binary"],
-        strip_accents=raw_vectorizer["strip_accents"],
-        analyzer=raw_vectorizer["analyzer"],
+        token_pattern=_require(raw_vectorizer, "token_pattern", "vectorizer", path),
+        ngram_range=tuple(  # type: ignore[arg-type]
+            _require(raw_vectorizer, "ngram_range", "vectorizer", path)
+        ),
+        lowercase=_require(raw_vectorizer, "lowercase", "vectorizer", path),
+        sublinear_tf=_require(raw_vectorizer, "sublinear_tf", "vectorizer", path),
+        norm=_require(raw_vectorizer, "norm", "vectorizer", path),
+        stop_words=tuple(_require(raw_vectorizer, "stop_words", "vectorizer", path)),
+        binary=_require(raw_vectorizer, "binary", "vectorizer", path),
+        strip_accents=_require(raw_vectorizer, "strip_accents", "vectorizer", path),
+        analyzer=_require(raw_vectorizer, "analyzer", "vectorizer", path),
     )
 
     if vectorizer.token_pattern != _SUPPORTED_TOKEN_PATTERN:
@@ -237,14 +268,15 @@ def load_artifact(path: str) -> Artifact:
             f"expected {_SUPPORTED_ANALYZER!r}"
         )
 
-    labels = tuple(body["labels"])
-    terms = body["vocabulary"].split("\n") if body["vocabulary"] else []
+    labels = tuple(_require(body, "labels", "top-level body", path))
+    raw_vocabulary = _require(body, "vocabulary", "top-level body", path)
+    terms = raw_vocabulary.split("\n") if raw_vocabulary else []
     vocabulary = {term: index for index, term in enumerate(terms)}
 
-    idf = _decode(body["idf_b64"])
-    coef = _decode(body["coef_b64"])
-    intercept = _decode(body["intercept_b64"])
-    thresholds = _decode(body["thresholds_b64"])
+    idf = _decode(_require(body, "idf_b64", "top-level body", path))
+    coef = _decode(_require(body, "coef_b64", "top-level body", path))
+    intercept = _decode(_require(body, "intercept_b64", "top-level body", path))
+    thresholds = _decode(_require(body, "thresholds_b64", "top-level body", path))
 
     n_labels = len(labels)
     n_features = len(vocabulary)
@@ -277,7 +309,9 @@ def load_artifact(path: str) -> Artifact:
         intercept=intercept,
         thresholds=thresholds,
         vectorizer=vectorizer,
-        taxonomy_fingerprint=body["taxonomy_fingerprint"],
-        model_fingerprint=body["model_fingerprint"],
-        training=body["training"],
+        taxonomy_fingerprint=_require(
+            body, "taxonomy_fingerprint", "top-level body", path
+        ),
+        model_fingerprint=_require(body, "model_fingerprint", "top-level body", path),
+        training=_require(body, "training", "top-level body", path),
     )
