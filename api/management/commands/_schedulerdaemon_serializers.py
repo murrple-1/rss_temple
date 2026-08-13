@@ -156,6 +156,15 @@ class _LabelFeedEntriesSerializer(serializers.Serializer):
     # either of them and a five-minute cadence is free to pick independently.
     # At db_limit 1000 a ~250,000-entry backlog needs 250 runs, which is
     # roughly a day at this cadence.
+    # This whole serializer is optional on `SetupSerializer` (see
+    # `label_feed_entries = _LabelFeedEntriesSerializer(required=False)`
+    # below): `schedulerdaemon.json` is gitignored, so an existing
+    # production config predating this job has no `label_feed_entries`
+    # key at all. Every field on it already has a default, so "optional"
+    # just means the job schedules with those defaults -- see
+    # `SetupSerializer.create` for how a missing key is resolved to them
+    # rather than raising `This field is required.` for the *whole*
+    # scheduler daemon.
     crontab = serializers.CharField(default="*/5 * * * *")
     dbLimit = serializers.IntegerField(source="db_limit", default=1000)
     largeBacklogThreshold = serializers.IntegerField(
@@ -349,7 +358,7 @@ class SetupSerializer(serializers.Serializer):
     archive_feed_entries = _ArchiveFeedEntriesSerializer()
     extract_top_images = _ExtractTopImagesSerializer()
     label_feeds = _LabelFeedsSerializer()
-    label_feed_entries = _LabelFeedEntriesSerializer()
+    label_feed_entries = _LabelFeedEntriesSerializer(required=False)
     label_users = _LabelUsersSerializer()
     feed_scrape = _FeedScrapeSerializer()
     setup_subscriptions = _SetupSubscriptionsSerializer()
@@ -362,7 +371,23 @@ class SetupSerializer(serializers.Serializer):
         jobs: list[Any] = []
         for field_name, serializer in self.fields.items():
             assert isinstance(serializer, serializers.Serializer)
-            job = serializer.create(validated_data[field_name])
+            field_data = validated_data.get(field_name)
+            if field_data is None:
+                # `required=False` fields (currently only
+                # `label_feed_entries`) are simply absent from
+                # `validated_data` when their key is missing from the
+                # config, rather than being filled in with their nested
+                # defaults -- DRF only auto-fills defaults for fields that
+                # declare one, and a `default=` on a nested Serializer
+                # field would bypass that child's own field-level
+                # validation/defaulting entirely (it would hand back the
+                # raw default object unvalidated). Running an empty `{}`
+                # through the child serializer itself is what actually
+                # produces its per-field defaults (crontab, dbLimit, etc.).
+                field_serializer = serializer.__class__(data={})
+                field_serializer.is_valid(raise_exception=True)
+                field_data = field_serializer.validated_data
+            job = serializer.create(field_data)
             jobs.append(job)
 
         return jobs
