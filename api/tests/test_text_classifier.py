@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import tempfile
 
@@ -511,6 +512,170 @@ class ArtifactTestCase(TestCase):
         # nothing on its own.
         script = (
             "import sys; import api.text_classifier.artifact; "
+            "leaked = sorted(m for m in sys.modules "
+            "if m == 'django' or m.startswith('django.')); "
+            "assert not leaked, leaked"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            env={"PATH": "/usr/bin:/bin"},
+            cwd=".",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+
+class ClassifierInferenceTestCase(TestCase):
+    def _artifact(self):
+        """A hand-built two-label, three-feature artifact with known answers."""
+        from api.text_classifier.artifact import (
+            VectorizerConfig,
+            dump_artifact,
+            load_artifact,
+        )
+
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmpdir.cleanup)
+        path = os.path.join(self.tmpdir.name, "artifact.json")
+        dump_artifact(
+            path,
+            labels=["Alpha", "Beta"],
+            vocabulary_terms=["cat", "dog", "cat dog"],
+            idf=[1.0, 1.0, 1.0],
+            # Alpha keys on "cat", Beta keys on "dog"
+            coef=[10.0, 0.0, 0.0, 0.0, 10.0, 0.0],
+            intercept=[0.0, 0.0],
+            thresholds=[1.0, 1.0],
+            vectorizer=VectorizerConfig(
+                token_pattern=r"(?u)\b\w\w+\b",
+                ngram_range=(1, 2),
+                lowercase=True,
+                sublinear_tf=True,
+                norm="l2",
+                stop_words=("the",),
+            ),
+            taxonomy_fingerprint="sha256:test",
+            training={},
+        )
+        return load_artifact(path)
+
+    def test_analyze_removes_stop_words_before_bigrams(self):
+        from api.text_classifier.artifact import VectorizerConfig
+        from api.text_classifier.classifier import analyze
+
+        config = VectorizerConfig(
+            token_pattern=r"(?u)\b\w\w+\b",
+            ngram_range=(1, 2),
+            lowercase=True,
+            sublinear_tf=True,
+            norm="l2",
+            stop_words=("the",),
+        )
+        terms = analyze("the cat dog", config)
+        self.assertEqual(terms, ["cat", "dog", "cat dog"])
+        self.assertNotIn("the cat", terms)
+
+    def test_analyze_drops_single_character_tokens(self):
+        from api.text_classifier.artifact import VectorizerConfig
+        from api.text_classifier.classifier import analyze
+
+        config = VectorizerConfig(
+            token_pattern=r"(?u)\b\w\w+\b",
+            ngram_range=(1, 2),
+            lowercase=True,
+            sublinear_tf=True,
+            norm="l2",
+            stop_words=(),
+        )
+        self.assertEqual(analyze("a cat", config), ["cat"])
+
+    def test_l2_normalisation_makes_length_irrelevant(self):
+        from api.text_classifier.classifier import decision_scores
+
+        artifact = self._artifact()
+        short = decision_scores(artifact, "cat")
+        long = decision_scores(artifact, "cat " * 20)
+        # Repeating one term must not change the unit vector's direction.
+        self.assertAlmostEqual(short[0], long[0], places=5)
+
+    def test_sublinear_tf_uses_natural_log_not_log10(self):
+        """Pins the exact decision score for a multi-feature vector.
+
+        `test_l2_normalisation_makes_length_irrelevant` above only exercises
+        a document with a single active feature. After L2 normalisation, a
+        vector with exactly one non-zero component always normalises to
+        1.0 regardless of what the raw tf value was (norm == |value|), so
+        that test cannot distinguish `1 + ln(count)` from `1 + log10(count)`
+        -- both give the same normalised result whenever every active term
+        has count 1. This test uses "cat cat dog", which puts unequal counts
+        (cat: 2, dog: 1, "cat dog": 1) into three *different* features at
+        once, so the ratio between components -- and therefore the
+        direction of the normalised vector -- depends on the log base used
+        for sublinear tf. The expected value is computed here from `math.log`
+        (natural log, matching scikit-learn's TfidfTransformer) independently
+        of the implementation under test.
+        """
+        from api.text_classifier.classifier import decision_scores
+
+        artifact = self._artifact()
+        scores = decision_scores(artifact, "cat cat dog")
+
+        tf_cat = 1.0 + math.log(2)
+        tf_dog = 1.0 + math.log(1)
+        tf_bigram = 1.0 + math.log(1)  # "cat dog" bigram occurs once
+        norm = math.sqrt(tf_cat**2 + tf_dog**2 + tf_bigram**2)
+        expected_alpha = 10.0 * (tf_cat / norm)  # Alpha's coef is 10 on "cat"
+
+        self.assertAlmostEqual(scores[0], expected_alpha, places=5)
+
+    def test_predict_returns_only_labels_over_threshold(self):
+        from api.text_classifier.classifier import predict
+
+        artifact = self._artifact()
+        predictions = predict(artifact, "cat", max_labels=3)
+        self.assertEqual([p.label for p in predictions], ["Alpha"])
+
+    def test_predict_orders_by_score_and_truncates(self):
+        from api.text_classifier.classifier import predict
+
+        artifact = self._artifact()
+        predictions = predict(artifact, "cat dog", max_labels=1)
+        self.assertEqual(len(predictions), 1)
+
+    def test_probability_is_between_zero_and_one(self):
+        from api.text_classifier.classifier import predict
+
+        artifact = self._artifact()
+        for prediction in predict(artifact, "cat dog", max_labels=3):
+            self.assertGreater(prediction.probability, 0.0)
+            self.assertLess(prediction.probability, 1.0)
+
+    def test_sigmoid_does_not_overflow(self):
+        from api.text_classifier.classifier import sigmoid
+
+        self.assertAlmostEqual(sigmoid(-10000.0), 0.0)
+        self.assertAlmostEqual(sigmoid(10000.0), 1.0)
+
+    def test_empty_and_out_of_vocabulary_text_scores_the_intercept(self):
+        from api.text_classifier.classifier import decision_scores
+
+        artifact = self._artifact()
+        self.assertEqual(decision_scores(artifact, ""), [0.0, 0.0])
+        self.assertEqual(decision_scores(artifact, "zebra"), [0.0, 0.0])
+
+    def test_module_does_not_import_django(self):
+        import subprocess
+        import sys
+
+        # Same rationale as the other text_classifier modules' equivalent
+        # tests: classifier.py is loaded lazily inside the dramatiq task so
+        # the model lives in exactly one process, and must not pull Django
+        # into that process as a side effect of import. Assert on
+        # sys.modules directly rather than the subprocess return code, since
+        # merely importing `django.conf.settings` (a lazy object) raises
+        # nothing on its own.
+        script = (
+            "import sys; import api.text_classifier.classifier; "
             "leaked = sorted(m for m in sys.modules "
             "if m == 'django' or m.startswith('django.')); "
             "assert not leaked, leaked"
