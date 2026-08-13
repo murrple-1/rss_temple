@@ -28,13 +28,19 @@ import unicodedata
 from collections import Counter, defaultdict
 
 import numpy as np
+import sklearn
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_recall_fscore_support
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from api.text_classifier.artifact import VectorizerConfig, dump_artifact  # noqa: E402
+from api.text_classifier.artifact import (  # noqa: E402
+    ArtifactError,
+    VectorizerConfig,
+    dump_artifact,
+    load_artifact,
+)
 from api.text_classifier.prep_content import prep_for_classification  # noqa: E402
 from api.text_classifier.seed_labeler import label_text  # noqa: E402
 from api.text_classifier.taxonomy import LABEL_NAMES, taxonomy_fingerprint  # noqa: E402
@@ -487,6 +493,38 @@ def build_parity_documents(vectorizer, train_texts, idf):
     return documents, report
 
 
+def _warn_if_sklearn_version_changed(out_path: str) -> None:
+    """Warn (stderr only, never raises) if `out_path` already holds an
+    artifact recorded under a different scikit-learn version than the one
+    installed here.
+
+    This is training-box-only, deliberately: `load_artifact` itself never
+    imports scikit-learn (see `api/text_classifier/artifact.py`), so calling
+    it from `train_classifier.py` doesn't violate "production must not
+    import scikit-learn" -- this whole script already requires
+    scikit-learn to run at all. Older artifacts (or ones from before this
+    field existed) simply have no `sklearn_version` to compare against and
+    are silently skipped, not flagged.
+    """
+    try:
+        old = load_artifact(out_path)
+    except (OSError, ArtifactError):
+        return
+
+    old_version = old.training.get("sklearn_version")
+    if old_version is not None and old_version != sklearn.__version__:
+        print(
+            f"warning: {out_path!r} was last trained under scikit-learn "
+            f"{old_version}, but {sklearn.__version__} is installed here. "
+            "TfidfVectorizer/LogisticRegression analyzer semantics can "
+            "change across scikit-learn versions; consider regenerating "
+            "the parity pair (see README's 'Training the classifier' "
+            "section) before trusting classifier.py's pure-Python "
+            "inference path against a model retrained under this version.",
+            file=sys.stderr,
+        )
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("corpus")
@@ -525,6 +563,8 @@ def main():
         # instead of accepting a flag combination that can't do what it
         # looks like it does.
         parser.error("--fixtures requires --emit-parity")
+
+    _warn_if_sklearn_version_changed(args.out)
 
     rows = build_dataset(args.corpus, args.per_label_cap, args.per_feed_per_label_cap)
     train_rows, dev_rows = feed_wise_split(rows)
@@ -625,6 +665,17 @@ def main():
             "n_dev": len(dev_rows),
             "labeler": "seed_terms_v1",
             "trained_at": datetime.datetime.now(datetime.UTC).isoformat(),
+            # The committed parity pair is a frozen snapshot of THIS
+            # sklearn version's TfidfVectorizer/LogisticRegression
+            # behaviour. Recording it here means a maintainer retraining
+            # under a newer sklearn (whose analyzer semantics may have
+            # changed) has something to diff against, rather than a
+            # still-green parity test (it only re-checks the OLD artifact)
+            # silently hiding a production model that now scores
+            # differently than the pure-Python path believes it does. See
+            # the README's "Training the classifier" section for when to
+            # regenerate the parity pair.
+            "sklearn_version": sklearn.__version__,
         },
     )
     print(f"wrote {args.out} ({fingerprint})", file=sys.stderr)
