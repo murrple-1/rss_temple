@@ -640,6 +640,30 @@ class ArtifactTestCase(TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode())
 
 
+class GoldSetTestCase(TestCase):
+    PATH = "api/text_classifier/gold/gold_set.jsonl"
+
+    def test_gold_set_is_well_formed(self):
+        if not os.path.exists(self.PATH):
+            self.skipTest("no gold set yet")
+
+        from api.text_classifier.taxonomy import LABEL_NAMES
+
+        with open(self.PATH, "r") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+
+        self.assertGreaterEqual(len(rows), 200)
+        seen_uuids = set()
+        for row in rows:
+            self.assertEqual(
+                set(row), {"uuid", "title", "content_excerpt", "feed_id", "labels"}
+            )
+            self.assertNotIn(row["uuid"], seen_uuids)
+            seen_uuids.add(row["uuid"])
+            for label in row["labels"]:
+                self.assertIn(label, LABEL_NAMES)
+
+
 class ImportGuardTestCase(TestCase):
     def test_views_do_not_import_the_classifier(self):
         """The model must live in the dramatiq worker, not in every web worker.
