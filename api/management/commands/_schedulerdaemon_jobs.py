@@ -63,6 +63,23 @@ def label_feeds(*args: Any, options: dict[str, Any] | None = None, **kwargs: Any
     )
 
 
+def label_feed_entries(
+    *args: Any, options: dict[str, Any] | None = None, **kwargs: Any
+):
+    from dramatiq import Message
+
+    options = options or {}
+    broker.enqueue(
+        Message(
+            queue_name="rss_temple",
+            actor_name="label_feed_entries",
+            args=args,
+            kwargs=kwargs,
+            options=options,
+        )
+    )
+
+
 def label_users(*args: Any, options: dict[str, Any] | None = None, **kwargs: Any):
     from dramatiq import Message
 

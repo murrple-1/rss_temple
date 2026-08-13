@@ -340,6 +340,7 @@ You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
     "feed_scrape": {},
     "flag_duplicate_feeds": {},
     "label_feeds": {},
+    "label_feed_entries": {},
     "label_users": {},
     "purge_duplicate_feed_urls": {},
     "purge_expired_data": {},
@@ -347,6 +348,15 @@ You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
     "ignore_missed_top_images": {}
 }
 ```
+
+`label_feed_entries` runs the trained text classifier over unlabelled feed
+entries. It processes `dbLimit` entries per run (default 1000) and marks each
+one with the model's fingerprint, so shipping a new model automatically
+re-labels the corpus. A backlog of ~250,000 entries takes around 250 runs to
+clear — roughly a day at the default five-minute cadence, or ten days if you
+lower it to hourly. A warning is logged when the backlog exceeds
+`largeBacklogThreshold`. If no `classifier.json` has been trained yet (see
+`scripts/train_classifier.py`), the job logs a warning and does nothing.
 
 `/opt/rss_temple/rss_temple/Caddyfile`
 ```

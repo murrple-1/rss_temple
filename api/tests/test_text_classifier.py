@@ -547,6 +547,30 @@ class ArtifactTestCase(TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode())
 
 
+class ImportGuardTestCase(TestCase):
+    def test_views_do_not_import_the_classifier(self):
+        """The model must live in the dramatiq worker, not in every web worker.
+
+        `api.views` is imported by every one of `cpu_count() * 2 + 1` gunicorn
+        workers. A transitive import of `classifier` here would load the ~10MB
+        artifact into each of them, silently.
+        """
+        import subprocess
+        import sys
+
+        script = (
+            "import os, django;"
+            "os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rss_temple.settings');"
+            "django.setup();"
+            "import api.views;"
+            "import sys;"
+            "assert 'api.text_classifier.classifier' not in sys.modules, "
+            "'api.views transitively imports api.text_classifier.classifier'"
+        )
+        result = subprocess.run([sys.executable, "-c", script], capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+
 class ParityTestCase(TestCase):
     """Checks the pure-Python inference path against scikit-learn's own scores.
 

@@ -2,6 +2,7 @@ from .archive_feed_entries import archive_feed_entries
 from .extract_top_images import extract_top_images
 from .feed_scrape import feed_scrape
 from .find_duplicate_feeds import find_duplicate_feeds
+from .label_feed_entries import label_feed_entries
 from .label_feeds import label_feeds
 from .label_users import label_users
 from .purge_duplicate_feed_urls import purge_duplicate_feed_urls
@@ -12,6 +13,7 @@ from .ignore_missed_top_images import ignore_missed_top_images
 __all__ = [
     "archive_feed_entries",
     "extract_top_images",
+    "label_feed_entries",
     "label_feeds",
     "label_users",
     "purge_expired_data",

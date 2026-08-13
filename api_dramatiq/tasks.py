@@ -33,6 +33,7 @@ from api.tasks import archive_feed_entries as archive_feed_entries_
 from api.tasks import extract_top_images as extract_top_images_
 from api.tasks import feed_scrape as feed_scrape_
 from api.tasks import find_duplicate_feeds as find_duplicate_feeds_
+from api.tasks import label_feed_entries as label_feed_entries_
 from api.tasks import label_feeds as label_feeds_
 from api.tasks import label_users as label_users_
 from api.tasks import purge_duplicate_feed_urls as purge_duplicate_feed_urls_
@@ -147,6 +148,14 @@ def extract_top_images(
 def label_feeds(*args: Any, top_x=3, **kwargs: Any) -> None:
     label_feeds_(top_x, settings.LABELING_EXPIRY_INTERVAL)
     label_feeds.logger.info("feeds labelled")
+
+
+@dramatiq.actor(queue_name="rss_temple")
+def label_feed_entries(
+    *args: Any, db_limit=1000, large_backlog_threshold=50000, **kwargs: Any
+) -> None:
+    count = label_feed_entries_(db_limit, large_backlog_threshold)
+    label_feed_entries.logger.info("labelled %d feed entry(s)", count)
 
 
 @dramatiq.actor(queue_name="rss_temple")

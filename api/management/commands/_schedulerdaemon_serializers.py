@@ -145,6 +145,40 @@ class _LabelUsersSerializer(serializers.Serializer):
         return job
 
 
+class _LabelFeedEntriesSerializer(serializers.Serializer):
+    # Every 5 minutes, deliberately not aligned with `label_feeds`' midnight
+    # or `label_users`' 00:30-past-midnight crontabs: those two are staggered
+    # relative to *each other* because one reads a table the other
+    # deletes-then-repopulates every night. This job reads/writes entirely
+    # different tables (FeedEntry.classifier_model_fingerprint and
+    # ClassifierLabelFeedEntryCalculated) and guards its own overlap with the
+    # "label_feed_entries_lock" redis lock, so it has nothing to race with
+    # either of them and a five-minute cadence is free to pick independently.
+    # At db_limit 1000 a ~250,000-entry backlog needs 250 runs, which is
+    # roughly a day at this cadence.
+    crontab = serializers.CharField(default="*/5 * * * *")
+    dbLimit = serializers.IntegerField(source="db_limit", default=1000)
+    largeBacklogThreshold = serializers.IntegerField(
+        source="large_backlog_threshold", default=50000
+    )
+
+    def create(self, validated_data: Any) -> Any:
+        scheduler: BaseScheduler = self.context["scheduler"]
+        job = scheduler.add_job(
+            jobs.label_feed_entries,
+            trigger=CronTrigger.from_crontab(validated_data["crontab"]),
+            id="label_feed_entries",
+            max_instances=1,
+            replace_existing=True,
+            coalesce=True,
+            kwargs={
+                "db_limit": validated_data["db_limit"],
+                "large_backlog_threshold": validated_data["large_backlog_threshold"],
+            },
+        )
+        return job
+
+
 class _FeedScrapeSerializer(serializers.Serializer):
     intervalSeconds = serializers.IntegerField(source="interval_seconds", default=30)
     maxAge = serializers.IntegerField(
@@ -315,6 +349,7 @@ class SetupSerializer(serializers.Serializer):
     archive_feed_entries = _ArchiveFeedEntriesSerializer()
     extract_top_images = _ExtractTopImagesSerializer()
     label_feeds = _LabelFeedsSerializer()
+    label_feed_entries = _LabelFeedEntriesSerializer()
     label_users = _LabelUsersSerializer()
     feed_scrape = _FeedScrapeSerializer()
     setup_subscriptions = _SetupSubscriptionsSerializer()
