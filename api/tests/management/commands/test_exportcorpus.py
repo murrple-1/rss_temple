@@ -89,6 +89,47 @@ class ExportCorpusTestCase(TestCase):
         rows = self._run("--per-feed", "2")
         self.assertEqual(len(rows), 2)
 
+    def test_per_feed_cap_applies_per_feed_not_globally(self):
+        # `setUp` creates only ONE feed, so `--per-feed` and a global cap
+        # are indistinguishable there: either interpretation caps the SAME
+        # single feed's entries. This is the command's entire reason for
+        # existing (per-feed sampling, not a global random sample) and
+        # `exportcorpus` produces the real production training corpus, so
+        # add a second feed and confirm each feed independently contributes
+        # up to `--per-feed` entries -- a regression to a single combined
+        # cap across all feeds would instead split the same total between
+        # them and fail this.
+        second_feed = Feed.objects.create(
+            feed_url="http://example.com/corpus2.xml",
+            title="Second Corpus Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+        FeedEntry.objects.bulk_create(
+            FeedEntry(
+                feed=second_feed,
+                published_at=timezone.now() + datetime.timedelta(days=-i),
+                title=f"Second {i}",
+                url=f"http://example.com/corpus2-{i}.html",
+                content="w" * 100,
+                author_name="A",
+                db_updated_at=None,
+                is_archived=False,
+                language=self.english,
+            )
+            for i in range(5)
+        )
+
+        rows = self._run("--per-feed", "2")
+
+        by_feed: dict[str, int] = {}
+        for row in rows:
+            by_feed[row["feed_id"]] = by_feed.get(row["feed_id"], 0) + 1
+
+        self.assertEqual(by_feed, {str(self.feed.uuid): 2, str(second_feed.uuid): 2})
+
     def test_respects_max_total(self):
         rows = self._run("--max-total", "3")
         self.assertEqual(len(rows), 3)
@@ -121,12 +162,15 @@ class ExportCorpusTestCase(TestCase):
         with CaptureQueriesContext(connection) as ctx:
             call_command("exportcorpus", stdout=out, stderr=StringIO())
 
+        # No need to separately exclude ClassifierLabelFeedEntryVote SELECTs
+        # here: `_vote_labels`'s query filters on its own `feed_entry_id`
+        # column without joining the FeedEntry table, so its SQL never
+        # contains the `"api_feedentry"` table name in the first place --
+        # the `select`/`"api_feedentry"` filter below already excludes it.
         entry_queries = [
             q["sql"]
             for q in ctx.captured_queries
-            if '"api_feedentry"' in q["sql"].lower()
-            and "select" in q["sql"].lower()
-            and "classifierlabelfeedentryvote" not in q["sql"].lower()
+            if '"api_feedentry"' in q["sql"].lower() and "select" in q["sql"].lower()
         ]
         self.assertTrue(entry_queries, "expected at least one FeedEntry SELECT query")
         for sql in entry_queries:

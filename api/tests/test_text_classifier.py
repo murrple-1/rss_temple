@@ -1,11 +1,32 @@
+import datetime
 import json
 import math
 import os
 import tempfile
 
+from django.conf import settings
 from django.test import SimpleTestCase, TestCase
 
 from api.text_classifier import lang_detector, prep_content
+
+
+class ClassifierSettingsTestCase(SimpleTestCase):
+    """Pins the two settings values `api/tasks/label_feed_entries.py`
+    consumes directly. Neither was pinned anywhere before: hardcoding 99
+    for `CLASSIFIER_MAX_LABELS_PER_ENTRY` (a regression that would write up
+    to 23 extra rows per entry -- ~5.75M rows over a 250k-entry corpus) or
+    swapping 1 day for 365 days on `CLASSIFIER_LABEL_EXPIRY_INTERVAL`
+    (defeating the "no weekly full re-classification" rationale documented
+    on the setting itself) both passed the full suite.
+    """
+
+    def test_max_labels_per_entry(self):
+        self.assertEqual(settings.CLASSIFIER_MAX_LABELS_PER_ENTRY, 3)
+
+    def test_label_expiry_interval(self):
+        self.assertEqual(
+            settings.CLASSIFIER_LABEL_EXPIRY_INTERVAL, datetime.timedelta(days=365)
+        )
 
 
 class LangDetectorTestCase(SimpleTestCase):
@@ -34,6 +55,18 @@ class PrepContentTestCase(SimpleTestCase):
         self.assertEqual(
             prep_content.prep_for_classification("Test Title", "Test Content"),
             "Test Title Test Content",
+        )
+
+    def test_prep_for_classification_truncates_to_the_cap(self):
+        # Pins MAX_CLASSIFICATION_CHARS itself: deleting the truncation
+        # entirely (or changing the cap) must be caught here, since this is
+        # the ONLY truncation point in the whole classification pipeline
+        # (see the long contract comment on MAX_CLASSIFICATION_CHARS).
+        long_content = "word " * 2000  # far more than 4000 chars once joined
+        result = prep_content.prep_for_classification("Title", long_content)
+        self.assertEqual(len(result), prep_content.MAX_CLASSIFICATION_CHARS)
+        self.assertEqual(
+            result, prep_content.prep_for_lang_detection("Title", long_content)[:4000]
         )
 
 

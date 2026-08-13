@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
                 db_index=True,
                 default="",
                 help_text="model_fingerprint of the classifier artifact that last labelled this entry. Empty means never labelled. Deliberately a fingerprint rather than a boolean (cf. has_top_image_been_processed) so that shipping a new model invalidates every entry automatically instead of needing a manual reset.",
-                max_length=64,
+                max_length=255,
             ),
         ),
     ]
