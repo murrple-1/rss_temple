@@ -497,6 +497,20 @@ LABELING_EXPIRY_INTERVAL = datetime.timedelta(days=7)
 # machine label at half a human vote. Consumed by the classifier (spec 2).
 CLASSIFIER_LABEL_CALCULATED_WEIGHT = 0.5
 
+CLASSIFIER_MODEL_PATH = os.getenv(
+    "APP_CLASSIFIER_MODEL_PATH",
+    os.path.join(BASE_DIR, "api", "text_classifier", "model", "classifier.json"),
+)
+CLASSIFIER_MAX_LABELS_PER_ENTRY = int(
+    os.getenv("APP_CLASSIFIER_MAX_LABELS_PER_ENTRY", "3")
+)
+# Deliberately NOT LABELING_EXPIRY_INTERVAL (7 days). Model output does not
+# decay with time -- it only changes when the model changes -- so a short
+# expiry would force a full re-classification of the entire corpus every week.
+# Real invalidation is driven by classifier_model_fingerprint. This is a safety
+# net only.
+CLASSIFIER_LABEL_EXPIRY_INTERVAL = datetime.timedelta(days=365)
+
 EXPOSED_FEEDS_CACHE_TIMEOUT_SECONDS: float | None = 60.0 * 60.0 * 12.0  # 12 hours
 CLASSIFIER_LABEL_VOTE_COUNTS_CACHE_TIMEOUT_SECONDS: float | None = (
     60.0 * 30.0
