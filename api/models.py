@@ -612,7 +612,11 @@ class FeedEntry(models.Model):
     )
     has_top_image_been_processed = models.BooleanField(default=False)
     classifier_model_fingerprint = models.CharField(
-        max_length=64,
+        # `dump_artifact` (api/text_classifier/artifact.py) produces
+        # "sha256:" + a 64-character hex digest == 71 characters. 255 leaves
+        # headroom (e.g. a future "sha512:" prefix would need 135) without
+        # costing anything extra in Postgres over a tighter bound.
+        max_length=255,
         default="",
         db_index=True,
         help_text=(
