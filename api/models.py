@@ -611,6 +611,18 @@ class FeedEntry(models.Model):
         Language, related_name="feed_entries", null=True, on_delete=models.SET_NULL
     )
     has_top_image_been_processed = models.BooleanField(default=False)
+    classifier_model_fingerprint = models.CharField(
+        max_length=64,
+        default="",
+        db_index=True,
+        help_text=(
+            "model_fingerprint of the classifier artifact that last labelled this "
+            "entry. Empty means never labelled. Deliberately a fingerprint rather "
+            "than a boolean (cf. has_top_image_been_processed) so that shipping a "
+            "new model invalidates every entry automatically instead of needing a "
+            "manual reset."
+        ),
+    )
     top_image_src = models.URLField(max_length=2048, default="")
     top_image_processing_attempt_count = models.PositiveIntegerField(default=0)
     voted_classifier_labels: models.ManyToManyField = models.ManyToManyField(

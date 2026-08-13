@@ -579,3 +579,27 @@ class ClassifierLabelWeightTestCase(TestCase):
         )
         with self.assertRaises(ValidationError):
             obj.full_clean()
+
+
+class FeedEntryClassifierFingerprintTestCase(TestCase):
+    def test_defaults_to_empty_string(self):
+        now = timezone.now()
+        feed = Feed.objects.create(
+            feed_url="http://example.com/fp.xml",
+            title="FP Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/fp.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        self.assertEqual(feed_entry.classifier_model_fingerprint, "")
