@@ -126,8 +126,12 @@ TAXONOMY: dict[str, SeedTerms] = {
         # ("vehicle for change", "got a lot of mileage out of the story").
         # Dropped all four rather than trying to enumerate every non-
         # automotive sense; the strong list is already specific enough to
-        # carry the label on its own. "driver" (device driver) now lives on
-        # Computer Hardware & Software instead, where it belongs.
+        # carry the label on its own. "driver" (device driver) is *not*
+        # relocated to Computer Hardware & Software either: it collides
+        # there too (motorsport, golf, taxi, screwdriver -- "the Formula 1
+        # driver praised the team's software update" fires Computer
+        # Hardware & Software at score 2). A dead exclude is not a reason
+        # to add a term that fails the weak-term rule; see that label.
         weak=["roadworthy", "fuel economy", "vehicle recall", "used car"],
     ),
     "Books": _terms(
@@ -220,11 +224,17 @@ TAXONOMY: dict[str, SeedTerms] = {
         # mechanical ("upgrade your suspension yourself -- easy to install
         # in an afternoon"); bare "hardware" collides with hardware
         # stores, and bare "peripheral" is a common adjective meaning
-        # "tangential". "driver" (device/graphics driver) belongs here --
-        # moved from Automobile & Vehicles -- which is also why the
-        # driver's-licence exclude below now has a term to guard.
-        weak=["computer hardware", "software update", "driver", "usb peripheral"],
-        exclude=["driver's licence", "driver's license"],
+        # "tangential". "driver" (device/graphics driver) was tried here
+        # after round 1 -- moved from Automobile & Vehicles specifically to
+        # give the driver's-licence exclude below a term to guard -- but it
+        # reintroduces the same defect one label over: "the Formula 1
+        # driver praised the team's software update to the car's telemetry
+        # system" fires this label at score 2 (driver + software update),
+        # a motorsport article wrongly tagged as computer hardware. A dead
+        # exclude is not a reason to add a term that fails the weak-term
+        # rule, so both "driver" and the driver's-licence exclude it existed
+        # to guard are removed rather than kept.
+        weak=["computer hardware", "software update", "usb peripheral"],
     ),
     "Education": _terms(
         strong=[
@@ -470,11 +480,19 @@ TAXONOMY: dict[str, SeedTerms] = {
         # "lens" is a generic metaphor ("viewed through the lens of recent
         # Fed moves"); "exposure" is routinely financial or sun exposure;
         # bare "camera" is also a security camera; bare "photo" is a photo
-        # finish (Sport) or photo op (Politics). "iso" is added as a weak
-        # term (the exposure-triangle setting) specifically so the
-        # standards-body excludes below have something to guard.
-        weak=["camera lens", "exposure settings", "camera gear", "photo essay", "iso"],
-        exclude=["iso 27001", "iso standard", "iso 8601", "iso 9001"],
+        # finish (Sport) or photo op (Politics). "iso" (the exposure-
+        # triangle setting) was tried here after round 1, specifically to
+        # give the standards-body excludes (iso 9001, iso 27001, ...) a
+        # term to guard -- but bare "iso" is itself common, unrelated tech
+        # vocabulary ("download the ISO and flash it to a USB stick"),
+        # and unlike a single fixed phrase such as "driver's licence" the
+        # colliding senses ("iso file", "iso image", "boot from iso",
+        # "mount the iso", "corrupted iso", ...) are open-ended, so no
+        # short exclude list can cover them. Same call as "driver" above:
+        # a dead exclude is not a reason to add a term that fails the
+        # weak-term rule, so "iso" and the standards-body excludes it
+        # existed to guard are both dropped.
+        weak=["camera lens", "exposure settings", "camera gear", "photo essay"],
     ),
     "Politics": _terms(
         strong=[
