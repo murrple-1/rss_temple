@@ -410,6 +410,9 @@ class ArtifactTestCase(TestCase):
                 sublinear_tf=True,
                 norm="l2",
                 stop_words=("the", "a"),
+                binary=False,
+                strip_accents=None,
+                analyzer="word",
             ),
             "taxonomy_fingerprint": "sha256:deadbeef",
             "training": {"n_docs": 3},
@@ -467,16 +470,35 @@ class ArtifactTestCase(TestCase):
     def test_rejects_unsupported_vectorizer_config(self):
         from api.text_classifier.artifact import ArtifactError, load_artifact
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path, _ = self._write(tmpdir)
-            with open(path, "r") as f:
-                raw = json.load(f)
-            raw["vectorizer"]["ngram_range"] = [1, 3]
-            with open(path, "w") as f:
-                json.dump(raw, f)
+        # Every field `load_artifact` actually validates against a fixed
+        # supported value. `stop_words` is deliberately absent: it is
+        # training-determined data with no single "supported" value, unlike
+        # the other eight. A prior review flagged that this test only
+        # exercised `ngram_range`, leaving seven of the eight fields'
+        # rejection guards unverified -- each other field could have had a
+        # broken or missing check and this test would still have passed.
+        cases = [
+            ("token_pattern", r"\w+"),
+            ("ngram_range", [1, 3]),
+            ("norm", "l1"),
+            ("lowercase", False),
+            ("sublinear_tf", False),
+            ("binary", True),
+            ("strip_accents", "unicode"),
+            ("analyzer", "char"),
+        ]
+        for field, bad_value in cases:
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    path, _ = self._write(tmpdir)
+                    with open(path, "r") as f:
+                        raw = json.load(f)
+                    raw["vectorizer"][field] = bad_value
+                    with open(path, "w") as f:
+                        json.dump(raw, f)
 
-            with self.assertRaises(ArtifactError):
-                load_artifact(path)
+                    with self.assertRaises(ArtifactError):
+                        load_artifact(path)
 
     def test_rejects_truncated_arrays(self):
         from api.text_classifier.artifact import ArtifactError, load_artifact
@@ -553,6 +575,9 @@ class ClassifierInferenceTestCase(TestCase):
                 sublinear_tf=True,
                 norm="l2",
                 stop_words=("the",),
+                binary=False,
+                strip_accents=None,
+                analyzer="word",
             ),
             taxonomy_fingerprint="sha256:test",
             training={},
@@ -570,6 +595,9 @@ class ClassifierInferenceTestCase(TestCase):
             sublinear_tf=True,
             norm="l2",
             stop_words=("the",),
+            binary=False,
+            strip_accents=None,
+            analyzer="word",
         )
         terms = analyze("the cat dog", config)
         self.assertEqual(terms, ["cat", "dog", "cat dog"])
@@ -586,8 +614,38 @@ class ClassifierInferenceTestCase(TestCase):
             sublinear_tf=True,
             norm="l2",
             stop_words=(),
+            binary=False,
+            strip_accents=None,
+            analyzer="word",
         )
         self.assertEqual(analyze("a cat", config), ["cat"])
+
+    def test_lowercase_happens_before_tokenizing(self):
+        from api.text_classifier.artifact import VectorizerConfig
+        from api.text_classifier.classifier import analyze
+
+        config = VectorizerConfig(
+            token_pattern=r"(?u)\b\w\w+\b",
+            ngram_range=(1, 2),
+            lowercase=True,
+            sublinear_tf=True,
+            norm="l2",
+            stop_words=(),
+            binary=False,
+            strip_accents=None,
+            analyzer="word",
+        )
+        # U+0130 (LATIN CAPITAL LETTER I WITH DOT ABOVE, "İ") lowercases in
+        # Python to "i" followed by a combining dot above (U+0307), which
+        # is not a \w character. Lowercasing the whole document *before*
+        # tokenizing -- what sklearn does, and what this must match --
+        # therefore splits "İstanbul" into a lone "i" (dropped: shorter
+        # than \w\w+) and "stanbul". Tokenizing the *original* text first
+        # and lowercasing each token afterward instead sees "İstanbul" as
+        # one Unicode word character run and produces a single un-split
+        # token, "i̇stanbul", once lowercased. Verified directly against
+        # this Python's str.lower() and re before writing this assertion.
+        self.assertEqual(analyze("İstanbul", config), ["stanbul"])
 
     def test_l2_normalisation_makes_length_irrelevant(self):
         from api.text_classifier.classifier import decision_scores
@@ -628,6 +686,64 @@ class ClassifierInferenceTestCase(TestCase):
 
         self.assertAlmostEqual(scores[0], expected_alpha, places=5)
 
+    def test_idf_multiplies_before_l2_normalisation(self):
+        """Pins tf -> idf -> normalise ordering using non-uniform idf.
+
+        `self._artifact()`'s idf is uniform ([1.0, 1.0, 1.0]), which makes
+        the two possible orderings indistinguishable: scaling every
+        component by the same idf before taking the L2 norm is equivalent
+        (up to that shared scale factor) to scaling the already-unit
+        vector by it afterward, when idf is a single repeated value. This
+        artifact uses three distinct idf values instead, so the orderings
+        diverge and this test can tell them apart.
+        """
+        from api.text_classifier.artifact import (
+            VectorizerConfig,
+            dump_artifact,
+            load_artifact,
+        )
+        from api.text_classifier.classifier import decision_scores
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "artifact.json")
+            dump_artifact(
+                path,
+                labels=["Alpha"],
+                vocabulary_terms=["cat", "dog", "cat dog"],
+                idf=[1.0, 2.5, 4.0],
+                coef=[10.0, 0.0, 0.0],  # Alpha keys on "cat" only
+                intercept=[0.0],
+                thresholds=[0.0],
+                vectorizer=VectorizerConfig(
+                    token_pattern=r"(?u)\b\w\w+\b",
+                    ngram_range=(1, 2),
+                    lowercase=True,
+                    sublinear_tf=True,
+                    norm="l2",
+                    stop_words=(),
+                    binary=False,
+                    strip_accents=None,
+                    analyzer="word",
+                ),
+                taxonomy_fingerprint="sha256:test",
+                training={},
+            )
+            artifact = load_artifact(path)
+
+        scores = decision_scores(artifact, "cat dog")
+
+        # "cat dog" produces cat, dog, and the "cat dog" bigram, each with
+        # count 1, so sublinear tf is 1 + ln(1) == 1.0 for all three --
+        # uniform tf isolates the idf x normalise ordering as the only
+        # thing that can make this diverge from the correct implementation.
+        tf = 1.0
+        idf = [1.0, 2.5, 4.0]
+        values = [tf * w for w in idf]
+        norm = math.sqrt(sum(v * v for v in values))
+        expected = 10.0 * (values[0] / norm)
+
+        self.assertAlmostEqual(scores[0], expected, places=5)
+
     def test_predict_returns_only_labels_over_threshold(self):
         from api.text_classifier.classifier import predict
 
@@ -641,6 +757,14 @@ class ClassifierInferenceTestCase(TestCase):
         artifact = self._artifact()
         predictions = predict(artifact, "cat dog", max_labels=1)
         self.assertEqual(len(predictions), 1)
+
+    def test_predict_with_negative_max_labels_returns_nothing(self):
+        from api.text_classifier.classifier import predict
+
+        artifact = self._artifact()
+        # `predictions[:-1]` would silently drop only the last prediction
+        # instead of returning nothing; max_labels must clamp to zero.
+        self.assertEqual(predict(artifact, "cat dog", max_labels=-1), [])
 
     def test_probability_is_between_zero_and_one(self):
         from api.text_classifier.classifier import predict

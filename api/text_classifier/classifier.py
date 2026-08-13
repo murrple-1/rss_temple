@@ -93,6 +93,11 @@ def decision_scores(artifact: Artifact, text: str) -> list[float]:
     """Raw one-vs-rest decision score per label, in artifact.labels order."""
     vector = _tfidf(artifact, text)
     n_features = len(artifact.vocabulary)
+    # `coef` must be C-order / row-major / label-major: coef[label_index *
+    # n_features + feature_index]. See the docstring on `Artifact.coef` in
+    # artifact.py -- a Fortran-order ravel has the same length and would
+    # not be caught by any check, only by scoring every label with the
+    # wrong coefficients.
     coef: array = artifact.coef
 
     scores: list[float] = []
@@ -119,4 +124,7 @@ def predict(artifact: Artifact, text: str, max_labels: int) -> list[Prediction]:
         if score >= artifact.thresholds[i]
     ]
     predictions.sort(key=lambda p: p.score, reverse=True)
-    return predictions[:max_labels]
+    # A negative max_labels would otherwise silently slice from the end
+    # (predictions[:-1] drops the last entry instead of returning nothing),
+    # so clamp to zero rather than pass a negative straight to slicing.
+    return predictions[: max(max_labels, 0)]

@@ -23,6 +23,9 @@ ARTIFACT_FORMAT_VERSION = 1
 _SUPPORTED_TOKEN_PATTERN = r"(?u)\b\w\w+\b"
 _SUPPORTED_NGRAM_RANGE = (1, 2)
 _SUPPORTED_NORM = "l2"
+_SUPPORTED_BINARY = False
+_SUPPORTED_STRIP_ACCENTS = None
+_SUPPORTED_ANALYZER = "word"
 
 
 class ArtifactError(Exception):
@@ -37,6 +40,16 @@ class VectorizerConfig:
     sublinear_tf: bool
     norm: str
     stop_words: tuple[str, ...]
+    # These three are recorded (and validated at load time below) purely as
+    # a tripwire. classifier.py's analyzer only ever implements
+    # binary=False, strip_accents=None, analyzer="word" -- if the training
+    # box fits a vectorizer with any other value for these, the produced
+    # feature vectors would silently disagree with what classifier.py
+    # computes, with no error at either fit time or load time, unless this
+    # dataclass records the value and load_artifact rejects a mismatch.
+    binary: bool
+    strip_accents: str | None
+    analyzer: str
 
 
 @dataclass(frozen=True)
@@ -44,6 +57,16 @@ class Artifact:
     labels: tuple[str, ...]
     vocabulary: dict[str, int]
     idf: array
+    # Flattened one-vs-rest coefficient matrix in C-order / row-major /
+    # label-major layout: coef[label_index * n_features + feature_index].
+    # This is scikit-learn's default `LogisticRegression.coef_.ravel()`
+    # order, but nothing about the array's length distinguishes it from a
+    # Fortran-order (feature-major) ravel of the same shape -- both produce
+    # exactly n_labels * n_features entries, so `dump_artifact`'s and
+    # `load_artifact`'s length checks cannot catch a wrong ravel order.
+    # Getting this wrong silently mixes up which coefficients score which
+    # label; every downstream length check still passes. See
+    # `classifier.decision_scores`, which indexes with this exact formula.
     coef: array
     intercept: array
     thresholds: array
@@ -76,7 +99,17 @@ def dump_artifact(
     taxonomy_fingerprint: str,
     training: dict[str, Any],
 ) -> str:
-    """Write the artifact and return its model fingerprint."""
+    """Write the artifact and return its model fingerprint.
+
+    `coef` must already be flattened in C-order / row-major / label-major
+    layout, i.e. `coef[label_index * n_features + feature_index]` -- the
+    default `.ravel()` order of a `(n_labels, n_features)` NumPy array.
+    A Fortran-order (feature-major) ravel has the same length and passes
+    every check in this function and in `load_artifact`, but silently
+    scores every label with the wrong coefficients. See the `coef` field
+    docstring on `Artifact` and `classifier.decision_scores` for the
+    indexing formula this must match.
+    """
     n_labels = len(labels)
     n_features = len(vocabulary_terms)
 
@@ -163,6 +196,9 @@ def load_artifact(path: str) -> Artifact:
         sublinear_tf=raw_vectorizer["sublinear_tf"],
         norm=raw_vectorizer["norm"],
         stop_words=tuple(raw_vectorizer["stop_words"]),
+        binary=raw_vectorizer["binary"],
+        strip_accents=raw_vectorizer["strip_accents"],
+        analyzer=raw_vectorizer["analyzer"],
     )
 
     if vectorizer.token_pattern != _SUPPORTED_TOKEN_PATTERN:
@@ -184,6 +220,21 @@ def load_artifact(path: str) -> Artifact:
             "unsupported vectorizer config: lowercase and sublinear_tf must "
             f"both be enabled (got lowercase={vectorizer.lowercase!r}, "
             f"sublinear_tf={vectorizer.sublinear_tf!r})"
+        )
+    if vectorizer.binary != _SUPPORTED_BINARY:
+        raise ArtifactError(
+            f"unsupported binary {vectorizer.binary!r}, "
+            f"expected {_SUPPORTED_BINARY!r}"
+        )
+    if vectorizer.strip_accents != _SUPPORTED_STRIP_ACCENTS:
+        raise ArtifactError(
+            f"unsupported strip_accents {vectorizer.strip_accents!r}, "
+            f"expected {_SUPPORTED_STRIP_ACCENTS!r}"
+        )
+    if vectorizer.analyzer != _SUPPORTED_ANALYZER:
+        raise ArtifactError(
+            f"unsupported analyzer {vectorizer.analyzer!r}, "
+            f"expected {_SUPPORTED_ANALYZER!r}"
         )
 
     labels = tuple(body["labels"])
