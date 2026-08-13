@@ -20,13 +20,26 @@ class Command(BaseCommand):
         parser.add_argument("--per-feed", type=int, default=50)
         parser.add_argument("--max-total", type=int, default=200_000)
         parser.add_argument("--language", default="ENG")
-        parser.add_argument("--max-content-chars", type=int, default=4000)
+        # A generous export-payload safety valve ONLY -- this is not where
+        # classification-text truncation happens. It used to slice raw
+        # content to 4000 chars (the classification length cap), which cut
+        # HTML mid-tag/mid-entity and made the trainer's
+        # `prep_for_classification` output diverge from whatever a
+        # production inference path would produce from the same, untruncated
+        # entry -- a training/inference text-prep mismatch no parity
+        # fixture can detect, because it happens before either side of that
+        # comparison runs. The real cap is
+        # `api.text_classifier.prep_content.MAX_CLASSIFICATION_CHARS`,
+        # applied to prepared (stripped) text by `prep_for_classification`
+        # itself, identically for every caller. This flag just bounds how
+        # much raw, unprepared content one JSONL line can contain.
+        parser.add_argument("--max-raw-content-chars", type=int, default=50_000)
 
     def handle(self, *args: Any, **options: Any) -> None:
         per_feed: int = options["per_feed"]
         max_total: int = options["max_total"]
         language: str = options["language"]
-        max_content_chars: int = options["max_content_chars"]
+        max_raw_content_chars: int = options["max_raw_content_chars"]
         verbosity: int = options["verbosity"]
 
         written = 0
@@ -58,7 +71,7 @@ class Command(BaseCommand):
                         {
                             "uuid": str(entry["uuid"]),
                             "title": entry["title"],
-                            "content": entry["content"][:max_content_chars],
+                            "content": entry["content"][:max_raw_content_chars],
                             "feed_id": str(entry["feed_id"]),
                             "language": language,
                             "vote_labels": votes.get(entry["uuid"], []),

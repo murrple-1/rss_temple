@@ -593,8 +593,27 @@ class ParityTestCase(TestCase):
                 for label, expected_score, actual_score in zip(
                     artifact.labels, fixture["scores"], actual
                 ):
-                    self.assertAlmostEqual(
-                        actual_score, expected_score, places=4, msg=label
+                    # Relative, not fixed-decimal-places: the artifact
+                    # stores float32 while sklearn computes float64, with a
+                    # measured worst case of ~1.9e-6 relative over many
+                    # random models. `places=4` (5e-5 absolute) happens to
+                    # clear that for this small synthetic model (|score| <
+                    # 1.5), but a real model with |score| in the 10-20 range
+                    # would need ~2.5e-6-5e-6 *relative* precision to pass
+                    # `places=4` -- tighter than the ~1e-5 relative floor
+                    # this test is allowed to enforce, and only ~1.3x above
+                    # the measured float32 noise floor. A relative
+                    # comparison keeps the tolerance meaningful regardless
+                    # of the trained model's score magnitude. `abs_tol`
+                    # exists only so a fixture whose expected score is near
+                    # zero doesn't require literally exact equality.
+                    self.assertTrue(
+                        math.isclose(
+                            actual_score, expected_score, rel_tol=1e-5, abs_tol=1e-5
+                        ),
+                        f"{label}: actual={actual_score!r} "
+                        f"expected={expected_score!r} "
+                        f"diff={abs(actual_score - expected_score):.3e}",
                     )
 
     def test_artifact_matches_current_taxonomy(self):

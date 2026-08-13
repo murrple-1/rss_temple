@@ -482,27 +482,55 @@ pip install -r scripts/requirements-train.txt
 python scripts/train_classifier.py corpus.jsonl.gz
 ```
 
-This writes `api/text_classifier/model/classifier.json` and
-`api/text_classifier/model/parity_fixtures.json`. Read the per-label document
-counts it prints — a label with no positives will never fire and needs better
-seed terms.
+This writes ONLY `api/text_classifier/model/classifier.json`. It does not
+touch `parity_artifact.json` or `parity_fixtures.json` — those are a
+separate, small, synthetic-data pair that exists purely so `ParityTestCase`
+always has something real to check the pure-Python inference path against
+(see the module docstring on that test), and regenerating them is an
+explicit, maintainer-only step (`--emit-parity`, below), not part of the
+everyday retrain loop. Read the per-label document counts the trainer
+prints — a label with no positives will never fire and needs better seed
+terms.
 
 **4. Verify and evaluate:**
 
 ```sh
-./scripts/run_tests.sh api.tests.test_text_classifier
-python scripts/eval_classifier.py
+python manage.py test api.tests.test_text_classifier
+python scripts/eval_classifier.py   # not yet implemented; forthcoming
 ```
 
 The parity test checks that the pure-Python inference path reproduces
-scikit-learn's scores exactly; it must pass before you ship. `eval_classifier.py`
-scores the model against the hand-labelled gold set and enforces two gates: the
-model must beat the raw seed labeler, and no label may ship below the precision
-floor.
+scikit-learn's scores exactly against the committed `parity_artifact.json`/
+`parity_fixtures.json` pair; it does not depend on the `classifier.json` you
+just trained, and passing it does not by itself mean your new model is any
+good. `eval_classifier.py` (forthcoming) is intended to score the model
+against a hand-labelled gold set and enforce two gates: the model must beat
+the raw seed labeler, and no label may ship below the precision floor. Run
+that (once it exists) before shipping a newly trained `classifier.json`.
 
-**5. Commit both files.** Deploying the new artifact automatically re-labels the
-existing corpus, because entries record the fingerprint of the model that
-labelled them.
+**5. Commit `classifier.json`.** Deploying the new artifact automatically
+re-labels the existing corpus, because entries record the fingerprint of the
+model that labelled them.
+
+**Regenerating the parity fixtures** (only needed if `classifier.py`'s
+pure-Python analyzer changes, or if `taxonomy.py`'s seed terms change enough
+that `parity_artifact.json`'s taxonomy fingerprint goes stale) is a separate
+command, using `--emit-parity` and explicit output paths so it can never be
+run by accident in place of a normal retrain:
+
+```sh
+python scripts/train_classifier.py corpus.jsonl.gz \
+  --out api/text_classifier/model/parity_artifact.json \
+  --fixtures api/text_classifier/model/parity_fixtures.json \
+  --emit-parity \
+  --per-label-cap 15 --per-feed-per-label-cap 5 --max-features 2000
+```
+
+Fixture generation validates itself against the actual fitted vocabulary
+(it searches for documents that provably activate the right vocabulary
+features for each known divergence class, and raises rather than writing a
+fixture set that can't catch what it claims to) and prints which document
+satisfied each category. Commit both files together.
 
 ### RSS Temple Frontend
 

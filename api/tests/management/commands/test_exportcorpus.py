@@ -94,7 +94,11 @@ class ExportCorpusTestCase(TestCase):
         self.assertEqual(len(rows), 3)
 
     def test_truncates_content(self):
-        rows = self._run("--max-content-chars", "10")
+        # Renamed from --max-content-chars: this is a raw-payload safety
+        # valve, not the classification-length cap (that one lives in
+        # `prep_content.MAX_CLASSIFICATION_CHARS`, applied to prepared text
+        # by every caller identically -- see that module's docstring).
+        rows = self._run("--max-raw-content-chars", "10")
         self.assertTrue(all(len(row["content"]) <= 10 for row in rows))
 
     def test_includes_vote_labels(self):

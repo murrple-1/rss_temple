@@ -34,7 +34,17 @@ def _compile(terms: frozenset[str]) -> re.Pattern[str] | None:
     # where both could match, which is what distinct-match counting assumes.
     # (`\b...\b` alone does not solve this: it decides whether a *given*
     # branch matches at a position, not which branch is tried first.)
-    alternation = "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True))
+    # Tie-break alphabetically, not just by length: `sorted(terms, key=len,
+    # reverse=True)` leaves equal-length terms in frozenset iteration order,
+    # which (like the training-script bug this mirrors) varies by Python's
+    # per-process string-hash randomization -- so the compiled pattern
+    # *string* differs run-to-run even though it is behaviorally harmless
+    # (two distinct equal-length alternatives can never match the same
+    # span, so which one is tried first cannot change what matches). Stable
+    # regardless of hash seed.
+    alternation = "|".join(
+        re.escape(t) for t in sorted(terms, key=lambda t: (-len(t), t))
+    )
     return re.compile(rf"\b(?:{alternation})\b", re.IGNORECASE)
 
 
