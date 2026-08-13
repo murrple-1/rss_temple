@@ -67,6 +67,8 @@ TAXONOMY: dict[str, SeedTerms] = {
         ],
         # "dubbed" ("the plan, dubbed Project X") and "adaptation" (any book
         # or film adaptation) are generic English, not anime-specific.
+        # "subtitled" is also generic for any foreign-language film or
+        # documentary (Movies & TV).
         weak=["cosplay", "fansub", "anime convention"],
     ),
     "Arts & Craft": _terms(
@@ -192,7 +194,9 @@ TAXONOMY: dict[str, SeedTerms] = {
         ],
         # Bare "rumour"/"rumor" collide with trade rumours (Sport), product
         # rumours (Gaming/Tech), and political rumours; bare "spotted" is a
-        # generic verb ("spotted a pattern", "spotted owl").
+        # generic verb ("spotted a pattern", "spotted owl"); bare "gossip"
+        # is generic outside the celebrity-press sense (office gossip,
+        # small-town gossip).
         weak=["celebrity gossip", "dating rumour", "dating rumor", "spotted together"],
     ),
     "Computer Hardware & Software": _terms(
