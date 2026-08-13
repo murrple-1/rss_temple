@@ -1,3 +1,7 @@
+import json
+import os
+import tempfile
+
 from django.test import SimpleTestCase, TestCase
 
 from api.text_classifier import lang_detector, prep_content
@@ -385,3 +389,136 @@ class SeedLabelerRegressionCorpusTestCase(TestCase):
                     f"Gaming incorrectly fired for {text!r}; "
                     f"labels fired: {sorted(fired)}",
                 )
+
+
+class ArtifactTestCase(TestCase):
+    def _write(self, tmpdir, **overrides):
+        from api.text_classifier.artifact import VectorizerConfig, dump_artifact
+
+        kwargs = {
+            "labels": ["Alpha", "Beta"],
+            "vocabulary_terms": ["cat", "dog", "cat dog"],
+            "idf": [1.0, 2.0, 3.0],
+            "coef": [0.1, 0.2, 0.3, -0.1, -0.2, -0.3],
+            "intercept": [0.5, -0.5],
+            "thresholds": [0.0, 0.25],
+            "vectorizer": VectorizerConfig(
+                token_pattern=r"(?u)\b\w\w+\b",
+                ngram_range=(1, 2),
+                lowercase=True,
+                sublinear_tf=True,
+                norm="l2",
+                stop_words=("the", "a"),
+            ),
+            "taxonomy_fingerprint": "sha256:deadbeef",
+            "training": {"n_docs": 3},
+        }
+        kwargs.update(overrides)
+        path = os.path.join(tmpdir, "artifact.json")
+        fingerprint = dump_artifact(path, **kwargs)
+        return path, fingerprint
+
+    def test_round_trip(self):
+        from api.text_classifier.artifact import load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path, fingerprint = self._write(tmpdir)
+            artifact = load_artifact(path)
+
+            self.assertEqual(artifact.labels, ("Alpha", "Beta"))
+            self.assertEqual(artifact.vocabulary, {"cat": 0, "dog": 1, "cat dog": 2})
+            self.assertEqual(list(artifact.idf), [1.0, 2.0, 3.0])
+            self.assertEqual(len(artifact.coef), 6)
+            self.assertAlmostEqual(artifact.coef[0], 0.1, places=6)
+            self.assertAlmostEqual(artifact.coef[5], -0.3, places=6)
+            self.assertEqual(list(artifact.intercept), [0.5, -0.5])
+            self.assertEqual(artifact.model_fingerprint, fingerprint)
+            self.assertEqual(artifact.taxonomy_fingerprint, "sha256:deadbeef")
+
+    def test_fingerprint_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, first = self._write(tmpdir)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, second = self._write(tmpdir)
+        self.assertEqual(first, second)
+
+    def test_fingerprint_changes_with_coefficients(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, first = self._write(tmpdir)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, second = self._write(tmpdir, coef=[0.9, 0.2, 0.3, -0.1, -0.2, -0.3])
+        self.assertNotEqual(first, second)
+
+    def test_rejects_unsupported_format_version(self):
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path, _ = self._write(tmpdir)
+            with open(path, "r") as f:
+                raw = json.load(f)
+            raw["format_version"] = 999
+            with open(path, "w") as f:
+                json.dump(raw, f)
+
+            with self.assertRaises(ArtifactError):
+                load_artifact(path)
+
+    def test_rejects_unsupported_vectorizer_config(self):
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path, _ = self._write(tmpdir)
+            with open(path, "r") as f:
+                raw = json.load(f)
+            raw["vectorizer"]["ngram_range"] = [1, 3]
+            with open(path, "w") as f:
+                json.dump(raw, f)
+
+            with self.assertRaises(ArtifactError):
+                load_artifact(path)
+
+    def test_rejects_truncated_arrays(self):
+        from api.text_classifier.artifact import ArtifactError, load_artifact
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path, _ = self._write(tmpdir)
+            with open(path, "r") as f:
+                raw = json.load(f)
+            raw["labels"] = ["Alpha", "Beta", "Gamma"]  # coef no longer 3 x 3
+            with open(path, "w") as f:
+                json.dump(raw, f)
+
+            with self.assertRaises(ArtifactError):
+                load_artifact(path)
+
+    def test_rejects_vocabulary_term_containing_newline(self):
+        from api.text_classifier.artifact import ArtifactError
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with self.assertRaises(ArtifactError):
+                self._write(tmpdir, vocabulary_terms=["cat", "dog\nbad", "cat dog"])
+
+    def test_module_does_not_import_django(self):
+        import subprocess
+        import sys
+
+        # Same rationale as taxonomy.py's and seed_labeler.py's equivalent
+        # tests: this module is written by an off-box training script with
+        # no Django installed at all, so no `django*` module may land in
+        # sys.modules as a side effect of importing it. Assert on
+        # sys.modules directly rather than the subprocess return code, since
+        # merely importing `django.conf.settings` (a lazy object) raises
+        # nothing on its own.
+        script = (
+            "import sys; import api.text_classifier.artifact; "
+            "leaked = sorted(m for m in sys.modules "
+            "if m == 'django' or m.startswith('django.')); "
+            "assert not leaked, leaked"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            env={"PATH": "/usr/bin:/bin"},
+            cwd=".",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
