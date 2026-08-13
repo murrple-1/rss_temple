@@ -151,11 +151,24 @@ def label_feed_entries(
                     )
                 )
 
+        entry_uuids = [e["uuid"] for e in entries]
         with transaction.atomic():
+            # Delete this batch's existing calculated rows before writing the
+            # new ones. Without this, `bulk_create(..., ignore_conflicts=True)`
+            # silently keeps the OLD row on every (classifier_label,
+            # feed_entry) collision -- a retrained model's new weights are
+            # discarded and a label the new model no longer predicts is never
+            # removed, even though the entry below gets stamped with the new
+            # fingerprint and so is never reconsidered again. Human votes live
+            # in ClassifierLabelFeedEntryVote, a different table, so this
+            # cannot touch them.
+            ClassifierLabelFeedEntryCalculated.objects.filter(
+                feed_entry_id__in=entry_uuids
+            ).delete()
             ClassifierLabelFeedEntryCalculated.objects.bulk_create(
                 rows, ignore_conflicts=True
             )
-            FeedEntry.objects.filter(uuid__in=[e["uuid"] for e in entries]).update(
+            FeedEntry.objects.filter(uuid__in=entry_uuids).update(
                 classifier_model_fingerprint=artifact.model_fingerprint
             )
 
