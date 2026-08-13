@@ -441,6 +441,69 @@ docker compose exec rss_temple python ./manage.py purgebulkvotes \
 
 **Take a backup first** — see `DB.md`. This is not reversible.
 
+## Training the classifier
+
+The feed entry classifier is designed to ship as a pre-trained artifact at
+`api/text_classifier/model/classifier.json`, so a `docker pull` gives you a
+working classifier with no setup. **No such artifact is committed yet.** No
+production corpus has been exported yet to train one, and shipping a model
+trained on synthetic data as the real `classifier.json` would give every
+self-hoster a worthless model with no visible warning that it's synthetic.
+Until a real corpus exists, `checkclassifierlabels`/inference simply have no
+artifact to load.
+
+What *is* committed is `api/text_classifier/model/parity_artifact.json` and
+`api/text_classifier/model/parity_fixtures.json` — a small model trained on a
+synthetic corpus purely so `ParityTestCase` in
+`api/tests/test_text_classifier.py` has a real trained artifact and real
+scikit-learn-computed scores to check the pure-Python inference path
+against. It is not a candidate classifier; don't load it in production.
+
+Training runs off-box. Nothing in the production image can import
+scikit-learn.
+
+**1. Export a corpus from the running deployment:**
+
+```sh
+docker compose exec -T rss_temple python ./manage.py exportcorpus \
+  | gzip > corpus.jsonl.gz
+```
+
+**2. Copy it to a machine with the training dependencies:**
+
+```sh
+scp corpus.jsonl.gz training-box:~/
+pip install -r scripts/requirements-train.txt
+```
+
+**3. Train:**
+
+```sh
+python scripts/train_classifier.py corpus.jsonl.gz
+```
+
+This writes `api/text_classifier/model/classifier.json` and
+`api/text_classifier/model/parity_fixtures.json`. Read the per-label document
+counts it prints — a label with no positives will never fire and needs better
+seed terms.
+
+**4. Verify and evaluate:**
+
+```sh
+./scripts/run_tests.sh api.tests.test_text_classifier
+python scripts/eval_classifier.py
+```
+
+The parity test checks that the pure-Python inference path reproduces
+scikit-learn's scores exactly; it must pass before you ship. `eval_classifier.py`
+scores the model against the hand-labelled gold set and enforces two gates: the
+model must beat the raw seed labeler, and no label may ship below the precision
+floor.
+
+**5. Commit both files.** Deploying the new artifact automatically re-labels the
+existing corpus, because entries record the fingerprint of the model that
+labelled them.
+
 ### RSS Temple Frontend
 
 Create a directory `/opt/rss_temple/rss_temple_web_app/`, and also `/opt/rss_temple/rss_temple_web_app/custom_html/`.

@@ -547,6 +547,71 @@ class ArtifactTestCase(TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode())
 
 
+class ParityTestCase(TestCase):
+    """Checks the pure-Python inference path against scikit-learn's own scores.
+
+    There is deliberately no production `classifier.json` committed to this
+    repository: the only corpus available when this was written is
+    synthetic (seeded from `taxonomy.py`, not real feed content), and
+    shipping a synthetic-data model as the real classifier.json would give
+    every self-hoster a worthless model with no visible warning. The real
+    artifact gets trained from production data later, via
+    `scripts/train_classifier.py`, and committed then.
+
+    That leaves this test with nothing to compare against unless something
+    is committed now. So `parity_artifact.json` / `parity_fixtures.json` are
+    a second, deliberately small pair of files: the same training script,
+    the same synthetic corpus, trained with a small `--max-features` purely
+    so this test has a real trained artifact and real sklearn-computed
+    scores to check the pure-Python path against. It is not a candidate
+    classifier -- see the module docstring above and README.md's "Training
+    the classifier" section. Once a real `classifier.json` exists, this test
+    can point at it if that becomes more convenient, but must not go back to
+    silently skipping in the meantime.
+    """
+
+    ARTIFACT = "api/text_classifier/model/parity_artifact.json"
+    FIXTURES = "api/text_classifier/model/parity_fixtures.json"
+
+    def test_pure_python_matches_sklearn(self):
+        if not (os.path.exists(self.ARTIFACT) and os.path.exists(self.FIXTURES)):
+            self.skipTest("no trained artifact; run scripts/train_classifier.py")
+
+        from api.text_classifier.artifact import load_artifact
+        from api.text_classifier.classifier import decision_scores
+
+        artifact = load_artifact(self.ARTIFACT)
+        with open(self.FIXTURES, "r") as f:
+            fixtures = json.load(f)
+
+        self.assertGreaterEqual(len(fixtures), 10)
+
+        for fixture in fixtures:
+            with self.subTest(text=fixture["text"][:40]):
+                actual = decision_scores(artifact, fixture["text"])
+                self.assertEqual(len(actual), len(fixture["scores"]))
+                for label, expected_score, actual_score in zip(
+                    artifact.labels, fixture["scores"], actual
+                ):
+                    self.assertAlmostEqual(
+                        actual_score, expected_score, places=4, msg=label
+                    )
+
+    def test_artifact_matches_current_taxonomy(self):
+        if not os.path.exists(self.ARTIFACT):
+            self.skipTest("no trained artifact")
+
+        from api.text_classifier.artifact import load_artifact
+        from api.text_classifier.taxonomy import taxonomy_fingerprint
+
+        artifact = load_artifact(self.ARTIFACT)
+        self.assertEqual(
+            artifact.taxonomy_fingerprint,
+            taxonomy_fingerprint(),
+            "seed terms have changed since this model was trained; retrain",
+        )
+
+
 class ClassifierInferenceTestCase(TestCase):
     def _artifact(self):
         """A hand-built two-label, three-feature artifact with known answers."""
