@@ -5,36 +5,13 @@ from typing import Any
 from django.core.management.base import BaseCommand
 
 from api.models import ClassifierLabel
+from api.text_classifier.taxonomy import LABEL_NAMES
 
-_EXPECTED_LABELS = [
-    "Anime & Manga",
-    "Arts & Craft",
-    "Automobile & Vehicles",
-    "Books",
-    "Business, Finance & Banking",
-    "Celebrities & Culture",
-    "Computer Hardware & Software",
-    "Education",
-    "Fashion & Beauty",
-    "Food & Drink",
-    "Gaming",
-    "Health",
-    "Movies & TV",
-    "Music",
-    "News & Weather",
-    "Pets & Animals",
-    "Photography",
-    "Politics",
-    "Programming",
-    "Religion",
-    "Science & Technology",
-    "Sport",
-    "Travel",
-]
+_EXPECTED_LABELS = list(LABEL_NAMES)
 
 
 class Command(BaseCommand):
-    help = "Check to make sure the classifier labels are correct, via comparison with a hardcoded list"
+    help = "Check to make sure the classifier labels are correct, via comparison with api.text_classifier.taxonomy.LABEL_NAMES"
 
     def handle(self, *args: Any, **options: Any) -> None:  # pragma: no cover
         expected_labels = frozenset(_EXPECTED_LABELS)

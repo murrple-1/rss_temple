@@ -111,3 +111,9 @@ schedulerdaemon.json
 
 # superpowers subagent-driven-development scratch
 .superpowers/
+
+# Hand-labelled gold evaluation set for the text classifier -- built with
+# `manage.py exportgoldcandidates`, deliberately not committed (see
+# api/tests/test_text_classifier.py's GoldSetTestCase and
+# scripts/eval_classifier.py).
+api/text_classifier/gold/gold_set.jsonl

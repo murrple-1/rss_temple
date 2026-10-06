@@ -579,3 +579,83 @@ class ClassifierLabelWeightTestCase(TestCase):
         )
         with self.assertRaises(ValidationError):
             obj.full_clean()
+
+
+class FeedEntryClassifierFingerprintTestCase(TestCase):
+    def test_defaults_to_empty_string(self):
+        now = timezone.now()
+        feed = Feed.objects.create(
+            feed_url="http://example.com/fp.xml",
+            title="FP Feed",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/fp.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        self.assertEqual(feed_entry.classifier_model_fingerprint, "")
+
+    def test_accepts_a_real_artifact_fingerprint(self):
+        """Regression test for a too-narrow column (fix round 1).
+
+        `dump_artifact` (api/text_classifier/artifact.py) produces
+        "sha256:" + a 64-character hex digest -- 71 characters. The column
+        was originally `max_length=64`, which SQLite does not enforce (this
+        test would pass regardless of the column width on this backend
+        without `full_clean()`), but PostgreSQL does, and would reject the
+        very first fingerprint this project's `label_feed_entries` task ever
+        writes. `full_clean()` enforces `max_length` at the Django layer on
+        every backend, which is what makes this test able to catch the bug
+        on SQLite. Uses the real committed parity artifact's fingerprint
+        rather than a hardcoded 71-character string, so this tracks the
+        actual artifact format instead of an assumption about it.
+        """
+        from api.text_classifier.artifact import load_artifact
+
+        artifact = load_artifact("api/text_classifier/model/parity_artifact.json")
+        fingerprint = artifact.model_fingerprint
+        # Guard the guard: if this ever shrinks, the test would stop
+        # exercising the width this bug was actually about.
+        self.assertGreater(len(fingerprint), 64)
+
+        now = timezone.now()
+        feed = Feed.objects.create(
+            feed_url="http://example.com/fp2.xml",
+            title="FP Feed 2",
+            home_url="http://example.com",
+            published_at=now,
+            updated_at=None,
+            db_updated_at=None,
+        )
+        feed_entry = FeedEntry.objects.create(
+            feed=feed,
+            published_at=now,
+            title="Entry",
+            url="http://example.com/fp2.html",
+            content="content",
+            author_name="John Doe",
+            db_updated_at=None,
+            is_archived=False,
+        )
+        feed_entry.classifier_model_fingerprint = fingerprint
+        # Excludes fields unrelated to this regression: `id`, `language`,
+        # and `top_image_src` are `null=True`/defaulted but not `blank=True`,
+        # so a freshly `.objects.create()`-d FeedEntry already fails
+        # `full_clean()` on those three regardless of this fix -- that is a
+        # pre-existing model characteristic, not part of the bug this test
+        # targets. `classifier_model_fingerprint` itself is deliberately
+        # NOT excluded: it is the one field this test exists to validate.
+        feed_entry.full_clean(exclude=["id", "language", "top_image_src"])
+        feed_entry.save()
+
+        feed_entry.refresh_from_db()
+        self.assertEqual(feed_entry.classifier_model_fingerprint, fingerprint)

@@ -3,6 +3,7 @@
 	"archive_feed_entries": {},
 	"extract_top_images": {},
 	"label_feeds": {},
+	"label_feed_entries": {},
 	"label_users": {},
 	"feed_scrape": {
 		"shouldScrapeDeadFeeds": true

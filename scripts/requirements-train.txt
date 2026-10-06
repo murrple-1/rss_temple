@@ -1,0 +1,21 @@
+# Training-only dependencies for scripts/train_classifier.py. Deliberately
+# NOT in the Pipfile -- these (plus scikit-learn/scipy/numpy below) total
+# 200MB+ and must never land in the production image or the dev venv that
+# `Pipfile.lock` controls.
+#
+# Versions actually used to generate the committed parity fixtures (Python
+# 3.14.6, since the brief's pins target an older Python but happened to
+# resolve fine here too -- recorded regardless, per the task instructions,
+# since the fixtures are only valid for the exact versions that produced
+# them):
+scikit-learn==1.7.2
+scipy==1.16.2
+numpy==2.3.3
+
+# api.text_classifier.prep_content.prep_for_classification (which training
+# text must be run through, to match what production does before inference)
+# depends on these. Pinned to match the versions in the project's own
+# Pipfile.lock at the time this was written, so the training box's HTML
+# stripping matches production's.
+beautifulsoup4==4.15.0
+lxml==6.1.1
