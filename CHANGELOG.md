@@ -4,7 +4,15 @@ All notable changes to the RSS Temple backend. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are the git tags, which are also the
 `murraychristopherson/rss_temple` Docker image tags.
 
-## [0.10.0] - Unreleased
+## [Unreleased]
+
+### Added
+
+- The `purgearchivedentries` management command, which deletes archived feed entries published before a cutoff
+  (3 years ago by default). Favorited entries and entries with classifier label votes are kept. Dry-run by default;
+  see the README.
+
+## [0.10.0]
 
 ### Upgrading from 0.9.4
 

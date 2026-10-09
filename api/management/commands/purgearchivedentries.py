@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
 from django.utils import timezone
 
-from api.models import ClassifierLabelFeedEntryVote, FeedEntry
+from api.models import FeedEntry
 
 
 class Command(BaseCommand):
@@ -54,13 +54,9 @@ class Command(BaseCommand):
         if cutoff > now:
             raise CommandError(f"cutoff {cutoff.isoformat()} is in the future")
 
-        qs = (
-            FeedEntry.objects.filter(is_archived=True, published_at__lt=cutoff)
-            .exclude(favorite_user_set__isnull=False)
-            .exclude(
-                uuid__in=ClassifierLabelFeedEntryVote.objects.values("feed_entry_id")
-            )
-        )
+        qs = FeedEntry.objects.filter(
+            is_archived=True, published_at__lt=cutoff
+        ).exclude(favorite_user_set__isnull=False)
 
         self.stderr.write(self.style.NOTICE(f"cutoff: {cutoff.isoformat()}"))
         self.stderr.write(self.style.NOTICE(f"matching entries: {qs.count()}"))
