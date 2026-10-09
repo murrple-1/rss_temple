@@ -441,6 +441,38 @@ docker compose exec rss_temple python ./manage.py purgebulkvotes \
 
 **Take a backup first** — see `DB.md`. This is not reversible.
 
+### Purging old archived feed entries
+
+`purgearchivedentries` deletes archived feed entries published more than 3
+years ago. Unarchived entries are never touched. Entries that someone has
+favorited, or voted a classifier label on, are kept.
+
+It is **dry-run by default** — it prints the cutoff and the number of matching
+entries, and deletes nothing:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgearchivedentries
+```
+
+Pass `--no-dry-run` to actually delete:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgearchivedentries --no-dry-run
+```
+
+Change the cutoff with `--older-than-years` (default `3`), or give a date with
+`--before` (`YYYY-MM-DD`, UTC midnight). Pass only one of them:
+
+```sh
+docker compose exec rss_temple python ./manage.py purgearchivedentries \
+  --before 2022-01-01 --no-dry-run
+```
+
+Deletion is batched; pass `--batch-size` to change how many entries are deleted
+per transaction (default `5000`).
+
+**Take a backup first** — see `DB.md`. This is not reversible.
+
 ### RSS Temple Frontend
 
 Create a directory `/opt/rss_temple/rss_temple_web_app/`, and also `/opt/rss_temple/rss_temple_web_app/custom_html/`.
