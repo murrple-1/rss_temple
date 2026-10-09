@@ -4,7 +4,7 @@ import uuid
 from django.contrib import admin
 from django.contrib.admin import helpers
 from django.contrib.auth.admin import UserAdmin as UserAdmin_
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Count
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http.request import HttpRequest
 
@@ -129,13 +129,25 @@ class FeedAdmin(admin.ModelAdmin):
         fields.insert(3, fields.pop(10))
         return fields
 
-    @admin.display(description="Number of subscribed users")
-    def subscribed_user_set__count(self, obj: Feed):  # pragma: no cover
-        return obj.subscribed_user_set.count()
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Feed]:
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                _feed_entries_count=Count("feed_entries"),
+                _subscribed_user_set_count=Count("subscribed_user_set"),
+            )
+        )
 
-    @admin.display(description="Number of entries")
+    @admin.display(
+        description="Number of subscribed users", ordering="_subscribed_user_set_count"
+    )
+    def subscribed_user_set__count(self, obj: Feed):  # pragma: no cover
+        return obj._subscribed_user_set_count
+
+    @admin.display(description="Number of entries", ordering="_feed_entries_count")
     def feed_entries__count(self, obj: Feed):  # pragma: no cover
-        return obj.feed_entries.count()
+        return obj._feed_entries_count
 
 
 @admin.register(FeedEntry)
