@@ -62,7 +62,7 @@ class PurgeArchivedEntriesTestCase(TestCase):
         call_command("purgearchivedentries", stderr=out)
 
         self.assertEqual(FeedEntry.objects.count(), 6)
-        self.assertIn("matching entries: 2", out.getvalue())
+        self.assertIn("matching entries: 3", out.getvalue())
 
     def test_no_dry_run_deletes_only_old_archived_unprotected_entries(self):
         call_command("purgearchivedentries", "--no-dry-run", stderr=StringIO())
@@ -73,9 +73,9 @@ class PurgeArchivedEntriesTestCase(TestCase):
                 "old_unarchived",
                 "recent_archived",
                 "old_favorited",
-                "old_voted",
             },
         )
+        self.assertFalse(ClassifierLabelFeedEntryVote.objects.exists())
 
     def test_older_than_years(self):
         call_command(
@@ -164,4 +164,4 @@ class PurgeArchivedEntriesTestCase(TestCase):
 
         self.assertNotIn("old_archived", self._remaining_titles())
         self.assertNotIn("old_archived_2", self._remaining_titles())
-        self.assertIn("deleted 2 feed entry(s)", out.getvalue())
+        self.assertIn("deleted 3 feed entry(s)", out.getvalue())

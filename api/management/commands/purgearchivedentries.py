@@ -13,8 +13,8 @@ from api.models import FeedEntry
 class Command(BaseCommand):
     help = (
         "Delete archived feed entries published before a cutoff (3 years ago by "
-        "default). Entries that someone has favorited or voted a classifier label "
-        "on are kept. Dry-run by default."
+        "default). Entries that someone has favorited are kept. Dry-run by "
+        "default."
     )
 
     def add_arguments(self, parser: CommandParser) -> None:

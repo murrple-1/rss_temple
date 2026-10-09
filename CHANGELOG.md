@@ -9,8 +9,8 @@ All notable changes to the RSS Temple backend. The format is based on
 ### Added
 
 - The `purgearchivedentries` management command, which deletes archived feed entries published before a cutoff
-  (3 years ago by default). Favorited entries and entries with classifier label votes are kept. Dry-run by default;
-  see the README.
+  (3 years ago by default). Favorited entries are kept; classifier label votes on deleted entries are deleted too.
+  Dry-run by default; see the README.
 
 ## [0.10.0]
 

@@ -445,7 +445,7 @@ docker compose exec rss_temple python ./manage.py purgebulkvotes \
 
 `purgearchivedentries` deletes archived feed entries published more than 3
 years ago. Unarchived entries are never touched. Entries that someone has
-favorited, or voted a classifier label on, are kept.
+favorited are kept. Classifier label votes on deleted entries are deleted too.
 
 It is **dry-run by default** — it prints the cutoff and the number of matching
 entries, and deletes nothing:
