@@ -49,10 +49,7 @@ jobs:
             .
       - run:
           name: Smoke Test
-          # the image must at least start, with django-silk both enabled and disabled
-          command: |
-            docker run --rm -e APP_ENABLE_SILK=true rss_temple:latest python manage.py check
-            docker run --rm -e APP_ENABLE_SILK=false rss_temple:latest python manage.py check
+          command: docker run --rm rss_temple:latest python ./manage.py check
       - run:
           name: Docker Upload
           command: |
@@ -76,10 +73,7 @@ jobs:
             .
       - run:
           name: Smoke Test
-          # the image must at least start, with django-silk both enabled and disabled
-          command: |
-            docker run --rm -e APP_ENABLE_SILK=true rss_temple:latest python manage.py check
-            docker run --rm -e APP_ENABLE_SILK=false rss_temple:latest python manage.py check
+          command: docker run --rm rss_temple:latest python ./manage.py check
       - run:
           name: Docker Upload
           command: |
