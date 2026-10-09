@@ -1,8 +1,6 @@
 import datetime
-from unittest.mock import Mock
 
-from django.http.request import HttpRequest
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.utils import timezone
 from rest_framework import exceptions
 
@@ -18,10 +16,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
         expires_at = timezone.now() + datetime.timedelta(days=14)
         token = Token.objects.create(user=user, expires_at=expires_at)
 
-        request = Mock(HttpRequest)
-        request.META = {
-            "HTTP_AUTHORIZATION": f"Token {token.key}",
-        }
+        request = RequestFactory().get("/", HTTP_AUTHORIZATION=f"Token {token.key}")
 
         tuple_ = authentication.authenticate(request)
         assert isinstance(tuple_, tuple)
@@ -35,10 +30,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
 
         token = Token.objects.create(user=user, expires_at=None)
 
-        request = Mock(HttpRequest)
-        request.META = {
-            "HTTP_AUTHORIZATION": f"Token {token.key}",
-        }
+        request = RequestFactory().get("/", HTTP_AUTHORIZATION=f"Token {token.key}")
 
         tuple_ = authentication.authenticate(request)
         assert isinstance(tuple_, tuple)
@@ -56,10 +48,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
         expires_at = timezone.now() + datetime.timedelta(days=-1)
         token = Token.objects.create(user=user, expires_at=expires_at)
 
-        request = Mock(HttpRequest)
-        request.META = {
-            "HTTP_AUTHORIZATION": f"Token {token.key}",
-        }
+        request = RequestFactory().get("/", HTTP_AUTHORIZATION=f"Token {token.key}")
 
         with self.assertRaises(exceptions.AuthenticationFailed):
             authentication.authenticate(request)
@@ -67,10 +56,7 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
     def test_authenticate_badtoken(self):
         authentication = ExpiringTokenAuthentication()
 
-        request = Mock(HttpRequest)
-        request.META = {
-            "HTTP_AUTHORIZATION": "Token badtoken",
-        }
+        request = RequestFactory().get("/", HTTP_AUTHORIZATION="Token badtoken")
 
         with self.assertRaises(exceptions.AuthenticationFailed):
             authentication.authenticate(request)
@@ -78,7 +64,6 @@ class ExpiringTokenAuthenticationTestCase(TestCase):
     def test_authenticate_anonymoususer(self):
         authentication = ExpiringTokenAuthentication()
 
-        request = Mock(HttpRequest)
-        request.META = {}
+        request = RequestFactory().get("/")
 
         self.assertIsNone(authentication.authenticate(request))

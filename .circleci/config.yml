@@ -6,19 +6,32 @@ workflows:
   build_and_test:
     jobs:
       - build_latest:
+          requires:
+            - test
+            - lint
           filters:
             branches:
               only: master
             tags:
               ignore: /.*/
       - build_tag:
+          requires:
+            - test
+            - lint
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /.*/
-      - test
-      - lint
+      # run on tags too, so `build_tag` can require them
+      - test:
+          filters:
+            tags:
+              only: /.*/
+      - lint:
+          filters:
+            tags:
+              only: /.*/
 jobs:
   build_latest:
     docker:
@@ -34,6 +47,9 @@ jobs:
             --progress=plain
             --build-arg BUILD_ENV=production
             .
+      - run:
+          name: Smoke Test
+          command: docker run --rm rss_temple:latest python ./manage.py check
       - run:
           name: Docker Upload
           command: |
@@ -55,6 +71,9 @@ jobs:
             --progress=plain
             --build-arg BUILD_ENV=production
             .
+      - run:
+          name: Smoke Test
+          command: docker run --rm rss_temple:latest python ./manage.py check
       - run:
           name: Docker Upload
           command: |
@@ -114,6 +133,9 @@ jobs:
           paths:
             - "~/.local/share/virtualenvs/"
             - "~/.pyenv/"
+      - run:
+          name: Pipfile.lock consistency
+          command: python scripts/check_lock_consistency.py
       - run:
           name: ruff lint
           command: pipenv run ruff check .
