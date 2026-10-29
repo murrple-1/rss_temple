@@ -4,6 +4,8 @@ from pathlib import Path
 
 from django.utils.csp import CSP
 
+from rss_temple import silk_intercept
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -397,6 +399,7 @@ CORS_EXPOSE_HEADERS = ["X-CSRFToken"]
 
 # django-silk
 SILKY_INTERCEPT_PERCENT = int(os.getenv("APP_SILK_INTERCEPT_PERCENT", "50"))
+SILKY_INTERCEPT_FUNC = silk_intercept.should_intercept
 SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
 SILKY_MAX_RECORDED_REQUESTS = 10**4
