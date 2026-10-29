@@ -50,6 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         auth_tokens: RelatedManager["Token"]
         user_categories: RelatedManager["UserCategory"]
 
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)
@@ -114,6 +118,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Token(_Token):
+    class Meta:
+        verbose_name = "Token"
+        verbose_name_plural = "Tokens"
+
     # overwrite OneToOneField with ForeignKey for multiple tokens per user
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="auth_tokens", on_delete=models.CASCADE
@@ -123,6 +131,9 @@ class Token(_Token):
 
 class UserCategory(models.Model):
     class Meta:
+        verbose_name = "User Category"
+        verbose_name_plural = "User Categories"
+
         constraints = (
             models.UniqueConstraint(
                 fields=("user", "text"), name="usercategory__unique__user__text"
@@ -156,6 +167,9 @@ class ClassifierLabel(models.Model):
         calculated_feed_entry_set: RelatedManager["FeedEntry"]
 
     class Meta:
+        verbose_name = "Classifier Label"
+        verbose_name_plural = "Classifier Labels"
+
         constraints = (
             models.UniqueConstraint(
                 fields=("text",),
@@ -250,6 +264,10 @@ class Language(models.Model):
     if TYPE_CHECKING:
         feed_entries: RelatedManager["FeedEntry"]
 
+    class Meta:
+        verbose_name = "Language"
+        verbose_name_plural = "Languages"
+
     iso639_3 = models.CharField(primary_key=True, max_length=3)
     iso639_1 = models.CharField(max_length=2)
     name = models.CharField(max_length=64)
@@ -267,6 +285,9 @@ class Feed(models.Model):
         duplicate_feed_suggestions_2: RelatedManager["DuplicateFeedSuggestion"]
 
     class Meta:
+        verbose_name = "Feed"
+        verbose_name_plural = "Feeds"
+
         indexes = [
             models.Index(fields=["update_backoff_until"]),
         ]
@@ -492,6 +513,10 @@ class Feed(models.Model):
 
 
 class AlternateFeedURL(models.Model):
+    class Meta:
+        verbose_name = "Alternate Feed URL"
+        verbose_name_plural = "Alternate Feed URLs"
+
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
     feed_url = models.URLField(max_length=2048, unique=True)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
@@ -499,6 +524,9 @@ class AlternateFeedURL(models.Model):
 
 class DuplicateFeedSuggestion(models.Model):
     class Meta:
+        verbose_name = "Duplicate Feed Suggestion"
+        verbose_name_plural = "Duplicate Feed Suggestions"
+
         constraints = [
             models.CheckConstraint(
                 condition=~models.Q(feed1_id__lt=models.F("feed2_id")),
@@ -545,6 +573,9 @@ class FeedEntry(models.Model):
         favorite_user_set: RelatedManager[User]
 
     class Meta:
+        verbose_name = "Feed Entry"
+        verbose_name_plural = "Feed Entries"
+
         indexes = (
             models.Index(fields=("-published_at",)),
             models.Index(fields=("-created_at",)),
@@ -763,6 +794,10 @@ class FeedSubscriptionProgressEntryDescriptor(models.Model):
 
 
 class Captcha(models.Model):
+    class Meta:
+        verbose_name = "CAPTCHA"
+        verbose_name_plural = "CAPTCHAs"
+
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
     key = models.CharField(max_length=64, unique=True)
     seed = models.CharField(max_length=64)
@@ -794,6 +829,9 @@ class Captcha(models.Model):
 
 class FeedReport(models.Model):
     class Meta:
+        verbose_name = "Feed Report"
+        verbose_name_plural = "Feed Reports"
+
         indexes = (models.Index(fields=["is_ignored"]),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
@@ -808,6 +846,9 @@ class FeedReport(models.Model):
 
 class FeedEntryReport(models.Model):
     class Meta:
+        verbose_name = "Feed Entry Report"
+        verbose_name_plural = "Feed Entry Reports"
+
         indexes = (models.Index(fields=["is_ignored"]),)
 
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
@@ -821,6 +862,10 @@ class FeedEntryReport(models.Model):
 
 
 class RemovedFeed(models.Model):
+    class Meta:
+        verbose_name = "Removed Feed"
+        verbose_name_plural = "Removed Feeds"
+
     uuid = models.UUIDField(primary_key=True, default=uuid_extensions.uuid7)
     feed_url = models.URLField(max_length=2048, unique=True)
     reason = models.TextField(blank=True)
