@@ -4,7 +4,8 @@ import uuid
 from django.contrib import admin
 from django.contrib.admin import helpers
 from django.contrib.auth.admin import UserAdmin as UserAdmin_
-from django.db.models import QuerySet, Count
+from django.db.models import Count, IntegerField, OuterRef, QuerySet, Subquery
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http.request import HttpRequest
 
@@ -89,9 +90,18 @@ class UserAdmin(UserAdmin_):
         ),
     )
 
-    @admin.display(description="Number of subscriptions")
+    def get_queryset(self, request: HttpRequest) -> QuerySet[User]:
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(_subscribed_feeds_count=Count("subscribed_feeds"))
+        )
+
+    @admin.display(
+        description="Number of subscriptions", ordering="_subscribed_feeds_count"
+    )
     def subscribed_feeds__count(self, obj: User):  # pragma: no cover
-        return obj.subscribed_feeds.count()
+        return obj._subscribed_feeds_count
 
 
 @admin.register(UserCategory)
@@ -101,9 +111,12 @@ class UserCategoryAdmin(admin.ModelAdmin):
     search_fields = ["text", "user__email"]
     autocomplete_fields = ["feeds"]
 
-    @admin.display(description="Number of feeds")
+    def get_queryset(self, request: HttpRequest) -> QuerySet[UserCategory]:
+        return super().get_queryset(request).annotate(_feeds_count=Count("feeds"))
+
+    @admin.display(description="Number of feeds", ordering="_feeds_count")
     def feeds__count(self, obj: UserCategory):  # pragma: no cover
-        return obj.feeds.count()
+        return obj._feeds_count
 
 
 @admin.register(Feed)
@@ -129,13 +142,28 @@ class FeedAdmin(admin.ModelAdmin):
         fields.insert(3, fields.pop(10))
         return fields
 
+    @staticmethod
+    def _count_subquery(qs: QuerySet[Any]) -> Coalesce:
+        # counts per-feed in a correlated subquery, so multiple counts don't multiply via joins
+        return Coalesce(
+            Subquery(
+                qs.order_by().values("feed_id").annotate(c=Count("*")).values("c"),
+                output_field=IntegerField(),
+            ),
+            0,
+        )
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Feed]:
         return (
             super()
             .get_queryset(request)
             .annotate(
-                _feed_entries_count=Count("feed_entries"),
-                _subscribed_user_set_count=Count("subscribed_user_set"),
+                _feed_entries_count=FeedAdmin._count_subquery(
+                    FeedEntry.objects.filter(feed_id=OuterRef("pk"))
+                ),
+                _subscribed_user_set_count=FeedAdmin._count_subquery(
+                    SubscribedFeedUserMapping.objects.filter(feed_id=OuterRef("pk"))
+                ),
             )
         )
 
