@@ -242,6 +242,44 @@ class UserCategoryTestCase(APITestCase):
         self.assertIsNotNone(user_category1.feeds.get(uuid=feed2.uuid))
         self.assertIsNotNone(user_category2.feeds.get(uuid=feed2.uuid))
 
+    def test_UserCategoriesApplyView_put_only_affects_own_categories(self):
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        other_user = User.objects.create_user("other@test.com", None)
+        other_user_category = UserCategory.objects.create(
+            user=other_user, text="Other User Category"
+        )
+        other_user_category.feeds.add(feed)
+
+        user_category1 = UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text="Test User Category 1"
+        )
+        user_category2 = UserCategory.objects.create(
+            user=UserCategoryTestCase.user, text="Test User Category 2"
+        )
+        user_category1.feeds.add(feed)
+
+        response = self.client.put(
+            "/api/usercategories/apply",
+            {
+                "mappings": {
+                    str(feed.uuid): [str(user_category2.uuid)],
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 204, response.content)
+
+        self.assertFalse(user_category1.feeds.filter(uuid=feed.uuid).exists())
+        self.assertTrue(user_category2.feeds.filter(uuid=feed.uuid).exists())
+        self.assertTrue(other_user_category.feeds.filter(uuid=feed.uuid).exists())
+
     def test_UserCategoriesApplyView_put_malformed(self):
         UserCategory.objects.create(
             user=UserCategoryTestCase.user, text="Test User Category"

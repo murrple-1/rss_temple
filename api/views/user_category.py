@@ -202,30 +202,32 @@ class UserCategoriesApplyView(APIView):
         for user_category_uuids in mappings.values():
             all_user_category_uuids.update(user_category_uuids)
 
-        feeds: dict[uuid_.UUID, Feed] = {
-            feed.uuid: feed for feed in Feed.objects.filter(uuid__in=all_feed_uuids)
-        }
+        user = cast(User, request.user)
 
-        if len(feeds) < len(all_feed_uuids):
+        if Feed.objects.filter(uuid__in=all_feed_uuids).count() < len(all_feed_uuids):
             raise NotFound("feed not found")
 
-        user_categories: dict[uuid_.UUID, UserCategory] = {
-            user_category.uuid: user_category
-            for user_category in UserCategory.objects.filter(
-                uuid__in=all_user_category_uuids, user=cast(User, request.user)
-            )
-        }
-
-        if len(user_categories) < len(all_user_category_uuids):
+        if UserCategory.objects.filter(
+            uuid__in=all_user_category_uuids, user=user
+        ).count() < len(all_user_category_uuids):
             raise NotFound("user category not found")
 
+        # `Feed.user_categories` spans every user's categories, so only touch
+        # the requesting user's links (`.set()` would clear other users' too)
+        FeedUserCategoryMapping = UserCategory.feeds.through
         with transaction.atomic():
             for feed_uuid, user_category_uuids in mappings.items():
-                feeds[feed_uuid].user_categories.set(
-                    [
-                        user_categories[user_category_uuid]
+                FeedUserCategoryMapping.objects.filter(
+                    feed_id=feed_uuid, usercategory__user=user
+                ).exclude(usercategory_id__in=user_category_uuids).delete()
+                FeedUserCategoryMapping.objects.bulk_create(
+                    (
+                        FeedUserCategoryMapping(
+                            feed_id=feed_uuid, usercategory_id=user_category_uuid
+                        )
                         for user_category_uuid in user_category_uuids
-                    ]
+                    ),
+                    ignore_conflicts=True,
                 )
 
         return Response(status=204)
