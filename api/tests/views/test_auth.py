@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from allauth.account.models import EmailAddress
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.core import mail
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -202,6 +203,22 @@ class AuthTestCase(APITestCase):
 
         self.assertGreater(len(getattr(mail, "outbox")), initial_outbox_count)
         debug_print_last_email()
+
+    def test_PasswordResetView_post_ignores_host_header(self):
+        User.objects.create_user("test@test.com", "password")
+
+        response = self.client.post(
+            "/api/auth/password/reset",
+            {
+                "email": "test@test.com",
+            },
+            HTTP_HOST="evil.example.org",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        body = getattr(mail, "outbox")[-1].body
+        self.assertNotIn("evil.example.org", body)
+        self.assertIn(Site.objects.get_current().domain, body)
 
     def test_PasswordResetConfirmView_post(self):
         if "allauth" in settings.INSTALLED_APPS:

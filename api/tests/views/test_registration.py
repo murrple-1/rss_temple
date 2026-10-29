@@ -3,6 +3,7 @@ import logging
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress, EmailConfirmationHMAC
+from django.contrib.sites.models import Site
 from django.core import mail
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -156,3 +157,23 @@ class RegistrationTestCase(APITestCase):
 
         self.assertGreater(len(getattr(mail, "outbox")), initial_outbox_count)
         debug_print_last_email()
+
+    def test_ResendEmailVerificationView_post_ignores_host_header(self):
+        user = User.objects.create_user("test@test.com", None)
+
+        EmailAddress.objects.create(
+            user=user, email="test@test.com", primary=True, verified=False
+        )
+
+        response = self.client.post(
+            "/api/registration/resendemail",
+            {
+                "email": "test@test.com",
+            },
+            HTTP_HOST="evil.example.org",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        body = getattr(mail, "outbox")[-1].body
+        self.assertNotIn("evil.example.org", body)
+        self.assertIn(Site.objects.get_current().domain, body)

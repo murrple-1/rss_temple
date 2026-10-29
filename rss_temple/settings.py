@@ -26,7 +26,11 @@ _IN_DOCKER = os.getenv("APP_IN_DOCKER", "false").lower() == "true"
 # entirely in production. Defaults on to preserve existing behavior + tests.
 SILK_ENABLED = os.getenv("APP_ENABLE_SILK", "true").lower() == "true"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = (
+    allowed_hosts.split(",")
+    if (allowed_hosts := os.getenv("APP_ALLOWED_HOSTS"))
+    else ["*"]
+)
 
 # Application definition
 
@@ -350,6 +354,7 @@ SOCIALACCOUNT_PROVIDERS = {
     "google": {"ID_TOKEN_ISSUER": "accounts.google.com"},
     "facebook": {},
 }
+ACCOUNT_ADAPTER = "api.account_adapter.AccountAdapter"
 SOCIALACCOUNT_ADAPTER = "api.socialaccount_adapter.SocialAccountAdapter"
 
 # dj-rest-auth
@@ -362,6 +367,8 @@ REST_AUTH = {
     "LOGIN_SERIALIZER": "api.serializers.LoginSerializer",
     "TOKEN_CREATOR": "api.token_creator.create_token",
     "TOKEN_MODEL": "api.models.Token",
+    # build reset links from the `Site` domain, not the request's `Host` header
+    "PASSWORD_RESET_USE_SITES_DOMAIN": True,
 }
 
 # drf-spectacular
