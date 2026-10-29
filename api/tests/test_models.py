@@ -79,6 +79,33 @@ class UserTestCase(TestCase):
         self.assertIn(feed1, category_dict[user_category.uuid])
         self.assertIn(feed2, category_dict[None])
 
+    def test_category_dict_ignores_other_users_categories(self):
+        user = User.objects.create_user("test_fields@test.com", None)
+        other_user = User.objects.create_user("other@test.com", None)
+
+        other_user_category = UserCategory.objects.create(
+            user=other_user, text="Category"
+        )
+
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+
+        SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+
+        other_user_category.feeds.add(feed)
+
+        category_dict = user.category_dict()
+
+        self.assertEqual(len(category_dict), 1)
+        self.assertNotIn(other_user_category.uuid, category_dict)
+        self.assertIn(feed, category_dict[None])
+
     def test_favorite_feed_entry_mappings(self):
         user = User.objects.create_user("test_fields@test.com", None)
 

@@ -2,9 +2,10 @@ import logging
 from typing import ClassVar
 
 from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from api.models import SubscribedFeedUserMapping, User
+from api.models import Feed, SubscribedFeedUserMapping, User, UserCategory
 from api.tests.utils import disable_silk, disable_throttling
 
 
@@ -48,6 +49,31 @@ class OPMLTestCase(APITestCase):
 
         response = self.client.get("/api/opml")
         self.assertEqual(response.status_code, 200, response.content)
+
+    def test_OPMLView_get_ignores_other_users_categories(self):
+        user = User.objects.create_user("test@test.com", None)
+        other_user = User.objects.create_user("other@test.com", None)
+
+        feed = Feed.objects.create(
+            feed_url="http://example.com/rss.xml",
+            title="Sample Feed",
+            home_url="http://example.com",
+            published_at=timezone.now(),
+            updated_at=None,
+            db_updated_at=None,
+        )
+        SubscribedFeedUserMapping.objects.create(feed=feed, user=user)
+
+        other_user_category = UserCategory.objects.create(
+            user=other_user, text="Other User Category"
+        )
+        other_user_category.feeds.add(feed)
+
+        self._login()
+
+        response = self.client.get("/api/opml")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertNotIn(b"Other User Category", response.content)
 
     def test_OPMLView_post(self):
         OPMLTestCase._reset_db("api/fixtures/default.json")

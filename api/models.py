@@ -94,9 +94,9 @@ class User(AbstractBaseUser, PermissionsMixin):
                 user=self
             ):
                 user_category_uuids = frozenset(
-                    subscribed_feed_user_mapping.feed.user_categories.values_list(
-                        "uuid", flat=True
-                    )
+                    subscribed_feed_user_mapping.feed.user_categories.filter(
+                        user=self
+                    ).values_list("uuid", flat=True)
                 )
 
                 keys: Collection[uuid_.UUID | None]
