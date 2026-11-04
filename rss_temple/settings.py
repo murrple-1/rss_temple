@@ -351,6 +351,11 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+# scheme for links in auth emails, which are built from the `Site` domain
+# rather than the request, so the scheme can't be taken from the request either
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = os.getenv(
+    "APP_ACCOUNT_DEFAULT_HTTP_PROTOCOL", "https" if _IN_DOCKER else "http"
+)
 SOCIALACCOUNT_PROVIDERS = {
     "google": {"ID_TOKEN_ISSUER": "accounts.google.com"},
     "facebook": {},

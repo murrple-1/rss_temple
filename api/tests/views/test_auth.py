@@ -7,6 +7,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core import mail
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
@@ -230,6 +231,21 @@ class AuthTestCase(APITestCase):
         body = getattr(mail, "outbox")[-1].body
         self.assertNotIn("evil.example.org", body)
         self.assertIn(Site.objects.get_current().domain, body)
+
+    @override_settings(ACCOUNT_DEFAULT_HTTP_PROTOCOL="https")
+    def test_PasswordResetView_post_uses_configured_protocol(self):
+        User.objects.create_user("test@test.com", "password")
+
+        response = self.client.post(
+            "/api/auth/password/reset",
+            {
+                "email": "test@test.com",
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        body = getattr(mail, "outbox")[-1].body
+        self.assertIn(f"https://{Site.objects.get_current().domain}/", body)
 
     def test_PasswordResetConfirmView_post(self):
         if "allauth" in settings.INSTALLED_APPS:
