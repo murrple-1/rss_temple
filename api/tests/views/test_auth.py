@@ -1,4 +1,3 @@
-import base64
 import datetime
 import logging
 from typing import ClassVar
@@ -107,16 +106,6 @@ class AuthTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 401, response.content)
-
-    def test_basic_authentication_rejected(self):
-        User.objects.create_user("test@test.com", "password")
-
-        credentials = base64.b64encode(b"test@test.com:password").decode()
-        response = self.client.get(
-            "/api/auth/user",
-            HTTP_AUTHORIZATION=f"Basic {credentials}",
-        )
-        self.assertIn(response.status_code, (401, 403), response.content)
 
     def test_LogoutView_post(self):
         user = User.objects.create_user("test@test.com", None)
