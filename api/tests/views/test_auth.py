@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 from typing import ClassVar
@@ -6,6 +7,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core import mail
+from django.core.cache import caches
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -106,6 +108,44 @@ class AuthTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 401, response.content)
+
+    def test_basic_authentication(self):
+        caches["throttle"].clear()
+
+        user = User.objects.create_user("test@test.com", "password")
+        EmailAddress.objects.create(
+            user=user, email="test@test.com", primary=True, verified=True
+        )
+
+        credentials = base64.b64encode(b"test@test.com:password").decode()
+        response = self.client.get(
+            "/api/auth/user",
+            HTTP_AUTHORIZATION=f"Basic {credentials}",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+    @override_settings(BASIC_AUTH_MAX_FAILURES_PER_USER=1)
+    def test_basic_authentication_throttled(self):
+        caches["throttle"].clear()
+
+        user = User.objects.create_user("test@test.com", "password")
+        EmailAddress.objects.create(
+            user=user, email="test@test.com", primary=True, verified=True
+        )
+
+        bad_credentials = base64.b64encode(b"test@test.com:badpassword").decode()
+        response = self.client.get(
+            "/api/auth/user",
+            HTTP_AUTHORIZATION=f"Basic {bad_credentials}",
+        )
+        self.assertIn(response.status_code, (401, 403), response.content)
+
+        credentials = base64.b64encode(b"test@test.com:password").decode()
+        response = self.client.get(
+            "/api/auth/user",
+            HTTP_AUTHORIZATION=f"Basic {credentials}",
+        )
+        self.assertEqual(response.status_code, 429, response.content)
 
     def test_LogoutView_post(self):
         user = User.objects.create_user("test@test.com", None)

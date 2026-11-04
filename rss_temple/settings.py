@@ -320,7 +320,7 @@ DEFAULT_FROM_EMAIL = os.getenv("APP_DEFAULT_FROM_EMAIL", "webmaster@localhost")
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "api.authentication.ExpiringTokenAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        "api.authentication.ThrottledVerifiedBasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
@@ -386,7 +386,7 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "AUTHENTICATION_WHITELIST": [
         "api.authentication.ExpiringTokenAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        "api.authentication.ThrottledVerifiedBasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
 }
@@ -469,6 +469,12 @@ CAPTCHA_AUDIO_VOICES_DIR = str(_captcha_data_path / "voices/")
 CAPTCHA_SEND_ANSWER = os.getenv("APP_CAPTCHA_SEND_ANSWER") == "true"
 
 TOKEN_EXPIRY_INTERVAL = datetime.timedelta(days=14)
+
+# failed HTTP Basic auth attempts allowed per window, counted per client IP and
+# per account (see `api.authentication.ThrottledVerifiedBasicAuthentication`)
+BASIC_AUTH_MAX_FAILURES_PER_IP = 20
+BASIC_AUTH_MAX_FAILURES_PER_USER = 20
+BASIC_AUTH_FAILURE_WINDOW = datetime.timedelta(minutes=15)
 
 USER_UNREAD_GRACE_INTERVAL = datetime.timedelta(days=-7)
 USER_UNREAD_GRACE_MIN_COUNT = 10
