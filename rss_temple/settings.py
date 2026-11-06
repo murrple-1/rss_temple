@@ -337,6 +337,12 @@ REST_FRAMEWORK = {
         "dj_rest_auth": "50/minute",
         "user_delete": "3/minute",
     },
+    # number of reverse proxies in front of the app that append to
+    # `X-Forwarded-For`, so throttling keys on the real client IP. Unset, DRF
+    # keys on the whole header (or `REMOTE_ADDR` when there isn't one)
+    "NUM_PROXIES": (
+        int(num_proxies) if (num_proxies := os.getenv("APP_NUM_PROXIES")) else None
+    ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "TEST_REQUEST_RENDERER_CLASSES": (
         "drf_ujson.renderers.UJSONRenderer",

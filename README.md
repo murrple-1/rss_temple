@@ -307,6 +307,8 @@ APP_SESSION_COOKIE_DOMAIN=.rsstemple.com
 APP_CSRF_TRUSTED_ORIGINS=https://api.rsstemple.com,https://app.rsstemple.com
 APP_CSRF_COOKIE_DOMAIN=.rsstemple.com
 
+APP_NUM_PROXIES=2
+
 APP_EMAIL_HOST=
 APP_EMAIL_PORT=587
 APP_EMAIL_HOST_USER=
@@ -331,6 +333,8 @@ Generate, or otherwise replace, the passwords/secret keys (values start with `'C
 
 You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
 
+`APP_NUM_PROXIES` is the number of reverse proxies in front of the app (here, the RSS Temple Infrastructure Caddy and the Caddy above), so rate limiting sees the real client IP. Change it if you add or remove a proxy, such as a CDN.
+
 `/opt/rss_temple/rss_temple/schedulerdaemon.json`
 ```json
 {
@@ -350,6 +354,14 @@ You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
 
 `/opt/rss_temple/rss_temple/Caddyfile`
 ```
+{
+        servers {
+                # trust the `X-Forwarded-For` set by the RSS Temple Infrastructure Caddy (only reachable over
+                # the Docker networks), so it's appended to rather than replaced with that Caddy's IP
+                trusted_proxies static private_ranges
+        }
+}
+
 :8000 {
         encode gzip
 
