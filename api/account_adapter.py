@@ -1,9 +1,9 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from django.conf import settings
 
 
 class AccountAdapter(DefaultAccountAdapter):
     def get_email_confirmation_url(self, request, emailconfirmation):
-        # build the link from the `Site` domain rather than the request's
-        # (attacker-controllable) `Host` header, so a forged `Host` can't
-        # redirect the confirmation key to a foreign domain
-        return super().get_email_confirmation_url(None, emailconfirmation)
+        # link straight to the frontend's verify page, rather than to the API's
+        # redirect to it, so the link doesn't depend on the request's `Host`
+        return settings.ACCOUNT_CONFIRM_EMAIL_URL % {"key": emailconfirmation.key}

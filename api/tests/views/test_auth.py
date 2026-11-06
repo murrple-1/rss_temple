@@ -1,11 +1,11 @@
 import base64
 import datetime
 import logging
+import re
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.core import mail
 from django.core.cache import caches
 from django.test import override_settings
@@ -246,7 +246,7 @@ class AuthTestCase(APITestCase):
         debug_print_last_email()
 
     def test_PasswordResetView_post_ignores_host_header(self):
-        User.objects.create_user("test@test.com", "password")
+        user = User.objects.create_user("test@test.com", "password")
 
         response = self.client.post(
             "/api/auth/password/reset",
@@ -259,22 +259,26 @@ class AuthTestCase(APITestCase):
 
         body = getattr(mail, "outbox")[-1].body
         self.assertNotIn("evil.example.org", body)
-        self.assertIn(Site.objects.get_current().domain, body)
 
-    @override_settings(ACCOUNT_DEFAULT_HTTP_PROTOCOL="https")
-    def test_PasswordResetView_post_uses_configured_protocol(self):
-        User.objects.create_user("test@test.com", "password")
+        # the link goes straight to the frontend, and its values complete a reset
+        match = re.search(
+            re.escape(settings.PASSWORD_RESET_CONFIRM_URL_FORMAT)
+            .replace(re.escape("%(token)s"), r"(?P<token>[0-9A-Za-z\-]+)")
+            .replace(re.escape("%(userId)s"), r"(?P<userId>[0-9a-f]+)"),
+            body,
+        )
+        assert match is not None, body
+        self.assertEqual(match["userId"], user.uuid.hex)
 
         response = self.client.post(
-            "/api/auth/password/reset",
+            "/api/auth/password/reset/confirm",
             {
-                "email": "test@test.com",
+                "newPassword": "aC0mplic?tedTestPassword",
+                "userUuid": match["userId"],
+                "token": match["token"],
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
-
-        body = getattr(mail, "outbox")[-1].body
-        self.assertIn(f"https://{Site.objects.get_current().domain}/", body)
 
     def test_PasswordResetConfirmView_post(self):
         if "allauth" in settings.INSTALLED_APPS:

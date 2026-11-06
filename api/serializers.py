@@ -11,6 +11,9 @@ from dj_rest_auth.registration.serializers import (
     SocialLoginSerializer as SocialLoginSerializer_,
 )
 from dj_rest_auth.serializers import LoginSerializer as _LoginSerializer
+from dj_rest_auth.serializers import (
+    PasswordResetSerializer as _PasswordResetSerializer,
+)
 from dj_rest_auth.serializers import UserDetailsSerializer as _UserDetailsSerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -34,7 +37,7 @@ from api.pg_ts_config import locale_to_ts_config
 try:
     from allauth.account import app_settings as allauth_account_settings
     from allauth.account.adapter import get_adapter
-    from allauth.account.utils import setup_user_email
+    from allauth.account.utils import setup_user_email, user_pk_to_url_str
     from allauth.socialaccount.helpers import complete_social_login
     from allauth.utils import email_address_exists, get_username_max_length
 except ImportError:  # pragma: no cover
@@ -154,6 +157,20 @@ class PasswordChangeSerializer(serializers.Serializer):  # pragma: no cover
 
             assert isinstance(self.request.user, AbstractBaseUser)
             update_session_auth_hash(self.request, self.request.user)
+
+
+def _password_reset_url_generator(request, user, temp_key) -> str:
+    # link straight to the frontend's reset page, rather than to the API's
+    # redirect to it, so the link doesn't depend on the request's `Host`
+    return settings.PASSWORD_RESET_CONFIRM_URL_FORMAT % {
+        "token": temp_key,
+        "userId": user_pk_to_url_str(user),
+    }
+
+
+class PasswordResetSerializer(_PasswordResetSerializer):  # pragma: no cover
+    def get_email_options(self):
+        return {"url_generator": _password_reset_url_generator}
 
 
 # based on `dj_rest_auth.serializers.PasswordResetConfirmSerializer`

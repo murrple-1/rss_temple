@@ -358,8 +358,8 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-# scheme for links in auth emails, which are built from the `Site` domain
-# rather than the request, so the scheme can't be taken from the request either
+# scheme for absolute URLs allauth builds without a request (or forces, when
+# "https")
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = os.getenv(
     "APP_ACCOUNT_DEFAULT_HTTP_PROTOCOL", "https" if _IN_DOCKER else "http"
 )
@@ -375,13 +375,12 @@ REST_AUTH = {
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "USER_DETAILS_SERIALIZER": "api.serializers.UserDetailsSerializer",
     "PASSWORD_CHANGE_SERIALIZER": "api.serializers.PasswordChangeSerializer",
+    "PASSWORD_RESET_SERIALIZER": "api.serializers.PasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "api.serializers.PasswordResetConfirmSerializer",
     "REGISTER_SERIALIZER": "api.serializers.RegisterSerializer",
     "LOGIN_SERIALIZER": "api.serializers.LoginSerializer",
     "TOKEN_CREATOR": "api.token_creator.create_token",
     "TOKEN_MODEL": "api.models.Token",
-    # build reset links from the `Site` domain, not the request's `Host` header
-    "PASSWORD_RESET_USE_SITES_DOMAIN": True,
 }
 
 # drf-spectacular

@@ -1,9 +1,10 @@
 import datetime
 import logging
+import re
 from typing import ClassVar
 
 from allauth.account.models import EmailAddress, EmailConfirmationHMAC
-from django.contrib.sites.models import Site
+from django.conf import settings
 from django.core import mail
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -176,4 +177,23 @@ class RegistrationTestCase(APITestCase):
 
         body = getattr(mail, "outbox")[-1].body
         self.assertNotIn("evil.example.org", body)
-        self.assertIn(Site.objects.get_current().domain, body)
+
+        # the link goes straight to the frontend, and its key verifies the email
+        match = re.search(
+            re.escape(settings.ACCOUNT_CONFIRM_EMAIL_URL).replace(
+                re.escape("%(key)s"), r"(?P<key>[-:\w]+)"
+            ),
+            body,
+        )
+        assert match is not None, body
+
+        response = self.client.post(
+            "/api/registration/verifyemail",
+            {
+                "key": match["key"],
+            },
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertTrue(
+            EmailAddress.objects.get(user=user, email="test@test.com").verified
+        )
