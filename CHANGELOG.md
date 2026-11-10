@@ -29,6 +29,9 @@ All notable changes to the RSS Temple backend. The format is based on
 
 ### Fixed
 
+- The README's Compose file mounted the `postgres:18-alpine` data volume at `/var/lib/postgresql/data/`, the
+  PostgreSQL 17 location. It now mounts it at `/var/lib/postgresql/`, where the 18 image expects it. Don't change
+  the path of a volume that already holds data: see `DB.md` to upgrade an existing database.
 - The dev Dramatiq worker exited on start-up, because `-Q` also took the broker module as a queue name.
 
 ### Added

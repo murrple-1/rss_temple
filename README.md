@@ -200,7 +200,7 @@ services:
     env_file:
       - .env
     volumes:
-      - db_data:/var/lib/postgresql/data/
+      - db_data:/var/lib/postgresql/
     networks:
       - rss_temple_net
     healthcheck:
