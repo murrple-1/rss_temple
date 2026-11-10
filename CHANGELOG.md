@@ -8,6 +8,8 @@ All notable changes to the RSS Temple backend. The format is based on
 
 ### Upgrading from 0.10.0
 
+- **Database migration:** `0042` only records the models' display names (`verbose_name`), as the admin shows
+  them. It doesn't change the schema.
 - **Compose (required):** the `checkready` management command is removed. Older `docker-compose.yml` files call it
   in a `while ! python ./manage.py checkready` loop, which now never ends, so `rss_temple` and
   `rss_temple_schedulerdaemon` hang without starting. Before you pull this image, update `docker-compose.yml` as in
