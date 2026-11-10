@@ -6,6 +6,29 @@ All notable changes to the RSS Temple backend. The format is based on
 
 ## [Unreleased]
 
+### Upgrading from 0.10.0
+
+- **Compose (required):** the `checkready` management command is removed. Older `docker-compose.yml` files call it
+  in a `while ! python ./manage.py checkready` loop, which now never ends, so `rss_temple` and
+  `rss_temple_schedulerdaemon` hang without starting. Before you pull this image, update `docker-compose.yml` as in
+  the README: add the `rss_temple_migrate` and `rss_temple_collectstatic` services, the PostgreSQL and Valkey
+  healthchecks, and the `depends_on` that makes the app services wait for them, and remove the `checkready` loops.
+
+### Changed
+
+- The README's Compose file and the dev Compose files run `migrate` and `collectstatic` as one-shot services, which
+  the app services wait for (`condition: service_completed_successfully`), instead of inside the `rss_temple`
+  container's start-up command. A failed migration now stops `docker compose up` with an error. The Dramatiq worker
+  waits for migrations too.
+
+### Removed
+
+- The `checkready` management command. The Compose files wait for the PostgreSQL healthcheck instead.
+
+### Fixed
+
+- The dev Dramatiq worker exited on start-up, because `-Q` also took the broker module as a queue name.
+
 ### Added
 
 - The `purgearchivedentries` management command, which deletes archived feed entries published before a cutoff

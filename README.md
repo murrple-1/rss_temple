@@ -167,6 +167,15 @@ Create the following files - editing them as needed:
 x-rss-temple-image: &rss-temple-image
   image: 'murraychristopherson/rss_temple:latest'
 
+x-rss-temple-depends-on: &rss-temple-depends-on
+  depends_on:
+    postgresql:
+      condition: service_healthy
+    valkey:
+      condition: service_healthy
+    rss_temple_migrate:
+      condition: service_completed_successfully
+
 services:
   valkey:
     image: valkey/valkey:8-alpine
@@ -176,6 +185,12 @@ services:
       - ./overrides/valkey.conf:/usr/local/etc/valkey/valkey.conf
     networks:
       - rss_temple_net
+    healthcheck:
+      test: ['CMD-SHELL', '[ "$$(valkey-cli ping)" = PONG ]']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
   postgresql:
     image: postgres:18-alpine
     restart: always
@@ -188,6 +203,12 @@ services:
       - db_data:/var/lib/postgresql/data/
     networks:
       - rss_temple_net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER:-postgres}" -d "$${POSTGRES_DB:-postgres}"']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
   caddy-rss_temple:
     image: caddy:2-alpine
     restart: always
@@ -200,22 +221,46 @@ services:
     networks:
       - rss_temple_net
       - global_rss_temple_net
+  # One-shot: applies migrations, then exits. The long-running services wait for it to finish successfully
+  rss_temple_migrate:
+    <<: *rss-temple-image
+    command: python ./manage.py migrate
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      APP_IN_DOCKER: 'true'
+    env_file:
+      - .env
+    volumes:
+      - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
+    networks:
+      - rss_temple_net
+  # One-shot: copies static files into the volume Caddy serves, then exits
+  rss_temple_collectstatic:
+    <<: *rss-temple-image
+    command: python ./manage.py collectstatic --noinput
+    environment:
+      APP_IN_DOCKER: 'true'
+    env_file:
+      - .env
+    volumes:
+      - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
+      - django_static:/code/_static/
+    networks:
+      - rss_temple_net
   rss_temple:
     <<: *rss-temple-image
-    command: >
-      sh -c "
-        while ! python ./manage.py checkready; do
-          sleep 0.1
-        done
-
-        python ./manage.py collectstatic --noinput &
-
-        python ./manage.py migrate
-
-        exec gunicorn \\
-          -b 0.0.0.0:8000 \\
-          rss_temple.wsgi:application
-      "
+    command: gunicorn -b 0.0.0.0:8000 rss_temple.wsgi:application
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      rss_temple_migrate:
+        condition: service_completed_successfully
+      rss_temple_collectstatic:
+        condition: service_completed_successfully
     restart: always
     environment:
       APP_IN_DOCKER: 'true'
@@ -228,12 +273,11 @@ services:
       - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
       - ./overrides/gunicorn.conf.py:/code/gunicorn.conf.py
       - ./mount/:/code/mount/
-      - django_static:/code/_static/
     networks:
       - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
   rss_temple_dramatiq:
-    <<: *rss-temple-image
+    <<: [*rss-temple-image, *rss-temple-depends-on]
     command: dramatiq api_dramatiq.main -Q rss_temple
     restart: always
     environment:
@@ -248,17 +292,9 @@ services:
       - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
   rss_temple_schedulerdaemon:
-    <<: *rss-temple-image
+    <<: [*rss-temple-image, *rss-temple-depends-on]
     command: >
       sh -c "
-        while ! python ./manage.py checkready; do
-          sleep 0.1
-        done
-
-        while ! python ./manage.py migrate --check; do
-          sleep 5
-        done
-
         python ./manage.py checkclassifierlabels
 
         exec python ./manage.py schedulerdaemon /schedulerdaemon.json
