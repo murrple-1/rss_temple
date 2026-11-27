@@ -18,6 +18,10 @@ All notable changes to the RSS Temple backend. The format is based on
 
 ### Changed
 
+- Registration, password change and password reset confirm now answer every rejected password with `422` and
+  one body shape, `{"password": ["<message>", ...]}`, with one message for each rule the password fails. Before,
+  only a too-common password or one too similar to the email gave `422` (with one string, not a list), and the
+  other rules gave `400`. Use web app images built after this change, which show these messages.
 - The README's Compose file and the dev Compose files run `migrate` and `collectstatic` as one-shot services, which
   the app services wait for (`condition: service_completed_successfully`), instead of inside the `rss_temple`
   container's start-up command. A failed migration now stops `docker compose up` with an error. The Dramatiq worker
@@ -29,6 +33,10 @@ All notable changes to the RSS Temple backend. The format is based on
 
 ### Fixed
 
+- Registration accepted a password that was too similar to the email, because that check never ran. It is now
+  rejected with `422`, as it is for password change and password reset.
+- The message for a password without a special character showed `%(special_characters)s` instead of the
+  characters.
 - The README's Compose file mounted the `postgres:18-alpine` data volume at `/var/lib/postgresql/data/`, the
   PostgreSQL 17 location. It now mounts it at `/var/lib/postgresql/`, where the 18 image expects it. Don't change
   the path of a volume that already holds data: see `DB.md` to upgrade an existing database.
