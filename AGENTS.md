@@ -26,12 +26,15 @@ Valkey; otherwise it falls back to SQLite and a local cache (this is what tests 
 
 ```sh
 pipenv sync --dev                                  # Python 3.14
-pipenv run python manage.py test --parallel auto   # tests (Django runner, not pytest)
+PIPENV_DONT_LOAD_ENV=1 pipenv run python manage.py test --parallel auto   # tests (Django runner, not pytest)
 scripts/run_tests.sh [labels]                      # tests with coverage + HTML report
 pipenv run ruff check . && pipenv run ruff format --check .
 pipenv run python scripts/check_lock_consistency.py
 pipenv run mypy .                                  # configured, not run in CI
 ```
+
+`pipenv run` loads `.env`, and the dev stack's `.env` sets `APP_IN_DOCKER=true`, which makes the tests look for
+PostgreSQL and Valkey. `PIPENV_DONT_LOAD_ENV=1` stops that. The `scripts/run_tests*.sh` scripts set it.
 
 `TEST_RUNNER_TYPE=timed` reports slow tests (threshold `TEST_SLOW_TEST_THRESHOLD`, default 0.5s).
 
