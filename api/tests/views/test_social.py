@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import ClassVar
 
 import jwt
@@ -93,7 +94,9 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/google",
             {
-                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
+                "access_token": jwt.encode(
+                    {}, f"{random.getrandbits(32):=032b}", algorithm="HS256"
+                ),
                 "stayLoggedIn": False,
             },
         )
@@ -109,7 +112,9 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/google/connect",
             {
-                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
+                "access_token": jwt.encode(
+                    {}, f"{random.getrandbits(32):=032b}", algorithm="HS256"
+                ),
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
@@ -173,7 +178,9 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/facebook",
             {
-                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
+                "access_token": jwt.encode(
+                    {}, f"{random.getrandbits(32):=032b}", algorithm="HS256"
+                ),
                 "stayLoggedIn": False,
             },
         )
@@ -189,7 +196,9 @@ class SocialTestCase(APITestCase):
         response = self.client.post(
             "/api/social/facebook/connect",
             {
-                "access_token": jwt.encode({}, "secret", algorithm="HS256"),
+                "access_token": jwt.encode(
+                    {}, f"{random.getrandbits(32):=032b}", algorithm="HS256"
+                ),
             },
         )
         self.assertEqual(response.status_code, 200, response.content)
