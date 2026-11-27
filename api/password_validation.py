@@ -1,14 +1,7 @@
 import re
 
 from django.contrib.auth.models import AbstractBaseUser
-from django.contrib.auth.password_validation import (
-    CommonPasswordValidator,
-    UserAttributeSimilarityValidator,
-)
 from django.core.exceptions import ValidationError
-from django.db.models import Model
-
-from api.exceptions import UnprocessableContent
 
 
 class HasLowercaseValidator:
@@ -60,27 +53,8 @@ class HasSpecialCharacterValidator:
             raise ValidationError(
                 "This password must contain at least 1 special character (%(special_characters)s).",
                 code="password_no_special_character",
-                # params={"special_characters": "".join(self.special_characters)},
+                params={"special_characters": "".join(self.special_characters)},
             )
 
     def get_help_text(self):  # pragma: no cover
         return f"Your password must contain at least 1 special character ({''.join(self.special_characters)})"
-
-
-class ElevatedCommonPasswordValidator(CommonPasswordValidator):
-    def validate(self, password: str, user: Model | None = None):
-        try:
-            super().validate(password, user)
-        except ValidationError as e:
-            raise UnprocessableContent({"password": e.message}, code=e.code) from e
-
-
-class ElevatedUserAttributeSimilarityValidator(UserAttributeSimilarityValidator):
-    def __init__(self, user_attributes: tuple[str] = ("email",), **kwargs):
-        super().__init__(user_attributes=user_attributes, **kwargs)
-
-    def validate(self, password: str, user: Model | None = None):
-        try:
-            super().validate(password, user)
-        except ValidationError as e:
-            raise UnprocessableContent({"password": e.message}, code=e.code) from e

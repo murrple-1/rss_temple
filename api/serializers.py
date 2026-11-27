@@ -1,6 +1,7 @@
 import logging
 import re
 import uuid
+from collections.abc import Iterable
 from typing import Any, cast
 
 from allauth.account.adapter import get_adapter
@@ -103,6 +104,20 @@ class UserDetailsSerializer(serializers.ModelSerializer[User]):  # pragma: no co
         read_only_fields = ("uuid", "email", "attributes")
 
 
+def _password_unprocessable(
+    message_lists: Iterable[Iterable[Any]],
+) -> UnprocessableContent:
+    # every rejected password is reported the same way, so clients can show the
+    # messages as-is: a 422 with `{"password": ["<message>", ...]}`
+    return UnprocessableContent(
+        {
+            "password": [
+                str(message) for messages in message_lists for message in messages
+            ]
+        }
+    )
+
+
 class _SetPasswordForm(PasswordVerificationMixin, UserForm):  # pragma: no cover
     password = SetPasswordField()
 
@@ -145,7 +160,7 @@ class PasswordChangeSerializer(serializers.Serializer):  # pragma: no cover
         )
 
         if not self.set_password_form.is_valid():
-            raise serializers.ValidationError(self.set_password_form.errors)
+            raise _password_unprocessable(self.set_password_form.errors.values())
         return attrs
 
     def save(self):
@@ -208,7 +223,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):  # pragma: no cove
             },
         )
         if not self.set_password_form.is_valid():
-            raise serializers.ValidationError(self.set_password_form.errors)
+            raise _password_unprocessable(self.set_password_form.errors.values())
 
         return attrs
 
@@ -245,7 +260,10 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         return email
 
     def validate_password(self, password):
-        return get_adapter().clean_password(password)
+        try:
+            return get_adapter().clean_password(password)
+        except DjangoValidationError as exc:
+            raise _password_unprocessable([exc.messages]) from exc
 
     def validate_captcha(self, captcha_str):
         if (
@@ -286,13 +304,11 @@ class RegisterSerializer(serializers.Serializer):  # pragma: no cover
         user = adapter.new_user(request)
         self.cleaned_data = self.get_cleaned_data()
         user = adapter.save_user(request, user, self, commit=False)
-        if "password" in self.cleaned_data:
+        if "password1" in self.cleaned_data:
             try:
-                adapter.clean_password(self.cleaned_data["password"], user=user)
+                adapter.clean_password(self.cleaned_data["password1"], user=user)
             except DjangoValidationError as exc:
-                raise serializers.ValidationError(
-                    detail=serializers.as_serializer_error(exc)
-                )
+                raise _password_unprocessable([exc.messages]) from exc
         user.save()
         setup_user_email(request, user, [])
 

@@ -223,6 +223,48 @@ class AuthTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 422, response.content)
 
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIs(type(json_["password"]), list)
+        self.assertGreater(len(json_["password"]), 1)
+        for message in json_["password"]:
+            self.assertIs(type(message), str)
+
+    def _change_to_rejected_password(self, email: str, password: str) -> list[str]:
+        user = User.objects.create_user(email, "password")
+
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            "/api/auth/password/change",
+            {
+                "oldPassword": "password",
+                "newPassword": password,
+            },
+        )
+        self.assertEqual(response.status_code, 422, response.content)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("password"))
+
+        return response.json()["password"]
+
+    def test_PasswordChangeView_post_common_password(self):
+        # fails only the common-password rule
+        self.assertEqual(
+            self._change_to_rejected_password("test@test.com", "Password1!"),
+            ["This password is too common."],
+        )
+
+    def test_PasswordChangeView_post_password_similar_to_email(self):
+        # fails only the email-similarity rule
+        self.assertEqual(
+            self._change_to_rejected_password(
+                "johnsmith1@test.com", "Johnsmith1@test.com"
+            ),
+            ["The password is too similar to the email."],
+        )
+
     def test_PasswordResetView_post(self):
         initial_outbox_count = len(getattr(mail, "outbox", []))
 
@@ -352,6 +394,52 @@ class AuthTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 422, response.content)
+
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIs(type(json_["password"]), list)
+        self.assertGreater(len(json_["password"]), 1)
+        for message in json_["password"]:
+            self.assertIs(type(message), str)
+
+    def _reset_to_rejected_password(self, email: str, password: str) -> list[str]:
+        if "allauth" in settings.INSTALLED_APPS:
+            from allauth.account.forms import default_token_generator
+        else:
+            from django.contrib.auth.tokens import default_token_generator
+
+        user = User.objects.create_user(email, None)
+
+        response = self.client.post(
+            "/api/auth/password/reset/confirm",
+            {
+                "newPassword": password,
+                "userUuid": str(user.uuid),
+                "token": default_token_generator.make_token(user),
+            },
+        )
+        self.assertEqual(response.status_code, 422, response.content)
+
+        user.refresh_from_db()
+        self.assertFalse(user.check_password(password))
+
+        return response.json()["password"]
+
+    def test_PasswordResetConfirmView_post_common_password(self):
+        # fails only the common-password rule
+        self.assertEqual(
+            self._reset_to_rejected_password("test@test.com", "Password1!"),
+            ["This password is too common."],
+        )
+
+    def test_PasswordResetConfirmView_post_password_similar_to_email(self):
+        # fails only the email-similarity rule
+        self.assertEqual(
+            self._reset_to_rejected_password(
+                "johnsmith1@test.com", "Johnsmith1@test.com"
+            ),
+            ["The password is too similar to the email."],
+        )
 
     def test_UserDetailsView_get(self):
         user = User.objects.create_user("test@test.com", None)

@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from api import password_validation
-from api.exceptions import UnprocessableContent
 from api.models import User
 
 
@@ -90,40 +89,3 @@ class HasSpecialCharacterValidatorTestCase(TestCase):
 
         with self.assertRaises(ValidationError):
             validator.validate("aA1", user=HasSpecialCharacterValidatorTestCase.user)
-
-
-class ElevatedCommonPasswordValidatorTestCase(TestCase):
-    user: ClassVar[User]
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-        cls.user = User.objects.create_user("test@test.com", None)
-
-    def test_validate(self):
-        validator = password_validation.ElevatedCommonPasswordValidator()
-
-        with self.assertRaises(UnprocessableContent):
-            validator.validate(
-                "password1", user=ElevatedCommonPasswordValidatorTestCase.user
-            )
-
-
-class ElevatedUserAttributeSimilarityValidatorTestCase(TestCase):
-    user: ClassVar[User]
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-
-        cls.user = User.objects.create_user("test@test.com", None)
-
-    def test_validate(self):
-        validator = password_validation.ElevatedUserAttributeSimilarityValidator()
-
-        with self.assertRaises(UnprocessableContent):
-            validator.validate(
-                "test@test.com",
-                user=ElevatedUserAttributeSimilarityValidatorTestCase.user,
-            )

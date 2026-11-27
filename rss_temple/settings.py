@@ -142,6 +142,15 @@ AUTH_PASSWORD_VALIDATORS = [
         },
     },
     {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "OPTIONS": {
+            "user_attributes": ["email"],
+        },
+    },
+    {
         "NAME": "api.password_validation.HasLowercaseValidator",
     },
     {
@@ -152,12 +161,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "api.password_validation.HasSpecialCharacterValidator",
-    },
-    {
-        "NAME": "api.password_validation.ElevatedCommonPasswordValidator",
-    },
-    {
-        "NAME": "api.password_validation.ElevatedUserAttributeSimilarityValidator",
     },
 ]
 

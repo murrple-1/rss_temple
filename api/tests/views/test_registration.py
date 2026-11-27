@@ -83,6 +83,53 @@ class RegistrationTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 422, response.content)
 
+        json_ = response.json()
+        self.assertIs(type(json_), dict)
+        self.assertIs(type(json_["password"]), list)
+        self.assertGreater(len(json_["password"]), 1)
+        for message in json_["password"]:
+            self.assertIs(type(message), str)
+
+    def _post_rejected_password(self, email: str, password: str) -> list[str]:
+        captcha = Captcha.objects.create(
+            key=reusable_captcha_key(),
+            seed=reusable_captcha_seed(),
+            expires_at=(timezone.now() + datetime.timedelta(days=1)),
+        )
+
+        response = self.client.post(
+            "/api/registration",
+            {
+                "email": email,
+                "password": password,
+                "captcha": f"{captcha.key}:{captcha.secret_phrase}",
+            },
+        )
+        self.assertEqual(response.status_code, 422, response.content)
+        self.assertFalse(User.objects.filter(email=email).exists())
+
+        return response.json()["password"]
+
+    def test_RegisterView_post_common_password(self):
+        # fails only the common-password rule
+        self.assertEqual(
+            self._post_rejected_password("test@test.com", "Password1!"),
+            ["This password is too common."],
+        )
+
+    def test_RegisterView_post_password_similar_to_email(self):
+        # fails only the email-similarity rule
+        self.assertEqual(
+            self._post_rejected_password("johnsmith1@test.com", "Johnsmith1@test.com"),
+            ["The password is too similar to the email."],
+        )
+
+    def test_RegisterView_post_password_no_special_character(self):
+        self.assertEqual(
+            self._post_rejected_password("test@test.com", "aC0mplicatedTestPassword"),
+            ["This password must contain at least 1 special character (!@#$%^&?)."],
+        )
+
     def test_RegisterView_post_badcaptcha(self):
         response = self.client.post(
             "/api/registration",
