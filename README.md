@@ -82,15 +82,28 @@ ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.
 ansible-playbook --connection=local --inventory localhost, murrple_1.rss_temple.rss_temple_home
 ```
 
+The playbooks never overwrite a config file that already exists. When a new version of a file differs from yours,
+they write it next to yours as `<file>.<timestamp>`, and you merge the two by hand. To only write the config files,
+without starting anything, run the `_config` variant of a playbook (for example
+`murrple_1.rss_temple.rss_temple_config`).
+
+The collection opens only SSH, 80 and 443 in the firewall, and does not harden the rest of the server. See the
+[collection's README](https://github.com/murrple-1/ansible-collection-rss-temple#hardening-the-server) for the
+hardening it recommends.
+
 ## Manual
+
+These steps make the same setup as the Ansible collection. If they disagree, the collection is the reference.
 
 ### RSS Temple Infrastructure
 
 Ensure [Docker](https://docs.docker.com/engine/install/) is installed.
 
+Open only ports 22 (SSH), 80 and 443 in the host firewall. Nothing else needs to be reachable from outside.
+
 ```bash
-# create the shared Docker network
-docker network create global_rss_temple_net
+# create the shared Docker network. It is internal: the Caddy containers on it reach each other, not the internet
+docker network create --internal global_rss_temple_net
 ```
 
 Create a directory `/opt/rss_temple/rss_temple_infra/`.
@@ -121,6 +134,10 @@ networks:
 
 `/opt/rss_temple/rss_temple_infra/Caddyfile`
 ```
+{
+  email admin@rsstemple.com
+}
+
 https://api.rsstemple.com {
   log
 
@@ -152,13 +169,14 @@ rsstemple.com {
 }
 ```
 
-Replace `rsstemple.com` with your top-level domain.
+Replace `rsstemple.com` with your top-level domain, and `admin@rsstemple.com` with the email address for your
+ACME (Let's Encrypt) account.
 
 Start the containers with `docker compose up -d`.
 
 ### RSS Temple Backend
 
-Create a directory `/opt/rss_temple/rss_temple/`, and also `/opt/rss_temple/rss_temple/overrides/` and `/opt/rss_temple/rss_temple/mount/`.
+Create a directory `/opt/rss_temple/rss_temple/`, and also `/opt/rss_temple/rss_temple/overrides/`.
 
 Create the following files - editing them as needed:
 
@@ -182,6 +200,7 @@ services:
     command: valkey-server /usr/local/etc/valkey/valkey.conf
     restart: always
     volumes:
+      - valkey_data:/data/
       - ./overrides/valkey.conf:/usr/local/etc/valkey/valkey.conf
     networks:
       - rss_temple_net
@@ -272,7 +291,6 @@ services:
     volumes:
       - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
       - ./overrides/gunicorn.conf.py:/code/gunicorn.conf.py
-      - ./mount/:/code/mount/
     networks:
       - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
@@ -287,7 +305,6 @@ services:
       - .env
     volumes:
       - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
-      - ./mount/:/code/mount/
     networks:
       - default  # necessary, because functionality requires making calls to the external internet
       - rss_temple_net
@@ -308,10 +325,10 @@ services:
     volumes:
       - ./schedulerdaemon.json:/schedulerdaemon.json
       - ./overrides/local_settings.py:/code/rss_temple/local_settings.py
-      - ./mount/:/code/mount/
     networks:
       - rss_temple_net
 volumes:
+  valkey_data:
   db_data:
   caddy_data:
   django_static:
@@ -327,13 +344,17 @@ networks:
 TZ=UTC
 DJANGO_SETTINGS_MODULE=rss_temple.settings
 
-POSTGRES_PASSWORD='CHANGE_ME_POSTGRES_PASSWORD'
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD='CHANGE_ME_POSTGRES_ADMIN_PASSWORD'
+POSTGRES_DB=postgres
 
 APP_DEBUG=False
+APP_ENABLE_SILK=False
 
 APP_DB_HOST=postgresql
-APP_DB_USER=postgres
-APP_DB_PASSWORD='CHANGE_ME_POSTGRES_PASSWORD'
+APP_DB_NAME=postgres
+APP_DB_USER=monk
+APP_DB_PASSWORD='CHANGE_ME_APP_POSTGRES_PASSWORD'
 
 APP_REDIS_URL=redis://valkey:6379
 
@@ -342,8 +363,12 @@ APP_SECRET_KEY='CHANGE_ME_SECRET_KEY'
 APP_SESSION_COOKIE_DOMAIN=.rsstemple.com
 APP_CSRF_TRUSTED_ORIGINS=https://api.rsstemple.com,https://app.rsstemple.com
 APP_CSRF_COOKIE_DOMAIN=.rsstemple.com
+APP_CORS_ALLOWED_ORIGINS=https://app.rsstemple.com
+APP_ALLOWED_HOSTS=api.rsstemple.com
 
 APP_NUM_PROXIES=2
+
+APP_DOWNLOAD_MAX_BYTE_COUNT=1000000
 
 APP_EMAIL_HOST=
 APP_EMAIL_PORT=587
@@ -367,7 +392,16 @@ Generate, or otherwise replace, the passwords/secret keys (values start with `'C
 
 > *TODO*: I should integrate some secret management.
 
+`POSTGRES_*` is the PostgreSQL admin account. The app connects as `APP_DB_USER`, a role with fewer privileges that
+you create below.
+
 You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
+
+`APP_CORS_ALLOWED_ORIGINS` must be the web app's origin. Without it, the web app can't call the API. `APP_ALLOWED_HOSTS`
+is the API's domains; requests with any other `Host` header are rejected.
+
+`APP_ENABLE_SILK` turns off the django-silk request profiler, which is on by default and records request and
+response bodies.
 
 `APP_NUM_PROXIES` is the number of reverse proxies in front of the app (here, the RSS Temple Infrastructure Caddy and the Caddy above), so rate limiting sees the real client IP. Change it if you add or remove a proxy, such as a CDN.
 
@@ -376,17 +410,26 @@ You'll want to setup the `APP_EMAIL_*` variables, to setup email verification.
 {
     "archive_feed_entries": {},
     "delete_old_job_executions": {},
-    "extract_top_images": {},
-    "feed_scrape": {},
+    "extract_top_images": {
+        "responseMaxByteCount": 1000000
+    },
+    "feed_scrape": {
+        "responseMaxByteCount": 1000000,
+        "shouldScrapeDeadFeeds": true
+    },
     "flag_duplicate_feeds": {},
     "label_feeds": {},
     "label_users": {},
     "purge_duplicate_feed_urls": {},
     "purge_expired_data": {},
-    "setup_subscriptions": {},
+    "setup_subscriptions": {
+        "responseMaxByteCount": 1000000
+    },
     "ignore_missed_top_images": {}
 }
 ```
+
+Keep `responseMaxByteCount` equal to `APP_DOWNLOAD_MAX_BYTE_COUNT` in `.env`.
 
 `/opt/rss_temple/rss_temple/Caddyfile`
 ```
@@ -439,23 +482,76 @@ warnings.simplefilter("ignore", category=DataLossWarning)
 `/opt/rss_temple/rss_temple/overrides/gunicorn.conf.py`
 ```python
 worker_class = "gthread"
+workers = 3  # the number of vCPUs + 1
+threads = 2
 capture_output = True
 accesslog = "-"
+
+# Load the app once in the master and fork, so workers share its memory. `kill -HUP` then no longer picks up new
+# code: restart the container instead
+preload_app = True
+
+
+def on_starting(server):
+    # Also import the view/serializer tree before forking (Django otherwise loads it lazily, per worker)
+    from rss_temple.preload import warm_url_resolver
+
+    count = warm_url_resolver()
+    server.log.info("pre-fork URL resolver warmup: %d root pattern(s)", count)
 ```
+
+Set `workers` to the number of vCPUs on the server plus 1.
+
+This file replaces the `gunicorn.conf.py` in the image, so it must set `preload_app` itself. With `preload_app`,
+`kill -HUP` no longer reloads new application code into running workers. To deploy a code change, restart the
+`rss_temple` container (`docker compose up -d` with a new image does this), and don't signal the existing one.
 
 `/opt/rss_temple/rss_temple/overrides/valkey.conf`
 ```
 maxmemory 0
 maxmemory-policy noeviction
+# Log every write so queued Dramatiq jobs survive a restart (at most ~1 second of writes is lost)
+appendonly yes
+appendfsync everysec
 ```
 
-Start the containers with `docker compose up -d`.
+Start PostgreSQL on its own, and create the role the app connects as. Use the `APP_DB_USER` and
+`APP_DB_PASSWORD` values from `.env`:
 
-Note: the backend's `gunicorn.conf.py` sets `preload_app = True`, which means
-`kill -HUP` no longer reloads new application code into running workers — a
-deploy that changes code requires restarting the `rss_temple` container (or
-running `docker compose up -d` again to pick up a new image), not signalling
-the existing one.
+```sh
+docker compose up -d --wait postgresql
+docker compose exec postgresql psql -U postgres -d postgres -c "
+CREATE USER monk WITH PASSWORD 'CHANGE_ME_APP_POSTGRES_PASSWORD';
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO monk;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO monk;
+GRANT ALL ON SCHEMA public TO monk;
+ALTER ROLE monk SET client_encoding TO 'utf8';
+ALTER ROLE monk SET default_transaction_isolation TO 'read committed';
+ALTER ROLE monk SET timezone TO 'UTC';
+"
+```
+
+Start the other containers. This waits for the migrations to finish:
+
+```sh
+docker compose up -d --wait
+```
+
+Create an admin account (it prompts for the password):
+
+```sh
+docker compose exec rss_temple python ./manage.py createsuperuser --email you@example.com
+```
+
+To let users log in with Google and Facebook, register the apps. Use your domain, a site name, and the client IDs
+and secrets from Google and Facebook:
+
+```sh
+docker compose exec rss_temple python ./manage.py setupsocialapps \
+  rsstemple.com 'RSS Temple' \
+  CHANGE_ME_GOOGLE_CLIENT_ID CHANGE_ME_GOOGLE_SECRET \
+  CHANGE_ME_FACEBOOK_APP_ID CHANGE_ME_FACEBOOK_SECRET
+```
 
 ### Purging bulk-applied classifier votes
 
@@ -573,8 +669,7 @@ networks:
   header {
     X-Content-Type-Options "nosniff"
     X-Frame-Options "DENY"
-    Content-Security-Policy "default-src 'none'; script-src 'self' apis.google.com connect.facebook.net; connect-src 'self' *.rsstemple.com www.facebook.com; img-src * data: blob:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; font-src 'self' data:; frame-src *; media-src blob:"
-    X-XSS-Protection "1"
+    Content-Security-Policy "default-src 'none'; script-src 'self' apis.google.com connect.facebook.net; connect-src 'self' https://api.rsstemple.com *.facebook.com; img-src * data: blob:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; font-src 'self' data:; frame-src *; media-src blob:"
     Strict-Transport-Security "max-age=31536000; includeSubDomains"
   }
 
@@ -638,6 +733,13 @@ x-rss-temple-home-image: &rss-temple-home-image
   image: 'murraychristopherson/rss_temple_home:latest'
 
 services:
+  # One-shot: gives the site volume to the user the build runs as, then exits
+  init-rss_temple_home:
+    image: alpine:3
+    volumes:
+      - caddy_srv:/srv/
+    command: chown -R 1000:1000 /srv/
+    network_mode: none
   caddy-rss_temple_home:
     image: caddy:2-alpine
     restart: always
@@ -674,6 +776,9 @@ services:
       - ./custom_html/:/custom_html/
     networks:
       - rss_temple_home_net
+    depends_on:
+      init-rss_temple_home:
+        condition: service_completed_successfully
 volumes:
   caddy_data:
   caddy_config:
@@ -687,27 +792,35 @@ networks:
 
 `/opt/rss_temple/rss_temple_home/.env`
 ```sh
-WEB_APP_URL=http://app.rsstemple.com
+SITE_URL=https://rsstemple.com
+WEB_APP_URL=https://app.rsstemple.com
 TWITTER_X_URL=https://x.com/rsstemple
 FB_URL=https://www.facebook.com/RSSTemple/
 INSTA_URL=https://www.instagram.com/rsstempleapp/
 ```
 
-Point these at your own socials, if you'd like.
+`SITE_URL` is the landing page's own URL, used for canonical links and the sitemap. Point the social URLs at your
+own socials, if you'd like.
 
 `/opt/rss_temple/rss_temple_home/Caddyfile`
 ```
 :3000 {
+  encode zstd gzip
+
   header {
     X-Content-Type-Options "nosniff"
     X-Frame-Options "DENY"
     Content-Security-Policy "default-src 'none'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; base-uri 'self'; form-action 'self'; font-src 'self' fonts.gstatic.com"
-    X-XSS-Protection "1"
     Strict-Transport-Security "max-age=31536000; includeSubDomains"
   }
 
   root * /srv/
   file_server
+
+  handle_errors 404 {
+    rewrite * /404.html
+    file_server
+  }
 }
 ```
 
@@ -717,7 +830,7 @@ The following files are custom HTML injected into each page. You can arguably pu
 ```html
 <meta property="og:title" content="RSS Temple" />
 <meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
-<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:url" content="https://rsstemple.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:description" content="The Zen of Syndication" />
 ```
@@ -734,9 +847,9 @@ The following files are custom HTML injected into each page. You can arguably pu
 
 `/opt/rss_temple/rss_temple_home/custom_html/contact.head.html`
 ```html
-<meta property="og:title" content="RSS Temple" />
+<meta property="og:title" content="RSS Temple: Contact" />
 <meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
-<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:url" content="https://rsstemple.com/contact/" />
 <meta property="og:type" content="website" />
 <meta property="og:description" content="The Zen of Syndication" />
 ```
@@ -752,9 +865,9 @@ The following files are custom HTML injected into each page. You can arguably pu
 
 `/opt/rss_temple/rss_temple_home/custom_html/privacy.head.html`
 ```html
-<meta property="og:title" content="RSS Temple" />
+<meta property="og:title" content="RSS Temple: Privacy" />
 <meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
-<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:url" content="https://rsstemple.com/privacy/" />
 <meta property="og:type" content="website" />
 <meta property="og:description" content="The Zen of Syndication" />
 ```
@@ -770,9 +883,9 @@ The following files are custom HTML injected into each page. You can arguably pu
 
 `/opt/rss_temple/rss_temple_home/custom_html/tos.head.html`
 ```html
-<meta property="og:title" content="RSS Temple" />
+<meta property="og:title" content="RSS Temple: Terms of Service" />
 <meta property="og:image" content="https://rsstemple.com/media/og_image.jpg" />
-<meta property="og:url" content="https://rsstemple.com" />
+<meta property="og:url" content="https://rsstemple.com/tos/" />
 <meta property="og:type" content="website" />
 <meta property="og:description" content="The Zen of Syndication" />
 ```

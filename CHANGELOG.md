@@ -15,6 +15,10 @@ All notable changes to the RSS Temple backend. The format is based on
   `rss_temple_schedulerdaemon` hang without starting. Before you pull this image, update `docker-compose.yml` as in
   the README: add the `rss_temple_migrate` and `rss_temple_collectstatic` services, the PostgreSQL and Valkey
   healthchecks, and the `depends_on` that makes the app services wait for them, and remove the `checkready` loops.
+- **README-based deploys (recommended):** compare your files with the updated README. Most importantly, add
+  `APP_ENABLE_SILK=False`, `APP_ALLOWED_HOSTS` and `APP_CORS_ALLOWED_ORIGINS` to `.env`, and add `preload_app` and
+  `workers` to `overrides/gunicorn.conf.py`. Your override replaces the image's file, so without them Gunicorn runs
+  one worker and doesn't preload.
 
 ### Changed
 
@@ -26,6 +30,12 @@ All notable changes to the RSS Temple backend. The format is based on
   the app services wait for (`condition: service_completed_successfully`), instead of inside the `rss_temple`
   container's start-up command. A failed migration now stops `docker compose up` with an error. The Dramatiq worker
   waits for migrations too.
+- The README's manual-deploy instructions now match the Ansible collection. The changes: settings that were missing
+  from `.env` (silk off, allowed hosts, CORS origins, download limit), a separate PostgreSQL role for the app, a
+  persisted Valkey volume with an append-only file, Gunicorn workers and `preload_app`, the scheduler's download
+  limits, the `createsuperuser` and `setupsocialapps` steps, an internal shared Docker network, an ACME email, the
+  web app's CSP, and the landing page's `SITE_URL`, 404 page and per-page OpenGraph tags. The unused `mount/`
+  directory is gone.
 
 ### Removed
 
